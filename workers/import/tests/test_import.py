@@ -399,7 +399,9 @@ def test_E02_run_of_a_paused_source_is_skipped_and_writes_nothing(conn: Any) -> 
     assert run_status(conn, run)["rows_new"] is None, "nothing was written"
 
     # 04 §7: resuming the source (a plan was chosen) lets the same run through.
-    conn.execute("update public.import_source set paused_at = null, paused_reason = null where id = %s", (source,))
+    conn.execute(
+        "update public.import_source set paused_at = null, paused_reason = null where id = %s", (source,)
+    )
     run2 = new_run(conn, "ifood", "imports/t/ifood.csv", IFOOD)
     conn.execute("update public.import_run set source_id = %s where id = %s", (source, run2))
     assert process_run(conn, files, run2, "ifood").status == "ok"

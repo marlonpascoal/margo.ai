@@ -3,7 +3,7 @@ name = "margoai"
 version = "0.0.0"
 description = "MargoAI workspace root: workers and repo scripts"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-render[local]"]
+dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-import[local]", "margo-render[local]"]
 
 [tool.uv]
 package = false
@@ -12,6 +12,7 @@ package = false
 margo-common = { workspace = true }
 margo-contracts = { workspace = true }
 margo-collector = { workspace = true }
+margo-import = { workspace = true }
 margo-render = { workspace = true }
 
 [tool.uv.workspace]
@@ -40,3 +41,6 @@ select = ["E", "F", "I", "B", "UP"]
 "workers/collector/src/margo_collector/repo.py" = ["E501"]
 "workers/render/src/margo_render/P01_raio_x.py" = ["E501"]
 "workers/render/src/margo_render/handlers.py" = ["E501"]
+# SQL statements and generated value lists read better unwrapped.
+"workers/import/src/margo_import/db.py" = ["E501"]
+"fixtures/m2/generate.py" = ["E501"]

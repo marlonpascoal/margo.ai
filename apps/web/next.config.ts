@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   // No dev overlay badge in the F02 screenshots.
   devIndicators: false,
   transpilePackages: ["@margoai/contracts"],
+  // C07: statements are uploaded through a server action; a month of iFood exports runs to a few MB.
+  experimental: { serverActions: { bodySizeLimit: "20mb" } },
 };
 
 export default nextConfig;

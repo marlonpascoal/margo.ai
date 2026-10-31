@@ -1,15 +1,16 @@
 [project]
 name = "margo-render"
 version = "0.0.0"
-description = "worker-render: PDFs (reportlab, pure Python wheels, no system libraries) and later xlsx"
+description = "worker-render: PDFs (P01 with reportlab, P06 with fpdf2, both pure Python) and xlsx (openpyxl)"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common", "margo-contracts", "reportlab>=4.2"]
+dependencies = ["margo-common", "margo-contracts", "reportlab>=4.2", "fpdf2>=2.8", "openpyxl>=3.1", "pypdf>=5"]
 
 [project.optional-dependencies]
 local = ["psycopg[binary]>=3.2"]
 
 [project.entry-points."margo.jobs"]
 render_xray = "margo_render.handlers:render_xray"
+render_close = "margo_render.close_job:render_close"
 
 [build-system]
 requires = ["hatchling"]

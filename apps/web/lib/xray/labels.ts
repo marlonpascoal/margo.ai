@@ -76,3 +76,6 @@ export function collectStopReason(error: string | null | undefined, reason?: str
       return "Coleta parada: erro ao ler as páginas públicas.";
   }
 }
+
+/** xray.target_kind as a small label in C02 and C05. */
+export const TARGET_KIND_LABEL = { own: "loja própria", competitor: "concorrente" } as const;

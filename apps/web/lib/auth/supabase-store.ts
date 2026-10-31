@@ -96,7 +96,8 @@ export class SupabaseLoginStore implements LoginStore {
     // 04 §9, E05: planned per Dono through the notifier, so preferences apply; e-mail always goes (locked).
     if (accountIds.length === 0) return;
     const who = must(await this.db.from("person").select("name").eq("id", personId).single());
-    await notifyNewDevice(this.notify, { personName: who.name, accountIds, userAgent });
+    const synthetic = must(await this.db.from("account").select("id").in("id", accountIds).eq("is_synthetic", true)).map((a) => a.id);
+    await notifyNewDevice(this.notify, { personName: who.name, accountIds, userAgent, syntheticAccountIds: synthetic });
   }
 
   async audit(rows: AuditRow[]): Promise<void> {

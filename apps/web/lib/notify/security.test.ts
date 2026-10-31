@@ -30,6 +30,15 @@ describe("P15 security_event through the planner", () => {
     expect(n).toMatchObject({ accountId: "acc", noticeCode: "security_event", recipient: "dono@exemplo.com.br", subject: "Login em aparelho novo" });
     expect(n.body).toContain("Financeiro entrou na MargoAI por um aparelho novo (Firefox).");
     expect(n.body).toContain("Você recebe este e-mail porque é Dono no Grupo Exemplo.");
+    // The security_event template of apps/web/emails: HTML with the "Ver aparelhos" button to W09.
+    expect(n.html).toContain("Ver aparelhos");
+    expect(n.html).toContain("/app/seguranca");
+    expect(n.html).not.toContain("SINTÉTICO");
+  });
+
+  it("P15_E05_synthetic_account_e_mail_carries_the_label", async () => {
+    await notifyNewDevice(deps(), { personName: "Financeiro", accountIds: ["acc"], userAgent: null, syntheticAccountIds: ["acc"] });
+    expect(store.notifications[0].html).toContain("SINTÉTICO · dados fictícios");
   });
 
   it("P15_E05_dono_whatsapp_pref_adds_whatsapp_and_respects_quiet_hours", async () => {

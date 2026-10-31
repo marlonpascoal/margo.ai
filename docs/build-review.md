@@ -77,3 +77,68 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - **Python worker notices:** `credit_confirmed` and `new_difference` are not sent yet (no Python notify path).
 - **`close_ready` before the 5th:** needs a cron.
 - **REST repositories for Maritime workers:** arrive with the first deployed worker.
+
+## Wave 2 (owner portal, billing, extension, e-mails)
+
+### Commands only Marlon runs
+- **Asaas sandbox:** `ASAAS_API_KEY='<sandbox key>' node scripts/record_asaas.mjs api`, pay the printed checkout link, then `node scripts/record_asaas.mjs webhooks <exported events>` (`fixtures/asaas/README.md`). The `E01_parse_recorded_*` tests run once the files land. E01 on the preview needs a freshly signed-up account.
+- **Extension, loaded unpacked:**
+  1. `MARGO_API_URL=<app url> pnpm --filter @margoai/extension build`
+  2. Load `extension/dist` in `chrome://extensions` (Developer mode).
+  3. Get a code from C07 "Ver a extensão".
+
+### Decisions to confirm
+- **Extension does not click Export.** 05, 06 and the P04 drawing say it clicks the Partner Portal's Export button. My brief to the agent was stricter than hard rule 5 (which allows acting on the page the owner opened), so the owner exports and picks the file in the popup instead. Say if you want the click; it is a content script on that one page. C07 still says "Envia sozinha uma vez por dia", which is not true now.
+- **Partner Portal host** `https://portal.ifood.com.br` and the Chrome Web Store URL (`NEXT_PUBLIC_CHROME_WEB_STORE_URL`, button disabled until set).
+- **Billing units:** only stores of kitchens in analysis are billed, which gives G-02 5 stores, not the drawn 6. The billing cron would change G-02 from R$ 1.800 to R$ 1.500 on the seed.
+- **Pilots:**
+  - nothing is created automatically from day 61
+  - a pilot with an open percentage, cap or start is not charged
+  - a failed pilot charge raises an alert and is never resent automatically
+- **Subscriptions:**
+  - "Ficar no grátis" only links to `/app`
+  - subscription deleted returns the account to Raio-X and pauses sources
+  - a refused card during the trial keeps the status
+- **Asaas:** `SUBSCRIPTION_CREATED` is handled (not in 06 §4) so a conversion during the trial is not undone. PUT for subscription updates and the checkout field `link` are to be checked against the first recording.
+- **Portal sign-up:**
+  - `auth.whatsapp_code` is off, so the screens show e-mail only, and P07's footer says "no seu e-mail"
+  - an existing contact creates nothing and gets the same answer
+  - the trial uses the Lucro plan, and the account code is the next free `G-NN`
+- **Invites:**
+  - an e-mail invite logs in directly
+  - a WhatsApp invite also asks for an e-mail
+  - no kitchens chosen means all kitchens, but a Gerente then sees none
+  - the Dono sends the invite link from their own phone; we send no invite e-mail
+- **P17 "Perdi o acesso"** opens a team alert; the public endpoint needs a rate limit before go-live.
+- **A03 on PDFs:** the account-wide close and X-ray PDFs only go to people with all kitchens. A Dono always has all kitchens.
+- **W01:** "cobrado errado" sums differences rated certa or provável in scope, excluding closed ones. "Sobrou depois dos insumos" shows "falta custo" until M3. Seed totals (R$ 111.000) differ from the drawn R$ 248.000.
+- **/app/conectar** is shown to the Dono and Financeiro, and only the Dono signs. One signature covers AI and international processing (D48). Terms version `rascunho-2026-10-30`, to bump when the lawyer's text lands.
+- **People and kitchens:**
+  - linking a new store to a kitchen is Dono only
+  - the kitchen in-analysis toggle counts as a plan change during a security lock
+  - with `conta.multi_cozinha` off, at most one kitchen is in analysis
+- **E06:**
+  - the export leaves out internal tables and columns named hash, token or secret
+  - deletion also removes members who have no other account
+  - the automatic deletion 90 days after a client leaves (02 §7) is not scheduled
+- **WhatsApp manual queue** is a section of C21. C18 shows when `bpo.marca_propria` is on for at least one BPO client; branded PDFs are downloaded from C18 because the partner's folder is outside MargoAI.
+- **E-mail:** the footer adds "SINTÉTICO · dados fictícios". E01 without cost says "falta custo". Nothing sends the outbox on a schedule yet (no cron). `MARGO_APP_URL` is needed for links.
+- **New env names:** `ASAAS_API_URL`, `CRON_SECRET` (not in C14 yet), `MARGO_APP_URL`, `NEXT_PUBLIC_CHROME_WEB_STORE_URL`, `MARGO_API_URL` (extension build).
+- **Seed invite `g-syn-convite-contador`** expires 05/nov, after which the P18 screenshot shows the invalid-invite page.
+
+### Copy written without a drawing (Wave 2)
+- **Portal entry:**
+  - sign-up and invite errors, the invalid-invite page, the group chooser "Qual grupo abrir?"
+  - P17 form, P08 statuses, W01 empty state, P11 placeholder
+  - W09 log verbs, "Pessoa nova na conta"
+- **Account:**
+  - the invite form and invite text, the kitchen editor, the lock banner
+  - people, Lojas, Contestações and Conectar messages
+  - the deletion notice, the export `LEIA-ME.txt`
+- **Billing:**
+  - plan states and return-from-Asaas messages, invoice and C15 statuses
+  - the C15 plan editor, last-event labels
+  - trial_ending and billing_result texts, the billing alerts
+- **Extension and e-mails:**
+  - the 8 notices besides E01 and E02 (`apps/web/emails/notices.ts`), WhatsApp versions of E01 and E02
+  - popup pairing and status texts, the C21 queue, the console extension page, C18 buttons and messages

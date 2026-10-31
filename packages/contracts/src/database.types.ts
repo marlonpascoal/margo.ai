@@ -99,18 +99,38 @@ isOneToOne: false
                   ]
                 },"billing_event": {
                   Row: {
-                    "account_id": string | null,"asaas_event": string,"asaas_event_id": string,"created_at": string,"id": string,"payload": NonNullable<Json>,"processed_at": string | null,"received_at": string,"updated_at": string
+                    "account_id": string | null,"asaas_event": string,"asaas_event_id": string,"created_at": string,"id": string,"kind": string | null,"payload": NonNullable<Json>,"processed_at": string | null,"received_at": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id"?: string | null,"asaas_event": string,"asaas_event_id": string,"created_at"?: string,"id"?: string,"payload": NonNullable<Json>,"processed_at"?: string | null,"received_at"?: string,"updated_at"?: string
+                    "account_id"?: string | null,"asaas_event": string,"asaas_event_id": string,"created_at"?: string,"id"?: string,"kind"?: string | null,"payload": NonNullable<Json>,"processed_at"?: string | null,"received_at"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string | null,"asaas_event"?: string,"asaas_event_id"?: string,"created_at"?: string,"id"?: string,"payload"?: NonNullable<Json>,"processed_at"?: string | null,"received_at"?: string,"updated_at"?: string
+                    "account_id"?: string | null,"asaas_event"?: string,"asaas_event_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string | null,"payload"?: NonNullable<Json>,"processed_at"?: string | null,"received_at"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "billing_event_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"billing_invoice": {
+                  Row: {
+                    "account_id": string,"amount_cents": number,"asaas_payment_id": string,"asaas_subscription_id": string | null,"created_at": string,"due_on": string | null,"id": string,"status": Database["public"]['Enums']["invoice_status"],"units": number | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"amount_cents": number,"asaas_payment_id": string,"asaas_subscription_id"?: string | null,"created_at"?: string,"due_on"?: string | null,"id"?: string,"status": Database["public"]['Enums']["invoice_status"],"units"?: number | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"amount_cents"?: number,"asaas_payment_id"?: string,"asaas_subscription_id"?: string | null,"created_at"?: string,"due_on"?: string | null,"id"?: string,"status"?: Database["public"]['Enums']["invoice_status"],"units"?: number | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "billing_invoice_account_id_fkey"
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
@@ -639,14 +659,14 @@ isOneToOne: false
                   ]
                 },"import_source": {
                   Row: {
-                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at": string,"id": string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at": string | null,"schedule_cron": string | null,"stale_after_hours": number | null,"updated_at": string
+                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at": string,"id": string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at": string | null,"paused_at": string | null,"paused_reason": string | null,"schedule_cron": string | null,"stale_after_hours": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
+                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"paused_at"?: string | null,"paused_reason"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
+                    "account_id"?: string,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"paused_at"?: string | null,"paused_reason"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1075,14 +1095,14 @@ isOneToOne: false
                   ]
                 },"plan": {
                   Row: {
-                    "billing_unit": Database["public"]['Enums']["billing_unit"],"code": string,"created_at": string,"features": NonNullable<Json>,"id": string,"name": string,"price_cents": number | null,"trial_days": number,"updated_at": string
+                    "billing_unit": Database["public"]['Enums']["billing_unit"],"code": string,"created_at": string,"features": NonNullable<Json>,"id": string,"name": string,"price_cents": number | null,"price_is_example": boolean,"trial_days": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code": string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name": string,"price_cents"?: number | null,"trial_days"?: number,"updated_at"?: string
+                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code": string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name": string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"trial_days"?: number,"updated_at"?: string
+                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -1533,7 +1553,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered"
+            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","invoice_status": "pending"|"confirmed"|"overdue"|"refused"|"canceled","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1653,7 +1673,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"]
+            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"invoice_status": ["pending", "confirmed", "overdue", "refused", "canceled"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"]
           }
         }
 } as const

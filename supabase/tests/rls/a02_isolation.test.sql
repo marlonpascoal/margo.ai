@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(47);
+select plan(49);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated;
@@ -49,6 +49,7 @@ begin
     values (acc, tests.id(a || ':co'), array['m2'], dono, now());
   insert into public.subscription (account_id, plan_id, status) values (acc, (select id from public.plan where code = 'lucro'), 'trial');
   insert into public.billing_event (account_id, asaas_event, asaas_event_id, payload) values (acc, 'PAYMENT_CONFIRMED', a || '-ev', '{}');
+  insert into public.billing_invoice (account_id, asaas_payment_id, amount_cents, status) values (acc, a || '-pay', 30000, 'confirmed');
   insert into public.pilot (id, account_id, pct_months_1_2, cap_cents) values (tests.id(a || ':pilot'), acc, 0.2, 100000);
   insert into public.pilot_charge (pilot_id, month, credited_cents, charge_cents) values (tests.id(a || ':pilot'), '2026-09-01', 1000, 200);
   insert into public.bpo_client (bpo_partner_id, account_id) values (tests.id('bpo'), acc);
@@ -155,6 +156,7 @@ select is(tests.n($$ select 1 from public.channel_store $$), 3, 'Dono sees own s
 select is(tests.n($$ select 1 from public.membership $$), 2, 'Dono sees every membership of the account');
 select is(tests.n($$ select 1 from public.person $$), 2, 'Dono sees the people of the account');
 select is(tests.n($$ select 1 from public.subscription $$), 1, 'Dono sees the subscription');
+select is(tests.n($$ select 1 from public.billing_invoice $$), 1, 'Dono sees the invoices (W05)');
 select is(tests.n($$ select 1 from public.invite $$), 1, 'Dono sees invites');
 select is(tests.n($$ select 1 from public.audit_log $$), 1, 'Dono sees the account access log');
 select is(tests.n($$ select 1 from public.billing_event $$), 0, 'raw Asaas events are console only');
@@ -174,6 +176,7 @@ select is(tests.n($$ select 1 from public.channel_store $$), 1, 'A03: Gerente se
 select is(tests.n($$ select 1 from public.person $$), 1, 'Gerente sees only self in people');
 select is(tests.n($$ select 1 from public.membership $$), 1, 'Gerente sees only own membership');
 select is(tests.n($$ select 1 from public.subscription $$), 0, 'Gerente does not see the plan');
+select is(tests.n($$ select 1 from public.billing_invoice $$), 0, 'Gerente does not see invoices');
 select is(tests.n($$ select 1 from public.invite $$), 0, 'Gerente does not see invites');
 select is(tests.n($$ select 1 from public.audit_log $$), 0, 'Gerente does not see the access log');
 select is(tests.n($$ select 1 from public.order_fact $$), 1, 'A03: Gerente sees orders of own kitchen only');

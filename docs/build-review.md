@@ -142,3 +142,23 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - **Extension and e-mails:**
   - the 8 notices besides E01 and E02 (`apps/web/emails/notices.ts`), WhatsApp versions of E01 and E02
   - popup pairing and status texts, the C21 queue, the console extension page, C18 buttons and messages
+
+### Wave 2 integration
+- **W09 "Trocar" contact change is Dono only.** Spec 04 §8 does not say so; should Financeiro and Gerente change their own e-mail?
+- **MenuDono shows every entry even when the page's flag is off** (the link answers 404).
+- **An abandoned e-mail change** leaves an unused Auth user for the new address.
+- **The P18 accept notice** still uses plain text, not the `new_person` template.
+- **Copy without a drawing:** W09 messages for e-mail change, export and deletion; the W07 pairing-code line; the 409 "importações pausadas"; the e-mail "Seu e-mail de login mudou".
+
+## Wave 3 (cost and contribution)
+
+### Schema decisions
+- **Invoice `access_key` is unique across all accounts** (03, D11). A second account sending the same key learns that it exists elsewhere.
+- **Regional priors (CST-02) are stored per account**, because `ingredient_price.account_id` is required. The CST-02 widening of the error bar has no value in the spec.
+- **Columns added beyond 03 §4:**
+  - `invoice_line.line_no`
+  - `ingredient_match.confidence`
+  - `contribution.packaging_cents`
+  - `account_id` on `invoice_line`, `ingredient_match` and `recipe_line` (for account isolation)
+- **No upper limit on `yield_pct`:** cooked rice can yield more than 100%.
+- **`invoice_line.unit_price_cents` is an integer.** Computations use `total_cents / qty` where precision matters.

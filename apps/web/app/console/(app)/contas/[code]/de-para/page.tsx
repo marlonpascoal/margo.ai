@@ -25,21 +25,19 @@ function Actions({ row, code, catalog }: { row: DeparaRow; code: string; catalog
     </>
   );
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-1.5">
-        {row.state === "suggested" && (
-          <form action={confirmAction} className="flex gap-1.5">
-            {hidden}
-            {row.needsConversion && <input name="conversao" required aria-label="Unidades do insumo por unidade da nota" placeholder="por unidade" className={`${field} w-24`} />}
-            <button type="submit" className={`${small} border-0 bg-ink text-ink-inverse`}>
-              Confirmar
-            </button>
-          </form>
-        )}
-      </div>
+    <div className="flex flex-wrap items-start gap-1.5">
+      {row.state === "suggested" && (
+        <form action={confirmAction} className="flex gap-1.5">
+          {hidden}
+          {row.needsConversion && <input name="conversao" required aria-label="Unidades do insumo por unidade da nota" placeholder="por unidade" className={`${field} w-24`} />}
+          <button type="submit" className={`${small} border-0 bg-ink text-ink-inverse`}>
+            Confirmar
+          </button>
+        </form>
+      )}
       <details>
-        <summary className={`${small} inline-flex items-center border border-border-strong bg-surface text-ink`}>Trocar</summary>
-        <div className="mt-2 flex flex-col gap-2">
+        <summary className={`${small} inline-flex list-none items-center border border-border-strong bg-surface text-ink`}>Trocar</summary>
+        <div className="mt-2 flex w-56 flex-col gap-2">
           <form action={swapAction} className="flex flex-col gap-1.5">
             {hidden}
             <select name="insumo" aria-label="Insumo do catálogo" className={field} defaultValue="">

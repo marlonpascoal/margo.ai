@@ -124,7 +124,7 @@ describe("C11 de-para", () => {
     l("3", "QJO PROC CHED FAT 2,27KG 160FT", "PC", 2, 23654, [m({ ingredient: "Queijo cheddar fatiado", method: "ai", status: "suggested", conversion_factor: 2270 })]),
     l("4", "PAO HAMB BRIOCHE GERG C/12", "PCT", 10, 13800, [m({ ingredient: "Pão brioche", method: "ai", status: "suggested", base_unit: "un", conversion_factor: 12 })]),
     l("5", "GAS GLP P13", "UN", 1, 11500, []),
-    l("6", "CARNE BOV MOIDA PATINHO/ACEM 80/20 KG", "KG", 5, 19450, [m({ ingredient: "Carne bovina moída (blend)", rule_note: "texto + NCM 0201" })], "2026-09-01T10:00:00-03:00"),
+    l("6", "CARNE BOV MOIDA PATINHO/ACEM 80/20 KG", "KG", 5, 19450, [m({ ingredient: "Carne bovina moída (blend)", rule_note: "texto + NCM 0201", confirmed_by: "seed" })], "2026-09-01T10:00:00-03:00"),
   ];
 
   it("C11_rows_as_drawn_one_per_invoice_text", () => {

@@ -72,7 +72,7 @@ export const groupKey = (l: Pick<LineRecord, "description" | "ncm" | "unit">) =>
 function stateOf(m: MatchRecord | null): RowState {
   if (!m) return "none";
   if (m.status === "suggested") return "suggested";
-  return m.confirmed_by ? "person" : "auto";
+  return m.method === "gtin" || m.method === "rule" ? "auto" : "person";
 }
 
 const ORDER: Record<RowState, number> = { auto: 0, person: 1, suggested: 2, none: 3 };
@@ -118,7 +118,7 @@ export function spendShares(lines: LineRecord[]): Shares {
     total += l.total_cents;
     const m = active(l);
     if (!m) none += l.total_cents;
-    else if (m.status === "confirmed" && !m.confirmed_by && (m.method === "gtin" || m.method === "rule")) auto += l.total_cents;
+    else if (m.status === "confirmed" && (m.method === "gtin" || m.method === "rule")) auto += l.total_cents;
     else if (m.status === "suggested" && m.method === "ai") ai += l.total_cents;
   }
   const pct = (v: number) => (total === 0 ? 0 : Math.round((v * 100) / total));

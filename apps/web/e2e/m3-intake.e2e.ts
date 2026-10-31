@@ -103,3 +103,81 @@ test("D01_C10_invalid_key_rejected_before_saving_and_a_valid_one_saved", async (
   const { data: lines } = await adminDb().from("invoice_line").select("description, qty, total_cents, unit_price_cents").eq("invoice_id", inv!.id);
   expect(lines).toEqual([{ description: "BACON CUBOS CONG KG", qty: 2, total_cents: 9200, unit_price_cents: 4600 }]);
 });
+
+// C11 on the seeded suggestions of Grupo Exemplo (G-02). D02: only a confirmation writes a price.
+type MatchRow = { id: string; status: string; confirmed_by: string | null; conversion_factor: number | null; invoice_line_id: string };
+async function matchesOf(description: string): Promise<MatchRow[]> {
+  const db = adminDb();
+  const g02 = (await db.from("account").select("id").eq("code", "G-02").single()).data!.id;
+  const { data: lines } = await db.from("invoice_line").select("id").eq("account_id", g02).eq("description", description);
+  const { data } = await db.from("ingredient_match").select("id, status, confirmed_by, conversion_factor, invoice_line_id").in("invoice_line_id", lines!.map((l) => l.id));
+  return data as MatchRow[];
+}
+async function g02Prices(): Promise<string[]> {
+  const db = adminDb();
+  const g02 = (await db.from("account").select("id").eq("code", "G-02").single()).data!.id;
+  const { data } = await db.from("ingredient_price").select("id, ingredient_id, price_per_base_unit_cents, invoice_line_id").eq("account_id", g02).order("id");
+  return (data ?? []).map((r) => JSON.stringify(r));
+}
+async function restore(before: MatchRow[]) {
+  const db = adminDb();
+  for (const m of before) await db.from("ingredient_match").update({ status: m.status as "suggested", confirmed_by: m.confirmed_by, conversion_factor: m.conversion_factor }).eq("id", m.id);
+  await db.from("ingredient_price").delete().in("invoice_line_id", before.map((m) => m.invoice_line_id));
+}
+
+test("D02_C11_confirming_a_suggestion_writes_its_price", async () => {
+  const description = "QJO PROC CHED FAT 2,27KG 160FT";
+  const before = await matchesOf(description);
+  expect(before.map((m) => m.status)).toContain("suggested");
+  const pricesBefore = await g02Prices();
+  try {
+    await page.goto("/console/contas/G-02/de-para");
+    await expect(page.locator("[data-share]").first()).toContainText("72%");
+    const row = page.locator(`tr[data-row="${description}"]`);
+    await expect(row).toContainText("Queijo cheddar fatiado");
+    await expect(row).toContainText("sugestão da IA");
+    await expect(row).toContainText("R$ 52,10/kg");
+    await row.getByRole("button", { name: "Confirmar" }).click();
+    await expect(page.locator(`tr[data-row="${description}"]`)).toContainText("confirmado");
+    const after = await matchesOf(description);
+    expect(after.filter((m) => m.status === "confirmed").every((m) => m.confirmed_by)).toBe(true);
+    const lineIds = before.map((m) => m.invoice_line_id);
+    const { data: prices } = await adminDb().from("ingredient_price").select("price_per_base_unit_cents").in("invoice_line_id", lineIds);
+    expect(prices!.length).toBeGreaterThan(0);
+    expect(prices!.every((p) => Math.round(Number(p.price_per_base_unit_cents) * 1000) === 5210)).toBe(true);
+    expect((await g02Prices()).length).toBe(pricesBefore.length + prices!.length);
+    const { data: audit } = await adminDb().from("audit_log").select("action").in("entity_id", after.filter((m) => m.status === "confirmed").map((m) => m.id));
+    expect(audit?.map((a) => a.action)).toContain("ingredient_match.confirm");
+  } finally {
+    await restore(before);
+  }
+  expect(await g02Prices()).toEqual(pricesBefore);
+});
+
+test("D02_C11_refusing_a_suggestion_changes_no_price", async () => {
+  const description = "MAION TEMP CASA 3KG BALDE";
+  const before = await matchesOf(description);
+  const pricesBefore = await g02Prices();
+  try {
+    await page.goto("/console/contas/G-02/de-para");
+    const row = page.locator(`tr[data-row="${description}"]`);
+    await row.locator("summary", { hasText: "Trocar" }).click();
+    await row.getByRole("button", { name: "Recusar sugestão" }).click();
+    await expect(page.locator(`tr[data-row="${description}"]`)).toContainText("sem par");
+    expect((await matchesOf(description)).every((m) => m.status === "rejected")).toBe(true);
+    expect(await g02Prices()).toEqual(pricesBefore);
+  } finally {
+    await restore(before);
+  }
+});
+
+test("P05_C10_whatsapp_lists_only_missing_top20", async () => {
+  await page.goto("/console/contas/G-02/notas");
+  await expect(page.locator("[data-zip-stats]")).toHaveText("312 notas · 12 meses · 41 fornecedores" + "NF-e: 268 · NFC-e: 44 · duplicadas: 9");
+  await expect(page.locator("[data-coverage]")).toHaveText("16 de 20");
+  const href = await page.getByRole("link", { name: "Pedir nota pelo WhatsApp" }).getAttribute("href");
+  const text = new URL(href!).searchParams.get("text")!;
+  expect(text).toMatch(/^Oi! Faltam 4 itens para fechar o custo do cardápio: .+\. Quando chegar uma nota com qualquer um deles, manda uma foto aqui\. Só isso\.$/);
+  for (const name of ["bacon", "embalagem", "copo 400 ml", "balde de papel"]) expect(text).toContain(name);
+  expect(text).not.toMatch(/cheddar|carne|batata/);
+});

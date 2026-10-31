@@ -1,5 +1,5 @@
 // Playwright against `next dev` on the local Supabase stack (scripts/with-local-env.mjs).
-//   pnpm e2e           acceptance flows (E03, C14 secrets, Operação 404)
+//   pnpm e2e           acceptance flows (E03, C14 secrets, Operação 404, A05 flags)
 //   pnpm e2e:screens   F02 screenshots at 390 and 1280 px into artifacts/screens/
 import { defineConfig } from "@playwright/test";
 import { E2E_FAKE_SECRETS } from "./e2e/fake-secrets";
@@ -16,7 +16,7 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL, locale: "pt-BR", timezoneId: "America/Sao_Paulo" },
   projects: [
-    { name: "e2e", testMatch: /.*\.e2e\.ts/ },
+    { name: "e2e", testMatch: [/.*\.e2e\.ts/, /flags\.spec\.ts/] },
     { name: "screens", testMatch: /screens\.spec\.ts/ },
   ],
   webServer: {
@@ -25,6 +25,7 @@ export default defineConfig({
     // Always our own server, so it carries E2E_FAKE_SECRETS.
     reuseExistingServer: false,
     timeout: 180_000,
-    env: { ...E2E_FAKE_SECRETS },
+    // MARGO_E2E_ROUTES compiles the test-only pages (page.e2e.tsx, next.config.ts).
+    env: { ...E2E_FAKE_SECRETS, MARGO_E2E_ROUTES: "1" },
   },
 });

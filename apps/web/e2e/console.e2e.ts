@@ -5,7 +5,7 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { E2E_FAKE_SECRETS } from "./fake-secrets";
-import { ARTIFACTS, ROOT, FOUNDER_EMAIL, clearMail, createStaff, loginToConsole, mailCode } from "./helpers";
+import { ARTIFACTS, ROOT, FOUNDER_EMAIL, adminDb, clearMail, createStaff, loginToConsole, mailCode } from "./helpers";
 
 const tag = randomBytes(4).toString("hex");
 const RESPONSES = path.join(ARTIFACTS, "e2e", "responses");
@@ -67,6 +67,30 @@ test.describe("as Fundador", () => {
       for (const value of Object.values(E2E_FAKE_SECRETS)) expect(body).not.toContain(value);
       expect(body).not.toContain(process.env.SUPABASE_SERVICE_ROLE_KEY!);
     }
+
+    // C20 from the sidebar: 15 keys of 04 §6, seed exceptions, plan defaults.
+    const nav = page.getByRole("navigation", { name: "Console" });
+    await nav.getByRole("link", { name: /Funcionalidades$/ }).click();
+    await page.waitForURL("**/console/funcionalidades");
+    await expect(page.getByRole("heading", { name: "Funcionalidades" })).toBeVisible();
+    await expect(page.locator("tr[data-flag]")).toHaveCount(15);
+    const ifood = page.locator('tr[data-flag="m2.ifood_api"]');
+    await expect(ifood).toContainText("Leitura do iFood pela API oficial");
+    await expect(ifood.getByRole("button", { name: "m2.ifood_api Raio-X: desligada" })).toBeVisible();
+    await expect(ifood.getByRole("button", { name: "m2.ifood_api Lucro: ligada" })).toBeVisible();
+    await expect(ifood.locator('[data-exception="G-03"]')).toContainText("G-03 ligada: ligada no teste grátis");
+    await page.getByLabel("Ambiente").selectOption("production");
+    await page.waitForURL("**/console/funcionalidades?amb=production");
+    await expect(page.getByLabel("Ambiente")).toHaveValue("production");
+
+    // C21 from the sidebar: the seven seed alerts, most urgent first.
+    await nav.getByRole("link", { name: /Alertas$/ }).click();
+    await page.waitForURL("**/console/alertas");
+    await expect(page.getByRole("heading", { name: "Alertas" })).toBeVisible();
+    await expect(page.locator("tr[data-alert]")).toHaveCount(7);
+    await expect(page.locator("tr[data-alert]").first()).toContainText("Importação da API falhou 2 vezes: token expirado");
+    await expect(page.locator("tr[data-alert]").first()).toContainText("e-mail e WhatsApp da equipe");
+    await expect(page.getByText("Ver e-mail que o dono recebe")).toHaveAttribute("aria-disabled", "true");
   });
 
   test("A06_saved_responses_pass_secret_scan", () => {
@@ -94,5 +118,38 @@ test.describe("as Operação", () => {
     const body = await (await page.request.get("/console/config")).text();
     expect(body).not.toContain("IFOOD_CLIENT_SECRET");
     expect(body).not.toContain("Autorizações dos donos");
+  });
+
+  test("C20_C21_operacao_gets_404_on_funcionalidades_and_resolves_an_alert", async ({ page }) => {
+    await loginToConsole(page, email);
+    expect((await page.goto("/console/funcionalidades"))?.status()).toBe(404);
+
+    const db = adminDb();
+    const title = `Alerta e2e ${tag}`;
+    const { data: acc } = await db.from("account").select("id").eq("code", "G-02").single();
+    const { data: alert } = await db
+      .from("alert")
+      .insert({ severity: "baixo", title, account_id: acc!.id, link: "/console/contas/G-02/estrutura", notified_via: ["team_email"] })
+      .select("id")
+      .single();
+    try {
+      await page.goto("/console");
+      await page.getByRole("navigation", { name: "Console" }).getByRole("link", { name: /Alertas$/ }).click();
+      await page.waitForURL("**/console/alertas");
+      const row = page.locator(`tr[data-alert="${alert!.id}"]`);
+      await expect(row).toContainText("Grupo Exemplo (G-02)");
+      await expect(row.getByRole("link", { name: "vincular" })).toHaveAttribute("href", "/console/contas/G-02/estrutura");
+      await row.getByRole("button", { name: `resolver: ${title}` }).click();
+      await expect(row).toHaveCount(0);
+
+      const { data: me } = await db.from("person").select("id").eq("email", email).single();
+      const { data: saved } = await db.from("alert").select("resolved_at, resolved_by").eq("id", alert!.id).single();
+      expect(saved!.resolved_by).toBe(me!.id);
+      expect(saved!.resolved_at).not.toBeNull();
+      const { data: audit } = await db.from("audit_log").select("action, actor_kind").eq("entity_id", alert!.id);
+      expect(audit).toEqual([{ action: "alert.resolve", actor_kind: "staff" }]);
+    } finally {
+      await db.from("alert").delete().eq("id", alert!.id);
+    }
   });
 });

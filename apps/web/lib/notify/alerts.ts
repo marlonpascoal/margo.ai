@@ -20,9 +20,22 @@ export function alertConfigFromEnv(env: Record<string, string | undefined> = pro
 
 export type NotifiedVia = "team_email" | "founder_whatsapp";
 
-/** C21 "Avisado por" column, as drawn. */
+// alert.notified_via tokens: raiseAlert writes team_email and founder_whatsapp; the G-SYN seed (as drawn)
+// also names the owner's channels.
+const TEAM_EMAIL = ["team_email", "email_equipe"];
+const TEAM_WHATSAPP = ["founder_whatsapp", "whatsapp_equipe"];
+
+function channels(email: boolean, whatsapp: boolean): string | null {
+  return email && whatsapp ? "e-mail e WhatsApp" : email ? "e-mail" : whatsapp ? "WhatsApp" : null;
+}
+
+/** C21 "Avisado por" column, as drawn: "e-mail e WhatsApp da equipe", "e-mail da equipe; WhatsApp do dono". */
 export function notifiedViaLabel(via: string[]): string {
-  return via.includes("founder_whatsapp") ? "e-mail e WhatsApp da equipe" : "e-mail da equipe";
+  const has = (tokens: string[]) => via.some((v) => tokens.includes(v));
+  const team = channels(has(TEAM_EMAIL), has(TEAM_WHATSAPP));
+  const owner = channels(via.includes("email_dono"), via.includes("whatsapp_dono"));
+  if (team && owner && team === owner) return `${team} da equipe e do dono`;
+  return [team && `${team} da equipe`, owner && `${owner} do dono`].filter(Boolean).join("; ");
 }
 
 export const SEVERITY_LABEL: Record<AlertSeverity, string> = { urgente: "urgente", medio: "médio", baixo: "baixo" };

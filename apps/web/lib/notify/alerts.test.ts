@@ -47,6 +47,15 @@ describe("C21 raise", () => {
     expect(notifiedViaLabel(store.alerts[0].notifiedVia)).toBe("e-mail da equipe");
   });
 
+  it("C21_notified_via_reads_team_and_owner_channels_as_drawn", () => {
+    expect(notifiedViaLabel(["email_equipe", "whatsapp_equipe"])).toBe("e-mail e WhatsApp da equipe");
+    expect(notifiedViaLabel(["email_equipe", "email_dono"])).toBe("e-mail da equipe e do dono");
+    expect(notifiedViaLabel(["email_equipe", "whatsapp_dono"])).toBe("e-mail da equipe; WhatsApp do dono");
+    expect(notifiedViaLabel(["email_dono", "whatsapp_dono"])).toBe("e-mail e WhatsApp do dono");
+    expect(notifiedViaLabel(["email_equipe"])).toBe("e-mail da equipe");
+    expect(notifiedViaLabel([])).toBe("");
+  });
+
   it("C21_urgente_without_a_founder_on_duty_still_emails_the_team", async () => {
     deps.config = { ...deps.config, founderOnDutyEmail: null };
     await raiseAlert(deps, "urgente", "Cobrança recusada no cartão", "acc", null);

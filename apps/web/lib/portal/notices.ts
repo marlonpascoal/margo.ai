@@ -1,8 +1,11 @@
 // P16, W08 Notificações: the 10 notices of 04 §9 with who and when, as drawn, and this person's choice
 // (E05: their preference, else the default; locked notices always by e-mail).
+import { closeReadyEmail, type EmailContent } from "@/emails";
+import { CHANNEL_LABEL, CHANNEL_ORDER } from "@/lib/m2/format";
 import { effectivePref, type NoticeType, type Role } from "@/lib/notify/plan";
 import type { NoticeCode } from "@/lib/notify/templates";
 import type { Db } from "@/lib/supabase/admin";
+import { homeNumbers, type HomeDiff, type HomeLine } from "./home";
 
 /** W08 "Quando" and the profile line; P16 uses shorter names on phone. Order as drawn. */
 export const NOTICE_COPY: [NoticeCode, { phone: string; who: string; when: string }][] = [
@@ -58,4 +61,22 @@ export async function loadNoticeRows(db: Db, personId: string, accountId: string
     new Map((prefs ?? []).map((p) => [p.notice_code, { email: p.email, whatsapp: p.whatsapp }])),
     role,
   );
+}
+
+/**
+ * W08 "Ver exemplo de e-mail": the E01 template (apps/web/emails) with this person's own numbers, scoped to
+ * their kitchens (A03): REP-01 sold, REP-02 received, DIF to contest, as W01 shows them.
+ */
+export function closeReadyExample(accountName: string, month: string, lines: HomeLine[], diffs: HomeDiff[]): EmailContent {
+  const n = homeNumbers(lines, diffs, null);
+  return closeReadyEmail({
+    accountName,
+    month,
+    kitchens: new Set(lines.map((l) => l.kitchenId).filter(Boolean)).size,
+    channels: CHANNEL_ORDER.filter((c) => lines.some((l) => l.channel === c)).map((c) => CHANNEL_LABEL[c]),
+    grossCents: n.soldCents,
+    payoutCents: n.receivedCents,
+    leftCents: null,
+    wrongCents: n.wrongCents,
+  });
 }

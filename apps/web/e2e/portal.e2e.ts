@@ -91,6 +91,13 @@ test("E03_E05_A03_W01_W09_dono_logs_in_sees_the_month_sets_notices_and_the_sessi
     .poll(async () => (await db.from("notice_pref").select("whatsapp").eq("person_id", dono).eq("notice_code", "weekly_summary").maybeSingle()).data?.whatsapp)
     .toBe(false);
 
+  // W08 "Ver exemplo de e-mail": the E01 template with the Dono's September numbers.
+  await page.goto("/app/notificacoes/exemplo");
+  await expect(page.locator("[data-email-subject]")).toHaveText(`Setembro fechado: recebeu ${reais(all.payout)} de ${reais(all.gross)}`);
+  const mail = page.frameLocator('iframe[title="Exemplo de e-mail"]');
+  await expect(mail.getByRole("heading", { name: "Seu fechamento de setembro está pronto" })).toBeVisible();
+  await expect(mail.getByText("Vendido no delivery")).toBeVisible();
+
   // W09: this device first, the seed devices after; the Dono sees the access log.
   await page.goto("/app/seguranca");
   await expect(page.getByRole("heading", { name: "Segurança e acesso" })).toBeVisible();

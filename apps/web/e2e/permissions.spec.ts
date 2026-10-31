@@ -19,7 +19,7 @@ let exportJob = "";
 test.beforeAll(async () => {
   const db = adminDb();
   await db.from("person").update({ email: GERENTE_EMAIL }).eq("id", sid("p:g02-ger"));
-  const { data: cp } = await db.from("close_period").select("id, pdf_path").eq("account_id", G02).single();
+  const { data: cp } = await db.from("close_period").select("id, pdf_path").eq("account_id", G02).eq("month", "2026-09-01").single();
   closeId = cp!.id;
   if (!cp!.pdf_path) {
     await db.from("job").insert({ type: "render_close", payload: { close_period_id: closeId }, account_id: G02 });
@@ -101,7 +101,7 @@ async function dono_E04_W04_last_dono_cannot_demote_self_and_C04_W03_ja_conteste
   expect(m!.role).toBe("dono");
 
   // A temporary difference of Cozinha Centro, removed after the test.
-  const { data: cp } = await db.from("close_period").select("id").eq("account_id", G02).single();
+  const { data: cp } = await db.from("close_period").select("id").eq("account_id", G02).eq("month", "2026-09-01").single();
   const { data: d } = await db
     .from("difference")
     .insert({ account_id: G02, close_period_id: cp!.id, channel_store_id: sid("G-02:s1"), rule_id: "DIF-05", finding_key: `e2e-${Date.now()}`, description: "Teste e2e A03", orders_count: 1, amount_cents: 99_900, confidence: "certa", detail: { short: "Teste e2e A03" } })

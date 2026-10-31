@@ -22,7 +22,7 @@ const G02 = sid("G-02");
 const DONO: Scope = { role: "dono", allKitchens: true, kitchenIds: [] };
 const GERENTE: Scope = { role: "gerente", allKitchens: false, kitchenIds: [sid("G-02:centro")] };
 const META = { ip: "127.0.0.1", userAgent: "vitest" };
-const cleanup: (() => Promise<unknown>)[] = [];
+const cleanup: (() => PromiseLike<unknown>)[] = [];
 afterEach(async () => {
   while (cleanup.length) await cleanup.pop()!();
 });
@@ -52,7 +52,7 @@ describe("A03 on the seed", () => {
   });
 
   it("A03_close_downloads_need_all_kitchens_for_the_account_wide_close", async () => {
-    const { data: cp } = await db.from("close_period").select("id").eq("account_id", G02).single();
+    const { data: cp } = await db.from("close_period").select("id").eq("account_id", G02).eq("month", "2026-09-01").single();
     await db.from("close_period").update({ pdf_path: "closes/G-02/2026-09/x.pdf" }).eq("id", cp!.id);
     cleanup.push(() => db.from("close_period").update({ pdf_path: null }).eq("id", cp!.id));
     expect(await closeFilePath(db, G02, DONO, cp!.id, "pdf")).toBe("closes/G-02/2026-09/x.pdf");
@@ -62,7 +62,7 @@ describe("A03 on the seed", () => {
 });
 
 async function tempContestation(store: string, key: string): Promise<string> {
-  const { data: cp } = await db.from("close_period").select("id").eq("account_id", G02).single();
+  const { data: cp } = await db.from("close_period").select("id").eq("account_id", G02).eq("month", "2026-09-01").single();
   const { data: d, error } = await db
     .from("difference")
     .insert({ account_id: G02, close_period_id: cp!.id, channel_store_id: sid(store), rule_id: "DIF-01", finding_key: `teste-${key}-${Date.now()}`, description: "teste", orders_count: 1, amount_cents: 1000, confidence: "certa" })
@@ -97,38 +97,44 @@ describe("P12/W03 owner marks (04 §3, D30)", () => {
   });
 });
 
+// On Pantanos (G-01): audit rows written here stay, and G-02's access log is counted by the seed test.
 describe("P03/W07 authorization (C06)", () => {
   it("C06_portal_signs_one_authorization_per_pending_cnpj_with_terms_version", async () => {
-    const cnpj2 = sid("G-02:cnpj2");
-    const { data: old } = await db.from("owner_authorization").select("*").eq("account_id", G02).eq("company_id", cnpj2).single();
+    const G01 = sid("G-01");
+    const cnpj = sid("G-01:cnpj");
+    const { data: old } = await db.from("owner_authorization").select("*").eq("account_id", G01).eq("company_id", cnpj).single();
     await db.from("owner_authorization").delete().eq("id", old!.id);
     cleanup.push(() => db.from("owner_authorization").insert(old!));
-    expect((await loadConnect(db, G02)).pending.map((c) => c.id)).toEqual([cnpj2]);
+    expect((await loadConnect(db, G01)).pending.map((c) => c.id)).toEqual([cnpj]);
 
-    const written = await signAuthorization(db, { personId: sid("p:g02-dono"), accountId: G02 }, [sid("G-02:cnpj1"), cnpj2], META);
+    const written = await signAuthorization(db, { personId: sid("p:g01-dono"), accountId: G01 }, [cnpj, sid("G-02:cnpj1")], META);
     cleanup.push(() => db.from("owner_authorization").delete().in("id", written));
     expect(written).toHaveLength(1);
     const { data: row } = await db.from("owner_authorization").select("company_id, signed_by, includes_ai, includes_international, terms_version").eq("id", written[0]).single();
-    expect(row).toEqual({ company_id: cnpj2, signed_by: sid("p:g02-dono"), includes_ai: true, includes_international: true, terms_version: TERMS_VERSION });
+    expect(row).toEqual({ company_id: cnpj, signed_by: sid("p:g01-dono"), includes_ai: true, includes_international: true, terms_version: TERMS_VERSION });
     const { data: a } = await db.from("audit_log").select("action, actor_kind").eq("entity_id", written[0]).single();
     expect(a).toEqual({ action: "owner_authorization.sign", actor_kind: "person" });
+    expect((await loadConnect(db, G01)).pending).toEqual([]);
+    // G-02's CNPJs are already signed and belong to another account: nothing written for them.
     expect((await loadConnect(db, G02)).pending).toEqual([]);
   });
 });
 
 describe("E06 from the portal", () => {
   const deps: EnqueueDeps = { queue: new SupabaseJobQueue(db), agentUrl: () => null, signingKey: () => "x", wake: async () => {}, now: () => new Date() };
-  const who = { personId: sid("p:g02-dono"), personName: "Dono do grupo", accountId: G02, accountName: "Grupo Exemplo", meta: META };
+  // Grupo B (G-03), so G-02's access log stays as seeded.
+  const G03 = sid("G-03");
+  const who = { personId: sid("p:g03-dono"), personName: "Dono do Grupo B", accountId: G03, accountName: "Grupo B", meta: META };
 
   it("E06_export_is_queued_audited_and_served_only_when_done_for_its_account", async () => {
     const jobId = await requestExport(db, deps, who);
     cleanup.push(() => db.from("job").delete().eq("id", jobId));
     const { data: j } = await db.from("job").select("type, account_id, payload, status").eq("id", jobId).single();
-    expect(j).toEqual({ type: "account_export", account_id: G02, payload: { account_id: G02, requested_by: who.personId }, status: "queued" });
+    expect(j).toEqual({ type: "account_export", account_id: G03, payload: { account_id: G03, requested_by: who.personId }, status: "queued" });
+    expect(await exportPath(db, G03, jobId)).toBeNull();
+    await db.from("job").update({ status: "done", log: [{ event: "done", path: `exports/G-03/${jobId}.zip` }] }).eq("id", jobId);
+    expect(await exportPath(db, G03, jobId)).toBe(`exports/G-03/${jobId}.zip`);
     expect(await exportPath(db, G02, jobId)).toBeNull();
-    await db.from("job").update({ status: "done", log: [{ event: "done", path: `exports/G-02/${jobId}.zip` }] }).eq("id", jobId);
-    expect(await exportPath(db, G02, jobId)).toBe(`exports/G-02/${jobId}.zip`);
-    expect(await exportPath(db, sid("G-01"), jobId)).toBeNull();
     const { count } = await db.from("audit_log").select("id", { count: "exact", head: true }).eq("entity_id", jobId).eq("action", "account.export_requested");
     expect(count).toBe(1);
   });
@@ -139,8 +145,8 @@ describe("E06 from the portal", () => {
     cleanup.push(() => db.from("job").delete().eq("id", jobId));
     cleanup.push(() => db.from("notification").delete().eq("notice_code", "security_event").gte("created_at", since));
     const { data: j } = await db.from("job").select("type, account_id, payload").eq("id", jobId).single();
-    expect(j).toEqual({ type: "account_delete", account_id: null, payload: { account_id: G02, requested_by: who.personId } });
+    expect(j).toEqual({ type: "account_delete", account_id: null, payload: { account_id: G03, requested_by: who.personId } });
     const { data: n } = await db.from("notification").select("person_id, channel, subject").eq("notice_code", "security_event").gte("created_at", since);
-    expect(n).toEqual(expect.arrayContaining([{ person_id: sid("p:g02-dono"), channel: "email", subject: "Pedido de exclusão da conta" }]));
+    expect(n).toEqual(expect.arrayContaining([{ person_id: sid("p:g03-dono"), channel: "email", subject: "Pedido de exclusão da conta" }]));
   });
 });

@@ -2,7 +2,7 @@
 // computer; 05 §B, 04 §3, D30). Flag m2.contestacao. Gerente sees only their kitchens (A03).
 import { CopyButton } from "@/components/AutoSubmit";
 import { CARD, DeskFictitious, DeskTitle, Notice, PhoneTop, PortalMain, SMALL_BUTTON, SMALL_BUTTON_DARK, TD, TH } from "@/components/portal";
-import { requirePortal } from "@/lib/portal/account-access";
+import { requirePortal } from "@/lib/portal/session";
 import { infoOf, kitchenApp, loadOwnerContestations, money, ownerTotals, PILL_LABEL, PILL_TONE, pillOf, whatHappened, type OwnerContestation } from "@/lib/portal/contestacoes";
 import { adminClient } from "@/lib/supabase/admin";
 import { markContestationAction } from "./actions";

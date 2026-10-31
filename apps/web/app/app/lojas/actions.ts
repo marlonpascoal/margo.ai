@@ -4,7 +4,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isEnabled } from "@/lib/flags";
-import { auditPerson, peopleLockUntil, requirePortal } from "@/lib/portal/account-access";
+import { peopleLockUntil } from "@/lib/portal/pessoas";
+import { auditPerson, requirePortal } from "@/lib/portal/session";
 import { adminClient } from "@/lib/supabase/admin";
 
 const PATH = "/app/lojas";

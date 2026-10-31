@@ -8,7 +8,7 @@ import { requestMeta } from "@/lib/console/request";
 import { notifyDeps } from "@/lib/notify/deps";
 import { notify } from "@/lib/notify/outbox";
 import type { MemberRole } from "@/lib/permissions";
-import { appOrigin, requirePortal, type PortalMember } from "@/lib/portal/account-access";
+import { appOrigin, requirePortal, type Member } from "@/lib/portal/session";
 import { newInviteToken } from "@/lib/portal/pessoas";
 import { inviteText, mailtoLink, normalizeEmail, normalizeWhatsapp, peopleError, PROFILE_LABEL, whatsappShareLink } from "@/lib/portal/scope";
 import { adminClient } from "@/lib/supabase/admin";
@@ -25,7 +25,7 @@ async function rpcMeta() {
   return { p_ip: meta.ip ?? undefined, p_user_agent: meta.userAgent ?? undefined };
 }
 
-async function membershipOf(m: PortalMember, id: string) {
+async function membershipOf(m: Member, id: string) {
   const { data } = await adminClient().from("membership").select("id, role, all_kitchens, membership_kitchen(kitchen_id)").eq("id", id).eq("account_id", m.account.id).maybeSingle();
   return data;
 }
@@ -117,11 +117,11 @@ export async function invitePersonAction(_prev: InviteState, form: FormData): Pr
   await notify(notifyDeps(), {
     code: "security_event",
     accountId: m.account.id,
-    message: { subject: "Pessoa nova na conta", body: `${m.personName} convidou ${name || destination} para a conta ${m.account.name} como ${PROFILE_LABEL[role]}.` },
+    message: { subject: "Pessoa nova na conta", body: `${m.name} convidou ${name || destination} para a conta ${m.account.name} como ${PROFILE_LABEL[role]}.` },
   });
   revalidatePath(PATH);
   const link = await inviteLink(token);
-  return { link, ...shareFor(channel, destination, inviteText(m.account.name, m.personName, role, link)) };
+  return { link, ...shareFor(channel, destination, inviteText(m.account.name, m.name, role, link)) };
 }
 
 /** W04 "Reenviar convite": new link, 7 more days; the old link stops working. */
@@ -135,5 +135,5 @@ export async function resendInviteAction(_prev: InviteState, form: FormData): Pr
   if (error) return { error: peopleError(error.message) };
   revalidatePath(PATH);
   const link = await inviteLink(token);
-  return { link, ...shareFor(inv.channel, inv.destination, inviteText(m.account.name, m.personName, inv.role, link)) };
+  return { link, ...shareFor(inv.channel, inv.destination, inviteText(m.account.name, m.name, inv.role, link)) };
 }

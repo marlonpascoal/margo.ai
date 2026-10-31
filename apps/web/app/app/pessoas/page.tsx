@@ -4,7 +4,8 @@
 import { AutoSubmitSelect } from "@/components/AutoSubmit";
 import { CARD, DeskFictitious, DeskTitle, Notice, PHONE_PRIMARY, PhoneTop, PortalMain, SMALL_BUTTON, TD, TH } from "@/components/portal";
 import { canPortal } from "@/lib/permissions";
-import { peopleLockUntil, requirePortal } from "@/lib/portal/account-access";
+import { peopleLockUntil } from "@/lib/portal/pessoas";
+import { requirePortal } from "@/lib/portal/session";
 import { loadPeople, MATRIX, type PersonRow } from "@/lib/portal/pessoas";
 import { dayTimeSP, PROFILE_LABEL } from "@/lib/portal/scope";
 import { adminClient } from "@/lib/supabase/admin";

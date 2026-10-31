@@ -158,3 +158,10 @@ export const MATRIX: { a: string; d: string; f: string; g: string }[] = (() => {
 })();
 
 export { PROFILE_LABEL };
+
+/** E04: end of the account's active security_lock (ISO), or null when changes are open. */
+export async function peopleLockUntil(db: Db, accountId: string): Promise<string | null> {
+  const { data, error } = await db.rpc("people_lock_until", { p_account: accountId });
+  if (error) throw new Error(error.message);
+  return (data as string | null) ?? null;
+}

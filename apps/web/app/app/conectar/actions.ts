@@ -5,7 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requestMeta } from "@/lib/console/request";
-import { requirePortal } from "@/lib/portal/account-access";
+import { requirePortal } from "@/lib/portal/session";
 import { PARTNER_PORTAL_URL, signAuthorization } from "@/lib/portal/connect";
 import { adminClient } from "@/lib/supabase/admin";
 

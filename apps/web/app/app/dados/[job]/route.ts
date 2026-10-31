@@ -1,7 +1,7 @@
 // E06, W09 "Baixar todos os meus dados": the export zip built by worker-account (job account_export).
 // Dono only (the zip holds every kitchen and every person of the account, 04 §5); anything else 404.
 import { canPortal } from "@/lib/permissions";
-import { portalMember } from "@/lib/portal/account-access";
+import { portalMember } from "@/lib/portal/session";
 import { exportPath, storageFile } from "@/lib/portal/account-data";
 import { adminClient } from "@/lib/supabase/admin";
 

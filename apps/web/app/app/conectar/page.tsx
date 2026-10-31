@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CARD, DeskFictitious, DeskTitle, Notice, PHONE_PRIMARY, PortalMain } from "@/components/portal";
 import { isEnabled } from "@/lib/flags";
-import { appOrigin, requirePortal } from "@/lib/portal/account-access";
+import { appOrigin, requirePortal } from "@/lib/portal/session";
 import { loadConnect, PARTNER_PORTAL_URL } from "@/lib/portal/connect";
 import { whatsappShareLink } from "@/lib/portal/scope";
 import { adminClient } from "@/lib/supabase/admin";

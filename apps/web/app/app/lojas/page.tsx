@@ -6,7 +6,7 @@ import { BUTTON_SECONDARY } from "@/components/console";
 import { CARD, DeskFictitious, DeskTitle, Notice, PHONE_PRIMARY, PhoneTop, PortalMain, TD, TH } from "@/components/portal";
 import { plural } from "@/lib/m2/format";
 import { canPortal } from "@/lib/permissions";
-import { requirePortal } from "@/lib/portal/account-access";
+import { requirePortal } from "@/lib/portal/session";
 import { loadLojas, lojasLead } from "@/lib/portal/lojas";
 import { adminClient } from "@/lib/supabase/admin";
 import { linkNewStoreAction, setInAnalysisAction } from "./actions";

@@ -1,11 +1,15 @@
 // Owner portal access (02 §5, 04 §5, §8): a valid portal session (30 days) of a person with a membership.
-// Every portal page and server action calls requireMember() and then checks its own 04 §5 row with
-// canPortal(); the /app layout calls it too, but the layout is not the permission check.
+// The one place that resolves which account a /app page or action acts on: the margo_conta cookie, else
+// the only membership, else the P15 chooser. Every portal page, route and server action calls
+// requireMember() or requirePortal() itself and checks its own 04 §5 row; the /app layout calls it too, but
+// the layout is not the permission check.
 import { cache } from "react";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { cookies, headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import { currentSession } from "@/lib/auth/session";
-import type { MemberRole } from "@/lib/permissions";
+import { requestMeta } from "@/lib/console/request";
+import { isEnabled, type FlagKey } from "@/lib/flags";
+import { canPortal, type MemberRole, type PortalAction } from "@/lib/permissions";
 import { adminClient, type Db } from "@/lib/supabase/admin";
 
 /** Which account the person opened, when they belong to more than one (P15). Checked on every read. */
@@ -113,6 +117,54 @@ export async function requireMember(): Promise<Member> {
   if (r.kind === "none") redirect("/entrar");
   if (r.kind === "choose") redirect("/entrar/conta");
   return r.member;
+}
+
+export interface PortalRequirement {
+  /** 04 §5 row the screen or action needs. */
+  action?: PortalAction;
+  /** Profiles allowed when the 04 §5 table has no row for the screen. */
+  roles?: readonly MemberRole[];
+  /** A05: the screen shows when any of these flags is on for the account; otherwise 404. */
+  flags?: readonly FlagKey[];
+}
+
+/** 04 §5 profile part of a requirement (flags are checked against the account separately). */
+export function roleAllowed(role: MemberRole, req: PortalRequirement): boolean {
+  if (req.action && !canPortal(role, req.action)) return false;
+  if (req.roles && !req.roles.includes(role)) return false;
+  return true;
+}
+
+/**
+ * requireMember() plus the screen's own check: signed in without the profile or with every listed flag
+ * off answers 404, never 403 (05 intro).
+ */
+export async function requirePortal(req: PortalRequirement = {}): Promise<Member> {
+  const m = await requireMember();
+  if (!roleAllowed(m.role, req)) notFound();
+  if (req.flags?.length) {
+    const on = await Promise.all(req.flags.map((k) => isEnabled(k, m.account.id)));
+    if (!on.some(Boolean)) notFound();
+  }
+  return m;
+}
+
+/** "https://app.margoai...": MARGO_APP_URL on the platform, else this request's own origin (invites, W07, Asaas return). */
+export async function appOrigin(): Promise<string> {
+  if (process.env.MARGO_APP_URL) return process.env.MARGO_APP_URL.replace(/\/$/, "");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+/** auditMember() with this request's ip and user agent. */
+export async function auditPerson(
+  db: Db,
+  m: Pick<Member, "personId" | "account">,
+  a: { action: string; entity: string; entityId: string | null; before?: unknown; after?: unknown },
+): Promise<void> {
+  await auditMember(db, m, { ...a, meta: await requestMeta() });
 }
 
 /** A04 audit row for a portal write by this member. */

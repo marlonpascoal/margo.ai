@@ -202,7 +202,7 @@ export function buildPlanView(input: PlanInput): PlanView {
   };
 }
 
-/** Service-role read for /app/plano, after requirePlanOwner(). */
+/** Service-role read for /app/plano, after requirePortal({ action: "billing" }). */
 export async function loadPlanView(db: Db, accountId: string, returnStatus: string | null, now: Date): Promise<PlanView> {
   const store = new SupabaseBillingStore(db);
   const [plans, sub, account] = await Promise.all([store.plans(), store.subscription(accountId), store.account(accountId)]);

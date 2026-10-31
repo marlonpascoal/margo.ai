@@ -1,7 +1,7 @@
 // P06 downloads for the owner (05 §C, W01 reports): the closing PDF or xlsx of one close_period. Every
 // profile may see the close (04 §5), scoped to their kitchens (A03): anything else answers 404.
 import { canPortal } from "@/lib/permissions";
-import { portalMember } from "@/lib/portal/account-access";
+import { portalMember } from "@/lib/portal/session";
 import { closeFilePath, storageFile } from "@/lib/portal/account-data";
 import { adminClient } from "@/lib/supabase/admin";
 

@@ -42,6 +42,10 @@ export interface NoticeMessage {
   body: string;
   /** WhatsApp text; the e-mail body when absent. */
   whatsapp?: string;
+  /** HTML version of the e-mail (apps/web/emails); its text body already ends with the footer. */
+  html?: string;
+  /** "<bucket>/<path>" attached to the e-mail (E01: the P06 PDF). */
+  attachmentPath?: string | null;
 }
 
 /** A notification row to insert. */
@@ -55,6 +59,8 @@ export interface PlannedNotification {
   body: string;
   status: NotificationStatus;
   recipient: string | null;
+  html?: string | null;
+  attachmentPath?: string | null;
 }
 
 const hourFormat = new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "numeric", hourCycle: "h23" });
@@ -91,7 +97,15 @@ export function planNotice(
   const base = { accountId: to.accountId, personId: to.personId, noticeCode: notice.code, alertId: null };
   const rows: PlannedNotification[] = [];
   if (want.email && to.email) {
-    rows.push({ ...base, channel: "email", subject: message.subject, body: message.body, status: "queued", recipient: to.email });
+    rows.push({
+      ...base,
+      channel: "email",
+      subject: message.subject,
+      body: message.body,
+      status: "queued",
+      recipient: to.email,
+      ...(message.html ? { html: message.html, attachmentPath: message.attachmentPath ?? null } : {}),
+    });
   }
   if (want.whatsapp && to.whatsappE164) {
     rows.push({

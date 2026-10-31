@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>P16 Notificações (celular)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; padding: 18px 14px; display: flex; flex-direction: column; gap: 10px">
+<a href="P08-MinhaConta.dc.html" style="font-size: 14px">Minha conta</a>
+<h1 style="margin: 0; font-size: 22px">Notificações</h1>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 56px 64px; gap: 6px; padding: 0 12px; font-size: 11px; color: #5D5A52; text-transform: uppercase"><span>Aviso</span><span style="text-align: center">E-mail</span><span style="text-align: center">WhatsApp</span></div>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 56px 64px; gap: 6px; align-items: center; padding: 10px 12px; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 10px; font-size: 14px">
+<span style="line-height: 1.3">{{r.n}}</span>
+<input type="checkbox" checked="{{r.e}}" disabled="{{r.lock}}" aria-label="{{r.n}} por e-mail" style="width: 20px; height: 20px; justify-self: center">
+<input type="checkbox" checked="{{r.w}}" aria-label="{{r.n}} por WhatsApp" style="width: 20px; height: 20px; justify-self: center">
+</div>
+</sc-for>
+<div style="font-size: 12px; color: #5D5A52; line-height: 1.5">Cobrança e segurança sempre por e-mail. Nada por WhatsApp entre 22h e 8h.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const r = (n, e, w, lock) => ({ n, e, w, lock: !!lock });
+    return {
+      rows: [
+        r('Fechamento do mês pronto', true, true), r('Diferença nova no repasse', true, false),
+        r('Prazo de contestação chegando', true, true), r('Crédito confirmado', true, false),
+        r('Dados parados', true, true), r('Notas faltando', false, true),
+        r('Resumo da semana', true, false), r('Teste grátis acabando', true, true, true),
+        r('Cobrança aprovada ou recusada', true, false, true), r('Login em aparelho novo', true, false, true)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

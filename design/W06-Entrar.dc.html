@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>W06 Entrar ou criar conta (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 860px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<section style="flex: 1 1 480px; min-width: 0; box-sizing: border-box; padding: 56px; background: #1C1C1A; color: #F6F4EF; display: flex; flex-direction: column; gap: 20px; justify-content: center">
+<b style="font-size: 20px">MargoAI</b>
+<h1 style="margin: 0; font-size: 40px; line-height: 1.15; max-width: 520px">Quanto sobra de cada pedido, por cozinha e por app.</h1>
+<p style="margin: 0; font-size: 17px; line-height: 1.55; color: #D6D2C4; max-width: 520px">Fechamento do mês, o que os apps cobraram errado e o custo de cada prato a partir das suas notas.</p>
+</section>
+<section style="flex: 1 1 420px; min-width: 0; box-sizing: border-box; padding: 56px; display: flex; flex-direction: column; gap: 20px; justify-content: center">
+<div style="display: flex; gap: 6px; padding: 4px; background: #EFECE5; border-radius: 10px; max-width: 420px">
+<button type="button" onClick="{{toLogin}}" style="flex: 1; min-height: 44px; border: 0; border-radius: 8px; font-size: 15px; background: {{loginBg}}">Entrar</button>
+<button type="button" onClick="{{toSignup}}" style="flex: 1; min-height: 44px; border: 0; border-radius: 8px; font-size: 15px; background: {{signupBg}}">Criar conta</button>
+</div>
+<sc-if value="{{isLogin}}" hint-placeholder-val="{{ true }}">
+<form style="display: flex; flex-direction: column; gap: 14px; max-width: 420px">
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="d1" style="font-size: 13px; font-weight: 600">E-mail ou WhatsApp</label><input id="d1" style="min-height: 48px; padding: 0 12px; border: 1px solid #BDB7A9; border-radius: 8px; font-size: 16px; background: #FFFFFF"></div>
+<a href="W01-Inicio.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 48px; background: #1C1C1A; color: #FFFFFF; border-radius: 10px; font-weight: 700; text-decoration: none">Mandar código</a>
+<span style="font-size: 13px; color: #5D5A52; line-height: 1.5">Sem senha: mandamos um código de 6 números. Vale por 10 minutos.</span>
+</form>
+</sc-if>
+<sc-if value="{{isSignup}}" hint-placeholder-val="{{ false }}">
+<form style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 520px">
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="s1" style="font-size: 13px; font-weight: 600">Seu nome</label><input id="s1" style="min-height: 44px; padding: 0 12px; border: 1px solid #BDB7A9; border-radius: 8px; background: #FFFFFF"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="s2" style="font-size: 13px; font-weight: 600">Grupo ou restaurante</label><input id="s2" style="min-height: 44px; padding: 0 12px; border: 1px solid #BDB7A9; border-radius: 8px; background: #FFFFFF"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="s3" style="font-size: 13px; font-weight: 600">E-mail</label><input id="s3" style="min-height: 44px; padding: 0 12px; border: 1px solid #BDB7A9; border-radius: 8px; background: #FFFFFF"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="s4" style="font-size: 13px; font-weight: 600">WhatsApp</label><input id="s4" style="min-height: 44px; padding: 0 12px; border: 1px solid #BDB7A9; border-radius: 8px; background: #FFFFFF"></div>
+<div style="display: flex; flex-direction: column; gap: 4px; grid-column: span 2"><label for="s5" style="font-size: 13px; font-weight: 600">CNPJ principal</label><input id="s5" style="min-height: 44px; padding: 0 12px; border: 1px solid #BDB7A9; border-radius: 8px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace"></div>
+<label style="grid-column: span 2; display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" style="margin-top: 3px"> <span>Li e aceito os <a href="P11-Termos.dc.html">termos e a política de privacidade</a>.</span></label>
+<a href="W07-Autorizar.dc.html" style="grid-column: span 2; display: flex; align-items: center; justify-content: center; min-height: 48px; background: #1C1C1A; color: #FFFFFF; border-radius: 10px; font-weight: 700; text-decoration: none">Começar o teste grátis</a>
+</form>
+</sc-if>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: 'login' }; }
+  renderVals() {
+    const l = this.state.tab === 'login';
+    return { isLogin: l, isSignup: !l, loginBg: l ? '#FFFFFF' : 'transparent', signupBg: l ? 'transparent' : '#FFFFFF',
+      toLogin: () => this.setState({ tab: 'login' }), toSignup: () => this.setState({ tab: 'signup' }) };
+  }
+}
+</script>
+</body>
+</html>

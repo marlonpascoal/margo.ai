@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C17 Corrigir importação</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C17" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C17 · Módulo 2 · Pantanos Burguer · extrato-99food-set.xlsx</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Corrigir importação</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">O arquivo da 99Food mudou de formato. Diga o que cada coluna nova significa; a regra fica salva para os próximos arquivos.</p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<a href="C07-Conectar.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Salvar e reprocessar</a>
+</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Coluna no arquivo</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Exemplo</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Vira o campo</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Situação</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="6">
+<tr>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{c.n}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #5D5A52">{{c.e}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF"><select aria-label="Campo para {{c.n}}" style="min-height: 36px; padding: 0 8px; border: 1px solid #BDB7A9; border-radius: 6px; background: #FFFFFF; font-size: 13px"><option>{{c.f}}</option><option>ignorar</option></select></td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF"><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; background: {{c.bg}}">{{c.s}}</span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; gap: 24px; flex-wrap: wrap; font-size: 14px">
+<span>Linhas no arquivo: <b style="font-family: 'IBM Plex Mono', monospace">1.022</b></span>
+<span>Soma do repasse no arquivo: <b style="font-family: 'IBM Plex Mono', monospace">R$ 14.471,00</b></span>
+<span>Soma depois do mapeamento: <b style="font-family: 'IBM Plex Mono', monospace; color: #1F7A62">R$ 14.471,00 · bate</b></span>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ok = '#E3F2EC', nova = '#FFF4E0';
+    return {
+      cols: [
+        { n: 'ID do pedido', e: '99F-8812304', f: 'pedido', s: 'conhecida', bg: ok },
+        { n: 'Valor dos itens', e: '36,90', f: 'venda bruta', s: 'conhecida', bg: ok },
+        { n: 'Taxa de intermediação', e: '-3,32', f: 'comissão', s: 'conhecida', bg: ok },
+        { n: 'Subsídio da plataforma (novo)', e: '4,00', f: 'promoção paga pelo app', s: 'nova: confirmar', bg: nova },
+        { n: 'Ajuste CBS/IBS (novo)', e: '-0,12', f: 'imposto retido', s: 'nova: confirmar', bg: nova },
+        { n: 'Repasse dividido (novo)', e: '2 de 2', f: 'parcela do repasse', s: 'nova: confirmar', bg: nova }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

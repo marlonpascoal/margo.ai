@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>W08 Notificações (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 860px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif">
+<dc-import name="MenuDono" current="W08" hint-size="100%,64px"></dc-import>
+<main style="max-width: 1180px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font-size: 30px">Notificações</h1><span style="font-size: 15px; color: #5D5A52">Cada pessoa escolhe o que recebe e por onde. Estas são as suas.</span></div>
+<div style="font-size: 13px; color: #5D5A52; line-height: 1.6; text-align: right">E-mail: dono@exemplo.com.br<br>WhatsApp: (43) 9 ••••-1234 · <a href="W09-Seguranca.dc.html">trocar</a></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px">
+<thead><tr style="color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em"><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4; text-align: left">Aviso</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4; text-align: left">Quando</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">E-mail</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">WhatsApp</th></tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="9">
+<tr>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF"><b>{{r.n}}</b><br><span style="font-size: 12px; color: #5D5A52">{{r.who}}</span></td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px; color: #3F3D38">{{r.q}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; text-align: center"><input type="checkbox" checked="{{r.e}}" disabled="{{r.lock}}" aria-label="{{r.n}} por e-mail" style="width: 18px; height: 18px"></td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; text-align: center"><input type="checkbox" checked="{{r.w}}" aria-label="{{r.n}} por WhatsApp" style="width: 18px; height: 18px"></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #5D5A52; line-height: 1.5">
+<span>Avisos de cobrança e de segurança sempre vão por e-mail, por exigência de registro.</span>
+<span>Horário de silêncio: nada por WhatsApp entre 22h e 8h.</span>
+<a href="E01-EmailFechamento.dc.html">Ver exemplo de e-mail</a>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const r = (n, who, q, e, w, lock) => ({ n, who, q, e, w, lock: !!lock });
+    return {
+      rows: [
+        r('Fechamento do mês pronto', 'Dono, Financeiro', 'dia 5 de cada mês', true, true),
+        r('Diferença nova no repasse', 'Dono, Financeiro', 'assim que a importação encontra', true, false),
+        r('Prazo de contestação chegando', 'Dono, Financeiro', '3 dias antes do prazo', true, true),
+        r('Crédito confirmado no repasse', 'Dono, Financeiro', 'quando o valor aparece', true, false),
+        r('Dados parados', 'Dono', 'extensão sem enviar há 3 dias, ou autorização do iFood revogada', true, true),
+        r('Notas faltando', 'Dono, Financeiro', 'quando falta preço de algum insumo do top 20', false, true),
+        r('Resumo da semana', 'todos os perfis', 'segunda, 8h', true, false),
+        r('Teste grátis acabando', 'Dono', '3 dias antes e no dia', true, true, true),
+        r('Cobrança aprovada ou recusada', 'Dono', 'a cada cobrança do Asaas', true, false, true),
+        r('Pessoa nova ou login em aparelho novo', 'Dono', 'na hora', true, false, true)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

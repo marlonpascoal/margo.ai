@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C19 Estrutura do cliente</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C19" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C19 · Clientes e cobrança · Grupo A (G-02)</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Estrutura do cliente</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">Conta, depois CNPJ, depois cozinha, depois loja em cada app. A loja de canal é o mesmo objeto que o iFood chama de merchant. No iFood, cada loja tem URL própria, e o código no fim da URL identifica a loja: é por ele que o raio-X público e a API autorizada se encontram.</p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; font-size: 15px">Buscar lojas no iFood de novo</button>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 14px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px">2</div><div style="font-size: 13px; color: #5D5A52">CNPJs</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 14px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px">3</div><div style="font-size: 13px; color: #5D5A52">cozinhas (2 cobradas)</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 14px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px">3</div><div style="font-size: 13px; color: #5D5A52">marcas</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 14px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px">7</div><div style="font-size: 13px; color: #5D5A52">lojas de canal</div></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 900px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">CNPJ</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Cozinha</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Marca</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">App</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Id no app e URL pública</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Fonte</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Vínculo</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+<tr>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px">{{r.cnpj}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF">{{r.u}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF">{{r.b}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF">{{r.c}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52">{{r.id}}<br><span style="color: #3F3D38">{{r.url}}</span></td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px; color: #5D5A52">{{r.f}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #ECE8DF"><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; background: {{r.bg}}">{{r.s}}</span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="font-size: 13px; color: #5D5A52; line-height: 1.5">Uma loja nova no iFood entra como "sem cozinha" até alguém vincular. O fechamento e a cobrança só contam lojas com vínculo.</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ok = '#E3F2EC', pend = '#FFF4E0', off = '#EFECE5';
+    return {
+      rows: [
+        { cnpj: '…/0001-10', u: 'Centro', b: 'Burger do Bairro', c: 'iFood', id: '3fa85f64-…-a6', url: '…/centro-burger-do-bairro/3fa85f64…', f: 'API de lojas', s: 'vinculada', bg: ok },
+        { cnpj: '…/0001-10', u: 'Centro', b: 'Frango Crocante', c: 'iFood', id: '9b1c22d0-…-41', url: '…/centro-frango-crocante/9b1c22d0…', f: 'API de lojas', s: 'vinculada', bg: ok },
+        { cnpj: '…/0001-10', u: 'Centro', b: 'Burger do Bairro', c: '99Food', id: '99F-551203', url: 'link da 99Food', f: 'extrato Excel', s: 'vinculada', bg: ok },
+        { cnpj: '…/0002-91', u: 'Zona Sul', b: 'Burger do Bairro', c: 'iFood', id: 'c47e0a19-…-0d', url: '…/zona-sul-burger-do-bairro/c47e0a19…', f: 'API de lojas', s: 'vinculada', bg: ok },
+        { cnpj: '…/0002-91', u: 'Zona Sul', b: 'Burger do Bairro', c: '99Food', id: '99F-551877', url: 'link da 99Food', f: 'extrato Excel', s: 'vinculada', bg: ok },
+        { cnpj: '…/0002-91', u: 'Shopping', b: 'Milkshake Bar', c: 'iFood', id: '5d2f8e3a-…-7c', url: '…/shopping-milkshake-bar/5d2f8e3a…', f: 'API de lojas', s: 'fora da análise', bg: off },
+        { cnpj: '?', u: '?', b: 'Burger do Bairro', c: 'iFood', id: 'e801b6c4-…-12', url: '…/burger-do-bairro-nova/e801b6c4…', f: 'API de lojas (nova)', s: 'sem cozinha: vincular', bg: pend }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

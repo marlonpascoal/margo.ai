@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C07 Conectar e importar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C07" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 40px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C07 · Módulo 2 · Grupo A (G-02) · 7 lojas de canal</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Conectar e importar</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">Tudo roda em segundo plano. A gente só olha esta tela quando algo falha.</p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<span style="display: inline-flex; gap: 8px; align-items: center; min-height: 36px; padding: 0 12px; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 999px; font-size: 13px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1F7A62"></span>1 rodando · 0 na fila</span>
+<a href="C08-Fechamento.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Ver fechamento</a>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px">
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: center"><b>iFood · API oficial</b><span style="font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #E3F2EC; color: #1F7A62">automático</span></div>
+<div style="font-size: 13px; color: #3F3D38; line-height: 1.5">Todo dia às 06:00, para as 5 lojas autorizadas. Busca os últimos 7 dias de novo, para pegar ajustes.</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52">próxima: amanhã 06:00</div>
+<a href="P03-Autorizar.dc.html" style="font-size: 13px">Ver o que o dono autorizou</a>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: center"><b>Extensão do Chrome</b><span style="font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #EFECE5">quando o navegador abre</span></div>
+<div style="font-size: 13px; color: #3F3D38; line-height: 1.5">Vendas por item e promoções. Envia sozinha uma vez por dia, quando o dono abre o Portal do Parceiro.</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8A5A00">sem envio há 3 dias: lembrar o dono</div>
+<a href="P04-Extensao.dc.html" style="font-size: 13px">Ver a extensão</a>
+</div>
+<div style="background: #FFFFFF; border: 1px dashed #8A8378; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<b>Arquivos</b>
+<div style="font-size: 13px; color: #3F3D38; line-height: 1.5">99Food e outros. Chegam por upload aqui, pela pasta do BPO ou pelo WhatsApp, e entram na mesma fila.</div>
+<label for="up" style="display: flex; align-items: center; justify-content: center; min-height: 48px; border: 1px dashed #BDB7A9; border-radius: 8px; font-size: 13px; color: #5D5A52">Arraste arquivos aqui</label>
+<input id="up" type="file" multiple style="font-size: 12px">
+</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; display: flex; flex-direction: column">
+<div style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+<b>Histórico de importações</b>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<label for="fc" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Canal</label>
+<select id="fc" style="min-height: 36px; padding: 0 8px; border: 1px solid #BDB7A9; border-radius: 6px; background: #FFFFFF; font-size: 13px"><option>Todos os canais</option><option>iFood</option><option>99Food</option></select>
+<label for="fs" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Situação</label>
+<select id="fs" style="min-height: 36px; padding: 0 8px; border: 1px solid #BDB7A9; border-radius: 6px; background: #FFFFFF; font-size: 13px"><option>Todas as situações</option><option>Com erro</option></select>
+</div>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 980px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Quando</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Disparo</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Canal e fonte</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Lojas</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Período</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4; text-align: right">Linhas</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4; text-align: right">Duração</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Situação</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Ações</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<tr>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px; white-space: nowrap">{{r.q}}</td>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF">{{r.d}}</td>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF">{{r.f}}</td>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF">{{r.l}}</td>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px">{{r.p}}</td>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace">{{r.n}}</td>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace; color: #5D5A52">{{r.t}}</td>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF"><span style="padding: 2px 9px; border-radius: 999px; font-size: 12px; background: {{r.bg}}; white-space: nowrap">{{r.s}}</span></td>
+<td style="padding: 9px 12px; border-bottom: 1px solid #ECE8DF; white-space: nowrap"><a href="{{r.h}}" style="font-size: 12px">{{r.a}}</a></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="padding: 10px 14px; font-size: 12px; color: #5D5A52">Mostrando 8 de 214 importações desde 10/out. Uma linha repetida em duas importações conta uma vez só.</div>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap"><a href="C10-Notas.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; text-decoration: none; font-size: 15px">Notas de compra (módulo 3)</a><a href="C19-Estrutura.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; text-decoration: none; font-size: 15px">Estrutura do cliente</a></div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ok = '#E3F2EC', run = '#EFECE5', err = '#FFF4E0', bad = '#FBEAE7';
+    const log = 'C07-Conectar.dc.html';
+    return {
+      rows: [
+        { q: 'hoje 06:00', d: 'agendado', f: 'iFood · API conciliação', l: '5', p: '24 a 30/out', n: '1.204', t: '2 min', s: 'rodando 60%', bg: run, a: 'acompanhar', h: log },
+        { q: 'ontem 21:14', d: 'extensão', f: 'iFood · vendas por item', l: '5', p: 'out/2026', n: '3.880', t: '40 s', s: 'importado', bg: ok, a: 'ver log', h: log },
+        { q: 'ontem 06:00', d: 'agendado', f: 'iFood · API conciliação', l: '5', p: '23 a 29/out', n: '1.187', t: '2 min', s: 'importado', bg: ok, a: 'ver log', h: log },
+        { q: '28/out 15:02', d: 'upload (Manuel)', f: '99Food · extrato.xlsx', l: '2', p: 'set/2026', n: '1.022', t: '8 s', s: '3 colunas novas', bg: err, a: 'corrigir', h: 'C17-CorrigirImport.dc.html' },
+        { q: '28/out 06:00', d: 'agendado', f: 'iFood · API repasses', l: '5', p: 'out/2026', n: '9', t: '5 s', s: 'importado', bg: ok, a: 'ver log', h: log },
+        { q: '27/out 06:00', d: 'agendado', f: 'iFood · API conciliação', l: '5', p: '21 a 27/out', n: '0', t: '1 s', s: 'falhou: token expirado', bg: bad, a: 'rodar de novo', h: log },
+        { q: '26/out 18:40', d: 'pasta do BPO', f: '99Food · extrato.xlsx', l: '2', p: 'ago/2026', n: '988', t: '7 s', s: 'importado', bg: ok, a: 'ver log', h: log },
+        { q: '25/out 10:12', d: 'upload (Marlon)', f: 'Notas · pasta do contador.zip', l: 'CNPJ 1', p: '12 meses', n: '312', t: '3 min', s: 'importado', bg: ok, a: 'ver log', h: 'C10-Notas.dc.html' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C08 Fechamento por loja e canal</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C08" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C08 · Módulo 2 · Pantanos Burguer · 1 loja</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Fechamento de setembro, por canal</h1>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<label for="mes" style="font-size: 13px; color: #5D5A52">Mês</label>
+<select id="mes" style="min-height: 44px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 8px; font-size: 15px; background: #FFFFFF"><option>set/2026</option><option>ago/2026</option><option>jul/2026</option></select>
+</div>
+</div>
+<a href="C09-Diferencas.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 16px 20px; background: #FBEAE7; border: 1px solid #E8B9B1; border-radius: 12px; text-decoration: none">
+<span style="font-size: 15px"><b>6 diferenças no repasse</b>, somando <b style="font-family: 'IBM Plex Mono', monospace">R$ 1.184</b>. 4 certas, 2 prováveis.</span>
+<span style="font-weight: 600">Ver diferenças</span>
+</a>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 820px">
+<thead><tr style="text-align: right; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4; text-align: left">Canal</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Venda bruta</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Comissão</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Pagamento</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Entrega</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Promoção</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Antecipação</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Repasse</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">% do bruto</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+<tr style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-weight: {{r.w}}">
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF; text-align: left; font-family: 'Public Sans', sans-serif">{{r.c}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF">{{r.b}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF; color: #B4443A">{{r.co}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF; color: #B4443A">{{r.pg}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF; color: #B4443A">{{r.en}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF; color: #B4443A">{{r.pr}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF; color: #B4443A">{{r.an}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF; color: #1F7A62">{{r.re}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF">{{r.pc}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; font-size: 14px; color: #5D5A52">
+<span>Ainda falta o custo dos insumos para chegar ao lucro por item.</span>
+<a href="C10-Notas.dc.html" style="font-weight: 600">Ir para o módulo 3</a>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      rows: [
+        { c: 'iFood', b: 'R$ 92.400', co: '−11.088', pg: '−2.957', en: '−4.620', pr: '−3.696', an: '−1.210', re: 'R$ 68.829', pc: '74,5%', w: 400 },
+        { c: '99Food', b: 'R$ 18.600', co: '−1.674', pg: '−595', en: '−1.302', pr: '−558', an: '0', re: 'R$ 14.471', pc: '77,8%', w: 400 },
+        { c: 'Total', b: 'R$ 111.000', co: '−12.762', pg: '−3.552', en: '−5.922', pr: '−4.254', an: '−1.210', re: 'R$ 83.300', pc: '75,0%', w: 700 }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

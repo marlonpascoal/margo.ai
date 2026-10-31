@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>W02 Lojas (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 860px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif">
+<dc-import name="MenuDono" current="W02" hint-size="100%,64px"></dc-import>
+<main style="max-width: 1180px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font-size: 30px">Lojas</h1><span style="font-size: 15px; color: #5D5A52">Grupo Exemplo · 2 CNPJs · 3 cozinhas · 7 lojas nos apps. A cobrança é por cozinha na análise.</span></div>
+<a href="W07-Autorizar.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; text-decoration: none; font-size: 15px">Conectar apps e extensão</a>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 860px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em"><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Na análise</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Cozinha</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">CNPJ</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Lojas nos apps</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Dados chegando</th></tr></thead>
+<tbody>
+<sc-for list="{{units}}" as="u" hint-placeholder-count="3">
+<tr>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF"><input type="checkbox" checked="{{u.on}}" aria-label="Incluir {{u.n}}" style="width: 18px; height: 18px"></td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF"><b>{{u.n}}</b><br><span style="font-size: 12px; color: #5D5A52">{{u.e}}</span></td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px">{{u.cnpj}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px; line-height: 1.6">{{u.st}}<br><a href="#" style="font-size: 12px">ver as lojas no iFood e na 99Food</a></td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px; color: {{u.c}}">{{u.d}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="padding: 14px 18px; background: #FFF4E0; border: 1px solid #E3C48A; border-radius: 12px; font-size: 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center"><span>Apareceu uma loja nova no iFood (Burger do Bairro, id e801…). Em qual cozinha ela fica?</span><select aria-label="Cozinha da loja nova" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 8px; background: #FFFFFF"><option>Escolher cozinha</option><option>Centro</option><option>Zona Sul</option><option>Quiosque Shopping</option></select></div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      units: [
+        { on: true, n: 'Cozinha Centro', e: 'Rua Exemplo, 100', cnpj: '…/0001-10', st: 'Burger do Bairro (iFood, 99Food) · Frango Crocante (iFood)', d: 'iFood hoje 06:00 · 99Food 28/out', c: '#1F7A62' },
+        { on: true, n: 'Cozinha Zona Sul', e: 'Av. Exemplo, 2000', cnpj: '…/0002-91', st: 'Burger do Bairro (iFood, 99Food)', d: 'iFood hoje 06:00 · 99Food 28/out', c: '#1F7A62' },
+        { on: false, n: 'Quiosque Shopping', e: 'Shopping Exemplo', cnpj: '…/0002-91', st: 'Burger do Bairro (iFood) · Milkshake Bar (iFood)', d: 'fora da análise', c: '#5D5A52' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

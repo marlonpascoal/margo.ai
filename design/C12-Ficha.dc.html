@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C12 Ficha técnica</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C12" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C12 · Módulo 3 · Pantanos Burguer · 8 de 20 fichas prontas</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Ficha técnica</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">Feita por nós na sessão de onboarding, só para os 20 itens que mais vendem. A quantidade não muda; o preço muda toda semana.</p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<a href="C13-Contribuicao.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Ver contribuição</a>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<nav aria-label="Itens do cardápio" style="flex: 1 1 240px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; display: flex; flex-direction: column">
+<sc-for list="{{dishes}}" as="d" hint-placeholder-count="7">
+<a href="#ficha" style="display: flex; justify-content: space-between; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #ECE8DF; text-decoration: none; font-size: 14px; background: {{d.bg}}"><span>{{d.n}}</span><span style="font-size: 12px; color: {{d.c}}">{{d.s}}</span></a>
+</sc-for>
+</nav>
+<section id="ficha" style="flex: 3 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; display: flex; flex-direction: column">
+<div style="padding: 14px 16px; border-bottom: 1px solid #D6D2C4; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px"><b>X-Bacon artesanal</b><span style="font-family: 'IBM Plex Mono', monospace">custo R$ 12,44 ± 9%</span></div>
+<div style="overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 10px 16px; border-bottom: 1px solid #D6D2C4">Insumo</th><th style="padding: 10px 16px; border-bottom: 1px solid #D6D2C4; text-align: right">No prato</th><th style="padding: 10px 16px; border-bottom: 1px solid #D6D2C4; text-align: right">Rendimento</th><th style="padding: 10px 16px; border-bottom: 1px solid #D6D2C4">Preço de onde</th><th style="padding: 10px 16px; border-bottom: 1px solid #D6D2C4; text-align: right">Custo</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ing}}" as="i" hint-placeholder-count="6">
+<tr><td style="padding: 10px 16px; border-bottom: 1px solid #ECE8DF">{{i.n}}</td><td style="padding: 10px 16px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace">{{i.q}}</td><td style="padding: 10px 16px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace">{{i.y}}</td><td style="padding: 10px 16px; border-bottom: 1px solid #ECE8DF; font-size: 13px; color: {{i.c}}">{{i.s}}</td><td style="padding: 10px 16px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace">{{i.v}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="padding: 12px 16px; font-size: 13px; color: #5D5A52">A barra de erro vem do rendimento declarado e dos dois preços que ainda são estimativa regional.</div>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const nf = '#1F7A62', est = '#8A5A00';
+    return {
+      dishes: [
+        { n: 'X-Bacon artesanal', s: 'pronta', c: nf, bg: '#EFECE5' },
+        { n: 'Smash duplo', s: 'pronta', c: nf, bg: '#FFFFFF' },
+        { n: 'Batata frita média', s: 'pronta', c: nf, bg: '#FFFFFF' },
+        { n: 'Combo casal', s: 'pronta', c: nf, bg: '#FFFFFF' },
+        { n: 'Milkshake 400 ml', s: 'pronta', c: nf, bg: '#FFFFFF' },
+        { n: 'Cheddar burger', s: 'a fazer', c: '#5D5A52', bg: '#FFFFFF' },
+        { n: 'Onion rings', s: 'a fazer', c: '#5D5A52', bg: '#FFFFFF' }
+      ],
+      ing: [
+        { n: 'Carne bovina moída (blend)', q: '160 g', y: '85%', s: 'nota de 12/out', c: nf, v: 'R$ 7,32' },
+        { n: 'Queijo cheddar fatiado', q: '28 g', y: '100%', s: 'nota de 30/set', c: nf, v: 'R$ 1,46' },
+        { n: 'Bacon em cubos', q: '30 g', y: '100%', s: 'estimativa regional', c: est, v: 'R$ 1,38' },
+        { n: 'Pão brioche', q: '1 un', y: '100%', s: 'nota de 05/out', c: nf, v: 'R$ 1,15' },
+        { n: 'Maionese (base de molho)', q: '20 g', y: '100%', s: 'nota de 18/set', c: nf, v: 'R$ 0,23' },
+        { n: 'Embalagem kraft', q: '1 un', y: '100%', s: 'estimativa regional', c: est, v: 'R$ 0,90' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

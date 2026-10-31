@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C03 Vizinhança de 3 km</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C03" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C03 · Módulo 1 · passo 2 de 4 · Pantanos Burguer</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Vizinhança de 3 km</h1>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<a href="C04-Pareamento.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Confirmar 84 lojas</a>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 1 1 380px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="position: relative; height: 420px; background: #EFECE5; border-radius: 8px; overflow: hidden">
+<div style="position: absolute; left: 50%; top: 50%; width: 340px; height: 340px; margin: -170px 0 0 -170px; border: 2px dashed #8A8378; border-radius: 50%"></div>
+<div style="position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; background: #1C1C1A; border-radius: 50%"></div>
+<sc-for list="{{dots}}" as="d" hint-placeholder-count="12">
+<div style="position: absolute; left: {{d.x}}; top: {{d.y}}; width: 10px; height: 10px; border-radius: 50%; background: {{d.c}}"></div>
+</sc-for>
+<div style="position: absolute; left: 12px; bottom: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; background: #FFFFFF; padding: 4px 8px; border-radius: 4px">mapa: espaço reservado</div>
+</div>
+<div style="display: flex; gap: 16px; font-size: 13px; color: #5D5A52; flex-wrap: wrap">
+<span><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #1F7A62"></span> no conjunto (84)</span>
+<span><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #B4443A"></span> excluída (23)</span>
+</div>
+</div>
+<div style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; display: flex; flex-direction: column">
+<div style="padding: 14px 16px; border-bottom: 1px solid #D6D2C4; display: flex; justify-content: space-between; font-size: 14px"><b>107 lojas encontradas</b><span style="color: #5D5A52">84 no conjunto · 23 excluídas</span></div>
+<sc-for list="{{stores}}" as="s" hint-placeholder-count="8">
+<label style="display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 16px; border-bottom: 1px solid #ECE8DF; font-size: 14px">
+<input type="checkbox" checked="{{s.on}}">
+<span><b>{{s.n}}</b><br><span style="font-size: 12px; color: #5D5A52">{{s.d}}</span></span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{s.c}}">{{s.r}}</span>
+</label>
+</sc-for>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const pts = [[30,28,1],[62,24,1],[70,44,1],[38,64,1],[56,70,1],[24,48,1],[44,36,1],[66,60,1],[48,80,0],[80,30,0],[18,72,1],[58,40,1],[34,50,1],[74,74,0]];
+    return {
+      dots: pts.map(([x, y, on]) => ({ x: x + '%', y: y + '%', c: on ? '#1F7A62' : '#B4443A' })),
+      stores: [
+        { n: 'Loja vizinha 01', d: 'Hambúrguer · 0,4 km', on: true, r: 'no conjunto', c: '#1F7A62' },
+        { n: 'Loja vizinha 02', d: 'Lanches · 0,9 km', on: true, r: 'no conjunto', c: '#1F7A62' },
+        { n: 'Loja vizinha 03', d: 'Hambúrguer · 1,2 km', on: true, r: 'no conjunto', c: '#1F7A62' },
+        { n: 'Rede nacional X', d: 'Hambúrguer · 1,5 km', on: false, r: 'regra: rede tabelada', c: '#B4443A' },
+        { n: 'Loja vizinha 05', d: 'Porções · 1,8 km', on: true, r: 'no conjunto', c: '#1F7A62' },
+        { n: 'Loja vizinha 06', d: 'Lanches · 2,3 km', on: false, r: 'regra: fechada há 40 dias', c: '#B4443A' },
+        { n: 'Loja vizinha 07', d: 'Hambúrguer · 2,6 km', on: true, r: 'no conjunto', c: '#1F7A62' },
+        { n: 'Loja vizinha 08', d: 'Pizza · 2,9 km', on: false, r: 'manual: outra categoria', c: '#B4443A' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

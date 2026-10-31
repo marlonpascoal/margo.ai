@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C06 Entrega ao dono</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C06" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C06 · Módulo 1 · Pantanos Burguer</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Entrega ao dono</h1>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-weight: 700">O arquivo</div>
+<a href="P01-RaioXPDF.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 16px; height: 260px; box-sizing: border-box; background: #F6F4EF; border: 1px solid #D6D2C4; border-radius: 6px; text-decoration: none">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52">PDF · A4 · 2 páginas</span>
+<span style="font-size: 18px; font-weight: 700">Pantanos Burguer: raio-X de preço</span>
+<span style="height: 10px; width: 80%; background: #D6D2C4; border-radius: 2px"></span>
+<span style="height: 10px; width: 65%; background: #D6D2C4; border-radius: 2px"></span>
+<span style="height: 60px; width: 100%; background: #E3F2EC; border-radius: 4px"></span>
+<span style="height: 40px; width: 100%; background: #FBEAE7; border-radius: 4px"></span>
+</a>
+<a href="P01-RaioXPDF.dc.html" style="display: inline-flex; justify-content: center; align-items: center; min-height: 44px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; text-decoration: none; font-size: 15px">Abrir o PDF</a>
+</div>
+<div style="flex: 2 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-weight: 700">A mensagem</div>
+<label for="msg" style="font-size: 13px; color: #5D5A52">Texto que vai junto, no WhatsApp do fundador</label>
+<textarea id="msg" rows="7" style="font-family: 'Public Sans', sans-serif; font-size: 14px; line-height: 1.5; padding: 12px; border: 1px solid #BDB7A9; border-radius: 8px; resize: vertical">Oi! Fizemos um raio-X dos preços da Pantanos Burguer comparando com 84 lojas num raio de 3 km. Tem 3 itens que dá para subir hoje sem risco. O PDF está aqui. Para saber o que dá lucro de verdade, dá para conectar o iFood em 2 minutos: [link de autorização]</textarea>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<a href="P02-WhatsRaioX.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Enviar pelo WhatsApp</a>
+<a href="C01-Clientes.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; text-decoration: none; font-size: 15px">Salvar e voltar</a>
+</div>
+<div style="border-top: 1px solid #ECE8DF; padding-top: 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="h1" style="font-size: 12px; color: #5D5A52">Horas: vizinhança</label><input id="h1" value="0,5" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 6px; font-family: 'IBM Plex Mono', monospace"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="h2" style="font-size: 12px; color: #5D5A52">Horas: pareamento</label><input id="h2" value="1,0" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 6px; font-family: 'IBM Plex Mono', monospace"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="h3" style="font-size: 12px; color: #5D5A52">Horas: entrega</label><input id="h3" value="0,3" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 6px; font-family: 'IBM Plex Mono', monospace"></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

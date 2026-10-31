@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C18 Parceiros BPO</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C18" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C18 · Clientes e cobrança · piloto E8</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Parceiros BPO</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">O BPO entrega o fechamento com a marca dele. Ele põe os arquivos numa pasta compartilhada; a gente devolve o PDF na mesma pasta.</p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<a href="P06-FechamentoPDF.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Gerar fechamento com a marca do BPO</a>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 3 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">BPO</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Clientes no piloto</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Pasta</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Preço por loja</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-weight: 600">BPO 01</td><td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF">2 grupos · 7 lojas</td><td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; color: #1F7A62">arquivos de out chegaram</td><td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace">[a definir]</td></tr>
+<tr><td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-weight: 600">BPO 02</td><td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF">conversa marcada</td><td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; color: #5D5A52">não criada</td><td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace">[a definir]</td></tr>
+</tbody>
+</table>
+</div>
+<div style="flex: 2 1 320px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<b>Marca do BPO 01 no fechamento</b>
+<label for="logo" style="display: flex; align-items: center; justify-content: center; min-height: 64px; border: 1px dashed #BDB7A9; border-radius: 8px; font-size: 13px; color: #5D5A52">Logo do BPO (PNG ou SVG)</label>
+<input id="logo" type="file" style="font-size: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="cor" style="font-size: 13px; color: #5D5A52">Cor principal</label><input id="cor" value="#1351B4" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 6px; font-family: 'IBM Plex Mono', monospace"></div>
+<label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox"> Mostrar "com tecnologia MargoAI" no rodapé</label>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

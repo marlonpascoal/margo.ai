@@ -1,0 +1,626 @@
+{
+"v": 3,
+"createdOnFiles": {
+"v": 1,
+"at": "2026-10-30T23:20:00Z"
+},
+"title": "MargoAI: todas as telas",
+"launch": {
+"view": "canvas"
+},
+"pages": [],
+"boards": {
+"Main.dc.html": {
+"x": 0,
+"y": 0,
+"w": 2880,
+"h": 1824,
+"title": "Mapa de telas e fluxos",
+"is_interactive": true
+},
+"C01-Clientes.dc.html": {
+"x": 0,
+"y": 2360,
+"w": 1280,
+"h": 900,
+"title": "C01 · Clientes",
+"expand": "fill",
+"is_interactive": true
+},
+"C02-NovoRaioX.dc.html": {
+"x": 1360,
+"y": 2360,
+"w": 1280,
+"h": 900,
+"title": "C02 · Novo raio-X",
+"expand": "fill",
+"is_interactive": true
+},
+"C03-Vizinhanca.dc.html": {
+"x": 2720,
+"y": 2360,
+"w": 1280,
+"h": 900,
+"title": "C03 · Vizinhança de 3 km",
+"expand": "fill",
+"is_interactive": true
+},
+"C04-Pareamento.dc.html": {
+"x": 4080,
+"y": 2360,
+"w": 1280,
+"h": 900,
+"title": "C04 · Pareamento de itens",
+"expand": "fill",
+"is_interactive": true
+},
+"C05-RaioX.dc.html": {
+"x": 5440,
+"y": 2360,
+"w": 1280,
+"h": 900,
+"title": "C05 · Raio-X de preço",
+"expand": "fill",
+"is_interactive": true
+},
+"C06-Entrega.dc.html": {
+"x": 6800,
+"y": 2360,
+"w": 1280,
+"h": 900,
+"title": "C06 · Entrega ao dono",
+"expand": "fill",
+"is_interactive": true
+},
+"Menu.dc.html": {
+"x": 8160,
+"y": 2360,
+"w": 232,
+"h": 900,
+"title": "Componente · menu lateral do console"
+},
+"C07-Conectar.dc.html": {
+"x": 0,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C07 · Conectar e importar",
+"expand": "fill",
+"is_interactive": true
+},
+"C17-CorrigirImport.dc.html": {
+"x": 1360,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C17 · Corrigir importação",
+"expand": "fill",
+"is_interactive": true
+},
+"C08-Fechamento.dc.html": {
+"x": 2720,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C08 · Fechamento por loja e canal",
+"expand": "fill",
+"is_interactive": true
+},
+"C09-Diferencas.dc.html": {
+"x": 4080,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C09 · Diferenças no repasse",
+"expand": "fill",
+"is_interactive": true
+},
+"C16-Contestacao.dc.html": {
+"x": 5440,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C16 · Contestação",
+"expand": "fill",
+"is_interactive": true
+},
+"C10-Notas.dc.html": {
+"x": 6800,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C10 · Notas de compra",
+"expand": "fill",
+"is_interactive": true
+},
+"C11-Depara.dc.html": {
+"x": 8160,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C11 · De-para de insumos",
+"expand": "fill",
+"is_interactive": true
+},
+"C12-Ficha.dc.html": {
+"x": 9520,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C12 · Ficha técnica",
+"expand": "fill",
+"is_interactive": true
+},
+"C13-Contribuicao.dc.html": {
+"x": 10880,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C13 · Contribuição por item e canal",
+"expand": "fill",
+"is_interactive": true
+},
+"C14-Config.dc.html": {
+"x": 12240,
+"y": 3740,
+"w": 1280,
+"h": 900,
+"title": "C14 · Configurações",
+"expand": "fill",
+"is_interactive": true
+},
+"P01-RaioXPDF.dc.html": {
+"x": 0,
+"y": 5120,
+"w": 794,
+"h": 1123,
+"title": "P01 · Raio-X em PDF (A4)",
+"paper": "a4"
+},
+"P02-WhatsRaioX.dc.html": {
+"x": 874,
+"y": 5120,
+"w": 390,
+"h": 844,
+"title": "P02 · WhatsApp: raio-X e convite",
+"is_interactive": true
+},
+"P03-Autorizar.dc.html": {
+"x": 1344,
+"y": 5120,
+"w": 390,
+"h": 844,
+"title": "P03 · Autorizar acesso",
+"is_interactive": true
+},
+"P04-Extensao.dc.html": {
+"x": 1814,
+"y": 5120,
+"w": 380,
+"h": 560,
+"title": "P04 · Extensão do Chrome",
+"is_interactive": true
+},
+"P05-WhatsNota.dc.html": {
+"x": 2274,
+"y": 5120,
+"w": 390,
+"h": 844,
+"title": "P05 · WhatsApp: pedido de nota",
+"is_interactive": true
+},
+"P06-FechamentoPDF.dc.html": {
+"x": 2744,
+"y": 5120,
+"w": 794,
+"h": 1123,
+"title": "P06 · Fechamento mensal em PDF (A4)",
+"paper": "a4",
+"is_interactive": true
+},
+"L01-Painel.dc.html": {
+"x": 3618,
+"y": 5120,
+"w": 390,
+"h": 844,
+"title": "L01 · Painel do dono (depois de 15/fev)",
+"is_interactive": true
+},
+"L02-Cupom.dc.html": {
+"x": 4088,
+"y": 5120,
+"w": 390,
+"h": 844,
+"title": "L02 · Aprovação de cupom (depois de 15/fev)"
+},
+"P07-CriarConta.dc.html": {
+"x": 0,
+"y": 6723,
+"w": 390,
+"h": 844,
+"title": "P07 · Criar conta (teste grátis)",
+"is_interactive": true
+},
+"P11-Termos.dc.html": {
+"x": 470,
+"y": 6723,
+"w": 390,
+"h": 844,
+"title": "P11 · Termos e privacidade",
+"is_interactive": true
+},
+"P08-MinhaConta.dc.html": {
+"x": 940,
+"y": 6723,
+"w": 390,
+"h": 844,
+"title": "P08 · Minha conta",
+"is_interactive": true
+},
+"P09-Plano.dc.html": {
+"x": 2820,
+"y": 6723,
+"w": 390,
+"h": 844,
+"title": "P09 · Escolher plano",
+"is_interactive": true
+},
+"P10-Pagamento.dc.html": {
+"x": 3290,
+"y": 6723,
+"w": 390,
+"h": 844,
+"title": "P10 · Pagamento (checkout do Asaas)",
+"is_interactive": true
+},
+"C15-Assinaturas.dc.html": {
+"x": 3760,
+"y": 6723,
+"w": 1280,
+"h": 900,
+"title": "C15 · Assinaturas",
+"expand": "fill",
+"is_interactive": true
+},
+"C18-BPO.dc.html": {
+"x": 6480,
+"y": 6723,
+"w": 1280,
+"h": 900,
+"title": "C18 · Parceiros BPO",
+"expand": "fill",
+"is_interactive": true
+},
+"P12-Contestacoes.dc.html": {
+"x": 2350,
+"y": 6723,
+"w": 390,
+"h": 960,
+"title": "P12 · Minhas contestações",
+"is_interactive": true
+},
+"P13-MinhasLojas.dc.html": {
+"x": 1410,
+"y": 6723,
+"w": 390,
+"h": 960,
+"title": "P13 · Minhas lojas (estrutura do grupo)",
+"is_interactive": true
+},
+"P14-Pessoas.dc.html": {
+"x": 1880,
+"y": 6723,
+"w": 390,
+"h": 844,
+"title": "P14 · Pessoas e acessos",
+"is_interactive": true
+},
+"C19-Estrutura.dc.html": {
+"x": 5120,
+"y": 6723,
+"w": 1280,
+"h": 900,
+"title": "C19 · Estrutura do cliente",
+"expand": "fill",
+"is_interactive": true
+},
+"W01-Inicio.dc.html": {
+"x": 0,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W01 · Início do dono (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"W02-Lojas.dc.html": {
+"x": 1360,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W02 · Lojas (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"W03-Contestacoes.dc.html": {
+"x": 2720,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W03 · Contestações (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"W04-Pessoas.dc.html": {
+"x": 4080,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W04 · Pessoas e acessos (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"W05-Plano.dc.html": {
+"x": 5440,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W05 · Plano e cobrança (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"W07-Autorizar.dc.html": {
+"x": 6800,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W07 · Conectar apps e instalar a extensão (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"MenuDono.dc.html": {
+"x": 8160,
+"y": 8163,
+"w": 1280,
+"h": 64,
+"title": "Componente · menu do portal do dono"
+},
+"C20-Funcionalidades.dc.html": {
+"x": 7840,
+"y": 6723,
+"w": 1280,
+"h": 900,
+"title": "C20 · Funcionalidades (feature toggles)",
+"expand": "fill",
+"is_interactive": true
+},
+"W06-Entrar.dc.html": {
+"x": 9520,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W06 · Entrar ou criar conta (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"W08-Notificacoes.dc.html": {
+"x": 10880,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W08 · Notificações (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"W09-Seguranca.dc.html": {
+"x": 12240,
+"y": 8163,
+"w": 1280,
+"h": 860,
+"title": "W09 · Segurança e acesso (desktop)",
+"expand": "fill",
+"is_interactive": true
+},
+"P15-Entrar.dc.html": {
+"x": 0,
+"y": 9503,
+"w": 390,
+"h": 844,
+"title": "P15 · Entrar (celular)",
+"is_interactive": true
+},
+"P17-Recuperar.dc.html": {
+"x": 470,
+"y": 9503,
+"w": 390,
+"h": 844,
+"title": "P17 · Não consigo entrar",
+"is_interactive": true
+},
+"P18-Convite.dc.html": {
+"x": 940,
+"y": 9503,
+"w": 390,
+"h": 844,
+"title": "P18 · Aceitar convite",
+"is_interactive": true
+},
+"P16-Notificacoes.dc.html": {
+"x": 1410,
+"y": 9503,
+"w": 390,
+"h": 844,
+"title": "P16 · Notificações (celular)",
+"is_interactive": true
+},
+"E01-EmailFechamento.dc.html": {
+"x": 1880,
+"y": 9503,
+"w": 640,
+"h": 900,
+"title": "E01 · E-mail: fechamento pronto",
+"is_interactive": true
+},
+"E02-EmailPrazo.dc.html": {
+"x": 2600,
+"y": 9503,
+"w": 640,
+"h": 900,
+"title": "E02 · E-mail: prazo de contestação",
+"is_interactive": true
+},
+"C00-Login.dc.html": {
+"x": 3320,
+"y": 9503,
+"w": 1280,
+"h": 860,
+"title": "C00 · Login do console",
+"expand": "fill",
+"is_interactive": true
+},
+"C21-Alertas.dc.html": {
+"x": 4680,
+"y": 9503,
+"w": 1280,
+"h": 900,
+"title": "C21 · Alertas da equipe",
+"expand": "fill",
+"is_interactive": true
+}
+},
+"order": [
+"Main.dc.html",
+"C01-Clientes.dc.html",
+"C02-NovoRaioX.dc.html",
+"C03-Vizinhanca.dc.html",
+"C04-Pareamento.dc.html",
+"C05-RaioX.dc.html",
+"C06-Entrega.dc.html",
+"Menu.dc.html",
+"C07-Conectar.dc.html",
+"C17-CorrigirImport.dc.html",
+"C08-Fechamento.dc.html",
+"C09-Diferencas.dc.html",
+"C16-Contestacao.dc.html",
+"C10-Notas.dc.html",
+"C11-Depara.dc.html",
+"C12-Ficha.dc.html",
+"C13-Contribuicao.dc.html",
+"C14-Config.dc.html",
+"P01-RaioXPDF.dc.html",
+"P02-WhatsRaioX.dc.html",
+"P03-Autorizar.dc.html",
+"P04-Extensao.dc.html",
+"P05-WhatsNota.dc.html",
+"P06-FechamentoPDF.dc.html",
+"L01-Painel.dc.html",
+"L02-Cupom.dc.html",
+"P07-CriarConta.dc.html",
+"P11-Termos.dc.html",
+"P08-MinhaConta.dc.html",
+"P09-Plano.dc.html",
+"P10-Pagamento.dc.html",
+"C15-Assinaturas.dc.html",
+"C18-BPO.dc.html",
+"P12-Contestacoes.dc.html",
+"P13-MinhasLojas.dc.html",
+"P14-Pessoas.dc.html",
+"C19-Estrutura.dc.html",
+"W01-Inicio.dc.html",
+"W02-Lojas.dc.html",
+"W03-Contestacoes.dc.html",
+"W04-Pessoas.dc.html",
+"W05-Plano.dc.html",
+"W07-Autorizar.dc.html",
+"MenuDono.dc.html",
+"C20-Funcionalidades.dc.html",
+"W06-Entrar.dc.html",
+"W08-Notificacoes.dc.html",
+"W09-Seguranca.dc.html",
+"P15-Entrar.dc.html",
+"P17-Recuperar.dc.html",
+"P18-Convite.dc.html",
+"P16-Notificacoes.dc.html",
+"E01-EmailFechamento.dc.html",
+"E02-EmailPrazo.dc.html",
+"C00-Login.dc.html",
+"C21-Alertas.dc.html"
+],
+"notes": {
+"tA": {
+"x": 0,
+"y": 2060,
+"text": "Console dos fundadores · Módulo 1, raio-X de preço",
+"kind": "title1",
+"maxW": 8392
+},
+"tB": {
+"x": 0,
+"y": 3440,
+"text": "Console · Módulo 2 (canais) e Módulo 3 (custo)",
+"kind": "title1",
+"maxW": 13520
+},
+"tC": {
+"x": 0,
+"y": 4820,
+"text": "O que o dono vê, e o que vem depois de 15/fev",
+"kind": "title1",
+"maxW": 4558
+},
+"tD": {
+"x": 0,
+"y": 6423,
+"text": "Conta, lojas, pessoas, cobrança (Asaas), contestações e parceiros",
+"kind": "title1",
+"maxW": 9120
+},
+"leia": {
+"x": 2960,
+"y": 0,
+"w": 520,
+"text": "Todas as telas num estilo neutro de rascunho, para decidir fluxo e conteúdo antes do visual. Depois de escolher uma das 12 direções, a gente veste estas mesmas telas com ela. Todos os números são fictícios (os mesmos da galeria). Cada botão leva à próxima tela: use o Play.",
+"size": "m",
+"fill": "orange"
+},
+"galeria": {
+"x": 2960,
+"y": 760,
+"w": 520,
+"text": "As 12 direções visuais estão no outro canvas: MargoAI: 12 interface directions.",
+"size": "m",
+"fill": "gray"
+},
+"valores": {
+"x": 2960,
+"y": 1100,
+"w": 520,
+"text": "Dias de teste grátis e preços dos planos são exemplos, ainda não decididos. Os dias estão como ajuste (Tweaks) nas telas P07, P08 e C15.",
+"size": "m",
+"fill": "gray"
+},
+"tE": {
+"x": 0,
+"y": 7863,
+"text": "Portal do dono no computador (as mesmas páginas abrem no celular)",
+"kind": "title1",
+"maxW": 13600
+},
+"dono": {
+"x": 2960,
+"y": 1440,
+"w": 520,
+"text": "Dono: as telas P são o celular; as W são o mesmo portal no computador. WhatsApp (P02, P05, L02) é só celular; extensão (P04) é só computador; PDFs são A4.",
+"size": "m",
+"fill": "gray"
+},
+"tF": {
+"x": 0,
+"y": 9203,
+"text": "Acesso (login sem senha, recuperação, convite) e notificações por e-mail e WhatsApp",
+"kind": "title1",
+"maxW": 6040
+}
+},
+"designSystems": []
+}

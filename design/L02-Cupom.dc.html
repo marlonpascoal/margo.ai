@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>L02 Aprovação de cupom</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #EFECE5; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: #FFFFFF; border-bottom: 1px solid #D6D2C4">
+<div style="width: 40px; height: 40px; border-radius: 50%; background: #1C1C1A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700">M</div>
+<div style="flex: 1"><div style="font-weight: 700">MargoAI</div><div style="font-size: 12px; color: #5D5A52">aprovação de campanha</div></div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">depois de 15/fev</span>
+</div>
+<div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow: hidden">
+<div style="align-self: flex-start; max-width: 90%; background: #FFFFFF; border-radius: 4px 12px 12px 12px; padding: 12px; font-size: 15px; line-height: 1.45; display: flex; flex-direction: column; gap: 10px">
+<span>A campanha <b>Combo casal 20% off</b> no iFood renova amanhã por 7 dias.</span>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-size: 14px; padding: 10px; background: #F6F4EF; border-radius: 8px">
+<span>Sem cupom, sobra por pedido</span><span style="font-family: 'IBM Plex Mono', monospace">R$ 27,73</span>
+<span>Com 20%</span><span style="font-family: 'IBM Plex Mono', monospace; color: #B4443A">R$ 15,82</span>
+<span>Com 10%</span><span style="font-family: 'IBM Plex Mono', monospace">R$ 21,77</span>
+</div>
+<span>Para valer a pena com 20%, precisa vender <b>75% mais combos</b> do que sem cupom.</span>
+</div>
+<div style="align-self: flex-start; width: 90%; display: flex; flex-direction: column; gap: 8px">
+<button type="button" style="min-height: 44px; border-radius: 8px; border: 1px solid #1C1C1A; background: #FFFFFF; font-size: 15px; font-weight: 600">Aprovar com 10%</button>
+<button type="button" style="min-height: 44px; border-radius: 8px; border: 1px solid #BDB7A9; background: #FFFFFF; font-size: 15px">Aprovar com 20%</button>
+<button type="button" style="min-height: 44px; border-radius: 8px; border: 1px solid #BDB7A9; background: #FFFFFF; font-size: 15px">Não renovar</button>
+</div>
+<a href="L01-Painel.dc.html" style="align-self: flex-start; font-size: 13px; color: #3F3D38">voltar ao painel</a>
+<div style="margin-top: auto; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52">dados fictícios · só desenho, não entra no build agora</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

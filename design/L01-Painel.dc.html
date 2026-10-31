@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>L01 Painel do dono</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<b style="font-size: 16px">MargoAI</b>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">depois de 15/fev</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: #5D5A52">Pantanos Burguer · outubro até hoje</span>
+<span style="font-size: 26px; font-weight: 700; line-height: 1.2">Sobrou <span style="font-family: 'IBM Plex Mono', monospace">R$ 23.300</span> de <span style="font-family: 'IBM Plex Mono', monospace">R$ 66.400</span> vendidos no delivery</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+<b style="font-size: 14px">Quanto sobra de cada R$ 100 vendidos</b>
+<sc-for list="{{ch}}" as="c" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 64px minmax(0, 1fr) 48px; gap: 10px; align-items: center; font-size: 13px">
+<span>{{c.n}}</span>
+<div style="height: 12px; background: #EFECE5; border-radius: 3px"><div style="height: 12px; width: {{c.w}}; background: #1F7A62; border-radius: 3px"></div></div>
+<span style="font-family: 'IBM Plex Mono', monospace; text-align: right">{{c.v}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<b style="font-size: 14px">Pede sua decisão</b>
+<a href="L02-Cupom.dc.html" style="display: flex; flex-direction: column; gap: 4px; padding: 14px; background: #FBEAE7; border: 1px solid #E8B9B1; border-radius: 12px; text-decoration: none"><b style="font-size: 15px">Cupom do Combo casal renova amanhã</b><span style="font-size: 13px; line-height: 1.4">Com 20% de desconto, sobra R$ 15,82 por pedido. Aprovar?</span></a>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 14px; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px"><b style="font-size: 15px">R$ 718 em contestação</b><span style="font-size: 13px; color: #5D5A52; line-height: 1.4">Resposta do iFood até 20/nov.</span></div>
+</div>
+<div style="margin-top: auto; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52">dados fictícios · só desenho, não entra no build agora</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      ch: [
+        { n: '99Food', w: '37%', v: 'R$ 37' },
+        { n: 'iFood', w: '33%', v: 'R$ 33' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

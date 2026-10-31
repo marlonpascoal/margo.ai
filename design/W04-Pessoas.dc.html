@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>W04 Pessoas e acessos (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 860px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif">
+<dc-import name="MenuDono" current="W04" hint-size="100%,64px"></dc-import>
+<main style="max-width: 1180px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font-size: 30px">Pessoas e acessos</h1><span style="font-size: 15px; color: #5D5A52">Três perfis. Cada pessoa vê todas as cozinhas ou só as que você escolher.</span></div>
+<button type="button" style="min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border: 0; border-radius: 8px; font-weight: 600; font-size: 15px">Convidar pessoa</button>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em"><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Pessoa</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Perfil</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Cozinhas</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Último acesso</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Ações</th></tr></thead>
+<tbody>
+<sc-for list="{{people}}" as="p" hint-placeholder-count="4">
+<tr>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF"><b>{{p.n}}</b><br><span style="font-size: 12px; color: #5D5A52">{{p.c}}</span></td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF"><label style="position: absolute; width: 1px; height: 1px; overflow: hidden" for="{{p.id}}">Perfil de {{p.n}}</label><select id="{{p.id}}" style="min-height: 36px; padding: 0 8px; border: 1px solid #BDB7A9; border-radius: 6px; background: #FFFFFF; font-size: 13px"><option>{{p.r}}</option><option>Dono</option><option>Financeiro</option><option>Gerente de cozinha</option></select></td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF">{{p.s}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52">{{p.a}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF"><button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 6px; font-size: 13px">{{p.x}}</button></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px">
+<caption style="text-align: left; padding: 12px 14px; font-weight: 700; border-bottom: 1px solid #D6D2C4">O que cada perfil pode fazer</caption>
+<thead><tr style="color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em"><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4; text-align: left">Ação</th><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4">Dono</th><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4">Financeiro</th><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4">Gerente de cozinha</th></tr></thead>
+<tbody>
+<sc-for list="{{matrix}}" as="m" hint-placeholder-count="7">
+<tr style="text-align: center"><td style="padding: 9px 14px; border-bottom: 1px solid #ECE8DF; text-align: left">{{m.a}}</td><td style="padding: 9px 14px; border-bottom: 1px solid #ECE8DF">{{m.d}}</td><td style="padding: 9px 14px; border-bottom: 1px solid #ECE8DF">{{m.f}}</td><td style="padding: 9px 14px; border-bottom: 1px solid #ECE8DF">{{m.g}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="font-size: 13px; color: #5D5A52">Toda conta tem pelo menos um Dono. Só o Dono convida, muda perfil e remove pessoas. Cada ação fica registrada com quem fez.</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = 'sim', N = '·', O = 'só a dele';
+    return {
+      people: [
+        { id: 'p1', n: 'Dono do grupo', c: 'dono@exemplo.com.br', r: 'Dono', s: 'todas', a: 'hoje 08:12', x: 'Você' },
+        { id: 'p2', n: 'Pessoa do financeiro', c: 'financeiro@exemplo.com.br', r: 'Financeiro', s: 'todas', a: 'ontem 17:40', x: 'Remover' },
+        { id: 'p3', n: 'Gerente do Centro', c: 'WhatsApp (43) 9…', r: 'Gerente de cozinha', s: 'Centro', a: '27/out', x: 'Remover' },
+        { id: 'p4', n: 'Contador', c: 'convite enviado 29/out', r: 'Financeiro', s: 'todas', a: 'pendente', x: 'Reenviar convite' }
+      ],
+      matrix: [
+        { a: 'Ver fechamento e quanto sobra', d: S, f: S, g: O },
+        { a: 'Ver e marcar contestações', d: S, f: S, g: O },
+        { a: 'Mandar notas de compra', d: S, f: S, g: O },
+        { a: 'Ver raio-X de preço', d: S, f: S, g: O },
+        { a: 'Escolher cozinhas na análise', d: S, f: N, g: N },
+        { a: 'Plano, cartão e faturas', d: S, f: N, g: N },
+        { a: 'Convidar e remover pessoas', d: S, f: N, g: N }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

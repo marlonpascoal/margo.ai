@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C14 Configurações</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C14" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C14 · Console</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Configurações</h1>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<b>Autorizações dos donos</b>
+<div style="font-size: 13px; color: #5D5A52">Uma por CNPJ. Sem autorização assinada, nenhum arquivo real entra.</div>
+<sc-for list="{{auth}}" as="a" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 0; border-top: 1px solid #ECE8DF; font-size: 14px"><span><b>{{a.n}}</b><br><span style="font-size: 12px; color: #5D5A52">{{a.e}}</span></span><span style="font-size: 12px; color: {{a.c}}">{{a.s}}</span></div>
+</sc-for>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<b>Segredos</b>
+<div style="font-size: 13px; color: #5D5A52">Ficam nas variáveis cifradas de cada plataforma (Vercel para o app, Maritime para os agentes, Supabase para o banco). Esta tela mostra a situação, nunca o valor.</div>
+<sc-for list="{{sec}}" as="s" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 0; border-top: 1px solid #ECE8DF; font-size: 14px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{s.n}}</span><span style="font-size: 12px; color: {{s.c}}">{{s.s}}</span></div>
+</sc-for>
+<div style="font-size: 12px; color: #8A5A00">Nada no repositório. Agentes de construção não acessam nenhuma delas.</div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<b>Equipe MargoAI no console</b>
+<div style="font-size: 13px; color: #5D5A52">Dois papéis. Fundador: tudo. Operação: clientes, importações, de-para, fichas e entregas; não vê cobrança, segredos nem funcionalidades.</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 0; border-top: 1px solid #ECE8DF; font-size: 14px"><span><b>Marlon</b></span><span style="font-size: 12px">Fundador</span></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 0; border-top: 1px solid #ECE8DF; font-size: 14px"><span><b>Manuel</b></span><span style="font-size: 12px">Fundador</span></div>
+<button type="button" style="min-height: 40px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; font-size: 14px">Convidar pessoa da operação</button>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<b>Padrões do raio-X</b>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="r" style="font-size: 13px; color: #5D5A52">Raio padrão</label><input id="r" value="3 km" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 6px"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="m" style="font-size: 13px; color: #5D5A52">Mínimo de pares para comparar um item</label><input id="m" value="5" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 6px"></div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<b>Dados de clientes</b>
+<div style="font-size: 14px; line-height: 1.6">Banco: Supabase de produção, em São Paulo<br>Cada cliente aparece por código (G-02, G-03)<br>Agentes de construção só usam o banco de desenvolvimento, com dados sintéticos<br>Processamento nos agentes da Maritime (EUA ou Alemanha), previsto nos termos</div>
+<label for="ret" style="font-size: 13px; color: #5D5A52">Apagar dados de cliente que saiu depois de</label>
+<select id="ret" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 6px; background: #FFFFFF"><option>90 dias</option><option>30 dias</option></select>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ok = '#1F7A62', pend = '#8A5A00';
+    return {
+      auth: [
+        { n: 'Pantanos Burguer', e: 'iFood (API e extensão) · IA incluída', s: 'assinada 29/out', c: ok },
+        { n: 'Grupo A (G-02)', e: 'iFood, 99Food, notas · IA incluída', s: 'assinada 10/out', c: ok },
+        { n: 'Grupo B (G-03)', e: 'só dado público', s: 'não precisa ainda', c: '#5D5A52' }
+      ],
+      sec: [
+        { n: 'IFOOD_CLIENT_ID', s: 'Vercel e Maritime', c: ok },
+        { n: 'IFOOD_CLIENT_SECRET', s: 'Vercel e Maritime', c: ok },
+        { n: 'ANTHROPIC_API_KEY', s: 'Maritime', c: ok },
+        { n: 'ASAAS_API_KEY (sandbox)', s: 'Vercel (preview)', c: ok }, { n: 'MARITIME_WEBHOOK_SIGNING_KEY', s: 'Vercel e Maritime', c: ok },
+        { n: 'certificado A1 de cliente', s: 'não guardamos', c: pend }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

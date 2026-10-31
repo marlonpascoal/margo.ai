@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>P14 Pessoas e acessos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; padding: 18px 14px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center"><a href="P08-MinhaConta.dc.html" style="font-size: 14px">Minha conta</a><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52">dados fictícios</span></div>
+<h1 style="margin: 0; font-size: 22px">Pessoas e acessos</h1>
+<sc-for list="{{people}}" as="p" hint-placeholder-count="4">
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; gap: 8px"><b style="font-size: 15px">{{p.n}}</b><span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #EFECE5">{{p.r}}</span></div>
+<span style="font-size: 13px; color: #3F3D38">{{p.s}}</span>
+</div>
+</sc-for>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.45">
+<b style="font-size: 14px">O que cada perfil vê</b>
+<span><b>Dono:</b> tudo, inclusive plano, cobrança e quem tem acesso.</span>
+<span><b>Financeiro:</b> fechamento, contestações e notas de todas as cozinhas.</span>
+<span><b>Gerente de cozinha:</b> só a cozinha dele, sem cobrança.</span>
+</div>
+<button type="button" style="margin-top: auto; min-height: 48px; background: #1C1C1A; color: #FFFFFF; border: 0; border-radius: 10px; font-weight: 700; font-size: 15px">Convidar pelo WhatsApp</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      people: [
+        { n: 'Dono do grupo', r: 'Dono', s: 'todas as cozinhas' },
+        { n: 'Pessoa do financeiro', r: 'Financeiro', s: 'todas as cozinhas' },
+        { n: 'Gerente do Centro', r: 'Gerente de cozinha', s: 'Cozinha Centro' },
+        { n: 'Contador (convite pendente)', r: 'Financeiro', s: 'só notas de compra' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C21 Alertas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C21" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 40px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C21 · Console · Operação</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Alertas</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">O que precisa de alguém da equipe. Cada alerta vai por e-mail para a equipe e fica aqui até alguém resolver.</p>
+</div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 900px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em"><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Gravidade</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Alerta</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Cliente</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Desde</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Avisado por</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Ação</th></tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+<tr>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF"><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; background: {{r.bg}}">{{r.g}}</span></td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF">{{r.t}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF">{{r.c}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px">{{r.d}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px; color: #5D5A52">{{r.v}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; white-space: nowrap"><a href="{{r.h}}" style="font-size: 13px">{{r.a}}</a></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px">
+<span><b>Para a equipe:</b> e-mail para alertas@margoai.com; urgentes também no WhatsApp do fundador de plantão.</span>
+<span><b>Para o dono:</b> segue as preferências de cada pessoa (W08).</span>
+<a href="E02-EmailPrazo.dc.html">Ver e-mail que o dono recebe</a>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const u = '#FBEAE7', m = '#FFF4E0', b = '#EFECE5';
+    return {
+      rows: [
+        { g: 'urgente', bg: u, t: 'Importação da API falhou 2 vezes: token expirado', c: 'Grupo A (G-02)', d: 'hoje 06:04', v: 'e-mail e WhatsApp da equipe', a: 'ver importação', h: 'C07-Conectar.dc.html' },
+        { g: 'urgente', bg: u, t: 'Cobrança recusada no cartão', c: 'Grupo A (G-02)', d: 'hoje 07:10', v: 'e-mail da equipe e do dono', a: 'ver assinatura', h: 'C15-Assinaturas.dc.html' },
+        { g: 'médio', bg: m, t: 'Extensão sem enviar há 3 dias', c: 'Pantanos Burguer', d: '27/out', v: 'e-mail da equipe; WhatsApp do dono', a: 'ver conexões', h: 'C07-Conectar.dc.html' },
+        { g: 'médio', bg: m, t: 'Prazo de contestação em 3 dias (R$ 186)', c: 'Pantanos Burguer', d: '12/nov', v: 'e-mail e WhatsApp do dono', a: 'ver contestação', h: 'C16-Contestacao.dc.html' },
+        { g: 'médio', bg: m, t: 'Arquivo da 99Food com colunas novas', c: 'Pantanos Burguer', d: '28/out', v: 'e-mail da equipe', a: 'corrigir', h: 'C17-CorrigirImport.dc.html' },
+        { g: 'baixo', bg: b, t: 'Teste grátis acaba em 2 dias, sem plano', c: 'Grupo B (G-03)', d: '28/out', v: 'e-mail e WhatsApp do dono', a: 'ver assinatura', h: 'C15-Assinaturas.dc.html' },
+        { g: 'baixo', bg: b, t: 'Loja nova no iFood sem cozinha', c: 'Grupo A (G-02)', d: '29/out', v: 'e-mail da equipe', a: 'vincular', h: 'C19-Estrutura.dc.html' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

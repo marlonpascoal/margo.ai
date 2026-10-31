@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C16 Contestação</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C16" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C16 · Módulo 2 · Pantanos Burguer</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Contestação</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">Quem abre o chamado no portal é o dono. A gente prepara o texto e a planilha, e acompanha o status junto com ele.</p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<a href="P12-Contestacoes.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Ver o que o dono vê</a>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{funil}}" as="f" hint-placeholder-count="5">
+<div style="background: {{f.bg}}; border: 1px solid #D6D2C4; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 20px">{{f.v}}</span><span style="font-size: 12px; color: #3F3D38">{{f.l}}</span></div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 3 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Diferença</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4; text-align: right">Valor</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Status</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Quem marcou</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Próximo passo</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+<tr>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52">{{r.id}}</span><br>{{r.t}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace">{{r.v}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF"><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; background: {{r.bg}}; white-space: nowrap">{{r.s}}</span></td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px; color: #5D5A52">{{r.who}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px">{{r.nx}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="flex: 2 1 320px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<b>Texto pronto · DIF-03, cupom cofinanciado</b>
+<label for="txt" style="font-size: 12px; color: #5D5A52">O dono cola isto no chamado do Portal do Parceiro</label>
+<textarea id="txt" rows="8" style="font-family: 'Public Sans', sans-serif; font-size: 13px; line-height: 1.5; padding: 10px; border: 1px solid #BDB7A9; border-radius: 8px; resize: vertical">Em setembro, 31 pedidos com o cupom da campanha de 20% tiveram o desconto debitado inteiro da loja. Pelo acordo da campanha, o iFood cofinancia metade. Diferença: R$ 186,00. Segue planilha com os pedidos.</textarea>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; font-size: 14px">Baixar planilha (31 pedidos)</button>
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 0; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-size: 14px">Mandar ao dono no WhatsApp</button>
+</div>
+<div style="font-size: 12px; color: #5D5A52; border-top: 1px solid #ECE8DF; padding-top: 10px; line-height: 1.5">Creditada é marcada pela MargoAI quando o valor aparece no repasse. Contestada e negada são marcadas pelo dono. Prazo vencido é automático.</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const C = { contestar: '#FBEAE7', analise: '#EFECE5', creditada: '#E3F2EC', resposta: '#FFF4E0', espera: '#EFECE5' };
+    return {
+      funil: [
+        { v: 'R$ 306', l: 'a contestar', bg: '#FBEAE7' },
+        { v: 'R$ 412', l: 'contestada, em análise', bg: '#FFFFFF' },
+        { v: 'R$ 238', l: 'creditada', bg: '#E3F2EC' },
+        { v: 'R$ 0', l: 'negada', bg: '#FFFFFF' },
+        { v: 'R$ 228', l: 'esperando o dono ou o repasse', bg: '#FFF4E0' }
+      ],
+      rows: [
+        { id: 'DIF-01', t: 'Comissão de 15% no lugar de 12%', v: 'R$ 412', s: 'em análise', bg: C.analise, who: 'dono, 02/out · protocolo 48213', nx: 'conferir repasse de 15/nov' },
+        { id: 'DIF-02', t: 'Cancelamento cobrado da loja', v: 'R$ 238', s: 'creditada', bg: C.creditada, who: 'MargoAI, repasse de 14/out', nx: 'nada' },
+        { id: 'DIF-03', t: 'Cupom cofinanciado debitado inteiro', v: 'R$ 186', s: 'a contestar', bg: C.contestar, who: '', nx: 'prazo 15/nov · lembrar o dono' },
+        { id: 'DIF-02', t: 'Cancelamento por atraso (99Food)', v: 'R$ 120', s: 'a contestar', bg: C.contestar, who: '', nx: 'prazo 20/nov' },
+        { id: 'DIF-03', t: 'Promoção sem acordo registrado', v: 'R$ 148', s: 'resposta do dono', bg: C.resposta, who: '', nx: 'dono confirma se combinou' },
+        { id: 'DIF-04', t: 'Repasse da semana 37 menor (99Food)', v: 'R$ 80', s: 'esperando repasse', bg: C.espera, who: 'MargoAI', nx: 'reabrir se não vier até 10/nov' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

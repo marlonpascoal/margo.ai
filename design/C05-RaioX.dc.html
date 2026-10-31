@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C05 Raio-X de preço</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C05" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C05 · Módulo 1 · passo 4 de 4 · Pantanos Burguer</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Raio-X de preço</h1>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<a href="C04-Pareamento.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; text-decoration: none; font-size: 15px">Rever pares</a>
+<a href="C06-Entrega.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Preparar entrega</a>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; color: {{k.c}}">{{k.v}}</div><div style="font-size: 13px; color: #5D5A52">{{k.l}}</div></div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 3 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Item</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4; text-align: right">Seu preço</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4; text-align: right">Paridade</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4; text-align: right">Diferença</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Leitura</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+<tr>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; font-weight: 600">{{r.n}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace">{{r.p}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace">{{r.q}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: {{r.c}}">{{r.g}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; color: {{r.c}}">{{r.l}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="flex: 2 1 320px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-weight: 700">6 de 24 itens somam 80% da perda por preço</div>
+<sc-for list="{{pareto}}" as="b" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 130px minmax(0, 1fr) 40px; gap: 10px; align-items: center; font-size: 13px">
+<span>{{b.n}}</span>
+<div style="height: 12px; background: #EFECE5; border-radius: 3px"><div style="height: 12px; width: {{b.w}}; background: #B4443A; border-radius: 3px"></div></div>
+<span style="font-family: 'IBM Plex Mono', monospace; color: #5D5A52; text-align: right">{{b.c}}</span>
+</div>
+</sc-for>
+<div style="font-size: 12px; color: #5D5A52; border-top: 1px solid #ECE8DF; padding-top: 10px">Paridade = mediana dos itens comparáveis no raio de 3 km. Sem custo: subir item barato é seguro, baixar item caro não.</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const up = '#1F7A62', hold = '#B4443A', mid = '#5D5A52';
+    return {
+      kpis: [
+        { v: '84', l: 'lojas comparáveis em 3 km', c: '#1C1C1A' },
+        { v: '24', l: 'itens analisados', c: '#1C1C1A' },
+        { v: '7', l: 'abaixo da paridade', c: up },
+        { v: '5', l: 'acima da paridade', c: hold }
+      ],
+      rows: [
+        { n: 'Refrigerante lata 350 ml', p: 'R$ 5,00', q: 'R$ 6,50', g: '−23%', c: up, l: 'pode subir hoje' },
+        { n: 'Batata frita média', p: 'R$ 14,90', q: 'R$ 18,40', g: '−19%', c: up, l: 'pode subir hoje' },
+        { n: 'Milkshake 400 ml', p: 'R$ 16,90', q: 'R$ 19,90', g: '−15%', c: up, l: 'pode subir hoje' },
+        { n: 'Smash duplo', p: 'R$ 29,90', q: 'R$ 30,50', g: '−2%', c: mid, l: 'na faixa' },
+        { n: 'X-Bacon artesanal', p: 'R$ 36,90', q: 'R$ 31,50', g: '+17%', c: hold, l: 'precisa do custo' },
+        { n: 'Combo casal', p: 'R$ 79,90', q: 'R$ 69,90', g: '+14%', c: hold, l: 'precisa do custo' }
+      ],
+      pareto: [
+        { n: 'Batata frita média', w: '100%', c: '31%' },
+        { n: 'Refrigerante lata', w: '71%', c: '53%' },
+        { n: 'Milkshake 400 ml', w: '45%', c: '67%' },
+        { n: 'Água 500 ml', w: '26%', c: '75%' },
+        { n: 'Sundae', w: '19%', c: '78%' },
+        { n: 'Molho extra', w: '13%', c: '80%' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

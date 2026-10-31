@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>W05 Plano e cobrança (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 860px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif">
+<dc-import name="MenuDono" current="W05" hint-size="100%,64px"></dc-import>
+<main style="max-width: 1180px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font-size: 30px">Plano e cobrança</h1><span style="font-size: 15px; color: #5D5A52">Teste grátis até 08/nov. Só cartão de crédito, pelo Asaas.</span></div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">preços de exemplo</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px">
+<sc-for list="{{plans}}" as="p" hint-placeholder-count="3">
+<div style="background: #FFFFFF; border: {{p.border}}; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<b style="font-size: 20px">{{p.n}}</b>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px">{{p.price}}</span>
+<span style="font-size: 14px; line-height: 1.5; color: #3F3D38">{{p.d}}</span>
+<span style="font-size: 13px; color: #5D5A52">{{p.calc}}</span>
+<a href="{{p.h}}" style="margin-top: auto; display: inline-flex; justify-content: center; align-items: center; min-height: 44px; border-radius: 8px; text-decoration: none; font-weight: 600; background: {{p.btnbg}}; color: {{p.btnc}}; border: 1px solid #1C1C1A">{{p.cta}}</a>
+</div>
+</sc-for>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px">
+<caption style="text-align: left; padding: 12px 14px; font-weight: 700; border-bottom: 1px solid #D6D2C4">Faturas</caption>
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em"><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4">Mês</th><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4">Cozinhas</th><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4; text-align: right">Valor</th><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4">Situação</th><th style="padding: 10px 14px; border-bottom: 1px solid #D6D2C4">Nota fiscal</th></tr></thead>
+<tbody><tr><td colspan="5" style="padding: 16px 14px; color: #5D5A52; font-size: 14px">Nenhuma fatura ainda. A primeira sai quando o teste acabar e você escolher um plano.</td></tr></tbody>
+</table>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sel = '2px solid #1C1C1A', off = '1px solid #D6D2C4';
+    return {
+      plans: [
+        { n: 'Raio-X', price: 'grátis', d: 'Raio-X de preço contra a vizinhança, uma vez por trimestre. Sem conectar nada.', calc: '', cta: 'Ficar no grátis', h: 'W01-Inicio.dc.html', border: off, btnbg: '#FFFFFF', btnc: '#1C1C1A' },
+        { n: 'Lucro', price: 'R$ 300 por cozinha/mês', d: 'Fechamento mensal por canal, diferenças no repasse com contestação, e quanto sobra por item com o custo das notas.', calc: '2 cozinhas na análise = R$ 600/mês', cta: 'Assinar pelo Asaas', h: 'P10-Pagamento.dc.html', border: sel, btnbg: '#1C1C1A', btnc: '#FFFFFF' },
+        { n: 'Rede', price: '5 cozinhas ou mais', d: 'Tudo do Lucro, com preço por conversa e atendimento direto dos fundadores.', calc: '', cta: 'Falar com a gente', h: 'W01-Inicio.dc.html', border: off, btnbg: '#FFFFFF', btnc: '#1C1C1A' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

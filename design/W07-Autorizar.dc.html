@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>W07 Autorizar acesso e instalar a extensão (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 860px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif">
+<dc-import name="MenuDono" current="W02" hint-size="100%,64px"></dc-import>
+<main style="max-width: 1180px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font-size: 30px">Conectar os apps</h1><span style="font-size: 15px; color: #5D5A52">Dois passos. Nenhum pede sua senha.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+<section style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center"><b style="font-size: 18px">1. Autorizar no iFood</b><span style="font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #E3F2EC; color: #1F7A62">feito em 29/out</span></div>
+<ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45"><li>Entre no Portal do Parceiro com o login de dono.</li><li>Em Aplicativos, clique em <b>Permitir</b> ao lado de MargoAI.</li><li>Volte aqui: suas lojas aparecem sozinhas.</li></ol>
+<div style="font-size: 13px; color: #5D5A52; line-height: 1.5">Lemos vendas, taxas, promoções e repasses. Não mexemos em preço nem em cardápio. <a href="P11-Termos.dc.html">Termos</a></div>
+<a href="W02-Lojas.dc.html" style="margin-top: auto; display: inline-flex; justify-content: center; align-items: center; min-height: 44px; border: 1px solid #1C1C1A; border-radius: 8px; font-weight: 600; text-decoration: none">Ver as lojas encontradas</a>
+</section>
+<section style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center"><b style="font-size: 18px">2. Instalar a extensão do Chrome</b><span style="font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #FFF4E0">neste computador</span></div>
+<div style="font-size: 15px; line-height: 1.5">Para o que a API do iFood não entrega, como vendas por item. Ela roda só no Chrome do computador, enquanto o Portal do Parceiro estiver aberto.</div>
+<div style="display: flex; gap: 12px; align-items: center; padding: 12px; background: #F6F4EF; border-radius: 8px"><span style="width: 40px; height: 40px; border-radius: 8px; background: #1C1C1A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800">M</span><span style="font-size: 14px; line-height: 1.4"><b>MargoAI para o Portal do Parceiro</b><br><span style="color: #5D5A52">Chrome Web Store · lê só a página aberta</span></span></div>
+<a href="P04-Extensao.dc.html" style="margin-top: auto; display: inline-flex; justify-content: center; align-items: center; min-height: 44px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none">Adicionar ao Chrome</a>
+<div style="font-size: 13px; color: #5D5A52">Está no celular? Mandamos este link por WhatsApp para abrir no computador.</div>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

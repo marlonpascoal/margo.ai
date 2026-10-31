@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Menu lateral do console</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav aria-label="Console" style="width: 232px; min-height: 900px; box-sizing: border-box; padding: 24px 16px; background: #EFECE5; border-right: 1px solid #D6D2C4; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 0 8px">
+<div style="font-size: 18px; font-weight: 800">MargoAI</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52">console dos fundadores</div>
+</div>
+<div style="padding: 10px 12px; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 8px; font-size: 13px; line-height: 18px"><b>Pantanos Burguer</b><br><span style="color: #5D5A52">Igapó, Londrina</span></div>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<sc-if value="{{g.t}}" hint-placeholder-val="{{ true }}">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 8px 4px">{{g.t}}</div>
+</sc-if>
+<sc-for list="{{g.items}}" as="it" hint-placeholder-count="3">
+<sc-if value="{{it.active}}" hint-placeholder-val="{{ false }}">
+<a href="{{it.h}}" aria-current="page" style="display: flex; gap: 8px; align-items: center; min-height: 30px; padding: 0 8px; border-radius: 6px; background: #1C1C1A; color: #FFFFFF; text-decoration: none; font-size: 14px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #D6D2C4">{{it.c}}</span>{{it.l}}</a>
+</sc-if>
+<sc-if value="{{it.idle}}" hint-placeholder-val="{{ true }}">
+<a href="{{it.h}}" style="display: flex; gap: 8px; align-items: center; min-height: 30px; padding: 0 8px; border-radius: 6px; color: #1C1C1A; text-decoration: none; font-size: 14px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52">{{it.c}}</span>{{it.l}}</a>
+</sc-if>
+</sc-for>
+</div>
+</sc-for>
+<a href="Main.dc.html" style="margin-top: auto; padding: 0 8px; font-size: 13px; color: #5D5A52">Ver o mapa de telas</a>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"current":{"editor":"text","default":"C01"},"$preview":{"width":232,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = this.props.current ?? 'C01';
+    const G = [
+      { t: 'Clientes e cobrança', items: [['C21', 'Alertas', 'C21-Alertas'], ['C01', 'Clientes', 'C01-Clientes'], ['C15', 'Assinaturas', 'C15-Assinaturas'], ['C19', 'Estrutura do cliente', 'C19-Estrutura'], ['C18', 'Parceiros BPO', 'C18-BPO']] },
+      { t: 'Módulo 1 · raio-X', items: [['C02', 'Novo raio-X', 'C02-NovoRaioX'], ['C03', 'Vizinhança', 'C03-Vizinhanca'], ['C04', 'Pareamento', 'C04-Pareamento'], ['C05', 'Raio-X de preço', 'C05-RaioX'], ['C06', 'Entrega', 'C06-Entrega']] },
+      { t: 'Módulo 2 · canais', items: [['C07', 'Conectar e importar', 'C07-Conectar'], ['C17', 'Corrigir importação', 'C17-CorrigirImport'], ['C08', 'Fechamento', 'C08-Fechamento'], ['C09', 'Diferenças', 'C09-Diferencas'], ['C16', 'Contestação', 'C16-Contestacao']] },
+      { t: 'Módulo 3 · custo', items: [['C10', 'Notas de compra', 'C10-Notas'], ['C11', 'De-para de insumos', 'C11-Depara'], ['C12', 'Ficha técnica', 'C12-Ficha'], ['C13', 'Contribuição', 'C13-Contribuicao']] },
+      { t: '', items: [['C14', 'Configurações', 'C14-Config'], ['C20', 'Funcionalidades', 'C20-Funcionalidades']] }
+    ];
+    return {
+      groups: G.map((g) => ({
+        t: g.t,
+        items: g.items.map(([c, l, f]) => ({ c, l, h: f + '.dc.html', active: c === cur, idle: c !== cur }))
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

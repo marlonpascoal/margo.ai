@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C15 Assinaturas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C15" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C15 · Clientes e cobrança</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Assinaturas</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">Uma assinatura por conta (grupo), cobrada por loja ativa. O status vem dos webhooks do Asaas.</p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios · Asaas sandbox</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 26px">2</div><div style="font-size: 13px; color: #5D5A52">em teste grátis ({{dias}} dias)</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 26px">1</div><div style="font-size: 13px; color: #5D5A52">pagante</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 26px">R$ 1.800</div><div style="font-size: 13px; color: #5D5A52">receita mensal</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 26px">0</div><div style="font-size: 13px; color: #5D5A52">com pagamento atrasado</div></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 860px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Conta</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Plano</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Lojas ativas</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Situação</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Próxima cobrança</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Asaas</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Último evento</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<tr>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-weight: 600">{{r.n}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF">{{r.p}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace">{{r.l}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF"><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; background: {{r.bg}}">{{r.s}}</span></td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace">{{r.nx}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52">{{r.id}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px; color: #5D5A52">{{r.ev}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap"><b>Pilotos pagos (fora dos planos, até 15/fev)</b><button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; font-size: 14px">Novo piloto</button></div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; font-size: 13px">
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="pc" style="color: #5D5A52">Conta</label><select id="pc" style="min-height: 40px; padding: 0 8px; border: 1px solid #BDB7A9; border-radius: 6px; background: #FFFFFF"><option>Grupo B (G-03)</option></select></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="pf" style="color: #5D5A52">Meses 1 e 2: % do creditado</label><input id="pf" value="20%" style="min-height: 40px; padding: 0 8px; border: 1px solid #BDB7A9; border-radius: 6px; font-family: 'IBM Plex Mono', monospace"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="pt" style="color: #5D5A52">Teto por mês</label><input id="pt" value="[a definir]" style="min-height: 40px; padding: 0 8px; border: 1px solid #BDB7A9; border-radius: 6px; font-family: 'IBM Plex Mono', monospace"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="pm" style="color: #5D5A52">A partir do mês 3</label><input id="pm" value="R$ 300 por cozinha" style="min-height: 40px; padding: 0 8px; border: 1px solid #BDB7A9; border-radius: 6px; font-family: 'IBM Plex Mono', monospace"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5D5A52">Próxima cobrança</span><span style="min-height: 40px; display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace">20% de R$ 238 creditados = R$ 47,60</span></div>
+</div>
+<div style="font-size: 12px; color: #5D5A52; line-height: 1.5">Meses 1 e 2: cobrança avulsa no Asaas, calculada pelo que foi creditado (C16). Dia 61: vira assinatura mensal fixa, sem desconto de última hora (teste E6 do plano de experimentos).</div>
+</div>
+<div style="font-size: 13px; color: #5D5A52; line-height: 1.5">Fim do teste: a conta recebe aviso no WhatsApp 3 dias antes e no dia. Sem plano escolhido, volta para o Raio-X grátis e os dados de canal param de atualizar.</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dias":{"editor":"int","default":14,"min":1,"max":60},"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const t = '#FFF4E0', a = '#E3F2EC', g = '#EFECE5';
+    return {
+      dias: this.props.dias ?? 14,
+      rows: [
+        { n: 'Grupo A (G-02)', p: 'Lucro', l: '6', s: 'ativa', bg: a, nx: '05/nov · R$ 1.800', id: 'sub_…a91f', ev: 'pagamento confirmado 05/out' },
+        { n: 'Pantanos Burguer', p: 'Lucro (teste)', l: '1', s: 'teste: faltam 9 dias', bg: t, nx: 'sem cartão ainda', id: 'cus_…77c2', ev: 'conta criada 25/out' },
+        { n: 'Grupo B (G-03)', p: 'Lucro (teste)', l: '3', s: 'teste: faltam 2 dias', bg: t, nx: 'sem cartão ainda', id: 'cus_…0b4e', ev: 'aviso de fim enviado' },
+        { n: 'Grupo C (G-04)', p: 'Raio-X', l: '2', s: 'grátis', bg: g, nx: 'não cobra', id: '', ev: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

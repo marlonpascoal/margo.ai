@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C09 Diferenças no repasse</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C09" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C09 · Módulo 2 · Pantanos Burguer · set/2026</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Diferenças no repasse</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">O que o app deveria ter repassado, pedido a pedido, contra o que repassou. Cada diferença tem a regra que a encontrou.</p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<a href="C16-Contestacao.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; text-decoration: none; font-size: 15px">Preparar contestação</a>
+<a href="P06-FechamentoPDF.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Gerar fechamento mensal</a>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px">R$ 956</div><div style="font-size: 13px; color: #5D5A52">certas (4), prontas para contestar</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px">R$ 228</div><div style="font-size: 13px; color: #5D5A52">prováveis (2), conferir com o dono</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px">0,9%</div><div style="font-size: 13px; color: #5D5A52">do bruto de delivery no mês</div></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 820px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Regra</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">O que aconteceu</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Canal</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Pedidos</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4; text-align: right">Valor</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Confiança</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Contestação</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+<tr>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace; font-size: 12px">{{r.id}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF">{{r.t}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF">{{r.c}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; font-family: 'IBM Plex Mono', monospace">{{r.n}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace; font-weight: 600">{{r.v}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF"><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; background: {{r.bg}}">{{r.k}}</span></td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #ECE8DF; color: #5D5A52">{{r.s}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cer = '#E3F2EC', pro = '#FFF4E0';
+    return {
+      rows: [
+        { id: 'DIF-01', t: 'Comissão de 15% onde o contrato diz 12%', c: 'iFood', n: '214', v: 'R$ 412', k: 'certa', bg: cer, s: 'contestada em 02/out' },
+        { id: 'DIF-02', t: 'Cancelamento pelo cliente cobrado da loja', c: 'iFood', n: '9', v: 'R$ 238', k: 'certa', bg: cer, s: 'creditado R$ 238' },
+        { id: 'DIF-03', t: 'Cupom cofinanciado debitado inteiro da loja', c: 'iFood', n: '31', v: 'R$ 186', k: 'certa', bg: cer, s: 'contestar até 15/nov' },
+        { id: 'DIF-02', t: 'Cancelamento por atraso do entregador', c: '99Food', n: '5', v: 'R$ 120', k: 'certa', bg: cer, s: 'contestar até 20/nov' },
+        { id: 'DIF-03', t: 'Promoção da semana sem acordo registrado', c: 'iFood', n: '22', v: 'R$ 148', k: 'provável', bg: pro, s: 'perguntar ao dono' },
+        { id: 'DIF-04', t: 'Repasse da semana 37 menor que a apuração', c: '99Food', n: '1', v: 'R$ 80', k: 'provável', bg: pro, s: 'esperar o próximo ciclo' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

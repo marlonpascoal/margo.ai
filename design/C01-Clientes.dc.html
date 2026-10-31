@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C01 Clientes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C01" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C01 · Console</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Clientes</h1>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; border: 1px dashed #8A8378; padding: 2px 8px; border-radius: 4px">dados fictícios</span>
+<a href="C02-NovoRaioX.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Novo raio-X</a>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px">4</div><div style="font-size: 13px; color: #5D5A52">restaurantes no funil</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px">2</div><div style="font-size: 13px; color: #5D5A52">raio-X entregues</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px">1</div><div style="font-size: 13px; color: #5D5A52">com iFood conectado</div></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px"><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px">11 h</div><div style="font-size: 13px; color: #5D5A52">horas registradas no mês</div></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 720px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
+<th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Restaurante</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Módulo 1 · raio-X</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Módulo 2 · canais</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Módulo 3 · custo</th><th style="padding: 12px 16px; border-bottom: 1px solid #D6D2C4">Próximo passo</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<tr>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF"><a href="{{r.h}}" style="font-weight: 600">{{r.n}}</a><div style="font-size: 12px; color: #5D5A52">{{r.b}}</div></td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF">{{r.m1}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF">{{r.m2}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF">{{r.m3}}</td>
+<td style="padding: 14px 16px; border-bottom: 1px solid #ECE8DF; color: #5D5A52">{{r.nx}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      rows: [
+        { n: 'Pantanos Burguer', b: 'Igapó, Londrina · 1 loja', h: 'C05-RaioX.dc.html', m1: 'Entregue 28/out', m2: 'Autorização pendente', m3: 'Não iniciado', nx: 'Cobrar a autorização no iFood' },
+        { n: 'Grupo A (código G-02)', b: 'São Paulo · 6 lojas', h: 'C08-Fechamento.dc.html', m1: 'Entregue 14/out', m2: 'Conectado · iFood e 99Food', m3: 'Notas de 12 meses', nx: 'Revisar 14 diferenças' },
+        { n: 'Grupo B (código G-03)', b: 'Londrina · 3 lojas', h: 'C03-Vizinhanca.dc.html', m1: 'Vizinhança em revisão', m2: 'Não iniciado', m3: 'Não iniciado', nx: 'Confirmar concorrentes' },
+        { n: 'Grupo C (código G-04)', b: 'Maringá · 2 lojas', h: 'C02-NovoRaioX.dc.html', m1: 'Na fila', m2: 'Não iniciado', m3: 'Não iniciado', nx: 'Rodar o raio-X' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

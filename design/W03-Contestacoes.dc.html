@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>W03 Contestações (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 860px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif">
+<dc-import name="MenuDono" current="W03" hint-size="100%,64px"></dc-import>
+<main style="max-width: 1180px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font-size: 30px">Contestações</h1><span style="font-size: 15px; color: #5D5A52">Você abre o chamado no Portal do Parceiro com o texto pronto. Aqui você marca o que já fez; o crédito a gente confere no repasse.</span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px">
+<div style="background: #FBEAE7; border-radius: 10px; padding: 12px"><b style="font-family: 'IBM Plex Mono', monospace; font-size: 20px">R$ 1.020</b><br><span style="font-size: 13px">para você contestar</span></div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 10px; padding: 12px"><b style="font-family: 'IBM Plex Mono', monospace; font-size: 20px">R$ 780</b><br><span style="font-size: 13px">em análise no app</span></div>
+<div style="background: #E3F2EC; border-radius: 10px; padding: 12px"><b style="font-family: 'IBM Plex Mono', monospace; font-size: 20px">R$ 410</b><br><span style="font-size: 13px">já voltou</span></div>
+<div style="background: #FFF4E0; border-radius: 10px; padding: 12px"><b style="font-family: 'IBM Plex Mono', monospace; font-size: 20px">R$ 200</b><br><span style="font-size: 13px">precisa da sua resposta</span></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 900px">
+<thead><tr style="text-align: left; color: #5D5A52; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em"><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">O que aconteceu</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Cozinha e app</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4; text-align: right">Valor</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Status</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Prazo ou protocolo</th><th style="padding: 12px 14px; border-bottom: 1px solid #D6D2C4">Ação</th></tr></thead>
+<tbody>
+<sc-for list="{{items}}" as="i" hint-placeholder-count="5">
+<tr>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF">{{i.t}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px">{{i.u}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; text-align: right; font-family: 'IBM Plex Mono', monospace">{{i.v}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF"><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; background: {{i.bg}}; white-space: nowrap">{{i.pill}}</span></td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; font-size: 13px; color: #5D5A52">{{i.info}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #ECE8DF; white-space: nowrap">
+<sc-if value="{{i.isContestar}}" hint-placeholder-val="{{ false }}"><button type="button" style="min-height: 34px; padding: 0 10px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 6px; font-size: 13px">Copiar texto</button> <button type="button" onClick="{{i.marcar}}" style="min-height: 34px; padding: 0 10px; border: 0; background: #1C1C1A; color: #FFFFFF; border-radius: 6px; font-size: 13px">Já contestei</button></sc-if>
+<sc-if value="{{i.isAnalise}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{i.negar}}" style="min-height: 34px; padding: 0 10px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 6px; font-size: 13px">Foi negada</button></sc-if>
+<sc-if value="{{i.isResposta}}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px">Foi combinado?</span> <button type="button" onClick="{{i.sim}}" style="min-height: 34px; padding: 0 10px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 6px; font-size: 13px">Sim</button> <button type="button" onClick="{{i.nao}}" style="min-height: 34px; padding: 0 10px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 6px; font-size: 13px">Não</button></sc-if>
+</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52">dados fictícios · os botões funcionam no Play</span>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { st: { a: 'analise', b: 'creditada', c: 'contestar', d: 'contestar', e: 'resposta' } }; }
+  renderVals() {
+    const S = {
+      contestar: { pill: 'a contestar', bg: '#FBEAE7' }, analise: { pill: 'em análise', bg: '#EFECE5' },
+      creditada: { pill: 'creditada', bg: '#E3F2EC' }, negada: { pill: 'negada', bg: '#E5E3DE' },
+      resposta: { pill: 'precisa da sua resposta', bg: '#FFF4E0' }, ok: { pill: 'não era erro', bg: '#E5E3DE' }
+    };
+    const base = [
+      { id: 'a', t: 'Comissão de 15% onde o contrato diz 12%', u: 'Centro · iFood', v: 'R$ 780', info: { analise: 'protocolo 48213', negada: 'protocolo 48213' } },
+      { id: 'b', t: 'Cancelamento pelo cliente cobrado da loja', u: 'Zona Sul · iFood', v: 'R$ 410', info: { creditada: 'voltou em 14/out' } },
+      { id: 'c', t: 'Cupom cofinanciado debitado inteiro', u: 'Centro · iFood', v: 'R$ 640', info: { contestar: 'até 15/nov', analise: 'contestada hoje' } },
+      { id: 'd', t: 'Cancelamento por atraso do entregador', u: 'Zona Sul · 99Food', v: 'R$ 380', info: { contestar: 'até 20/nov', analise: 'contestada hoje' } },
+      { id: 'e', t: 'Promoção da semana sem acordo registrado', u: 'Centro · iFood', v: 'R$ 200', info: { resposta: '', contestar: 'até 22/nov' } }
+    ];
+    const set = (id, s) => () => this.setState({ st: Object.assign({}, this.state.st, { [id]: s }) });
+    return {
+      items: base.map((b) => {
+        const s = this.state.st[b.id];
+        return { t: b.t, u: b.u, v: b.v, pill: S[s].pill, bg: S[s].bg, info: (b.info && b.info[s]) || '',
+          isContestar: s === 'contestar', isAnalise: s === 'analise', isResposta: s === 'resposta',
+          marcar: set(b.id, 'analise'), negar: set(b.id, 'negada'), sim: set(b.id, 'ok'), nao: set(b.id, 'contestar') };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

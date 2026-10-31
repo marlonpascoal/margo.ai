@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C20 Funcionalidades (feature toggles)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C20" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 40px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C20 · Console · só papel Fundador</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Funcionalidades</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; line-height: 1.5">Toda funcionalidade do produto tem uma chave. O plano define o padrão; uma conta pode ter exceção. Toda mudança fica no histórico.</p>
+</div>
+<div style="display: flex; gap: 8px; align-items: center"><label for="amb" style="font-size: 13px; color: #5D5A52">Ambiente</label><select id="amb" style="min-height: 40px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 8px; background: #FFFFFF"><option>teste (sandbox)</option><option>produção</option></select></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 960px">
+<thead><tr style="color: #5D5A52; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em"><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4; text-align: left">Chave</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4; text-align: left">O que liga</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Raio-X</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Lucro</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4">Rede</th><th style="padding: 10px 12px; border-bottom: 1px solid #D6D2C4; text-align: left">Exceções</th></tr></thead>
+<tbody>
+<sc-for list="{{flags}}" as="f" hint-placeholder-count="12">
+<tr style="text-align: center">
+<td style="padding: 8px 12px; border-bottom: 1px solid #ECE8DF; text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 12px">{{f.k}}</td>
+<td style="padding: 8px 12px; border-bottom: 1px solid #ECE8DF; text-align: left">{{f.d}}</td>
+<td style="padding: 8px 12px; border-bottom: 1px solid #ECE8DF; color: {{f.c1}}">{{f.a}}</td>
+<td style="padding: 8px 12px; border-bottom: 1px solid #ECE8DF; color: {{f.c2}}">{{f.b}}</td>
+<td style="padding: 8px 12px; border-bottom: 1px solid #ECE8DF; color: {{f.c3}}">{{f.r}}</td>
+<td style="padding: 8px 12px; border-bottom: 1px solid #ECE8DF; text-align: left; font-size: 12px; color: #5D5A52">{{f.x}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="font-size: 13px; color: #5D5A52; line-height: 1.5">Desligada em todos os planos = ainda não lançada. As telas L01 e L02 só aparecem quando a chave delas liga, depois de 15/fev.</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const on = 'ligada', off = 'desligada';
+    const f = (k, d, a, b, r, x) => ({ k, d, a: a ? on : off, b: b ? on : off, r: r ? on : off, c1: a ? '#1F7A62' : '#5D5A52', c2: b ? '#1F7A62' : '#5D5A52', c3: r ? '#1F7A62' : '#5D5A52', x: x || '' });
+    return {
+      flags: [
+        f('m1.raio_x', 'Raio-X de preço por dado público', 1, 1, 1),
+        f('m2.ifood_api', 'Leitura do iFood pela API oficial', 0, 1, 1, 'G-03 ligada no teste grátis'),
+        f('m2.extensao_chrome', 'Extensão do Chrome', 0, 1, 1),
+        f('m2.arquivo_99food', 'Importar extrato da 99Food', 0, 1, 1),
+        f('m2.contestacao', 'Diferenças e contestação', 0, 1, 1),
+        f('m3.notas_xml', 'Notas da pasta do contador', 0, 1, 1),
+        f('m3.nfce_qr_auto', 'Leitura automática do QR (SP e PR)', 0, 0, 0, 'só Pantanos, para testar'),
+        f('m3.depara_ia', 'Sugestão de insumo pela IA', 0, 1, 1),
+        f('conta.multi_cozinha', 'Mais de uma cozinha por conta', 0, 1, 1),
+        f('conta.pessoas', 'Convidar pessoas e perfis', 0, 1, 1),
+        f('bpo.marca_propria', 'Fechamento com a marca do BPO', 0, 0, 0, 'BPO 01'),
+        f('l.painel_dono', 'Painel do dono (L01)', 0, 0, 0),
+        f('l.aprovacao_cupom', 'Aprovação de cupom no WhatsApp (L02)', 0, 0, 0)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

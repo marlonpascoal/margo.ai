@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>P13 Minhas lojas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="width: 390px; height: 960px; box-sizing: border-box; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; padding: 18px 14px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center"><a href="P08-MinhaConta.dc.html" style="font-size: 14px">Minha conta</a><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5D5A52">dados fictícios</span></div>
+<h1 style="margin: 0; font-size: 22px; line-height: 1.25">Encontramos 7 lojas na sua autorização</h1>
+<p style="margin: 0; font-size: 14px; color: #3F3D38; line-height: 1.45">Agrupamos por cozinha. Confira e escolha quais entram na análise. A cobrança é por cozinha, não por marca.</p>
+<div style="font-size: 12px; color: #5D5A52; display: flex; gap: 12px; flex-wrap: wrap"><span>Conta: <b>Grupo Exemplo</b></span><span>2 CNPJs</span><span>3 cozinhas</span></div>
+<sc-for list="{{units}}" as="u" hint-placeholder-count="3">
+<div style="background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+<label style="display: flex; gap: 10px; align-items: flex-start"><input type="checkbox" checked="{{u.on}}" style="width: 18px; height: 18px; margin: 2px 0 0"><span style="font-size: 15px; line-height: 1.35"><b>{{u.n}}</b><br><span style="font-size: 12px; color: #5D5A52">{{u.cnpj}}</span></span></label>
+<sc-for list="{{u.stores}}" as="s" hint-placeholder-count="2">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 6px 0 0 28px; font-size: 13px; border-top: 1px solid #ECE8DF"><span>{{s.b}} <a href="#" style="font-size: 12px">ver no app</a></span><span style="padding: 1px 8px; border-radius: 999px; background: {{s.bg}}; font-size: 12px">{{s.c}}</span></div>
+</sc-for>
+</div>
+</sc-for>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span>Cozinhas na análise</span><b style="font-family: 'IBM Plex Mono', monospace">2 de 3</b></div>
+<a href="P14-Pessoas.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 48px; background: #1C1C1A; color: #FFFFFF; border-radius: 10px; font-weight: 700; text-decoration: none">Confirmar e convidar a equipe</a>
+<div style="font-size: 12px; color: #5D5A52; line-height: 1.45">A 99Food não tem API: as lojas de lá aparecem quando você mandar o primeiro extrato.</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":960}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const i = '#FBEAE7', n = '#FFF4E0';
+    return {
+      units: [
+        { n: 'Cozinha Centro', cnpj: 'CNPJ 1 · Rua Exemplo, 100', on: true, stores: [{ b: 'Burger do Bairro', c: 'iFood', bg: i }, { b: 'Frango Crocante', c: 'iFood', bg: i }, { b: 'Burger do Bairro', c: '99Food', bg: n }] },
+        { n: 'Cozinha Zona Sul', cnpj: 'CNPJ 2 · Av. Exemplo, 2000', on: true, stores: [{ b: 'Burger do Bairro', c: 'iFood', bg: i }, { b: 'Burger do Bairro', c: '99Food', bg: n }] },
+        { n: 'Quiosque Shopping', cnpj: 'CNPJ 2 · Shopping Exemplo', on: false, stores: [{ b: 'Burger do Bairro', c: 'iFood', bg: i }, { b: 'Milkshake Bar', c: 'iFood', bg: i }] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

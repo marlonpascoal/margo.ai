@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Menu do portal do dono</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<header style="box-sizing: border-box; width: 100%; min-height: 64px; padding: 10px 32px; background: #FFFFFF; border-bottom: 1px solid #D6D2C4; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px">
+<b style="font-size: 18px">MargoAI</b>
+<div style="font-size: 13px; padding: 6px 12px; background: #F6F4EF; border: 1px solid #D6D2C4; border-radius: 8px">Grupo Exemplo · 2 cozinhas</div>
+<nav aria-label="Portal do dono" style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="5">
+<sc-if value="{{it.active}}" hint-placeholder-val="{{ false }}"><a href="{{it.h}}" aria-current="page" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; background: #1C1C1A; color: #FFFFFF; text-decoration: none; font-size: 14px">{{it.l}}</a></sc-if>
+<sc-if value="{{it.idle}}" hint-placeholder-val="{{ true }}"><a href="{{it.h}}" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; color: #1C1C1A; text-decoration: none; font-size: 14px">{{it.l}}</a></sc-if>
+</sc-for>
+</nav>
+<span style="font-size: 13px; color: #5D5A52">Dono do grupo</span>
+</header>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"current":{"editor":"text","default":"W01"},"$preview":{"width":1280,"height":64}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = this.props.current ?? 'W01';
+    const I = [['W01', 'Início', 'W01-Inicio'], ['W02', 'Lojas', 'W02-Lojas'], ['W03', 'Contestações', 'W03-Contestacoes'], ['W04', 'Pessoas', 'W04-Pessoas'], ['W05', 'Plano e cobrança', 'W05-Plano'], ['W08', 'Notificações', 'W08-Notificacoes'], ['W09', 'Segurança', 'W09-Seguranca']];
+    return { items: I.map(([c, l, f]) => ({ l, h: f + '.dc.html', active: c === cur, idle: c !== cur })) };
+  }
+}
+</script>
+</body>
+</html>

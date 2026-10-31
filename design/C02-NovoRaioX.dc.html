@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>C02 Novo raio-X</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F4EF}
+a{color:#1C1C1A}a:hover{color:#5D5A52}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F6F4EF; color: #1C1C1A; font-family: 'Public Sans', sans-serif; display: flex; flex-wrap: wrap">
+<dc-import name="Menu" current="C02" hint-size="232px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5D5A52; text-transform: uppercase; letter-spacing: 0.06em">C02 · Módulo 1 · passo 1 de 4</div>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Novo raio-X de preço</h1>
+<p style="margin: 0; font-size: 15px; color: #5D5A52; max-width: 640px; line-height: 1.5">Só dado público do cardápio. Nada é pedido ao restaurante neste passo.</p>
+</div>
+<form style="max-width: 720px; background: #FFFFFF; border: 1px solid #D6D2C4; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="url" style="font-weight: 600; font-size: 14px">Link da loja no iFood</label>
+<input id="url" type="url" value="ifood.com.br/delivery/londrina-pr/pantanos-burguer-igapo/91a9c35d-…" style="min-height: 44px; padding: 0 12px; border: 1px solid #BDB7A9; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">
+<div style="font-size: 13px; color: #1F7A62">Loja encontrada: Pantanos Burguer · Igapó, Londrina · Lanches</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="raio" style="font-weight: 600; font-size: 14px">Raio da vizinhança</label>
+<select id="raio" style="min-height: 44px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 8px; font-size: 15px; background: #FFFFFF"><option>3 km (padrão)</option><option>2 km</option><option>5 km</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="cat" style="font-weight: 600; font-size: 14px">Categorias que contam como concorrente</label>
+<select id="cat" style="min-height: 44px; padding: 0 10px; border: 1px solid #BDB7A9; border-radius: 8px; font-size: 15px; background: #FFFFFF"><option>Lanches, hambúrguer, porções</option><option>Só hambúrguer</option></select>
+</div>
+</div>
+<fieldset style="border: 1px solid #ECE8DF; border-radius: 8px; padding: 12px 16px; margin: 0; display: flex; flex-direction: column; gap: 10px">
+<legend style="font-size: 13px; font-weight: 600; padding: 0 4px">Regras do conjunto competitivo</legend>
+<label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked> Excluir lojas fechadas há mais de 30 dias</label>
+<label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked> Excluir redes nacionais com preço tabelado</label>
+<label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox"> Considerar só lojas que entregam no mesmo bairro</label>
+</fieldset>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<a href="C03-Vizinhanca.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #1C1C1A; color: #FFFFFF; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px">Buscar vizinhança</a>
+<a href="C01-Clientes.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #BDB7A9; background: #FFFFFF; border-radius: 8px; text-decoration: none; font-size: 15px">Cancelar</a>
+</div>
+</form>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

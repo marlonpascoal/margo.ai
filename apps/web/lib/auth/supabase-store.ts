@@ -1,5 +1,8 @@
 // LoginStore over Postgres, with the service role (04 §8). Covered by login.int.test.ts.
 import type { Db } from "@/lib/supabase/admin";
+import type { NotifyDeps } from "@/lib/notify/outbox";
+import { notifyNewDevice } from "@/lib/notify/security";
+import { SupabaseNotifyStore } from "@/lib/notify/supabase-store";
 import type { AuditRow, LoginPerson, LoginStore, SessionRow } from "./login";
 import { emptyGuard, type Guard, type Surface } from "./rules";
 
@@ -16,7 +19,10 @@ function must<T>(res: { data: T; error: { message: string } | null }): NonNullab
 }
 
 export class SupabaseLoginStore implements LoginStore {
-  constructor(private db: Db) {}
+  constructor(
+    private db: Db,
+    private notify: NotifyDeps = { store: new SupabaseNotifyStore(db), now: () => new Date() },
+  ) {}
 
   async getGuard(email: string): Promise<Guard> {
     const row = check(await this.db.from("auth_code_guard").select("sent_at, attempts, locked_until").eq("email", email).maybeSingle());
@@ -87,25 +93,10 @@ export class SupabaseLoginStore implements LoginStore {
   }
 
   async notifyNewDevice(personId: string, accountIds: string[], userAgent: string | null): Promise<void> {
-    // Outbox rows for every Dono of these accounts; the notifier (04 §9) delivers them. Always by e-mail (locked).
+    // 04 §9, E05: planned per Dono through the notifier, so preferences apply; e-mail always goes (locked).
     if (accountIds.length === 0) return;
-    const donos = must(
-      await this.db.from("membership").select("account_id, person_id").in("account_id", accountIds).eq("role", "dono"),
-    );
     const who = must(await this.db.from("person").select("name").eq("id", personId).single());
-    if (donos.length === 0) return;
-    check(
-      await this.db.from("notification").insert(
-        donos.map((d) => ({
-          account_id: d.account_id,
-          person_id: d.person_id,
-          notice_code: "security_event",
-          channel: "email" as const,
-          subject: "Login em aparelho novo",
-          body: `${who.name} entrou na MargoAI por um aparelho novo${userAgent ? ` (${userAgent})` : ""}.`,
-        })),
-      ),
-    );
+    await notifyNewDevice(this.notify, { personName: who.name, accountIds, userAgent });
   }
 
   async audit(rows: AuditRow[]): Promise<void> {

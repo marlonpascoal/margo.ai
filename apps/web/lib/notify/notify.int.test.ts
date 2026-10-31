@@ -114,7 +114,7 @@ describe("notifier against the local stack", () => {
   });
 
   it("E05_int_security_event_row_from_login_is_delivered_by_email", async () => {
-    // Same shape as SupabaseLoginStore.notifyNewDevice inserts: no recipient, read from person.
+    // A row queued without recipient (written outside the planner): the address is read from person.
     await db.from("notification").insert({
       account_id: accountId, person_id: ids.dono, notice_code: "security_event", channel: "email",
       subject: `Login em aparelho novo ${tag}`, body: "Dono notificações entrou na MargoAI por um aparelho novo.",

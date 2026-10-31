@@ -106,6 +106,31 @@ describe("login against the local stack", () => {
     expect(new Date(guard.data!.locked_until!).getTime()).toBeGreaterThan(Date.now() + 14 * 60_000);
   });
 
+  it("P15_E05_int_new_device_security_event_is_planned_by_dono_prefs", async () => {
+    // The store call verifyCode makes on a new device (P15), against the real notice_type and notice_pref.
+    const people = await db.from("person").select("id, email").in("id", personIds);
+    const id = (e: string) => people.data!.find((p) => p.email === e)!.id;
+    const store = new SupabaseLoginStore(db);
+
+    await store.notifyNewDevice(id(emails.fin), [accountId], "vitest");
+    const first = await db.from("notification").select("person_id, channel, recipient, notice_code, status, body").eq("account_id", accountId);
+    expect(first.data).toHaveLength(1);
+    expect(first.data![0]).toMatchObject({ person_id: id(emails.dono), channel: "email", recipient: emails.dono, notice_code: "security_event", status: "queued" });
+    expect(first.data![0].body).toContain("Financeiro integração entrou na MargoAI por um aparelho novo (vitest).");
+
+    // A Dono who turned WhatsApp on gets it too; e-mail stays (locked).
+    await db.from("person").update({ whatsapp_e164: "+5543911112222" }).eq("id", id(emails.dono));
+    expect((await db.from("notice_pref").insert({ person_id: id(emails.dono), account_id: accountId, notice_code: "security_event", email: true, whatsapp: true })).error).toBeNull();
+    await db.from("notification").delete().eq("account_id", accountId);
+    await store.notifyNewDevice(id(emails.fin), [accountId], null);
+    const second = await db.from("notification").select("channel, recipient").eq("account_id", accountId).order("channel");
+    expect(second.data).toEqual([
+      { channel: "email", recipient: emails.dono },
+      { channel: "whatsapp_manual", recipient: "+5543911112222" },
+    ]);
+    await db.from("notification").delete().eq("account_id", accountId);
+  });
+
   it("E03_int_console_login_for_staff", async () => {
     await sendCode(deps(), { email: emails.staff, surface: "console" });
     const r = await verifyCode(deps(), { email: emails.staff, code: codeIn((await mailTo(emails.staff))!), surface: "console", ctx });

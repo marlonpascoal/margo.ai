@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(56);
+select plan(58);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated;
@@ -72,8 +72,8 @@ begin
   insert into public.import_run (id, account_id, trigger, channel) values (tests.id(a || ':run'), acc, 'upload', 'ifood');
   insert into public.contract_terms (account_id, channel_store_id, plan_name, commission_pct, payment_fee_pct, delivery_model, valid_from)
     values (acc, tests.id(a || ':s1'), 'Plano', 0.12, 0.035, 'canal', '2026-01-01');
-  insert into public.campaign (account_id, channel_store_id, name, discount_pct, channel_share_pct, starts_on, ends_on)
-    values (acc, tests.id(a || ':s1'), 'Cupom', 0.2, 0.5, '2026-09-01', '2026-09-30');
+  insert into public.campaign (id, account_id, channel_store_id, name, discount_pct, channel_share_pct, starts_on, ends_on)
+    values (tests.id(a || ':camp'), acc, tests.id(a || ':s1'), 'Cupom', 0.2, 0.5, '2026-09-01', '2026-09-30');
   insert into public.order_fact (id, account_id, channel_store_id, external_order_id, ordered_at, gross_cents, items_cents, status) values
     (tests.id(a || ':o1'), acc, tests.id(a || ':s1'), 'o1', '2026-09-10 12:00-03', 5000, 5000, 'concluido'),
     (tests.id(a || ':o2'), acc, tests.id(a || ':s2'), 'o2', '2026-09-10 12:00-03', 5000, 5000, 'concluido');
@@ -117,6 +117,11 @@ begin
   insert into public.contribution (account_id, close_period_id, menu_item_id, channel, price_cents, channel_take_cents,
       ingredient_cents, ingredient_error_pct, packaging_cents, left_cents, left_pct)
     values (acc, tests.id(a || ':cp'), tests.id(a || ':dish'), 'ifood', 3000, 900, 938, 0.05, 150, 1012, 0.3373);
+  insert into public.campaign_item (account_id, campaign_id, menu_item_id) values (acc, tests.id(a || ':camp'), tests.id(a || ':dish'));
+  insert into public.close_cost_line (account_id, close_period_id, channel_store_id, units, ingredient_cents) values
+    (acc, tests.id(a || ':cp'), tests.id(a || ':s1'), 1, 938), (acc, tests.id(a || ':cp'), tests.id(a || ':s2'), 1, 938);
+  insert into public.close_decision (close_period_id, account_id, kind, menu_item_id, channel, left_cents)
+    values (tests.id(a || ':cp'), acc, 'lowest', tests.id(a || ':dish'), 'ifood', 1012);
 end $$;
 
 -- Tables with an account_id column where account `acc` has no row (fixture guard).
@@ -210,6 +215,8 @@ select is(tests.n($$ select 1 from public.close_period $$), 0, 'A03: the whole-a
 select is(tests.n($$ select 1 from public.import_run $$), 0, 'import history is console only');
 select is(tests.n($$ select 1 from public.invoice $$), 1, 'A03: Gerente sees invoices of the company of own kitchen');
 select is(tests.n($$ select 1 from public.contribution $$), 0, 'A03: contribution of the whole-account close needs all kitchens');
+select is(tests.n($$ select 1 from public.close_cost_line $$), 1, 'A03: W01 insumos of own kitchen stores only');
+select is(tests.n($$ select 1 from public.close_decision $$), 0, 'A03: the month''s decision of the whole-account close needs all kitchens');
 reset role;
 
 -- Dono of Y, the other direction.

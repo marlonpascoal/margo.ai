@@ -1,7 +1,9 @@
-"""P06: monthly closing PDF (A4) and xlsx, from close_period, close_line and contestation (05 §C).
+"""P06: monthly closing PDF (A4) and xlsx from close_period, close_line, contribution, contestation (05 §C).
 
-Without module 3 the cost section says "falta custo" (08 Wave 1). Synthetic accounts carry SINTÉTICO and
-"dados fictícios" (D46, 05). Copy lives in templates/P06-fechamento.json, as drawn in
+With module 3 (contribution of the close, worker-cost) the cost box counts the top insumos priced from notes
+(CST-01) and by regional estimate (CST-02), the items section lists what is left per order (CTB-01) and
+the month's decision (DLV-01); without it both say "falta custo" (08 Wave 1). Synthetic accounts carry
+SINTÉTICO and "dados fictícios" (D46, 05). Copy lives in templates/P06-fechamento.json, as drawn in
 design/P06-FechamentoPDF.dc.html; colors come from tokens.py.
 
 PDF library: fpdf2 (pure Python, installs with uv), core fonts Helvetica and Courier (Latin-1 covers
@@ -66,6 +68,31 @@ class Brand:
 
 
 @dataclass(frozen=True)
+class CostItem:
+    """One row of "O que sobra por pedido": label ("X-Bacon artesanal, 99Food"), price and left (CTB-01)."""
+
+    label: str
+    price_cents: int
+    left_cents: int
+    #: The decision row or the lowest one: drawn in the danger color.
+    attention: bool = False
+
+
+@dataclass(frozen=True)
+class CostSection:
+    """Module 3 part of P06, from the close's contribution (CST-01 to CST-04, CTB-01, DLV-01)."""
+
+    invoice_count: int
+    top_count: int
+    prior_count: int
+    items: list[CostItem]
+    decision_title: str | None
+    decision_text: str | None
+    #: CST-04: the widest error bar of the rows ("Custo ± 9%").
+    error_pct: Decimal
+
+
+@dataclass(frozen=True)
 class P06Data:
     account: str
     month: date
@@ -80,6 +107,8 @@ class P06Data:
     differences: list[tuple[str, str, str, int, int, str, str]] = field(default_factory=list)
     #: None: MargoAI's own P06. Set: the BPO variant, with only the partner's logo and color.
     brand: Brand | None = None
+    #: None: no contribution yet, the cost parts say "falta custo".
+    cost: CostSection | None = None
 
     @property
     def gross_cents(self) -> int:
@@ -88,6 +117,12 @@ class P06Data:
     @property
     def payout_cents(self) -> int:
         return sum(c.payout_cents for c in self.channels)
+
+
+def money2(cents: int) -> str:
+    """36,90: reais with centavos, as the items table is drawn (Latin-1 hyphen for a negative)."""
+    r = abs(cents)
+    return f"{'-' if cents < 0 else ''}{f'{r // 100:,}'.replace(',', '.')},{r % 100:02d}"
 
 
 def reais(cents: int) -> str:
@@ -222,10 +257,15 @@ def render_pdf(d: P06Data) -> bytes:
     )
     if d.wrong_cents and not d.open_deadline:
         wrong_text = wrong_text.split(". ")[0] + "."
-    boxes = [
-        (str(COPY["wrong_title"]), brl(d.wrong_cents), wrong_text),
-        (str(COPY["cost_title"]), str(COPY["cost_missing"]), str(COPY["cost_missing_text"])),
-    ]
+    if d.cost is None:
+        cost_box = (str(COPY["cost_title"]), str(COPY["cost_missing"]), str(COPY["cost_missing_text"]))
+    else:
+        c = d.cost
+        cost_text = str(COPY["cost_text"])
+        if c.prior_count:
+            cost_text += " " + str(COPY["cost_text_prior"]).format(n=c.prior_count)
+        cost_box = (str(COPY["cost_title"]), f"{c.invoice_count} de {c.top_count}", cost_text)
+    boxes = [(str(COPY["wrong_title"]), brl(d.wrong_cents), wrong_text), cost_box]
     for i, (title, big, text) in enumerate(boxes):
         x = left + i * (box_w + 12 * PX)
         pdf.set_draw_color(*border)
@@ -242,25 +282,83 @@ def render_pdf(d: P06Data) -> bytes:
         pdf.set_font("Helvetica", "", 14 * 0.75)
         pdf.multi_cell(box_w - 8, 4.6, _t(text), align="L")
 
-    # Items section: needs cost (module 3).
+    # Items section: what is left per order (module 3), or "falta custo".
     pdf.set_xy(left, y + box_h + 8)
     pdf.set_font("Helvetica", "B", 22 * 0.75)
     pdf.set_text_color(*ink)
     pdf.multi_cell(width, 8, _t(str(COPY["items_title"])))
-    pdf.set_x(left)
-    pdf.set_font("Courier", "", 15 * 0.75)
-    pdf.set_text_color(*muted)
-    pdf.cell(width, 8, _t(str(COPY["cost_missing"])), border="TB")
+    if d.cost is None:
+        pdf.set_x(left)
+        pdf.set_font("Courier", "", 15 * 0.75)
+        pdf.set_text_color(*muted)
+        pdf.cell(width, 8, _t(str(COPY["cost_missing"])), border="TB")
+    else:
+        _items_table(pdf, d.cost, left, width, ink, muted, border, danger)
+        if d.cost.decision_title and d.cost.decision_text:
+            _decision_box(pdf, d.cost, left, width, ink)
 
     # Footer: sources.
     pdf.set_xy(left, 297 - 48 * PX - 6)
     pdf.set_font("Courier", "", 11 * 0.75)
     pdf.set_text_color(*muted)
-    pdf.cell(width, 5, _t(str(COPY["sources"]).format(fontes=", ".join(d.sources) or "-")))
+    sources = list(d.sources) + ([str(COPY["sources_invoices"])] if d.cost else [])
+    footer = str(COPY["sources"]).format(fontes=", ".join(sources) or "-")
+    if d.cost:
+        err = int((d.cost.error_pct * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+        footer += " " + str(COPY["cost_error"]).format(pct=err)
+    pdf.cell(width, 5, _t(footer))
     if d.brand and d.brand.show_powered_by:
         pdf.set_xy(left, 297 - 48 * PX - 6)
         pdf.cell(width, 5, _t(str(COPY["powered_by"])), align="R")
     return bytes(pdf.output())
+
+
+RGB = tuple[int, int, int]
+
+
+def _items_table(
+    pdf: FPDF, c: CostSection, left: float, width: float, ink: RGB, muted: RGB, border: RGB, danger: RGB
+) -> None:
+    """CTB-01 per order for the items that sell most (rows from margo_cost.compute.p06_rows)."""
+    widths = [width * 0.64, width * 0.18, width * 0.18]
+    pdf.set_x(left)
+    pdf.set_font("Helvetica", "", 12 * 0.75)
+    pdf.set_text_color(*muted)
+    pdf.set_draw_color(*ink)
+    pdf.set_line_width(0.2)
+    heads = [str(x) for x in COPY["items_columns"]]  # type: ignore[union-attr]
+    for i, (h, w) in enumerate(zip(heads, widths, strict=True)):
+        pdf.cell(w, 7, _t(h.upper()), border="B", align="L" if i == 0 else "R")
+    pdf.ln()
+    pdf.set_draw_color(*border)
+    ok = _rgb("color-ok")
+    for it in c.items:
+        pdf.set_x(left)
+        pdf.set_font("Helvetica", "", 15 * 0.75)
+        pdf.set_text_color(*ink)
+        pdf.cell(widths[0], 7.5, _t(it.label), border="B")
+        pdf.set_font("Courier", "", 15 * 0.75)
+        pdf.cell(widths[1], 7.5, _t(money2(it.price_cents)), border="B", align="R")
+        pdf.set_text_color(*(danger if it.attention else ok))
+        pdf.cell(widths[2], 7.5, _t(money2(it.left_cents)), border="B", align="R")
+        pdf.ln()
+
+
+def _decision_box(pdf: FPDF, c: CostSection, left: float, width: float, ink: tuple[int, int, int]) -> None:
+    """DLV-01: "Uma decisão para <mês>" on the danger background, as drawn."""
+    y = pdf.get_y() + 5
+    pdf.set_font("Helvetica", "", 15 * 0.75)
+    lines = pdf.multi_cell(width - 10, 5, _t(c.decision_text or ""), dry_run=True, output="LINES")
+    h = 6 + 6 + 5 * len(lines) + 4
+    pdf.set_fill_color(*_rgb("color-danger-bg"))
+    pdf.rect(left, y, width, h, style="F")
+    pdf.set_xy(left + 5, y + 4)
+    pdf.set_text_color(*ink)
+    pdf.set_font("Helvetica", "B", 17 * 0.75)
+    pdf.cell(width - 10, 6, _t(c.decision_title or ""))
+    pdf.set_xy(left + 5, y + 11)
+    pdf.set_font("Helvetica", "", 15 * 0.75)
+    pdf.multi_cell(width - 10, 5, _t(c.decision_text or ""))
 
 
 def render_xlsx(d: P06Data) -> bytes:
@@ -303,6 +401,11 @@ def render_xlsx(d: P06Data) -> bytes:
                 ),
             ]
         )
+    if d.cost is not None:
+        ws3 = wb.create_sheet("Sobra por pedido")
+        ws3.append([str(c) for c in COPY["items_columns"]])  # type: ignore[union-attr]
+        for it in d.cost.items:
+            ws3.append([it.label, it.price_cents / 100, it.left_cents / 100])
     ws2 = wb.create_sheet("Diferenças")
     ws2.append(["Regra", "O que aconteceu", "Canal", "Loja", "Pedidos", "Valor", "Confiança"])
     for rule, text, channel, store, n, cents, conf in d.differences:

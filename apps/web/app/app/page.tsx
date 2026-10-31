@@ -1,13 +1,16 @@
 // P08 Minha conta (phone) and W01 Início (computer), one route (D32). Every number is filtered by the
 // person's kitchens (04 §5, A03) and traces to a rule: REP-05 (vendido, recebido), REP-01 to REP-04
-// (o app levou), DIF-01 to DIF-05 (cobrado errado), CTB-01 (sobrou: "falta custo" until module 3).
-// DLV-01 ("Uma decisão para ...") also needs contribution, so it stays hidden until module 3 lands.
+// (o app levou), DIF-01 to DIF-05 (cobrado errado), CTB-01 (sobrou: received minus the insumos of the
+// dishes sold, "falta custo" while unknown). DLV-01 ("Uma decisão para ...") is the whole-account close's
+// decision, shown only to people who see every kitchen (A03), like the closing PDF.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import NavSelect from "@/components/NavSelect";
 import { FictitiousLabel } from "@/components/console";
 import { isEnabled } from "@/lib/flags";
 import { brl, monthLong, reais } from "@/lib/m2/format";
+import { loadDecision } from "@/lib/m3/data";
+import { decisionW01 } from "@/lib/m3/format";
 import { canPortal } from "@/lib/permissions";
 import { dayMon, kitchenShort, trialDaysLeft, trialUsedPct } from "@/lib/portal/format";
 import { homeNumbers, homePeriods, loadHomeDiffs, loadHomeLines, loadReports, scopeKitchens } from "@/lib/portal/home";
@@ -86,6 +89,8 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
   const kitchen = shown.find((k) => k.id === sp.cozinha) ?? null;
   const [lines, diffs] = period ? await Promise.all([loadHomeLines(db, period.id, m), loadHomeDiffs(db, period.id, m)]) : [[], []];
   const n = homeNumbers(lines, diffs, kitchen?.id ?? null);
+  const decision = period && m.allKitchens ? await loadDecision(db, period.id, period.month) : null;
+  const dlv = decision ? decisionW01(decision) : null;
   const href = (mes: string | null, coz: string | null) => {
     const q = new URLSearchParams();
     if (mes) q.set("mes", mes);
@@ -224,7 +229,11 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
             <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
               <Kpi value={brl(n.soldCents)} label="vendido no delivery" />
               <Kpi value={brl(n.receivedCents)} label={`recebido dos apps (${n.receivedPct}%)`} />
-              <Kpi value="falta custo" label="sobrou depois dos insumos" tone="muted" />
+              {n.leftCents === null ? (
+                <Kpi value="falta custo" label="sobrou depois dos insumos" tone="muted" />
+              ) : (
+                <Kpi value={brl(n.leftCents)} label={`sobrou depois dos insumos (${n.leftPct}%)`} tone="ok" />
+              )}
               {contest && (
                 <Link href="/app/contestacoes" className="rounded-xl border border-danger-border bg-danger-bg p-4 no-underline">
                   <div className="font-mono text-3xl">{brl(n.wrongCents)}</div>
@@ -249,14 +258,19 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
                         <td className="px-3.5 py-2.75 text-left font-sans">{r.label}</td>
                         <td className="pr-3.5">{reais(r.soldCents)}</td>
                         <td className="pr-3.5 text-danger">{reais(r.appTookCents)}</td>
-                        <td className="pr-3.5 font-sans text-sm text-ink-muted">falta custo</td>
+                        {r.leftCents === null ? (
+                          <td className="pr-3.5 font-sans text-sm text-ink-muted">falta custo</td>
+                        ) : (
+                          <td className="pr-3.5 text-ok">{reais(r.leftCents)}</td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              {reports.length > 0 && (
+              {(reports.length > 0 || dlv) && (
                 <div className="flex min-w-0 flex-[2_1_320px] flex-col gap-3">
+                  {reports.length > 0 && (
                   <div className="flex flex-col rounded-xl border border-border bg-surface [&>*+*]:border-t [&>*+*]:border-border-subtle">
                     <b className="border-b border-border px-3.5 py-3">Relatórios</b>
                     {closeReport && (
@@ -272,6 +286,12 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
                       </a>
                     )}
                   </div>
+                  )}
+                  {dlv && (
+                    <div className="rounded-xl border border-danger-border bg-danger-bg p-3.5 text-md leading-normal" data-decision>
+                      <b>{dlv[0]}</b> {dlv[1]}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -282,10 +302,10 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
   );
 }
 
-function Kpi({ value, label, tone }: { value: string; label: string; tone?: "muted" }) {
+function Kpi({ value, label, tone }: { value: string; label: string; tone?: "muted" | "ok" }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
-      <div className={tone === "muted" ? "flex min-h-[42px] items-center text-xl text-ink-muted" : "font-mono text-3xl"}>{value}</div>
+      <div className={tone === "muted" ? "flex min-h-[42px] items-center text-xl text-ink-muted" : `font-mono text-3xl${tone === "ok" ? " text-ok" : ""}`}>{value}</div>
       <div className="text-sm text-ink-muted">{label}</div>
     </div>
   );

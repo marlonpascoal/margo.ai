@@ -8,8 +8,6 @@
 # Wave 3 (M3)
 C10
 C11
-C12
-C13
 P05
 
 # After 15/fev: reserved routes (05 §D)

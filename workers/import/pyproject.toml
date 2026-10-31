@@ -1,9 +1,9 @@
 [project]
 name = "margo-import"
 version = "0.0.0"
-description = "worker-import: iFood export file and 99Food statement parsers, column mapping, close and differences (M2)"
+description = "worker-import: iFood export file and 99Food statement parsers, column mapping, close and differences (M2); purchase invoices (M3)"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common", "margo-contracts", "openpyxl>=3.1"]
+dependencies = ["margo-common", "margo-contracts", "margo-match", "openpyxl>=3.1"]
 
 [project.optional-dependencies]
 local = ["psycopg[binary]>=3.2"]
@@ -11,6 +11,7 @@ local = ["psycopg[binary]>=3.2"]
 [project.entry-points."margo.jobs"]
 import_ifood_file = "margo_import.jobs:import_ifood_file"
 import_99food_file = "margo_import.jobs:import_99food_file"
+import_invoice_zip = "margo_import.jobs:import_invoice_zip"
 
 [build-system]
 requires = ["hatchling"]
@@ -22,3 +23,4 @@ packages = ["src/margo_import"]
 [tool.uv.sources]
 margo-common = { workspace = true }
 margo-contracts = { workspace = true }
+margo-match = { workspace = true }

@@ -630,6 +630,7 @@ class Ingredient(Row):
     gtin: list[str]
     id: UUID
     name: str
+    short_name: str | None
     updated_at: datetime
 
 
@@ -643,6 +644,7 @@ class IngredientMatch(Row):
     ingredient_id: UUID
     invoice_line_id: UUID
     method: MatchMethod
+    rule_id: UUID | None
     status: MatchStatus
     updated_at: datetime
 
@@ -656,6 +658,18 @@ class IngredientPrice(Row):
     observed_on: date
     price_per_base_unit_cents: Decimal
     source: PriceSource
+    updated_at: datetime
+
+
+class IngredientRule(Row):
+    created_at: datetime
+    created_by: UUID | None
+    id: UUID
+    ingredient_id: UUID
+    keywords: list[str]
+    ncm_prefix: str | None
+    source: str
+    unit: str | None
     updated_at: datetime
 
 
@@ -681,6 +695,7 @@ class Invoice(Row):
     company_id: UUID
     created_at: datetime
     id: UUID
+    invoice_import_id: UUID | None
     issued_at: datetime
     issuer_cnpj: str
     issuer_name: str | None
@@ -691,8 +706,33 @@ class Invoice(Row):
     xml_path: str | None
 
 
+class InvoiceImport(Row):
+    account_id: UUID
+    created_at: datetime
+    created_by: UUID | None
+    duplicates: int | None
+    duration_ms: int | None
+    file_name: str | None
+    file_path: str
+    files_total: int | None
+    id: UUID
+    invoices_new: int | None
+    invoices_total: int | None
+    job_id: UUID | None
+    log: JsonValue
+    months_count: int | None
+    nfce_count: int | None
+    nfe_count: int | None
+    rejected: int | None
+    status: ImportStatus
+    suppliers_count: int | None
+    trigger: ImportTrigger
+    updated_at: datetime
+
+
 class InvoiceLine(Row):
     account_id: UUID
+    ai_asked_at: datetime | None
     created_at: datetime
     description: str
     gtin: str | None

@@ -13,3 +13,11 @@ export const publicEnv = () => ({
 
 /** Server only. */
 export const serviceRoleKey = () => required("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+/** Server only. Signs job wake-ups (02 §4.2). */
+export const maritimeSigningKey = () =>
+  required("MARITIME_WEBHOOK_SIGNING_KEY", process.env.MARITIME_WEBHOOK_SIGNING_KEY);
+
+/** Maritime agent serving a job type, from MARITIME_AGENT_<TYPE> (e.g. MARITIME_AGENT_IMPORT). Null if unset. */
+export const maritimeAgentId = (jobType: string): string | null =>
+  process.env[`MARITIME_AGENT_${jobType.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`] || null;

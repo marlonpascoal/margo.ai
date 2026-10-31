@@ -2,13 +2,8 @@
 # Remove a code when its route or template lands; check_screens fails if a built screen stays here.
 
 # Wave 0
-C00
-C01
-C14
 C20
 C21
-Menu
-MenuDono
 
 # Wave 1, lane A (M1)
 C02

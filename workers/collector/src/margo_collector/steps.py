@@ -64,6 +64,10 @@ class XrayRepo(Protocol):
 
     def save_calc(self, xray_id: str, result: CalcResult) -> None: ...
 
+    def snapshot(self, xray_id: str) -> None:
+        """M1 history: keep this run's stores, items and prices as a dated snapshot; never rewrites one."""
+        ...
+
 
 def neighborhood_step(
     repo: XrayRepo, xray_id: str, delivers_to_target: dict[str, bool | None] | None = None
@@ -116,6 +120,7 @@ def collect_step(
             delivers[repo.save_public_store(parsed)] = parsed.delivers_to_target
         repo.mark_collected(xray_id, now)
         result = neighborhood_step(repo, xray_id, delivers)
+        repo.snapshot(xray_id)
     return {**result, "requests": fetcher.requests}
 
 
@@ -134,4 +139,5 @@ def calc_step(repo: XrayRepo, xray_id: str) -> dict[str, int]:
     x = repo.load_xray(xray_id)
     result = calculate(repo.calc_inputs(xray_id), x.settings.reading_band)
     repo.save_calc(xray_id, result)
+    repo.snapshot(xray_id)
     return {"items": result.items_analyzed, "items_for_80": result.items_for_80}

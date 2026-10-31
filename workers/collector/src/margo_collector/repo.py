@@ -31,6 +31,8 @@ class MemoryXrayRepo:
     item_extra: dict[tuple[str, str], dict[str, Any]] = field(default_factory=dict)
     calc: dict[str, CalcResult] = field(default_factory=dict)
     status: dict[str, str] = field(default_factory=dict)
+    price_snapshots: dict[str, dict[str, int]] = field(default_factory=dict)
+    """M1 history: xray id -> item id -> price in that run. Only added to, never rewritten."""
 
     def load_xray(self, xray_id: str) -> XrayRun:
         return self.xrays[xray_id]
@@ -101,6 +103,14 @@ class MemoryXrayRepo:
     def save_calc(self, xray_id: str, result: CalcResult) -> None:
         self.calc[xray_id] = result
         self.status[xray_id] = "ready"
+
+    def snapshot(self, xray_id: str) -> None:
+        x = self.xrays[xray_id]
+        ids = {x.target_store_id, *self.included_store_ids(xray_id)}
+        run = self.price_snapshots.setdefault(xray_id, {})
+        for i in self.items.values():
+            if i.store_id in ids:
+                run.setdefault(i.id, i.price_cents)
 
 
 # Postgres -----------------------------------------------------------------------------------------
@@ -206,6 +216,10 @@ class PostgresXrayRepo:
                     (sid, it.external_item_id, it.name, it.description, it.price_cents, it.unit, it.unit_qty),
                 )
         return str(sid)
+
+    def snapshot(self, xray_id: str) -> None:
+        """M1 history: dated snapshots of the run and its M1-10 ranking (adds only)."""
+        self._conn.execute("select app.snapshot_xray(%s)", (xray_id,))
 
     def mark_collected(self, xray_id: str, at: datetime) -> None:
         self._conn.execute("update public.xray set collected_at = %s where id = %s", (at, xray_id))

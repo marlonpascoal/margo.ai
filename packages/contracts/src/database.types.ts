@@ -1333,6 +1333,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"public_menu_item_snapshot": {
+                  Row: {
+                    "collected_at": string,"created_at": string,"id": string,"name": string,"price_cents": number,"public_menu_item_id": string,"public_store_id": string,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty": number | null,"updated_at": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "collected_at": string,"created_at"?: string,"id"?: string,"name": string,"price_cents": number,"public_menu_item_id": string,"public_store_id": string,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string,"xray_id": string
+                  }
+                  Update: {
+                    "collected_at"?: string,"created_at"?: string,"id"?: string,"name"?: string,"price_cents"?: number,"public_menu_item_id"?: string,"public_store_id"?: string,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "public_menu_item_snapshot_public_menu_item_id_fkey"
+      columns: ["public_menu_item_id"]
+isOneToOne: false
+      referencedRelation: "public_menu_item"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "public_menu_item_snapshot_public_store_id_fkey"
+      columns: ["public_store_id"]
+isOneToOne: false
+      referencedRelation: "public_store"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "public_menu_item_snapshot_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"public_store": {
                   Row: {
                     "area": string | null,"category": string | null,"channel": Database["public"]['Enums']["channel"],"created_at": string,"external_id": string,"id": string,"is_national_chain": boolean,"last_seen_open_at": string | null,"lat": number | null,"lng": number | null,"name": string | null,"updated_at": string,"url": string | null
@@ -1346,6 +1378,32 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"public_store_snapshot": {
+                  Row: {
+                    "area": string | null,"category": string | null,"collected_at": string,"created_at": string,"id": string,"is_national_chain": boolean,"last_seen_open_at": string | null,"name": string | null,"public_store_id": string,"updated_at": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "area"?: string | null,"category"?: string | null,"collected_at": string,"created_at"?: string,"id"?: string,"is_national_chain": boolean,"last_seen_open_at"?: string | null,"name"?: string | null,"public_store_id": string,"updated_at"?: string,"xray_id": string
+                  }
+                  Update: {
+                    "area"?: string | null,"category"?: string | null,"collected_at"?: string,"created_at"?: string,"id"?: string,"is_national_chain"?: boolean,"last_seen_open_at"?: string | null,"name"?: string | null,"public_store_id"?: string,"updated_at"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "public_store_snapshot_public_store_id_fkey"
+      columns: ["public_store_id"]
+isOneToOne: false
+      referencedRelation: "public_store"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "public_store_snapshot_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"recipe": {
                   Row: {
@@ -1551,14 +1609,14 @@ isOneToOne: false
                   ]
                 },"xray": {
                   Row: {
-                    "account_id": string | null,"categories": (string)[],"collected_at": string | null,"created_at": string,"created_by": string | null,"delivered_at": string | null,"id": string,"pdf_path": string | null,"radius_km": number,"rules": NonNullable<Json>,"status": Database["public"]['Enums']["xray_status"],"target_store_id": string,"updated_at": string
+                    "account_id": string | null,"categories": (string)[],"collected_at": string | null,"created_at": string,"created_by": string | null,"delivered_at": string | null,"id": string,"pdf_path": string | null,"radius_km": number,"rules": NonNullable<Json>,"status": Database["public"]['Enums']["xray_status"],"target_kind": string,"target_store_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id"?: string | null,"categories"?: (string)[],"collected_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"delivered_at"?: string | null,"id"?: string,"pdf_path"?: string | null,"radius_km"?: number,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["xray_status"],"target_store_id": string,"updated_at"?: string
+                    "account_id"?: string | null,"categories"?: (string)[],"collected_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"delivered_at"?: string | null,"id"?: string,"pdf_path"?: string | null,"radius_km"?: number,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["xray_status"],"target_kind"?: string,"target_store_id": string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string | null,"categories"?: (string)[],"collected_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"delivered_at"?: string | null,"id"?: string,"pdf_path"?: string | null,"radius_km"?: number,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["xray_status"],"target_store_id"?: string,"updated_at"?: string
+                    "account_id"?: string | null,"categories"?: (string)[],"collected_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"delivered_at"?: string | null,"id"?: string,"pdf_path"?: string | null,"radius_km"?: number,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["xray_status"],"target_kind"?: string,"target_store_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1677,6 +1735,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "xray_store_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"xray_store_rank": {
+                  Row: {
+                    "created_at": string,"id": string,"is_target": boolean,"items_compared": number,"price_index": number,"public_store_id": string,"rank": number,"stores_ranked": number,"updated_at": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"is_target": boolean,"items_compared": number,"price_index": number,"public_store_id": string,"rank": number,"stores_ranked": number,"updated_at"?: string,"xray_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"is_target"?: boolean,"items_compared"?: number,"price_index"?: number,"public_store_id"?: string,"rank"?: number,"stores_ranked"?: number,"updated_at"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_store_rank_public_store_id_fkey"
+      columns: ["public_store_id"]
+isOneToOne: false
+      referencedRelation: "public_store"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_store_rank_xray_id_fkey"
       columns: ["xray_id"]
 isOneToOne: false
       referencedRelation: "xray"

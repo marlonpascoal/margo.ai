@@ -8,7 +8,7 @@ never invented). The collection itself is driven by a test double of the PublicP
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
@@ -347,3 +347,22 @@ def test_B02_record_refuses_non_public_urls_before_any_request(tmp_path):
 def test_scrub_keeps_prices_and_ids():
     clean, n = scrub(b'{"id": "1730000000", "price": 1490, "name": "Batata"}')
     assert n == 0 and b"1730000000" in clean
+
+
+def test_B01_history_a_second_run_keeps_the_first_runs_prices():
+    """M1 history: every collection is a dated snapshot; a later run with new prices never rewrites it."""
+    repo, pages, target = run_setup()
+    clock = FakeClock()
+    collect_step(repo, "x1", fetcher=fetcher(clock, FakeTransport(clock)), pages=pages, lock=MemoryLock(), clock=clock)
+    first = dict(repo.price_snapshots["x1"])
+    assert first and set(first.values()) == {1000}
+
+    dearer = {u: replace(s, items=(ParsedItem("1", "Sundae", 1200),)) for u, s in pages.stores.items()}
+    pages2 = ScriptedPages(dearer, pages.listing)
+    repo.xrays["x2"] = replace(repo.xrays["x1"], id="x2", collected_at=None)
+    clock2 = FakeClock()
+    collect_step(repo, "x2", fetcher=fetcher(clock2, FakeTransport(clock2)), pages=pages2, lock=MemoryLock(), clock=clock2)
+    assert repo.price_snapshots["x1"] == first
+    assert set(repo.price_snapshots["x2"].values()) == {1200}
+    repo.snapshot("x1")
+    assert repo.price_snapshots["x1"] == first

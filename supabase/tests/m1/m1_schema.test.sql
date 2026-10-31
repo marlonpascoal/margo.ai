@@ -36,7 +36,7 @@ update public.person set auth_user_id = '22222222-0000-0000-0000-000000000002' w
 create temp table ids as select
   (select id from public.person where email = 'marlon@margoai.com') as marlon,
   (select id from public.person where email = 'pantanos@exemplo.com.br') as dono,
-  (select id from public.xray where account_id = (select id from public.account where code = 'G-01')) as xray;
+  '9aae2f75-4168-fde3-4570-d7bd0f4669d0'::uuid as xray;
 grant select on ids to authenticated;
 
 select pg_temp.login((select marlon from ids));

@@ -48,6 +48,7 @@ JOB_FLAGS: dict[str, str] = {
     "import_99food_file": "m2.arquivo_99food",  # 06: 99Food statement file (worker-import)
     "import_invoice_zip": "m3.notas_xml",  # accountant's invoice XML zip (worker-import)
     "match_ai": "m3.depara_ia",  # AI ingredient matching (worker-match)
+    "render_close_bpo": "bpo.marca_propria",  # 05 C18: P06 with the BPO's brand (worker-render)
 }
 """Job type to feature flag key (04 §6, A05). A type not listed here has no flag and always runs."""
 

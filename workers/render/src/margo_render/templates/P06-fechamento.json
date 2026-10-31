@@ -13,5 +13,6 @@
   "cost_missing": "falta custo",
   "cost_missing_text": "Sem notas de compra ainda. O lucro por item entra quando o custo dos insumos chegar.",
   "items_title": "O que sobra por pedido, nos itens que mais vendem",
-  "sources": "Fontes: {fontes}."
+  "sources": "Fontes: {fontes}.",
+  "powered_by": "com tecnologia MargoAI"
 }

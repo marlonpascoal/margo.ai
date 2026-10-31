@@ -6,12 +6,12 @@ Payload: {"import_run_id": "<uuid>"}.
 
 from __future__ import annotations
 
+from margo_common.files import local_storage
 from margo_common.runner import JobRun, LogValue
 from pydantic import BaseModel
 
 from . import db, food99_file, ifood_file
 from .process import process_run
-from .storage import local_storage
 
 
 class ImportPayload(BaseModel):

@@ -14,9 +14,10 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
+from margo_common.files import FileStore
+
 from . import db
 from .layout import LayoutError, Mapping_, apply, examples, propose, read_table, signature
-from .storage import FileStore
 
 CHANNEL_LABEL = {"ifood": "iFood", "food99": "99Food"}
 

@@ -150,16 +150,25 @@ version = "0.0.0"
 source = { editable = "workers/render" }
 dependencies = [
     { name = "fpdf2" },
+    { name = "margo-common" },
     { name = "openpyxl" },
     { name = "pypdf" },
+]
+
+[package.optional-dependencies]
+local = [
+    { name = "psycopg", extra = ["binary"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "fpdf2", specifier = ">=2.8" },
+    { name = "margo-common", editable = "workers/common" },
     { name = "openpyxl", specifier = ">=3.1" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'local'", specifier = ">=3.2" },
     { name = "pypdf", specifier = ">=5" },
 ]
+provides-extras = ["local"]
 
 [[package]]
 name = "margoai"
@@ -169,7 +178,7 @@ dependencies = [
     { name = "margo-common", extra = ["local"] },
     { name = "margo-contracts", extra = ["gen"] },
     { name = "margo-import", extra = ["local"] },
-    { name = "margo-render" },
+    { name = "margo-render", extra = ["local"] },
 ]
 
 [package.dev-dependencies]
@@ -183,7 +192,7 @@ requires-dist = [
     { name = "margo-common", extras = ["local"], editable = "workers/common" },
     { name = "margo-contracts", extras = ["gen"], editable = "packages/contracts" },
     { name = "margo-import", extras = ["local"], editable = "workers/import" },
-    { name = "margo-render", editable = "workers/render" },
+    { name = "margo-render", extras = ["local"], editable = "workers/render" },
 ]
 
 [package.metadata.requires-dev]

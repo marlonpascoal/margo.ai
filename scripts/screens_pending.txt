@@ -17,7 +17,6 @@ C09
 C16
 C17
 C19
-P06
 
 # Wave 2 (owner portal, billing, extension, e-mails)
 P03

@@ -1,10 +1,16 @@
 [project]
 name = "margo-render"
 version = "0.0.0"
-description = "worker-render: PDFs (weasyprint) and xlsx (openpyxl). Wave 0 holds only the design tokens."
+description = "worker-render: PDFs and xlsx (P06 with fpdf2 and openpyxl), design tokens"
 requires-python = ">=3.12,<3.13"
 # fpdf2: pure-Python PDF for P06 (margo_render/p06.py); pypdf reads PDFs back in tests.
-dependencies = ["fpdf2>=2.8", "openpyxl>=3.1", "pypdf>=5"]
+dependencies = ["margo-common", "fpdf2>=2.8", "openpyxl>=3.1", "pypdf>=5"]
+
+[project.optional-dependencies]
+local = ["psycopg[binary]>=3.2"]
+
+[project.entry-points."margo.jobs"]
+render_close = "margo_render.close_job:render_close"
 
 [build-system]
 requires = ["hatchling"]
@@ -12,3 +18,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/margo_render"]
+
+[tool.uv.sources]
+margo-common = { workspace = true }

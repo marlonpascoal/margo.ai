@@ -250,8 +250,8 @@ def snapshot(conn: Any) -> tuple[list[Any], list[Any]]:
 
 @pytestmark_db
 def test_C01_reimport_of_the_seeded_statements_adds_zero_rows(conn: Any) -> None:
+    from margo_common.files import MemoryFileStore
     from margo_import.process import process_run
-    from margo_import.storage import MemoryFileStore
 
     files = MemoryFileStore({"imports/t/ifood.csv": data(IFOOD), "imports/t/99.xlsx": data(F99_V1)})
     before = snapshot(conn)
@@ -270,8 +270,8 @@ def test_C01_reimport_of_the_seeded_statements_adds_zero_rows(conn: Any) -> None
 
 @pytestmark_db
 def test_C01_C03_import_from_empty_rebuilds_the_seeded_close(conn: Any) -> None:
+    from margo_common.files import MemoryFileStore
     from margo_import.process import process_run
-    from margo_import.storage import MemoryFileStore
 
     before = snapshot(conn)
     conn.execute(
@@ -321,8 +321,8 @@ def test_C01_C03_import_from_empty_rebuilds_the_seeded_close(conn: Any) -> None:
 def test_C02_changed_layout_needs_mapping_then_imports_and_the_next_file_imports_alone(conn: Any) -> None:
     import json
 
+    from margo_common.files import MemoryFileStore
     from margo_import.process import process_run
-    from margo_import.storage import MemoryFileStore
 
     files = MemoryFileStore({"imports/t/set.xlsx": data(F99_V2), "imports/t/out.xlsx": data(F99_OCT)})
     run = new_run(conn, "food99", "imports/t/set.xlsx", F99_V2)
@@ -349,8 +349,8 @@ def test_C02_changed_layout_needs_mapping_then_imports_and_the_next_file_imports
 def test_C02_payout_total_mismatch_fails_the_run(conn: Any) -> None:
     import json
 
+    from margo_common.files import MemoryFileStore
     from margo_import.process import process_run
-    from margo_import.storage import MemoryFileStore
 
     files = MemoryFileStore({"imports/t/set.xlsx": data(F99_V2)})
     sig = signature(read_table(data(F99_V2), F99_V2).headers)
@@ -366,8 +366,8 @@ def test_C02_payout_total_mismatch_fails_the_run(conn: Any) -> None:
 
 @pytestmark_db
 def test_C06_real_file_refused_when_its_cnpj_has_no_authorization(conn: Any) -> None:
+    from margo_common.files import MemoryFileStore
     from margo_import.process import process_run
-    from margo_import.storage import MemoryFileStore
 
     conn.execute("update public.account set is_synthetic = false where code = 'G-02'")
     conn.execute(

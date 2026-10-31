@@ -747,7 +747,56 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "claim_job":
+{ Args: { "p_job_id": string }; Returns: {
+              "account_id": string | null,
+"attempts": number,
+"claimed_at": string | null,
+"created_at": string,
+"dedupe_key": string | null,
+"finished_at": string | null,
+"id": string,
+"log": NonNullable<Json>,
+"payload": NonNullable<Json>,
+"status": Database["public"]['Enums']["job_status"],
+"type": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "job"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"claim_next_job":
+{ Args: { "p_type": string }; Returns: {
+              "account_id": string | null,
+"attempts": number,
+"claimed_at": string | null,
+"created_at": string,
+"dedupe_key": string | null,
+"finished_at": string | null,
+"id": string,
+"log": NonNullable<Json>,
+"payload": NonNullable<Json>,
+"status": Database["public"]['Enums']["job_status"],
+"type": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "job"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"finish_job":
+{ Args: { "p_entry"?: Json,"p_job_id": string,"p_status": Database["public"]['Enums']["job_status"] }; Returns: boolean
+                           },
+"requeue_stuck_jobs":
+{ Args: { "p_now"?: string }; Returns: {
+              "alert_id": string,"job_id": string,"outcome": string
+            }[]
+                           }
           }
           Enums: {
             "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","channel": "ifood"|"food99"|"keeta"|"rappi","contact_channel": "email"|"whatsapp","flag_env": "sandbox"|"production","job_status": "queued"|"running"|"done"|"failed","member_role": "dono"|"financeiro"|"gerente","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free"

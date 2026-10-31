@@ -40,6 +40,23 @@ wheels = [
 name = "margo-common"
 version = "0.0.0"
 source = { editable = "workers/common" }
+dependencies = [
+    { name = "margo-contracts" },
+    { name = "pydantic" },
+]
+
+[package.optional-dependencies]
+local = [
+    { name = "psycopg", extra = ["binary"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "margo-contracts", editable = "packages/contracts" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'local'", specifier = ">=3.2" },
+    { name = "pydantic", specifier = ">=2.8" },
+]
+provides-extras = ["local"]
 
 [[package]]
 name = "margo-contracts"
@@ -66,7 +83,7 @@ name = "margoai"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "margo-common" },
+    { name = "margo-common", extra = ["local"] },
     { name = "margo-contracts", extra = ["gen"] },
 ]
 
@@ -78,7 +95,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "margo-common", editable = "workers/common" },
+    { name = "margo-common", extras = ["local"], editable = "workers/common" },
     { name = "margo-contracts", extras = ["gen"], editable = "packages/contracts" },
 ]
 

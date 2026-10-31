@@ -1,0 +1,30 @@
+[project]
+name = "margoai"
+version = "0.0.0"
+description = "MargoAI workspace root: workers and repo scripts"
+requires-python = ">=3.12,<3.13"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["workers/*"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+testpaths = ["scripts/tests", "workers"]
+addopts = "--import-mode=importlib"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["design", "node_modules", "apps", "extension"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Expected messages and sample values read better unwrapped.
+"**/tests/**" = ["E501"]

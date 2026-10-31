@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+artifacts/
+supabase/.branches/
+supabase/.temp/
+.env
+.env.*
+!.env.example
+.DS_Store

@@ -140,7 +140,7 @@ test("A03_gerente_do_centro_sees_only_cozinha_centro_numbers", async ({ page }) 
     await page.goto(`/app?cozinha=${sid("G-02:zonasul")}`);
     await expect(page.getByText("vendido no delivery").locator("..")).toContainText(reais(centro.gross));
     await expect(page.getByRole("cell", { name: /Zona Sul/ })).toHaveCount(0);
-    const pdf = await page.request.get(`/app/relatorios/fechamento/${sid("G-02:close:2026-09")}`);
+    const pdf = await page.request.get(`/app/relatorios/fechamento/${sid("G-02:close:2026-09")}/pdf`);
     expect(pdf.status()).toBe(404);
 
     // W09 without the Dono's access log.

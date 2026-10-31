@@ -157,7 +157,7 @@ export async function loadReports(db: Db, m: Pick<Member, "account" | "allKitche
     db.from("xray").select("id, delivered_at, created_at").eq("account_id", m.account.id).not("pdf_path", "is", null).order("created_at", { ascending: false }).limit(1),
   ]);
   const out: HomeReport[] = [];
-  for (const c of closes ?? []) out.push({ kind: "close", id: c.id, href: `/app/relatorios/fechamento/${c.id}`, at: c.computed_at, month: c.month });
+  for (const c of closes ?? []) out.push({ kind: "close", id: c.id, href: `/app/relatorios/fechamento/${c.id}/pdf`, at: c.computed_at, month: c.month });
   for (const x of xrays ?? []) out.push({ kind: "xray", id: x.id, href: `/app/relatorios/raio-x/${x.id}`, at: x.delivered_at ?? x.created_at });
   return out;
 }

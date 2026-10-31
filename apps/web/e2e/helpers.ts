@@ -1,4 +1,6 @@
 // Shared steps for the e2e tests. Local stack only: env comes from scripts/with-local-env.mjs.
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import { expect, type Page } from "@playwright/test";
 import path from "node:path";
@@ -84,4 +86,15 @@ export async function createStaff(email: string, name: string, role: "fundador" 
     await db.from("auth_code_guard").delete().eq("email", email);
     if (data?.auth_user_id) await db.auth.admin.deleteUser(data.auth_user_id);
   };
+}
+
+/** Same ids as the G-SYN seed (pg_temp.sid): md5('g-syn:' || tag)::uuid. */
+export function sid(tag: string): string {
+  const h = createHash("md5").update(`g-syn:${tag}`).digest("hex");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
+/** One queued job of this type through the local runner (`uv run worker <type> --local --once`). */
+export function runWorker(type: string) {
+  execFileSync("node", ["scripts/with-local-env.mjs", "uv", "run", "worker", type, "--local", "--once"], { cwd: ROOT, stdio: "pipe", timeout: 120_000 });
 }

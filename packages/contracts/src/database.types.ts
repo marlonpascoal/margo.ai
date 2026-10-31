@@ -953,6 +953,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "xray_item"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_pair_xray_item_id_fkey"
+      columns: ["xray_item_id"]
+isOneToOne: false
+      referencedRelation: "xray_item_view"
+      referencedColumns: ["id"]
     }
                   ]
                 },"xray_store": {
@@ -984,7 +990,27 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "xray_item_view": {
+                  Row: {
+                    "accepted_pairs": number | null,"comparables": number | null,"example_cents": number | null,"example_name": string | null,"gap_pct": number | null,"id": string,"loss_cents": number | null,"name": string,"norm_price_cents": number,"norm_unit": string,"own_cents": number,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"public_menu_item_id": string,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"skipped": boolean,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty": number | null,"weekly_units": number | null,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_item_public_menu_item_id_fkey"
+      columns: ["public_menu_item_id"]
+isOneToOne: false
+      referencedRelation: "public_menu_item"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_item_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
           }
           Functions: {
             "claim_job":

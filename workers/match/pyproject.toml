@@ -1,0 +1,26 @@
+[project]
+name = "margo-match"
+version = "0.0.0"
+description = "worker-match: invoice line to catalog ingredient by GTIN, rules and Claude API suggestions (M3, D14)"
+requires-python = ">=3.12,<3.13"
+dependencies = ["margo-common", "margo-contracts", "anthropic>=0.70"]
+
+[project.optional-dependencies]
+local = ["psycopg[binary]>=3.2"]
+
+[project.scripts]
+record-anthropic = "margo_match.record:main"
+
+[project.entry-points."margo.jobs"]
+match_ai = "margo_match.jobs:match_ai"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/margo_match"]
+
+[tool.uv.sources]
+margo-common = { workspace = true }
+margo-contracts = { workspace = true }

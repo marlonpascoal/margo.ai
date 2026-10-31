@@ -3,7 +3,7 @@ name = "margo-render"
 version = "0.0.0"
 description = "worker-render: PDFs (P01 with reportlab, P06 with fpdf2, both pure Python) and xlsx (openpyxl)"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common", "margo-contracts", "reportlab>=4.2", "fpdf2>=2.8", "openpyxl>=3.1", "pypdf>=5"]
+dependencies = ["margo-common", "margo-contracts", "margo-cost", "reportlab>=4.2", "fpdf2>=2.8", "openpyxl>=3.1", "pypdf>=5"]
 
 [project.optional-dependencies]
 local = ["psycopg[binary]>=3.2"]
@@ -23,3 +23,4 @@ packages = ["src/margo_render"]
 [tool.uv.sources]
 margo-common = { workspace = true }
 margo-contracts = { workspace = true }
+margo-cost = { workspace = true }

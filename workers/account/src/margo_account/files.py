@@ -11,7 +11,7 @@ from typing import Protocol
 
 from margo_common.files import MemoryFileStore, StorageFileStore, local_storage
 
-BUCKETS = ("imports", "closes", "pdf", "exports")
+BUCKETS = ("imports", "closes", "pdf", "exports", "invoices")
 """Private buckets that may hold an account's files, each under "<account code>/" when they do."""
 
 

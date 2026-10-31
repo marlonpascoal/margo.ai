@@ -11,6 +11,7 @@ import { enqueueDeps } from "@/lib/jobs/deps";
 import type { Db } from "@/lib/supabase/admin";
 import { audit, type M2Account } from "./account";
 import { brl, CHANNEL_LABEL, CHANNEL_ORDER, dayMon, deduction, monthShort, percent, plural, type Channel } from "./format";
+import { closeLeftCents } from "@/lib/m3/data";
 
 type Confidence = Database["public"]["Enums"]["difference_confidence"];
 type ContestationStatus = Database["public"]["Enums"]["contestation_status"];
@@ -197,12 +198,13 @@ export async function loadDifferences(db: Db, closeId: string): Promise<Differen
 /** Differences still to contest: no contestation yet, or waiting for the owner (04 §3). */
 const toContest = (d: DifferenceRecord) => !d.contestation || (!d.contestation.closed_at && ["a_contestar", "precisa_resposta"].includes(d.contestation.status));
 
-/** E01 for one close: C08 totals (REP), differences to contest (DIF), the P06 PDF attached. No cost yet (M3). */
+/** E01 for one close: C08 totals (REP), what was left (CTB-01, once M3 has cost), differences to contest (DIF), P06 attached. */
 export async function closeReadyMessage(db: Db, account: M2Account, close: ClosePeriod): Promise<MessageSource> {
-  const [{ lines }, diffs, kitchens] = await Promise.all([
+  const [{ lines }, diffs, kitchens, leftCents] = await Promise.all([
     loadClose(db, close.id),
     loadDifferences(db, close.id),
     db.from("kitchen").select("id", { count: "exact", head: true }).eq("account_id", account.id).eq("in_analysis", true),
+    closeLeftCents(db, close.id),
   ]);
   const channels = CHANNEL_ORDER.filter((c) => lines.some((l) => l.channel === c)).map((c) => CHANNEL_LABEL[c]);
   const ym = close.month.slice(0, 7);
@@ -213,7 +215,7 @@ export async function closeReadyMessage(db: Db, account: M2Account, close: Close
     channels,
     grossCents: lines.reduce((a, l) => a + l.gross, 0),
     payoutCents: lines.reduce((a, l) => a + l.payout, 0),
-    leftCents: null,
+    leftCents,
     wrongCents: diffs.filter(toContest).reduce((a, d) => a + d.amount_cents, 0),
   });
   // worker-render writes the PDF at this path (render_close); the outbox attaches it once it exists.

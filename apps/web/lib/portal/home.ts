@@ -1,7 +1,8 @@
 // P08 / W01 Início (05 §B): the month's numbers for the kitchens this person may see (04 §5, A03).
 // Numbers come from close_line and difference, computed by worker-import with REP-01 to REP-05 and
-// DIF-01 to DIF-05 (04 §2). "Sobrou depois dos insumos" is CTB-01 and needs module 3: until contribution
-// exists the screen says "falta custo", as the P06 PDF does (08 Wave 1).
+// DIF-01 to DIF-05 (04 §2). "Sobrou depois dos insumos" is CTB-01 for the month: what the apps paid (C08)
+// minus the insumos of the dishes sold (C13 insumos times units, close_cost_line, worker-cost). A store
+// without cost, or with a dish sold without a ficha, shows "falta custo", as does the total.
 import type { Database } from "@margoai/contracts";
 import { CHANNEL_LABEL, CHANNEL_ORDER, type Channel } from "@/lib/m2/format";
 import { closePeriods, type ClosePeriod } from "@/lib/m2/close";
@@ -18,6 +19,8 @@ export interface HomeLine {
   channel: Channel;
   gross: number;
   payout: number;
+  /** Insumos (ingredients plus packaging) of the dishes sold; null when unknown (no cost, or a dish without ficha). */
+  insumos: number | null;
 }
 
 export interface HomeDiff {
@@ -34,6 +37,8 @@ export interface HomeRow {
   label: string;
   soldCents: number;
   appTookCents: number;
+  /** CTB-01: received minus insumos; null shows "falta custo". */
+  leftCents: number | null;
 }
 
 export interface HomeNumbers {
@@ -46,6 +51,9 @@ export interface HomeNumbers {
   wrongCents: number;
   /** "N para você contestar": contestations a_contestar (04 §3). */
   toContest: number;
+  /** "sobrou depois dos insumos" (CTB-01): received minus insumos; null while any row lacks cost. */
+  leftCents: number | null;
+  leftPct: number;
   /** Table per kitchen and app: "O app levou" = gross minus payout (REP-01 to REP-04). */
   rows: HomeRow[];
 }
@@ -57,12 +65,13 @@ export function homeNumbers(lines: HomeLine[], diffs: HomeDiff[], kitchenId: str
   const soldCents = ls.reduce((a, l) => a + l.gross, 0);
   const receivedCents = ls.reduce((a, l) => a + l.payout, 0);
 
-  const groups = new Map<string, { name: string | null; channel: Channel; sold: number; payout: number }>();
+  const groups = new Map<string, { name: string | null; channel: Channel; sold: number; payout: number; insumos: number | null }>();
   for (const l of ls) {
     const key = `${l.kitchenId ?? ""}|${l.channel}`;
-    const g = groups.get(key) ?? { name: l.kitchenName, channel: l.channel, sold: 0, payout: 0 };
+    const g = groups.get(key) ?? { name: l.kitchenName, channel: l.channel, sold: 0, payout: 0, insumos: 0 };
     g.sold += l.gross;
     g.payout += l.payout;
+    g.insumos = g.insumos === null || l.insumos === null ? null : g.insumos + l.insumos;
     groups.set(key, g);
   }
   const rows = [...groups.values()]
@@ -72,7 +81,13 @@ export function homeNumbers(lines: HomeLine[], diffs: HomeDiff[], kitchenId: str
         (a.name ?? "").localeCompare(b.name ?? "", "pt-BR") ||
         CHANNEL_ORDER.indexOf(a.channel) - CHANNEL_ORDER.indexOf(b.channel),
     )
-    .map((g) => ({ label: `${g.name ? kitchenShort(g.name) : "Sem cozinha"} · ${CHANNEL_LABEL[g.channel]}`, soldCents: g.sold, appTookCents: g.sold - g.payout }));
+    .map((g) => ({
+      label: `${g.name ? kitchenShort(g.name) : "Sem cozinha"} · ${CHANNEL_LABEL[g.channel]}`,
+      soldCents: g.sold,
+      appTookCents: g.sold - g.payout,
+      leftCents: g.insumos === null ? null : g.payout - g.insumos,
+    }));
+  const leftCents = rows.length > 0 && rows.every((r) => r.leftCents !== null) ? rows.reduce((a, r) => a + (r.leftCents ?? 0), 0) : null;
 
   return {
     soldCents,
@@ -81,6 +96,8 @@ export function homeNumbers(lines: HomeLine[], diffs: HomeDiff[], kitchenId: str
     wrongCents: ds.reduce((a, d) => a + d.amount, 0),
     toContest: ds.filter((d) => d.status === "a_contestar").length,
     rows,
+    leftCents,
+    leftPct: leftCents === null || soldCents === 0 ? 0 : Math.round((leftCents * 100) / soldCents),
   };
 }
 
@@ -100,11 +117,13 @@ export async function scopeKitchens(db: Db, m: Pick<Member, "account" | "kitchen
 
 /** A03: close lines of one account-level close, only for stores of kitchens in scope (all, with "sem cozinha", when allKitchens). */
 export async function loadHomeLines(db: Db, closeId: string, m: Pick<Member, "allKitchens" | "kitchenIds">): Promise<HomeLine[]> {
-  const { data, error } = await db
-    .from("close_line")
-    .select("gross_cents, payout_cents, channel_store(channel, kitchen_id, kitchen(name))")
-    .eq("close_period_id", closeId);
+  const [{ data, error }, { data: costs, error: costError }] = await Promise.all([
+    db.from("close_line").select("channel_store_id, gross_cents, payout_cents, channel_store(channel, kitchen_id, kitchen(name))").eq("close_period_id", closeId),
+    db.from("close_cost_line").select("channel_store_id, uncovered_units, ingredient_cents, packaging_cents").eq("close_period_id", closeId),
+  ]);
   if (error) throw new Error(error.message);
+  if (costError) throw new Error(costError.message);
+  const insumos = new Map((costs ?? []).map((c) => [c.channel_store_id, c.uncovered_units > 0 ? null : c.ingredient_cents + c.packaging_cents] as const));
   const scope = new Set(m.kitchenIds);
   return (data ?? [])
     .filter((l) => l.channel_store && (m.allKitchens || (l.channel_store.kitchen_id !== null && scope.has(l.channel_store.kitchen_id))))
@@ -114,6 +133,7 @@ export async function loadHomeLines(db: Db, closeId: string, m: Pick<Member, "al
       channel: l.channel_store!.channel,
       gross: l.gross_cents,
       payout: l.payout_cents,
+      insumos: insumos.get(l.channel_store_id) ?? null,
     }));
 }
 

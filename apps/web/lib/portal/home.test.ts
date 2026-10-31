@@ -3,12 +3,13 @@ import { homeNumbers, type HomeDiff, type HomeLine } from "./home";
 
 const K1 = { id: "k1", name: "Cozinha Centro" };
 const K2 = { id: "k2", name: "Cozinha Zona Sul" };
-const line = (kitchen: typeof K1 | null, channel: HomeLine["channel"], gross: number, payout: number): HomeLine => ({
+const line = (kitchen: typeof K1 | null, channel: HomeLine["channel"], gross: number, payout: number, insumos: number | null = null): HomeLine => ({
   kitchenId: kitchen?.id ?? null,
   kitchenName: kitchen?.name ?? null,
   channel,
   gross,
   payout,
+  insumos,
 });
 const lines: HomeLine[] = [
   line(K1, "ifood", 100_00, 75_00),
@@ -66,5 +67,42 @@ describe("W01 numbers per scope (A03, REP-05, DIF-xx)", () => {
   it("W01_no_close_gives_zeros", () => {
     const n = homeNumbers([], [], null);
     expect(n).toMatchObject({ soldCents: 0, receivedCents: 0, receivedPct: 0, wrongCents: 0, toContest: 0, rows: [] });
+  });
+
+  it("W01_without_cost_sobrou_stays_falta_custo", () => {
+    const n = homeNumbers(lines, diffs, null);
+    expect(n.leftCents).toBeNull();
+    expect(n.rows.every((r) => r.leftCents === null)).toBe(true);
+  });
+});
+
+describe("W01 sobrou depois dos insumos (CTB-01 for the month)", () => {
+  const costed: HomeLine[] = [
+    line(K1, "ifood", 100_00, 75_00, 30_00),
+    line(K1, "ifood", 50_00, 40_00, 15_00),
+    line(K1, "food99", 30_00, 25_00, 10_00),
+    line(K2, "ifood", 80_00, 60_00, 20_00),
+  ];
+
+  it("W01_sobrou_is_received_minus_insumos_per_row_and_in_total", () => {
+    const n = homeNumbers(costed, [], null);
+    expect(n.rows.map((r) => [r.label, r.leftCents])).toEqual([
+      ["Centro · iFood", 70_00],
+      ["Centro · 99Food", 15_00],
+      ["Zona Sul · iFood", 40_00],
+    ]);
+    expect(n.leftCents).toBe(125_00);
+    expect(n.leftPct).toBe(48); // of 260,00 sold
+  });
+
+  it("A03_W01_sobrou_follows_the_kitchen_filter", () => {
+    expect(homeNumbers(costed, [], "k2").leftCents).toBe(40_00);
+  });
+
+  it("W01_a_row_with_a_dish_without_ficha_shows_falta_custo_and_so_does_the_total", () => {
+    const n = homeNumbers([...costed, line(K2, "food99", 10_00, 8_00, null)], [], null);
+    expect(n.rows.find((r) => r.label === "Zona Sul · 99Food")?.leftCents).toBeNull();
+    expect(n.rows.find((r) => r.label === "Zona Sul · iFood")?.leftCents).toBe(40_00);
+    expect(n.leftCents).toBeNull();
   });
 });

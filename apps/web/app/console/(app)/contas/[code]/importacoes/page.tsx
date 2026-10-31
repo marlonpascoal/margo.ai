@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, Card, ConsoleMain, FictitiousLabel, PageTitle, Pill } from "@/components/console";
 import NavSelect from "@/components/NavSelect";
+import { isEnabled } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { accountByCode, requireAnyFlag } from "@/lib/m2/account";
 import { plural } from "@/lib/m2/format";
@@ -31,6 +32,7 @@ export default async function ImportsPage({ params, searchParams }: { params: Pr
   const { runs, total, since, cards, storeCount } = await loadImports(db, account, filters);
   const rows = buildRunRows(runs, new Date());
   const latestClose = (await closePeriods(db, account.id))[0];
+  const notasOn = await isEnabled("m3.notas_xml", account.id);
   const base = `/console/contas/${account.code}/importacoes`;
   const href = (over: Partial<Search>) => {
     const p = new URLSearchParams();
@@ -217,10 +219,15 @@ export default async function ImportsPage({ params, searchParams }: { params: Pr
       </section>
 
       <div className="flex flex-wrap gap-2.5">
-        {/* C10 (module 3) is wave 3. */}
-        <span aria-disabled="true" className={`${BUTTON_SECONDARY} cursor-default text-ink-faint`}>
-          Notas de compra (módulo 3)
-        </span>
+        {notasOn ? (
+          <Link href={`/console/contas/${account.code}/notas`} className={BUTTON_SECONDARY}>
+            Notas de compra (módulo 3)
+          </Link>
+        ) : (
+          <span aria-disabled="true" className={`${BUTTON_SECONDARY} cursor-default text-ink-faint`}>
+            Notas de compra (módulo 3)
+          </span>
+        )}
         <Link href={`/console/contas/${account.code}/estrutura`} className={BUTTON_SECONDARY}>
           Estrutura do cliente
         </Link>

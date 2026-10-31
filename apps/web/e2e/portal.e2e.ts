@@ -22,8 +22,12 @@ function syntheticCnpj(): string {
 
 /** Gross and payout of the September close for these stores of G-02 (C08 rows). */
 async function closeSums(stores: string[]) {
-  const { data } = await adminDb().from("close_line").select("gross_cents, payout_cents").eq("close_period_id", sid("G-02:close:2026-09")).in("channel_store_id", stores.map((s) => sid(`G-02:${s}`)));
-  return { gross: data!.reduce((a, l) => a + l.gross_cents, 0), payout: data!.reduce((a, l) => a + l.payout_cents, 0) };
+  const ids = stores.map((s) => sid(`G-02:${s}`));
+  const { data } = await adminDb().from("close_line").select("gross_cents, payout_cents").eq("close_period_id", sid("G-02:close:2026-09")).in("channel_store_id", ids);
+  // CTB-01 for the month (M3): insumos of the dishes sold per store, from worker-cost.
+  const { data: cost } = await adminDb().from("close_cost_line").select("ingredient_cents, packaging_cents").eq("close_period_id", sid("G-02:close:2026-09")).in("channel_store_id", ids);
+  const payout = data!.reduce((a, l) => a + l.payout_cents, 0);
+  return { gross: data!.reduce((a, l) => a + l.gross_cents, 0), payout, left: payout - cost!.reduce((a, c) => a + c.ingredient_cents + c.packaging_cents, 0) };
 }
 
 test.describe.configure({ mode: "serial" });
@@ -93,7 +97,7 @@ test("E03_E05_A03_W01_W09_dono_logs_in_sees_the_month_sets_notices_and_the_sessi
 
   // W08 "Ver exemplo de e-mail": the E01 template with the Dono's September numbers.
   await page.goto("/app/notificacoes/exemplo");
-  await expect(page.locator("[data-email-subject]")).toHaveText(`Setembro fechado: recebeu ${reais(all.payout)} de ${reais(all.gross)}`);
+  await expect(page.locator("[data-email-subject]")).toHaveText(`Setembro fechado: sobrou ${reais(all.left)} de ${reais(all.gross)}`);
   const mail = page.frameLocator('iframe[title="Exemplo de e-mail"]');
   await expect(mail.getByRole("heading", { name: "Seu fechamento de setembro está pronto" })).toBeVisible();
   await expect(mail.getByText("Vendido no delivery")).toBeVisible();

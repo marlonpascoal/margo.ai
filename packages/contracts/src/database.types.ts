@@ -223,6 +223,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"campaign_item": {
+                  Row: {
+                    "account_id": string,"campaign_id": string,"created_at": string,"menu_item_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"campaign_id": string,"created_at"?: string,"menu_item_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"campaign_id"?: string,"created_at"?: string,"menu_item_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "campaign_item_account_id_campaign_id_fkey"
+      columns: ["account_id","campaign_id"]
+isOneToOne: false
+      referencedRelation: "campaign"
+      referencedColumns: ["account_id","id"]
+    },{
+      foreignKeyName: "campaign_item_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "campaign_item_account_id_menu_item_id_fkey"
+      columns: ["account_id","menu_item_id"]
+isOneToOne: false
+      referencedRelation: "menu_item"
+      referencedColumns: ["account_id","id"]
+    }
+                  ]
                 },"channel_store": {
                   Row: {
                     "account_id": string,"authorized": boolean,"authorized_at": string | null,"brand_id": string | null,"channel": Database["public"]['Enums']["channel"],"corporate_name": string | null,"created_at": string,"external_id": string,"id": string,"kitchen_id": string | null,"listed": boolean,"name": string,"public_url": string | null,"source": Database["public"]['Enums']["store_source"],"updated_at": string
@@ -273,6 +305,70 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "channel_store"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"close_cost_line": {
+                  Row: {
+                    "account_id": string,"channel_store_id": string,"close_period_id": string,"created_at": string,"id": string,"ingredient_cents": number,"packaging_cents": number,"uncovered_units": number,"units": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"channel_store_id": string,"close_period_id": string,"created_at"?: string,"id"?: string,"ingredient_cents"?: number,"packaging_cents"?: number,"uncovered_units"?: number,"units"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"channel_store_id"?: string,"close_period_id"?: string,"created_at"?: string,"id"?: string,"ingredient_cents"?: number,"packaging_cents"?: number,"uncovered_units"?: number,"units"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "close_cost_line_account_id_close_period_id_fkey"
+      columns: ["account_id","close_period_id"]
+isOneToOne: false
+      referencedRelation: "close_period"
+      referencedColumns: ["account_id","id"]
+    },{
+      foreignKeyName: "close_cost_line_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "close_cost_line_channel_store_id_fkey"
+      columns: ["channel_store_id"]
+isOneToOne: false
+      referencedRelation: "channel_store"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"close_decision": {
+                  Row: {
+                    "account_id": string,"base_left_cents": number | null,"campaign_discount_pct": number | null,"campaign_name": string | null,"channel": Database["public"]['Enums']["channel"],"close_period_id": string,"created_at": string,"kind": Database["public"]['Enums']["decision_kind"],"left_cents": number,"menu_item_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"base_left_cents"?: number | null,"campaign_discount_pct"?: number | null,"campaign_name"?: string | null,"channel": Database["public"]['Enums']["channel"],"close_period_id": string,"created_at"?: string,"kind": Database["public"]['Enums']["decision_kind"],"left_cents": number,"menu_item_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"base_left_cents"?: number | null,"campaign_discount_pct"?: number | null,"campaign_name"?: string | null,"channel"?: Database["public"]['Enums']["channel"],"close_period_id"?: string,"created_at"?: string,"kind"?: Database["public"]['Enums']["decision_kind"],"left_cents"?: number,"menu_item_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "close_decision_account_id_close_period_id_fkey"
+      columns: ["account_id","close_period_id"]
+isOneToOne: false
+      referencedRelation: "close_period"
+      referencedColumns: ["account_id","id"]
+    },{
+      foreignKeyName: "close_decision_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "close_decision_account_id_menu_item_id_fkey"
+      columns: ["account_id","menu_item_id"]
+isOneToOne: false
+      referencedRelation: "menu_item"
+      referencedColumns: ["account_id","id"]
     }
                   ]
                 },"close_line": {
@@ -453,14 +549,14 @@ isOneToOne: false
                   ]
                 },"contribution": {
                   Row: {
-                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"channel_take_cents": number,"close_period_id": string,"created_at": string,"id": string,"ingredient_cents": number,"ingredient_error_pct": number,"left_cents": number,"left_pct": number | null,"menu_item_id": string,"packaging_cents": number,"price_cents": number,"updated_at": string
+                    "account_id": string,"campaign_discount_pct": number | null,"campaign_name": string | null,"can_invert": boolean,"channel": Database["public"]['Enums']["channel"],"channel_take_cents": number,"close_period_id": string,"created_at": string,"id": string,"ingredient_cents": number,"ingredient_error_pct": number,"left_cents": number,"left_pct": number | null,"menu_item_id": string,"packaging_cents": number,"price_cents": number,"prices_as_of": string | null,"units": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"channel_take_cents": number,"close_period_id": string,"created_at"?: string,"id"?: string,"ingredient_cents": number,"ingredient_error_pct": number,"left_cents": number,"left_pct"?: number | null,"menu_item_id": string,"packaging_cents"?: number,"price_cents": number,"updated_at"?: string
+                    "account_id": string,"campaign_discount_pct"?: number | null,"campaign_name"?: string | null,"can_invert"?: boolean,"channel": Database["public"]['Enums']["channel"],"channel_take_cents": number,"close_period_id": string,"created_at"?: string,"id"?: string,"ingredient_cents": number,"ingredient_error_pct": number,"left_cents": number,"left_pct"?: number | null,"menu_item_id": string,"packaging_cents"?: number,"price_cents": number,"prices_as_of"?: string | null,"units"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"channel"?: Database["public"]['Enums']["channel"],"channel_take_cents"?: number,"close_period_id"?: string,"created_at"?: string,"id"?: string,"ingredient_cents"?: number,"ingredient_error_pct"?: number,"left_cents"?: number,"left_pct"?: number | null,"menu_item_id"?: string,"packaging_cents"?: number,"price_cents"?: number,"updated_at"?: string
+                    "account_id"?: string,"campaign_discount_pct"?: number | null,"campaign_name"?: string | null,"can_invert"?: boolean,"channel"?: Database["public"]['Enums']["channel"],"channel_take_cents"?: number,"close_period_id"?: string,"created_at"?: string,"id"?: string,"ingredient_cents"?: number,"ingredient_error_pct"?: number,"left_cents"?: number,"left_pct"?: number | null,"menu_item_id"?: string,"packaging_cents"?: number,"price_cents"?: number,"prices_as_of"?: string | null,"units"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -717,28 +813,28 @@ isOneToOne: false
                   ]
                 },"ingredient": {
                   Row: {
-                    "base_unit": Database["public"]['Enums']["base_unit"],"category": string,"created_at": string,"gtin": (string)[],"id": string,"name": string,"updated_at": string
+                    "base_unit": Database["public"]['Enums']["base_unit"],"category": string,"created_at": string,"gtin": (string)[],"id": string,"name": string,"short_name": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "base_unit": Database["public"]['Enums']["base_unit"],"category": string,"created_at"?: string,"gtin"?: (string)[],"id"?: string,"name": string,"updated_at"?: string
+                    "base_unit": Database["public"]['Enums']["base_unit"],"category": string,"created_at"?: string,"gtin"?: (string)[],"id"?: string,"name": string,"short_name"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "base_unit"?: Database["public"]['Enums']["base_unit"],"category"?: string,"created_at"?: string,"gtin"?: (string)[],"id"?: string,"name"?: string,"updated_at"?: string
+                    "base_unit"?: Database["public"]['Enums']["base_unit"],"category"?: string,"created_at"?: string,"gtin"?: (string)[],"id"?: string,"name"?: string,"short_name"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     
                   ]
                 },"ingredient_match": {
                   Row: {
-                    "account_id": string,"confidence": number | null,"confirmed_by": string | null,"conversion_factor": number | null,"created_at": string,"id": string,"ingredient_id": string,"invoice_line_id": string,"method": Database["public"]['Enums']["match_method"],"status": Database["public"]['Enums']["match_status"],"updated_at": string
+                    "account_id": string,"confidence": number | null,"confirmed_by": string | null,"conversion_factor": number | null,"created_at": string,"id": string,"ingredient_id": string,"invoice_line_id": string,"method": Database["public"]['Enums']["match_method"],"rule_note": string | null,"status": Database["public"]['Enums']["match_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id": string,"invoice_line_id": string,"method": Database["public"]['Enums']["match_method"],"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
+                    "account_id": string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id": string,"invoice_line_id": string,"method": Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id"?: string,"invoice_line_id"?: string,"method"?: Database["public"]['Enums']["match_method"],"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
+                    "account_id"?: string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id"?: string,"invoice_line_id"?: string,"method"?: Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -799,6 +895,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"ingredient_rule": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix": string | null,"source": string,"unit": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix"?: string | null,"source": string,"unit"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id"?: string,"keywords"?: (string)[],"ncm_prefix"?: string | null,"source"?: string,"unit"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ingredient_rule_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ingredient_rule_ingredient_id_fkey"
+      columns: ["ingredient_id"]
+isOneToOne: false
+      referencedRelation: "ingredient"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"invite": {
                   Row: {
                     "accepted_at": string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at": string,"destination": string,"expires_at": string,"id": string,"invited_by": string | null,"kitchen_ids": (string)[],"name": string | null,"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at": string
@@ -827,14 +949,14 @@ isOneToOne: false
                   ]
                 },"invoice": {
                   Row: {
-                    "access_key": string,"account_id": string,"company_id": string,"created_at": string,"id": string,"issued_at": string,"issuer_cnpj": string,"issuer_name": string | null,"model": number,"source": Database["public"]['Enums']["invoice_source"],"total_cents": number,"updated_at": string,"xml_path": string | null
+                    "access_key": string,"account_id": string,"company_id": string,"created_at": string,"id": string,"invoice_import_id": string | null,"issued_at": string,"issuer_cnpj": string,"issuer_name": string | null,"model": number,"source": Database["public"]['Enums']["invoice_source"],"total_cents": number,"updated_at": string,"xml_path": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "access_key": string,"account_id": string,"company_id": string,"created_at"?: string,"id"?: string,"issued_at": string,"issuer_cnpj": string,"issuer_name"?: string | null,"model": number,"source": Database["public"]['Enums']["invoice_source"],"total_cents": number,"updated_at"?: string,"xml_path"?: string | null
+                    "access_key": string,"account_id": string,"company_id": string,"created_at"?: string,"id"?: string,"invoice_import_id"?: string | null,"issued_at": string,"issuer_cnpj": string,"issuer_name"?: string | null,"model": number,"source": Database["public"]['Enums']["invoice_source"],"total_cents": number,"updated_at"?: string,"xml_path"?: string | null
                   }
                   Update: {
-                    "access_key"?: string,"account_id"?: string,"company_id"?: string,"created_at"?: string,"id"?: string,"issued_at"?: string,"issuer_cnpj"?: string,"issuer_name"?: string | null,"model"?: number,"source"?: Database["public"]['Enums']["invoice_source"],"total_cents"?: number,"updated_at"?: string,"xml_path"?: string | null
+                    "access_key"?: string,"account_id"?: string,"company_id"?: string,"created_at"?: string,"id"?: string,"invoice_import_id"?: string | null,"issued_at"?: string,"issuer_cnpj"?: string,"issuer_name"?: string | null,"model"?: number,"source"?: Database["public"]['Enums']["invoice_source"],"total_cents"?: number,"updated_at"?: string,"xml_path"?: string | null
                   }
                   Relationships: [
                     {
@@ -849,18 +971,56 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "account"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoice_invoice_import_id_fkey"
+      columns: ["invoice_import_id"]
+isOneToOne: false
+      referencedRelation: "invoice_import"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"invoice_import": {
+                  Row: {
+                    "account_id": string,"created_at": string,"created_by": string | null,"duplicates": number | null,"duration_ms": number | null,"file_name": string | null,"file_path": string,"files_total": number | null,"id": string,"invoices_new": number | null,"invoices_total": number | null,"job_id": string | null,"log": NonNullable<Json>,"months_count": number | null,"nfce_count": number | null,"nfe_count": number | null,"rejected": number | null,"status": Database["public"]['Enums']["import_status"],"suppliers_count": number | null,"trigger": Database["public"]['Enums']["import_trigger"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"created_at"?: string,"created_by"?: string | null,"duplicates"?: number | null,"duration_ms"?: number | null,"file_name"?: string | null,"file_path": string,"files_total"?: number | null,"id"?: string,"invoices_new"?: number | null,"invoices_total"?: number | null,"job_id"?: string | null,"log"?: NonNullable<Json>,"months_count"?: number | null,"nfce_count"?: number | null,"nfe_count"?: number | null,"rejected"?: number | null,"status"?: Database["public"]['Enums']["import_status"],"suppliers_count"?: number | null,"trigger"?: Database["public"]['Enums']["import_trigger"],"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"created_at"?: string,"created_by"?: string | null,"duplicates"?: number | null,"duration_ms"?: number | null,"file_name"?: string | null,"file_path"?: string,"files_total"?: number | null,"id"?: string,"invoices_new"?: number | null,"invoices_total"?: number | null,"job_id"?: string | null,"log"?: NonNullable<Json>,"months_count"?: number | null,"nfce_count"?: number | null,"nfe_count"?: number | null,"rejected"?: number | null,"status"?: Database["public"]['Enums']["import_status"],"suppliers_count"?: number | null,"trigger"?: Database["public"]['Enums']["import_trigger"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "invoice_import_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoice_import_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoice_import_job_id_fkey"
+      columns: ["job_id"]
+isOneToOne: false
+      referencedRelation: "job"
+      referencedColumns: ["id"]
     }
                   ]
                 },"invoice_line": {
                   Row: {
-                    "account_id": string,"created_at": string,"description": string,"gtin": string | null,"id": string,"invoice_id": string,"line_no": number,"ncm": string | null,"qty": number,"total_cents": number,"unit": string,"unit_price_cents": number,"updated_at": string
+                    "account_id": string,"ai_asked_at": string | null,"created_at": string,"description": string,"gtin": string | null,"id": string,"invoice_id": string,"line_no": number,"ncm": string | null,"qty": number,"total_cents": number,"unit": string,"unit_price_cents": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"created_at"?: string,"description": string,"gtin"?: string | null,"id"?: string,"invoice_id": string,"line_no": number,"ncm"?: string | null,"qty": number,"total_cents": number,"unit": string,"unit_price_cents": number,"updated_at"?: string
+                    "account_id": string,"ai_asked_at"?: string | null,"created_at"?: string,"description": string,"gtin"?: string | null,"id"?: string,"invoice_id": string,"line_no": number,"ncm"?: string | null,"qty": number,"total_cents": number,"unit": string,"unit_price_cents": number,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"description"?: string,"gtin"?: string | null,"id"?: string,"invoice_id"?: string,"line_no"?: number,"ncm"?: string | null,"qty"?: number,"total_cents"?: number,"unit"?: string,"unit_price_cents"?: number,"updated_at"?: string
+                    "account_id"?: string,"ai_asked_at"?: string | null,"created_at"?: string,"description"?: string,"gtin"?: string | null,"id"?: string,"invoice_id"?: string,"line_no"?: number,"ncm"?: string | null,"qty"?: number,"total_cents"?: number,"unit"?: string,"unit_price_cents"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1015,14 +1175,14 @@ isOneToOne: false
                   ]
                 },"menu_item": {
                   Row: {
-                    "account_id": string,"brand_id": string,"channel_item_ids": NonNullable<Json>,"created_at": string,"id": string,"is_top20": boolean,"name": string,"updated_at": string
+                    "account_id": string,"brand_id": string,"channel_item_ids": NonNullable<Json>,"created_at": string,"id": string,"is_top20": boolean,"name": string,"top20_rank": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"brand_id": string,"channel_item_ids"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"is_top20"?: boolean,"name": string,"updated_at"?: string
+                    "account_id": string,"brand_id": string,"channel_item_ids"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"is_top20"?: boolean,"name": string,"top20_rank"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"brand_id"?: string,"channel_item_ids"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"is_top20"?: boolean,"name"?: string,"updated_at"?: string
+                    "account_id"?: string,"brand_id"?: string,"channel_item_ids"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"is_top20"?: boolean,"name"?: string,"top20_rank"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1407,14 +1567,14 @@ isOneToOne: false
                   ]
                 },"recipe": {
                   Row: {
-                    "account_id": string,"built_by": string | null,"built_on": string | null,"created_at": string,"id": string,"menu_item_id": string,"status": Database["public"]['Enums']["recipe_status"],"updated_at": string
+                    "account_id": string,"built_by": string | null,"built_on": string | null,"cost_as_of": string | null,"cost_cents": number | null,"cost_computed_at": string | null,"created_at": string,"error_pct": number | null,"id": string,"menu_item_id": string,"status": Database["public"]['Enums']["recipe_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"built_by"?: string | null,"built_on"?: string | null,"created_at"?: string,"id"?: string,"menu_item_id": string,"status"?: Database["public"]['Enums']["recipe_status"],"updated_at"?: string
+                    "account_id": string,"built_by"?: string | null,"built_on"?: string | null,"cost_as_of"?: string | null,"cost_cents"?: number | null,"cost_computed_at"?: string | null,"created_at"?: string,"error_pct"?: number | null,"id"?: string,"menu_item_id": string,"status"?: Database["public"]['Enums']["recipe_status"],"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"built_by"?: string | null,"built_on"?: string | null,"created_at"?: string,"id"?: string,"menu_item_id"?: string,"status"?: Database["public"]['Enums']["recipe_status"],"updated_at"?: string
+                    "account_id"?: string,"built_by"?: string | null,"built_on"?: string | null,"cost_as_of"?: string | null,"cost_cents"?: number | null,"cost_computed_at"?: string | null,"created_at"?: string,"error_pct"?: number | null,"id"?: string,"menu_item_id"?: string,"status"?: Database["public"]['Enums']["recipe_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1439,14 +1599,14 @@ isOneToOne: false
                   ]
                 },"recipe_line": {
                   Row: {
-                    "account_id": string,"created_at": string,"id": string,"ingredient_id": string,"qty_base_units": number,"recipe_id": string,"updated_at": string,"yield_confidence": Database["public"]['Enums']["yield_confidence"],"yield_pct": number
+                    "account_id": string,"cost_cents": number | null,"created_at": string,"id": string,"ingredient_id": string,"price_observed_on": string | null,"price_per_base_unit_cents": number | null,"price_source": Database["public"]['Enums']["price_source"] | null,"qty_base_units": number,"recipe_id": string,"updated_at": string,"yield_confidence": Database["public"]['Enums']["yield_confidence"],"yield_pct": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"created_at"?: string,"id"?: string,"ingredient_id": string,"qty_base_units": number,"recipe_id": string,"updated_at"?: string,"yield_confidence": Database["public"]['Enums']["yield_confidence"],"yield_pct": number
+                    "account_id": string,"cost_cents"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id": string,"price_observed_on"?: string | null,"price_per_base_unit_cents"?: number | null,"price_source"?: Database["public"]['Enums']["price_source"] | null,"qty_base_units": number,"recipe_id": string,"updated_at"?: string,"yield_confidence": Database["public"]['Enums']["yield_confidence"],"yield_pct": number
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"id"?: string,"ingredient_id"?: string,"qty_base_units"?: number,"recipe_id"?: string,"updated_at"?: string,"yield_confidence"?: Database["public"]['Enums']["yield_confidence"],"yield_pct"?: number
+                    "account_id"?: string,"cost_cents"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id"?: string,"price_observed_on"?: string | null,"price_per_base_unit_cents"?: number | null,"price_source"?: Database["public"]['Enums']["price_source"] | null,"qty_base_units"?: number,"recipe_id"?: string,"updated_at"?: string,"yield_confidence"?: Database["public"]['Enums']["yield_confidence"],"yield_pct"?: number
                   }
                   Relationships: [
                     {
@@ -1835,6 +1995,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"confirm_ingredient_match":
+{ Args: { "p_conversion"?: number,"p_match": string,"p_person": string }; Returns: string
+                           },
 "contestation_mark":
 { Args: { "p_actor"?: string,"p_actor_kind": Database["public"]['Enums']["actor_kind"],"p_at"?: string,"p_contestation": string,"p_credited_entry"?: string,"p_event": string,"p_ip"?: unknown,"p_protocol"?: string,"p_user_agent"?: string }; Returns: {
               "account_id": string,
@@ -1998,7 +2161,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","base_unit": "g"|"ml"|"un","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","invoice_source": "xml_zip"|"key_typed"|"qr_url"|"whatsapp_photo","invoice_status": "pending"|"confirmed"|"overdue"|"refused"|"canceled","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","match_method": "gtin"|"rule"|"ai"|"manual","match_status": "suggested"|"confirmed"|"rejected","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","price_source": "invoice"|"regional_prior","recipe_status": "draft"|"ready","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered","yield_confidence": "medido"|"declarado"|"estimado"
+            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","base_unit": "g"|"ml"|"un","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","decision_kind": "campaign"|"lowest","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","invoice_source": "xml_zip"|"key_typed"|"qr_url"|"whatsapp_photo","invoice_status": "pending"|"confirmed"|"overdue"|"refused"|"canceled","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","match_method": "gtin"|"rule"|"ai"|"manual","match_status": "suggested"|"confirmed"|"rejected","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","price_source": "invoice"|"regional_prior","recipe_status": "draft"|"ready","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered","yield_confidence": "medido"|"declarado"|"estimado"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -2118,7 +2281,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"base_unit": ["g", "ml", "un"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"invoice_source": ["xml_zip", "key_typed", "qr_url", "whatsapp_photo"],"invoice_status": ["pending", "confirmed", "overdue", "refused", "canceled"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"match_method": ["gtin", "rule", "ai", "manual"],"match_status": ["suggested", "confirmed", "rejected"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"price_source": ["invoice", "regional_prior"],"recipe_status": ["draft", "ready"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"],"yield_confidence": ["medido", "declarado", "estimado"]
+            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"base_unit": ["g", "ml", "un"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"decision_kind": ["campaign", "lowest"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"invoice_source": ["xml_zip", "key_typed", "qr_url", "whatsapp_photo"],"invoice_status": ["pending", "confirmed", "overdue", "refused", "canceled"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"match_method": ["gtin", "rule", "ai", "manual"],"match_status": ["suggested", "confirmed", "rejected"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"price_source": ["invoice", "regional_prior"],"recipe_status": ["draft", "ready"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"],"yield_confidence": ["medido", "declarado", "estimado"]
           }
         }
 } as const

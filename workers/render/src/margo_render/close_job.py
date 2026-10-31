@@ -1,5 +1,7 @@
 """`render_close` job: P06 PDF and xlsx of one close_period, into the `closes` bucket (C09, 05 §C).
 
+The module 3 section reads the contribution worker-cost stored for the close; rendering never recomputes it.
+
 Payload {"close_period_id": "<uuid>"}. The web action ("Gerar fechamento mensal") sets the status and
 queues the notice; this job only renders and records the paths.
 """
@@ -15,6 +17,7 @@ from margo_common.runner import JobRun, LogValue
 from pydantic import BaseModel
 
 from .p06 import ChannelRow, P06Data, render_pdf, render_xlsx
+from .p06_cost import load_cost_section
 
 CHANNEL = {"ifood": "iFood", "food99": "99Food", "keeta": "Keeta", "rappi": "Rappi"}
 SOURCE = {
@@ -115,6 +118,7 @@ def load_p06(conn: Any, close_period_id: str) -> tuple[P06Data, str, str]:
             )
             for d in diffs
         ],
+        cost=load_cost_section(conn, close_period_id),
     )
     return data, cp["code"], cp["month"].isoformat()[:7]
 

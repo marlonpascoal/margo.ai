@@ -1,6 +1,7 @@
 // C08 Fechamento por loja e canal (design/C08-Fechamento.dc.html, 05 §A). Fundador and Operação.
 // REP-01 to REP-05 give the expected values, ledger_entry the actual ones (worker-import writes close_line);
-// the payout column equals the payout entries of the month (C08 "Done when").
+// the payout column equals the payout entries of the month (C08 "Done when"). The M3 prompt links to C10
+// until the close has contribution.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConsoleMain, FictitiousLabel, PageTitle } from "@/components/console";
@@ -36,6 +37,8 @@ export default async function ClosePage({ params }: { params: Promise<{ code: st
   const options = monthOptions(periods).map((o) => ({ ...o, href: `${base}/${o.value}` }));
   if (!options.some((o) => o.value === p["yyyy-mm"])) options.unshift({ value: p["yyyy-mm"], label: p["yyyy-mm"], href: `${base}/${p["yyyy-mm"]}` });
   const banner = summary && summary.count > 0 ? bannerParts(summary) : null;
+  // The M3 prompt shows while the close has no contribution (CTB-01) yet.
+  const { count: costRows } = close ? await db.from("contribution").select("id", { count: "exact", head: true }).eq("close_period_id", close.id) : { count: 0 };
 
   return (
     <ConsoleMain>
@@ -93,13 +96,12 @@ export default async function ClosePage({ params }: { params: Promise<{ code: st
           </tbody>
         </table>
       </div>
-      <div className="flex flex-wrap items-center gap-3 text-md">
-        <span>Ainda falta o custo dos insumos para chegar ao lucro por item.</span>
-        {/* C10 (module 3) is wave 3. */}
-        <span aria-disabled="true" className="text-ink-faint underline">
-          Ir para o módulo 3
-        </span>
-      </div>
+      {(costRows ?? 0) === 0 && (
+        <div className="flex flex-wrap items-center gap-3 text-md">
+          <span>Ainda falta o custo dos insumos para chegar ao lucro por item.</span>
+          <Link href={`/console/contas/${account.code}/notas`}>Ir para o módulo 3</Link>
+        </div>
+      )}
     </ConsoleMain>
   );
 }

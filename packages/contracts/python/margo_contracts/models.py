@@ -68,6 +68,11 @@ class ContestationStatus(StrEnum):
     PRAZO_VENCIDO = "prazo_vencido"
 
 
+class DecisionKind(StrEnum):
+    CAMPAIGN = "campaign"
+    LOWEST = "lowest"
+
+
 class DeliveryModel(StrEnum):
     CANAL = "canal"
     LOJA = "loja"
@@ -371,6 +376,14 @@ class Campaign(Row):
     updated_at: datetime
 
 
+class CampaignItem(Row):
+    account_id: UUID
+    campaign_id: UUID
+    created_at: datetime
+    menu_item_id: UUID
+    updated_at: datetime
+
+
 class ChannelStore(Row):
     account_id: UUID
     authorized: bool
@@ -396,6 +409,33 @@ class ChannelStoreUrlHistory(Row):
     seen_at: datetime
     updated_at: datetime
     url: str
+
+
+class CloseCostLine(Row):
+    account_id: UUID
+    channel_store_id: UUID
+    close_period_id: UUID
+    created_at: datetime
+    id: UUID
+    ingredient_cents: int
+    packaging_cents: int
+    uncovered_units: int
+    units: int
+    updated_at: datetime
+
+
+class CloseDecision(Row):
+    account_id: UUID
+    base_left_cents: int | None
+    campaign_discount_pct: Decimal | None
+    campaign_name: str | None
+    channel: Channel
+    close_period_id: UUID
+    created_at: datetime
+    kind: DecisionKind
+    left_cents: int
+    menu_item_id: UUID
+    updated_at: datetime
 
 
 class CloseLine(Row):
@@ -490,6 +530,9 @@ class ContractTerms(Row):
 
 class Contribution(Row):
     account_id: UUID
+    campaign_discount_pct: Decimal | None
+    campaign_name: str | None
+    can_invert: bool
     channel: Channel
     channel_take_cents: int
     close_period_id: UUID
@@ -502,6 +545,8 @@ class Contribution(Row):
     menu_item_id: UUID
     packaging_cents: int
     price_cents: int
+    prices_as_of: date | None
+    units: int
     updated_at: datetime
 
 
@@ -630,6 +675,7 @@ class Ingredient(Row):
     gtin: list[str]
     id: UUID
     name: str
+    short_name: str | None
     updated_at: datetime
 
 
@@ -643,6 +689,7 @@ class IngredientMatch(Row):
     ingredient_id: UUID
     invoice_line_id: UUID
     method: MatchMethod
+    rule_note: str | None
     status: MatchStatus
     updated_at: datetime
 
@@ -656,6 +703,18 @@ class IngredientPrice(Row):
     observed_on: date
     price_per_base_unit_cents: Decimal
     source: PriceSource
+    updated_at: datetime
+
+
+class IngredientRule(Row):
+    created_at: datetime
+    created_by: UUID | None
+    id: UUID
+    ingredient_id: UUID
+    keywords: list[str]
+    ncm_prefix: str | None
+    source: str
+    unit: str | None
     updated_at: datetime
 
 
@@ -681,6 +740,7 @@ class Invoice(Row):
     company_id: UUID
     created_at: datetime
     id: UUID
+    invoice_import_id: UUID | None
     issued_at: datetime
     issuer_cnpj: str
     issuer_name: str | None
@@ -691,8 +751,33 @@ class Invoice(Row):
     xml_path: str | None
 
 
+class InvoiceImport(Row):
+    account_id: UUID
+    created_at: datetime
+    created_by: UUID | None
+    duplicates: int | None
+    duration_ms: int | None
+    file_name: str | None
+    file_path: str
+    files_total: int | None
+    id: UUID
+    invoices_new: int | None
+    invoices_total: int | None
+    job_id: UUID | None
+    log: JsonValue
+    months_count: int | None
+    nfce_count: int | None
+    nfe_count: int | None
+    rejected: int | None
+    status: ImportStatus
+    suppliers_count: int | None
+    trigger: ImportTrigger
+    updated_at: datetime
+
+
 class InvoiceLine(Row):
     account_id: UUID
+    ai_asked_at: datetime | None
     created_at: datetime
     description: str
     gtin: str | None
@@ -779,6 +864,7 @@ class MenuItem(Row):
     id: UUID
     is_top20: bool
     name: str
+    top20_rank: int | None
     updated_at: datetime
 
 
@@ -943,6 +1029,20 @@ class PublicMenuItem(Row):
     updated_at: datetime
 
 
+class PublicMenuItemSnapshot(Row):
+    collected_at: datetime
+    created_at: datetime
+    id: UUID
+    name: str
+    price_cents: int
+    public_menu_item_id: UUID
+    public_store_id: UUID
+    unit: MenuUnit
+    unit_qty: Decimal | None
+    updated_at: datetime
+    xray_id: UUID
+
+
 class PublicStore(Row):
     area: str | None
     category: str | None
@@ -959,11 +1059,29 @@ class PublicStore(Row):
     url: str | None
 
 
+class PublicStoreSnapshot(Row):
+    area: str | None
+    category: str | None
+    collected_at: datetime
+    created_at: datetime
+    id: UUID
+    is_national_chain: bool
+    last_seen_open_at: datetime | None
+    name: str | None
+    public_store_id: UUID
+    updated_at: datetime
+    xray_id: UUID
+
+
 class Recipe(Row):
     account_id: UUID
     built_by: UUID | None
     built_on: date | None
+    cost_as_of: date | None
+    cost_cents: int | None
+    cost_computed_at: datetime | None
     created_at: datetime
+    error_pct: Decimal | None
     id: UUID
     menu_item_id: UUID
     status: RecipeStatus
@@ -972,9 +1090,13 @@ class Recipe(Row):
 
 class RecipeLine(Row):
     account_id: UUID
+    cost_cents: Decimal | None
     created_at: datetime
     id: UUID
     ingredient_id: UUID
+    price_observed_on: date | None
+    price_per_base_unit_cents: Decimal | None
+    price_source: PriceSource | None
     qty_base_units: Decimal
     recipe_id: UUID
     updated_at: datetime
@@ -1060,6 +1182,7 @@ class Xray(Row):
     radius_km: int
     rules: JsonValue
     status: XrayStatus
+    target_kind: str
     target_store_id: UUID
     updated_at: datetime
 
@@ -1106,5 +1229,18 @@ class XrayStore(Row):
     id: UUID
     included: bool
     public_store_id: UUID
+    updated_at: datetime
+    xray_id: UUID
+
+
+class XrayStoreRank(Row):
+    created_at: datetime
+    id: UUID
+    is_target: bool
+    items_compared: int
+    price_index: Decimal
+    public_store_id: UUID
+    rank: int
+    stores_ranked: int
     updated_at: datetime
     xray_id: UUID

@@ -65,7 +65,7 @@ export async function loadNoticeRows(db: Db, personId: string, accountId: string
 
 /**
  * W08 "Ver exemplo de e-mail": the E01 template (apps/web/emails) with this person's own numbers, scoped to
- * their kitchens (A03): REP-01 sold, REP-02 received, DIF to contest, as W01 shows them.
+ * their kitchens (A03): REP-01 sold, REP-02 received, CTB-01 sobrou, DIF to contest, as W01 shows them.
  */
 export function closeReadyExample(accountName: string, month: string, lines: HomeLine[], diffs: HomeDiff[]): EmailContent {
   const n = homeNumbers(lines, diffs, null);
@@ -76,7 +76,7 @@ export function closeReadyExample(accountName: string, month: string, lines: Hom
     channels: CHANNEL_ORDER.filter((c) => lines.some((l) => l.channel === c)).map((c) => CHANNEL_LABEL[c]),
     grossCents: n.soldCents,
     payoutCents: n.receivedCents,
-    leftCents: null,
+    leftCents: n.leftCents,
     wrongCents: n.wrongCents,
   });
 }

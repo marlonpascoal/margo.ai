@@ -1,9 +1,15 @@
 [project]
 name = "margo-render"
 version = "0.0.0"
-description = "worker-render: PDFs (weasyprint) and xlsx (openpyxl). Wave 0 holds only the design tokens."
+description = "worker-render: PDFs (reportlab, pure Python wheels, no system libraries) and later xlsx"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = ["margo-common", "margo-contracts", "reportlab>=4.2"]
+
+[project.optional-dependencies]
+local = ["psycopg[binary]>=3.2"]
+
+[project.entry-points."margo.jobs"]
+render_xray = "margo_render.handlers:render_xray"
 
 [build-system]
 requires = ["hatchling"]
@@ -11,3 +17,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/margo_render"]
+
+[tool.uv.sources]
+margo-common = { workspace = true }
+margo-contracts = { workspace = true }

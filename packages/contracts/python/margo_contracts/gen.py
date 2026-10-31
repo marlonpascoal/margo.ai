@@ -20,6 +20,7 @@ SCALARS = {
     "bpchar": "str",
     "citext": "str",
     "inet": "str",
+    "bytea": "bytes",
     "bool": "bool",
     "int2": "int",
     "int4": "int",

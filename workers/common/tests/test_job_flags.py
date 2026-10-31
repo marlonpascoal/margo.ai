@@ -47,6 +47,9 @@ class Calls:
 def test_A05_job_flags_map_the_job_types_the_spec_names() -> None:
     assert JOB_FLAGS == {
         "collect": "m1.raio_x",
+        "xray_pair": "m1.raio_x",
+        "xray_calc": "m1.raio_x",
+        "render_xray": "m1.raio_x",
         "import_ifood_api": "m2.ifood_api",
         "import_ifood_file": "m2.arquivo_ifood",
         "import_99food_file": "m2.arquivo_99food",

@@ -9,15 +9,7 @@ import NavSelect from "@/components/NavSelect";
 import { isEnabled } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { accountByCode, requireAnyFlag } from "@/lib/m2/account";
-import {
-  bannerParts,
-  closePeriods,
-  closeRows,
-  loadClose,
-  loadDifferences,
-  monthOptions,
-  summarize,
-} from "@/lib/m2/close";
+import { bannerParts, closePeriods, closeRows, loadClose, loadDifferences, monthOptions, summarize } from "@/lib/m2/close";
 import { monthLong, parseMonth, plural } from "@/lib/m2/format";
 import { adminClient } from "@/lib/supabase/admin";
 
@@ -25,79 +17,37 @@ export const metadata = { title: "Fechamento · MargoAI" };
 
 const th = "border-b border-border px-4 py-3 font-normal";
 const td = "border-b border-border-subtle px-4 py-3.5";
-const HEAD = [
-  "Canal",
-  "Venda bruta",
-  "Comissão",
-  "Pagamento",
-  "Entrega",
-  "Promoção",
-  "Antecipação",
-  "Repasse",
-  "% do bruto",
-];
+const HEAD = ["Canal", "Venda bruta", "Comissão", "Pagamento", "Entrega", "Promoção", "Antecipação", "Repasse", "% do bruto"];
 
-export default async function ClosePage({
-  params,
-}: {
-  params: Promise<{ code: string; "yyyy-mm": string }>;
-}) {
+export default async function ClosePage({ params }: { params: Promise<{ code: string; "yyyy-mm": string }> }) {
   await requireConsole("clients");
   const p = await params;
   const month = parseMonth(p["yyyy-mm"]);
   if (!month) notFound();
   const db = adminClient();
   const account = await accountByCode(db, p.code);
-  await requireAnyFlag(
-    ["m2.arquivo_ifood", "m2.arquivo_99food", "m2.ifood_api"],
-    account.id,
-  );
+  await requireAnyFlag(["m2.arquivo_ifood", "m2.arquivo_99food", "m2.ifood_api"], account.id);
   const periods = await closePeriods(db, account.id);
   const close = periods.find((c) => c.month === month);
-  const { lines, stores } = close
-    ? await loadClose(db, close.id)
-    : { lines: [], stores: 0 };
+  const { lines, stores } = close ? await loadClose(db, close.id) : { lines: [], stores: 0 };
   const rows = closeRows(lines);
   const contest = await isEnabled("m2.contestacao", account.id);
-  const summary =
-    close && contest ? summarize(await loadDifferences(db, close.id)) : null;
+  const summary = close && contest ? summarize(await loadDifferences(db, close.id)) : null;
   const base = `/console/contas/${account.code}/fechamento`;
-  const options = monthOptions(periods).map((o) => ({
-    ...o,
-    href: `${base}/${o.value}`,
-  }));
-  if (!options.some((o) => o.value === p["yyyy-mm"]))
-    options.unshift({
-      value: p["yyyy-mm"],
-      label: p["yyyy-mm"],
-      href: `${base}/${p["yyyy-mm"]}`,
-    });
+  const options = monthOptions(periods).map((o) => ({ ...o, href: `${base}/${o.value}` }));
+  if (!options.some((o) => o.value === p["yyyy-mm"])) options.unshift({ value: p["yyyy-mm"], label: p["yyyy-mm"], href: `${base}/${p["yyyy-mm"]}` });
   const banner = summary && summary.count > 0 ? bannerParts(summary) : null;
   // The M3 prompt shows while the close has no contribution (CTB-01) yet.
-  const { count: costRows } = close
-    ? await db
-        .from("contribution")
-        .select("id", { count: "exact", head: true })
-        .eq("close_period_id", close.id)
-    : { count: 0 };
+  const { count: costRows } = close ? await db.from("contribution").select("id", { count: "exact", head: true }).eq("close_period_id", close.id) : { count: 0 };
 
   return (
     <ConsoleMain>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageTitle
-          code="C08"
-          kicker={`C08 · Módulo 2 · ${account.name} · ${plural(stores, "loja", "lojas")}`}
-          title={`Fechamento de ${monthLong(month)}, por canal`}
-        />
+        <PageTitle code="C08" kicker={`C08 · Módulo 2 · ${account.name} · ${plural(stores, "loja", "lojas")}`} title={`Fechamento de ${monthLong(month)}, por canal`} />
         <div className="flex flex-wrap items-center gap-2.5">
           {account.isSynthetic && <FictitiousLabel />}
           <span className="text-sm text-ink-muted">Mês</span>
-          <NavSelect
-            label="Mês"
-            value={p["yyyy-mm"]}
-            options={options}
-            className="min-h-11 rounded-md text-base"
-          />
+          <NavSelect label="Mês" value={p["yyyy-mm"]} options={options} className="min-h-11 rounded-md text-base" />
         </div>
       </div>
       {banner && (
@@ -134,11 +84,7 @@ export default async function ClosePage({
               </tr>
             )}
             {rows.map((r) => (
-              <tr
-                key={r.channel}
-                data-channel={r.channel}
-                className={r.total ? "font-bold" : ""}
-              >
+              <tr key={r.channel} data-channel={r.channel} className={r.total ? "font-bold" : ""}>
                 <td className={td}>{r.channel}</td>
                 {r.cells.map((c, i) => (
                   <td key={i} className={`${td} text-right font-mono`}>
@@ -152,12 +98,8 @@ export default async function ClosePage({
       </div>
       {(costRows ?? 0) === 0 && (
         <div className="flex flex-wrap items-center gap-3 text-md">
-          <span>
-            Ainda falta o custo dos insumos para chegar ao lucro por item.
-          </span>
-          <Link href={`/console/contas/${account.code}/notas`}>
-            Ir para o módulo 3
-          </Link>
+          <span>Ainda falta o custo dos insumos para chegar ao lucro por item.</span>
+          <Link href={`/console/contas/${account.code}/notas`}>Ir para o módulo 3</Link>
         </div>
       )}
     </ConsoleMain>

@@ -146,7 +146,14 @@ def git_files(root: Path) -> list[Path]:
         capture_output=True,
         check=True,
     )
-    return [Path(p) for p in out.stdout.decode().split("\0") if p]
+    # git lists a nested repository or worktree (e.g. .claude/worktrees/agent-*) as one directory entry.
+    # It is a separate checkout that runs its own scan; walking it here would read its node_modules and
+    # its local .env files.
+    return [
+        Path(p)
+        for p in out.stdout.decode().split("\0")
+        if p and not (p.endswith("/") and (root / p / ".git").exists())
+    ]
 
 
 def main(argv: list[str] | None = None) -> int:

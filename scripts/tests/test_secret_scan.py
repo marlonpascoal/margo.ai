@@ -129,3 +129,16 @@ def test_A06_clean_tree_exits_zero(tmp_path: Path) -> None:
         text=True,
     )
     assert out.returncode == 0, out.stdout
+
+
+def test_A06_git_scan_skips_nested_worktrees(tmp_path: Path) -> None:
+    # Agent worktrees under .claude/worktrees/ are separate checkouts with their own .env.local and
+    # node_modules; each runs its own scan. Files of this repo are still scanned.
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / "a.ts").write_text("export const x = 1\n")
+    nested = tmp_path / ".claude" / "worktrees" / "agent-x"
+    subprocess.run(["git", "init", "-q", str(nested)], check=True)
+    (nested / ".env.local").write_text("SUPABASE_SERVICE_ROLE_KEY=local\n")
+    files = secret_scan.git_files(tmp_path)
+    assert Path("a.ts") in files
+    assert not any(str(p).startswith(".claude/worktrees") for p in files)

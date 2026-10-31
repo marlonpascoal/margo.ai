@@ -10,11 +10,11 @@
     "lint": "pnpm -r --if-present lint && uv run ruff check .",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test && uv run pytest -q && pnpm test:db",
-    "test:db": "supabase test db && pnpm --filter @margoai/web test:int && MARGO_DB_TESTS=1 uv run pytest -q packages/contracts && MARGO_DB_TESTS=1 node scripts/with-local-env.mjs uv run pytest -q workers/common && supabase gen types typescript --local 2>/dev/null | diff -q - packages/contracts/src/database.types.ts",
+    "test:db": "supabase test db && pnpm --filter @margoai/web test:int && MARGO_DB_TESTS=1 uv run pytest -q packages/contracts && MARGO_DB_TESTS=1 node scripts/with-local-env.mjs uv run pytest -q workers/common workers/import && supabase gen types typescript --local 2>/dev/null | diff -q - packages/contracts/src/database.types.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test && uv run python scripts/check_screens.py && uv run python scripts/secret_scan.py",
     "e2e": "pnpm --filter @margoai/web e2e",
     "e2e:screens": "pnpm --filter @margoai/web e2e:screens",
-    "db:reset":"supabase db reset",
+    "db:reset": "supabase db reset && node scripts/seed_storage.mjs",
     "db:types": "supabase gen types typescript --local > packages/contracts/src/database.types.ts"
   }
 }

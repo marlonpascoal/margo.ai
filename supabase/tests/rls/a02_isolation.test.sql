@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(43);
+select plan(47);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated;
@@ -62,6 +62,34 @@ begin
   insert into public.audit_log (actor_person_id, actor_kind, account_id, action, entity) values (dono, 'person', acc, 'test', 'account');
   insert into public.job (type, payload, account_id, dedupe_key) values ('import', '{}', acc, a || '-job');
   insert into public.extension_token (person_id, account_id, token_hash) values (dono, acc, md5(a || 'ext'));
+  -- M2 (03 §3): one fact, close and contestation per store of kitchen 1 and kitchen 2.
+  insert into public.import_source (account_id, channel, kind) values (acc, 'ifood', 'upload');
+  insert into public.import_run (id, account_id, trigger, channel) values (tests.id(a || ':run'), acc, 'upload', 'ifood');
+  insert into public.contract_terms (account_id, channel_store_id, plan_name, commission_pct, payment_fee_pct, delivery_model, valid_from)
+    values (acc, tests.id(a || ':s1'), 'Plano', 0.12, 0.035, 'canal', '2026-01-01');
+  insert into public.campaign (account_id, channel_store_id, name, discount_pct, channel_share_pct, starts_on, ends_on)
+    values (acc, tests.id(a || ':s1'), 'Cupom', 0.2, 0.5, '2026-09-01', '2026-09-30');
+  insert into public.order_fact (id, account_id, channel_store_id, external_order_id, ordered_at, gross_cents, items_cents, status) values
+    (tests.id(a || ':o1'), acc, tests.id(a || ':s1'), 'o1', '2026-09-10 12:00-03', 5000, 5000, 'concluido'),
+    (tests.id(a || ':o2'), acc, tests.id(a || ':s2'), 'o2', '2026-09-10 12:00-03', 5000, 5000, 'concluido');
+  insert into public.order_item_fact (account_id, order_fact_id, line_no, item_name, qty, unit_price_cents)
+    values (acc, tests.id(a || ':o1'), 1, 'X-Bacon', 1, 5000);
+  insert into public.ledger_entry (account_id, channel_store_id, external_entry_id, order_fact_id, entry_date, type, amount_cents) values
+    (acc, tests.id(a || ':s1'), 'o1:commission', tests.id(a || ':o1'), '2026-09-10', 'commission', -600),
+    (acc, tests.id(a || ':s2'), 'o2:commission', tests.id(a || ':o2'), '2026-09-10', 'commission', -600);
+  insert into public.close_period (id, account_id, month) values (tests.id(a || ':cp'), acc, '2026-09-01');
+  insert into public.close_line (account_id, close_period_id, channel_store_id, gross_cents, commission_cents, payment_cents,
+      delivery_cents, promotion_cents, anticipation_cents, payout_cents) values
+    (acc, tests.id(a || ':cp'), tests.id(a || ':s1'), 5000, -600, 0, 0, 0, 0, 4400),
+    (acc, tests.id(a || ':cp'), tests.id(a || ':s2'), 5000, -600, 0, 0, 0, 0, 4400);
+  insert into public.difference (id, account_id, close_period_id, channel_store_id, rule_id, finding_key, description,
+      orders_count, amount_cents, confidence) values
+    (tests.id(a || ':d1'), acc, tests.id(a || ':cp'), tests.id(a || ':s1'), 'DIF-01', 'DIF-01', 'x', 1, 600, 'certa'),
+    (tests.id(a || ':d2'), acc, tests.id(a || ':cp'), tests.id(a || ':s2'), 'DIF-01', 'DIF-01', 'x', 1, 600, 'certa');
+  insert into public.difference_order (account_id, difference_id, order_fact_id, amount_cents) values
+    (acc, tests.id(a || ':d1'), tests.id(a || ':o1'), 600), (acc, tests.id(a || ':d2'), tests.id(a || ':o2'), 600);
+  insert into public.contestation (account_id, difference_id, status) values
+    (acc, tests.id(a || ':d1'), 'a_contestar'), (acc, tests.id(a || ':d2'), 'a_contestar');
 end $$;
 
 -- Tables with an account_id column where account `acc` has no row (fixture guard).
@@ -144,6 +172,10 @@ select is(tests.n($$ select 1 from public.membership $$), 1, 'Gerente sees only 
 select is(tests.n($$ select 1 from public.subscription $$), 0, 'Gerente does not see the plan');
 select is(tests.n($$ select 1 from public.invite $$), 0, 'Gerente does not see invites');
 select is(tests.n($$ select 1 from public.audit_log $$), 0, 'Gerente does not see the access log');
+select is(tests.n($$ select 1 from public.order_fact $$), 1, 'A03: Gerente sees orders of own kitchen only');
+select is(tests.n($$ select 1 from public.contestation $$), 1, 'A03: Gerente sees contestations of own kitchen only');
+select is(tests.n($$ select 1 from public.close_period $$), 0, 'A03: the whole-account close needs all kitchens');
+select is(tests.n($$ select 1 from public.import_run $$), 0, 'import history is console only');
 reset role;
 
 -- Dono of Y, the other direction.

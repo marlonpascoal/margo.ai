@@ -29,6 +29,12 @@ class BillingUnit(StrEnum):
     CHANNEL_STORE = "channel_store"
 
 
+class CancelParty(StrEnum):
+    LOJA = "loja"
+    CLIENTE = "cliente"
+    CANAL = "canal"
+
+
 class Channel(StrEnum):
     IFOOD = "ifood"
     FOOD99 = "food99"
@@ -36,9 +42,35 @@ class Channel(StrEnum):
     RAPPI = "rappi"
 
 
+class CloseStatus(StrEnum):
+    OPEN = "open"
+    COMPUTED = "computed"
+    DELIVERED = "delivered"
+
+
 class ContactChannel(StrEnum):
     EMAIL = "email"
     WHATSAPP = "whatsapp"
+
+
+class ContestationStatus(StrEnum):
+    A_CONTESTAR = "a_contestar"
+    PRECISA_RESPOSTA = "precisa_resposta"
+    CONTESTADA = "contestada"
+    CREDITADA = "creditada"
+    NEGADA = "negada"
+    PRAZO_VENCIDO = "prazo_vencido"
+
+
+class DeliveryModel(StrEnum):
+    CANAL = "canal"
+    LOJA = "loja"
+
+
+class DifferenceConfidence(StrEnum):
+    CERTA = "certa"
+    PROVAVEL = "provavel"
+    DUVIDOSA = "duvidosa"
 
 
 class FlagEnv(StrEnum):
@@ -46,11 +78,49 @@ class FlagEnv(StrEnum):
     PRODUCTION = "production"
 
 
+class ImportKind(StrEnum):
+    API = "api"
+    EXTENSION = "extension"
+    UPLOAD = "upload"
+    BPO_FOLDER = "bpo_folder"
+    WHATSAPP = "whatsapp"
+
+
+class ImportStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    OK = "ok"
+    FAILED = "failed"
+    NEEDS_MAPPING = "needs_mapping"
+
+
+class ImportTrigger(StrEnum):
+    SCHEDULE = "schedule"
+    EXTENSION = "extension"
+    UPLOAD = "upload"
+    RERUN = "rerun"
+    MANUAL = "manual"
+
+
 class JobStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
     DONE = "done"
     FAILED = "failed"
+
+
+class LedgerType(StrEnum):
+    COMMISSION = "commission"
+    PAYMENT_FEE = "payment_fee"
+    DELIVERY = "delivery"
+    PROMOTION = "promotion"
+    SUBSIDY = "subsidy"
+    REFUND = "refund"
+    CANCELLATION = "cancellation"
+    ANTICIPATION = "anticipation"
+    ADJUSTMENT = "adjustment"
+    PAYOUT = "payout"
+    OTHER = "other"
 
 
 class MemberRole(StrEnum):
@@ -70,6 +140,11 @@ class NotificationStatus(StrEnum):
     SENT = "sent"
     FAILED = "failed"
     HELD_QUIET_HOURS = "held_quiet_hours"
+
+
+class OrderStatus(StrEnum):
+    CONCLUIDO = "concluido"
+    CANCELADO = "cancelado"
 
 
 class SessionSurface(StrEnum):
@@ -190,6 +265,19 @@ class Brand(Row):
     updated_at: datetime
 
 
+class Campaign(Row):
+    account_id: UUID
+    channel_share_pct: Decimal
+    channel_store_id: UUID
+    created_at: datetime
+    discount_pct: Decimal
+    ends_on: date
+    id: UUID
+    name: str
+    starts_on: date
+    updated_at: datetime
+
+
 class ChannelStore(Row):
     account_id: UUID
     authorized: bool
@@ -217,12 +305,111 @@ class ChannelStoreUrlHistory(Row):
     url: str
 
 
+class CloseLine(Row):
+    account_id: UUID
+    anticipation_cents: int
+    channel_store_id: UUID
+    close_period_id: UUID
+    commission_cents: int
+    created_at: datetime
+    delivery_cents: int
+    gross_cents: int
+    id: UUID
+    payment_cents: int
+    payout_cents: int
+    promotion_cents: int
+    updated_at: datetime
+
+
+class ClosePeriod(Row):
+    account_id: UUID
+    computed_at: datetime | None
+    created_at: datetime
+    id: UUID
+    kitchen_id: UUID | None
+    month: date
+    pdf_path: str | None
+    status: CloseStatus
+    updated_at: datetime
+    xlsx_path: str | None
+
+
+class ColumnMapping(Row):
+    channel: Channel
+    created_at: datetime
+    created_by: UUID | None
+    file_signature: str
+    id: UUID
+    mapping: JsonValue
+    name: str
+    updated_at: datetime
+
+
 class Company(Row):
     account_id: UUID
     cnpj: str
     created_at: datetime
     id: UUID
     legal_name: str
+    updated_at: datetime
+
+
+class Contestation(Row):
+    account_id: UUID
+    claim_text: str | None
+    closed_at: datetime | None
+    created_at: datetime
+    credited_entry_id: UUID | None
+    deadline_on: date | None
+    difference_id: UUID
+    id: UUID
+    marked_at: datetime | None
+    marked_by: UUID | None
+    marked_by_kind: ActorKind | None
+    protocol: str | None
+    status: ContestationStatus
+    updated_at: datetime
+
+
+class ContractTerms(Row):
+    account_id: UUID
+    channel_store_id: UUID
+    commission_pct: Decimal
+    created_at: datetime
+    delivery_model: DeliveryModel
+    id: UUID
+    payment_fee_pct: Decimal
+    plan_name: str
+    updated_at: datetime
+    valid_from: date
+    valid_to: date | None
+
+
+class Difference(Row):
+    account_id: UUID
+    amount_cents: int
+    channel_store_id: UUID
+    close_period_id: UUID
+    confidence: DifferenceConfidence
+    created_at: datetime
+    description: str
+    detail: JsonValue
+    evidence_path: str | None
+    finding_key: str
+    id: UUID
+    orders_count: int
+    rule_id: str
+    shown: bool
+    updated_at: datetime
+
+
+class DifferenceOrder(Row):
+    account_id: UUID
+    amount_cents: int
+    created_at: datetime
+    difference_id: UUID
+    id: UUID
+    order_fact_id: UUID
     updated_at: datetime
 
 
@@ -274,6 +461,43 @@ class FeatureOverride(Row):
     value: bool
 
 
+class ImportRun(Row):
+    account_id: UUID
+    channel: Channel
+    created_at: datetime
+    created_by: UUID | None
+    duration_ms: int | None
+    file_name: str | None
+    file_path: str | None
+    file_sha256: str | None
+    id: UUID
+    job_id: UUID | None
+    log: JsonValue
+    mapping_id: UUID | None
+    period_end: date | None
+    period_start: date | None
+    rows_duplicate: int | None
+    rows_new: int | None
+    rows_total: int | None
+    source_id: UUID | None
+    status: ImportStatus
+    store_ids: list[UUID]
+    trigger: ImportTrigger
+    updated_at: datetime
+
+
+class ImportSource(Row):
+    account_id: UUID
+    channel: Channel
+    created_at: datetime
+    id: UUID
+    kind: ImportKind
+    last_ok_at: datetime | None
+    schedule_cron: str | None
+    stale_after_hours: int | None
+    updated_at: datetime
+
+
 class Invite(Row):
     accepted_at: datetime | None
     account_id: UUID
@@ -316,6 +540,22 @@ class Kitchen(Row):
     lng: Decimal | None
     name: str
     uf: str | None
+    updated_at: datetime
+
+
+class LedgerEntry(Row):
+    account_id: UUID
+    amount_cents: int
+    channel_store_id: UUID
+    created_at: datetime
+    entry_date: date
+    expected_payment_date: date | None
+    external_entry_id: str
+    id: UUID
+    import_run_id: UUID | None
+    order_fact_id: UUID | None
+    raw_type: str | None
+    type: LedgerType
     updated_at: datetime
 
 
@@ -377,6 +617,38 @@ class Notification(Row):
     updated_at: datetime
 
 
+class OrderFact(Row):
+    account_id: UUID
+    cancel_reason: str | None
+    cancelled_by: CancelParty | None
+    channel_store_id: UUID
+    created_at: datetime
+    delivery_fee_cents: int
+    discount_channel_cents: int
+    discount_store_cents: int
+    external_order_id: str
+    gross_cents: int
+    id: UUID
+    import_run_id: UUID | None
+    items_cents: int
+    ordered_at: datetime
+    status: OrderStatus
+    updated_at: datetime
+
+
+class OrderItemFact(Row):
+    account_id: UUID
+    created_at: datetime
+    external_item_id: str | None
+    id: UUID
+    item_name: str
+    line_no: int
+    order_fact_id: UUID
+    qty: Decimal
+    unit_price_cents: int
+    updated_at: datetime
+
+
 class OwnerAuthorization(Row):
     account_id: UUID
     company_id: UUID
@@ -434,6 +706,14 @@ class Plan(Row):
     price_cents: int | None
     trial_days: int
     updated_at: datetime
+
+
+class RuleParam(Row):
+    created_at: datetime
+    description: str
+    key: str
+    updated_at: datetime
+    value: Decimal
 
 
 class SecurityLock(Row):

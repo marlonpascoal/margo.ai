@@ -12,8 +12,10 @@ select tables_are('public', array[
   'plan', 'subscription', 'billing_event', 'pilot', 'pilot_charge', 'bpo_partner', 'bpo_client',
   'feature_flag', 'feature_override', 'feature_flag_log', 'notice_type', 'notice_pref',
   'notification', 'alert', 'audit_log', 'job', 'extension_token',
-  'auth_code_guard'
-], 'A02: tables of 03 §1 and §5, plus the login code guard (04 §8)');
+  'auth_code_guard',
+  'rule_param', 'import_source', 'import_run', 'column_mapping', 'order_fact', 'order_item_fact', 'ledger_entry',
+  'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation'
+], 'A02: tables of 03 §1, §3 and §5, plus the login code guard (04 §8) and M2 params and evidence');
 
 select is_empty($$
   select c.relname::text from pg_class c join pg_namespace n on n.oid = c.relnamespace

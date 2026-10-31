@@ -177,6 +177,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"campaign": {
+                  Row: {
+                    "account_id": string,"channel_share_pct": number,"channel_store_id": string,"created_at": string,"discount_pct": number,"ends_on": string,"id": string,"name": string,"starts_on": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"channel_share_pct": number,"channel_store_id": string,"created_at"?: string,"discount_pct": number,"ends_on": string,"id"?: string,"name": string,"starts_on": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"channel_share_pct"?: number,"channel_store_id"?: string,"created_at"?: string,"discount_pct"?: number,"ends_on"?: string,"id"?: string,"name"?: string,"starts_on"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "campaign_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "campaign_channel_store_id_fkey"
+      columns: ["channel_store_id"]
+isOneToOne: false
+      referencedRelation: "channel_store"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"channel_store": {
                   Row: {
                     "account_id": string,"authorized": boolean,"authorized_at": string | null,"brand_id": string | null,"channel": Database["public"]['Enums']["channel"],"corporate_name": string | null,"created_at": string,"external_id": string,"id": string,"kitchen_id": string | null,"listed": boolean,"name": string,"public_url": string | null,"source": Database["public"]['Enums']["store_source"],"updated_at": string
@@ -229,6 +255,84 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"close_line": {
+                  Row: {
+                    "account_id": string,"anticipation_cents": number,"channel_store_id": string,"close_period_id": string,"commission_cents": number,"created_at": string,"delivery_cents": number,"gross_cents": number,"id": string,"payment_cents": number,"payout_cents": number,"promotion_cents": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"anticipation_cents": number,"channel_store_id": string,"close_period_id": string,"commission_cents": number,"created_at"?: string,"delivery_cents": number,"gross_cents": number,"id"?: string,"payment_cents": number,"payout_cents": number,"promotion_cents": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"anticipation_cents"?: number,"channel_store_id"?: string,"close_period_id"?: string,"commission_cents"?: number,"created_at"?: string,"delivery_cents"?: number,"gross_cents"?: number,"id"?: string,"payment_cents"?: number,"payout_cents"?: number,"promotion_cents"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "close_line_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "close_line_channel_store_id_fkey"
+      columns: ["channel_store_id"]
+isOneToOne: false
+      referencedRelation: "channel_store"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "close_line_close_period_id_fkey"
+      columns: ["close_period_id"]
+isOneToOne: false
+      referencedRelation: "close_period"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"close_period": {
+                  Row: {
+                    "account_id": string,"computed_at": string | null,"created_at": string,"id": string,"kitchen_id": string | null,"month": string,"pdf_path": string | null,"status": Database["public"]['Enums']["close_status"],"updated_at": string,"xlsx_path": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"computed_at"?: string | null,"created_at"?: string,"id"?: string,"kitchen_id"?: string | null,"month": string,"pdf_path"?: string | null,"status"?: Database["public"]['Enums']["close_status"],"updated_at"?: string,"xlsx_path"?: string | null
+                  }
+                  Update: {
+                    "account_id"?: string,"computed_at"?: string | null,"created_at"?: string,"id"?: string,"kitchen_id"?: string | null,"month"?: string,"pdf_path"?: string | null,"status"?: Database["public"]['Enums']["close_status"],"updated_at"?: string,"xlsx_path"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "close_period_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "close_period_account_id_kitchen_id_fkey"
+      columns: ["account_id","kitchen_id"]
+isOneToOne: false
+      referencedRelation: "kitchen"
+      referencedColumns: ["account_id","id"]
+    }
+                  ]
+                },"column_mapping": {
+                  Row: {
+                    "channel": Database["public"]['Enums']["channel"],"created_at": string,"created_by": string | null,"file_signature": string,"id": string,"mapping": NonNullable<Json>,"name": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "channel": Database["public"]['Enums']["channel"],"created_at"?: string,"created_by"?: string | null,"file_signature": string,"id"?: string,"mapping": NonNullable<Json>,"name": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"created_by"?: string | null,"file_signature"?: string,"id"?: string,"mapping"?: NonNullable<Json>,"name"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "column_mapping_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"company": {
                   Row: {
                     "account_id": string,"cnpj": string,"created_at": string,"id": string,"legal_name": string,"updated_at": string
@@ -246,6 +350,134 @@ isOneToOne: false
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"contestation": {
+                  Row: {
+                    "account_id": string,"claim_text": string | null,"closed_at": string | null,"created_at": string,"credited_entry_id": string | null,"deadline_on": string | null,"difference_id": string,"id": string,"marked_at": string | null,"marked_by": string | null,"marked_by_kind": Database["public"]['Enums']["actor_kind"] | null,"protocol": string | null,"status": Database["public"]['Enums']["contestation_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"claim_text"?: string | null,"closed_at"?: string | null,"created_at"?: string,"credited_entry_id"?: string | null,"deadline_on"?: string | null,"difference_id": string,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"marked_by_kind"?: Database["public"]['Enums']["actor_kind"] | null,"protocol"?: string | null,"status": Database["public"]['Enums']["contestation_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"claim_text"?: string | null,"closed_at"?: string | null,"created_at"?: string,"credited_entry_id"?: string | null,"deadline_on"?: string | null,"difference_id"?: string,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"marked_by_kind"?: Database["public"]['Enums']["actor_kind"] | null,"protocol"?: string | null,"status"?: Database["public"]['Enums']["contestation_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "contestation_account_id_difference_id_fkey"
+      columns: ["account_id","difference_id"]
+isOneToOne: false
+      referencedRelation: "difference"
+      referencedColumns: ["account_id","id"]
+    },{
+      foreignKeyName: "contestation_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contestation_credited_entry_id_fkey"
+      columns: ["credited_entry_id"]
+isOneToOne: false
+      referencedRelation: "ledger_entry"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contestation_marked_by_fkey"
+      columns: ["marked_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"contract_terms": {
+                  Row: {
+                    "account_id": string,"channel_store_id": string,"commission_pct": number,"created_at": string,"delivery_model": Database["public"]['Enums']["delivery_model"],"id": string,"payment_fee_pct": number,"plan_name": string,"updated_at": string,"valid_from": string,"valid_to": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"channel_store_id": string,"commission_pct": number,"created_at"?: string,"delivery_model": Database["public"]['Enums']["delivery_model"],"id"?: string,"payment_fee_pct": number,"plan_name": string,"updated_at"?: string,"valid_from": string,"valid_to"?: string | null
+                  }
+                  Update: {
+                    "account_id"?: string,"channel_store_id"?: string,"commission_pct"?: number,"created_at"?: string,"delivery_model"?: Database["public"]['Enums']["delivery_model"],"id"?: string,"payment_fee_pct"?: number,"plan_name"?: string,"updated_at"?: string,"valid_from"?: string,"valid_to"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "contract_terms_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contract_terms_channel_store_id_fkey"
+      columns: ["channel_store_id"]
+isOneToOne: false
+      referencedRelation: "channel_store"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"difference": {
+                  Row: {
+                    "account_id": string,"amount_cents": number,"channel_store_id": string,"close_period_id": string,"confidence": Database["public"]['Enums']["difference_confidence"],"created_at": string,"description": string,"detail": NonNullable<Json>,"evidence_path": string | null,"finding_key": string,"id": string,"orders_count": number,"rule_id": string,"shown": boolean,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"amount_cents": number,"channel_store_id": string,"close_period_id": string,"confidence": Database["public"]['Enums']["difference_confidence"],"created_at"?: string,"description": string,"detail"?: NonNullable<Json>,"evidence_path"?: string | null,"finding_key": string,"id"?: string,"orders_count": number,"rule_id": string,"shown"?: boolean,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"amount_cents"?: number,"channel_store_id"?: string,"close_period_id"?: string,"confidence"?: Database["public"]['Enums']["difference_confidence"],"created_at"?: string,"description"?: string,"detail"?: NonNullable<Json>,"evidence_path"?: string | null,"finding_key"?: string,"id"?: string,"orders_count"?: number,"rule_id"?: string,"shown"?: boolean,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "difference_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "difference_channel_store_id_fkey"
+      columns: ["channel_store_id"]
+isOneToOne: false
+      referencedRelation: "channel_store"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "difference_close_period_id_fkey"
+      columns: ["close_period_id"]
+isOneToOne: false
+      referencedRelation: "close_period"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"difference_order": {
+                  Row: {
+                    "account_id": string,"amount_cents": number,"created_at": string,"difference_id": string,"id": string,"order_fact_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"amount_cents": number,"created_at"?: string,"difference_id": string,"id"?: string,"order_fact_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"amount_cents"?: number,"created_at"?: string,"difference_id"?: string,"id"?: string,"order_fact_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "difference_order_account_id_difference_id_fkey"
+      columns: ["account_id","difference_id"]
+isOneToOne: false
+      referencedRelation: "difference"
+      referencedColumns: ["account_id","id"]
+    },{
+      foreignKeyName: "difference_order_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "difference_order_order_fact_id_fkey"
+      columns: ["order_fact_id"]
+isOneToOne: false
+      referencedRelation: "order_fact"
       referencedColumns: ["id"]
     }
                   ]
@@ -347,6 +579,70 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"import_run": {
+                  Row: {
+                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at": string,"created_by": string | null,"duration_ms": number | null,"file_name": string | null,"file_path": string | null,"file_sha256": string | null,"id": string,"job_id": string | null,"log": NonNullable<Json>,"mapping_id": string | null,"period_end": string | null,"period_start": string | null,"rows_duplicate": number | null,"rows_new": number | null,"rows_total": number | null,"source_id": string | null,"status": Database["public"]['Enums']["import_status"],"store_ids": (string)[],"trigger": Database["public"]['Enums']["import_trigger"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_name"?: string | null,"file_path"?: string | null,"file_sha256"?: string | null,"id"?: string,"job_id"?: string | null,"log"?: NonNullable<Json>,"mapping_id"?: string | null,"period_end"?: string | null,"period_start"?: string | null,"rows_duplicate"?: number | null,"rows_new"?: number | null,"rows_total"?: number | null,"source_id"?: string | null,"status"?: Database["public"]['Enums']["import_status"],"store_ids"?: (string)[],"trigger": Database["public"]['Enums']["import_trigger"],"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_name"?: string | null,"file_path"?: string | null,"file_sha256"?: string | null,"id"?: string,"job_id"?: string | null,"log"?: NonNullable<Json>,"mapping_id"?: string | null,"period_end"?: string | null,"period_start"?: string | null,"rows_duplicate"?: number | null,"rows_new"?: number | null,"rows_total"?: number | null,"source_id"?: string | null,"status"?: Database["public"]['Enums']["import_status"],"store_ids"?: (string)[],"trigger"?: Database["public"]['Enums']["import_trigger"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "import_run_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "import_run_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "import_run_job_id_fkey"
+      columns: ["job_id"]
+isOneToOne: false
+      referencedRelation: "job"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "import_run_mapping_id_fkey"
+      columns: ["mapping_id"]
+isOneToOne: false
+      referencedRelation: "column_mapping"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "import_run_source_id_fkey"
+      columns: ["source_id"]
+isOneToOne: false
+      referencedRelation: "import_source"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"import_source": {
+                  Row: {
+                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at": string,"id": string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at": string | null,"schedule_cron": string | null,"stale_after_hours": number | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "import_source_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"invite": {
                   Row: {
                     "accepted_at": string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at": string,"destination": string,"expires_at": string,"id": string,"invited_by": string | null,"kitchen_ids": (string)[],"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at": string
@@ -416,6 +712,44 @@ isOneToOne: false
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ledger_entry": {
+                  Row: {
+                    "account_id": string,"amount_cents": number,"channel_store_id": string,"created_at": string,"entry_date": string,"expected_payment_date": string | null,"external_entry_id": string,"id": string,"import_run_id": string | null,"order_fact_id": string | null,"raw_type": string | null,"type": Database["public"]['Enums']["ledger_type"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"amount_cents": number,"channel_store_id": string,"created_at"?: string,"entry_date": string,"expected_payment_date"?: string | null,"external_entry_id": string,"id"?: string,"import_run_id"?: string | null,"order_fact_id"?: string | null,"raw_type"?: string | null,"type": Database["public"]['Enums']["ledger_type"],"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"amount_cents"?: number,"channel_store_id"?: string,"created_at"?: string,"entry_date"?: string,"expected_payment_date"?: string | null,"external_entry_id"?: string,"id"?: string,"import_run_id"?: string | null,"order_fact_id"?: string | null,"raw_type"?: string | null,"type"?: Database["public"]['Enums']["ledger_type"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ledger_entry_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ledger_entry_channel_store_id_fkey"
+      columns: ["channel_store_id"]
+isOneToOne: false
+      referencedRelation: "channel_store"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ledger_entry_import_run_id_fkey"
+      columns: ["import_run_id"]
+isOneToOne: false
+      referencedRelation: "import_run"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ledger_entry_order_fact_id_fkey"
+      columns: ["order_fact_id"]
+isOneToOne: false
+      referencedRelation: "order_fact"
       referencedColumns: ["id"]
     }
                   ]
@@ -555,6 +889,64 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"order_fact": {
+                  Row: {
+                    "account_id": string,"cancel_reason": string | null,"cancelled_by": Database["public"]['Enums']["cancel_party"] | null,"channel_store_id": string,"created_at": string,"delivery_fee_cents": number,"discount_channel_cents": number,"discount_store_cents": number,"external_order_id": string,"gross_cents": number,"id": string,"import_run_id": string | null,"items_cents": number,"ordered_at": string,"status": Database["public"]['Enums']["order_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"cancel_reason"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancel_party"] | null,"channel_store_id": string,"created_at"?: string,"delivery_fee_cents"?: number,"discount_channel_cents"?: number,"discount_store_cents"?: number,"external_order_id": string,"gross_cents": number,"id"?: string,"import_run_id"?: string | null,"items_cents": number,"ordered_at": string,"status": Database["public"]['Enums']["order_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"cancel_reason"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancel_party"] | null,"channel_store_id"?: string,"created_at"?: string,"delivery_fee_cents"?: number,"discount_channel_cents"?: number,"discount_store_cents"?: number,"external_order_id"?: string,"gross_cents"?: number,"id"?: string,"import_run_id"?: string | null,"items_cents"?: number,"ordered_at"?: string,"status"?: Database["public"]['Enums']["order_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_fact_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "order_fact_channel_store_id_fkey"
+      columns: ["channel_store_id"]
+isOneToOne: false
+      referencedRelation: "channel_store"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "order_fact_import_run_id_fkey"
+      columns: ["import_run_id"]
+isOneToOne: false
+      referencedRelation: "import_run"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"order_item_fact": {
+                  Row: {
+                    "account_id": string,"created_at": string,"external_item_id": string | null,"id": string,"item_name": string,"line_no": number,"order_fact_id": string,"qty": number,"unit_price_cents": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"created_at"?: string,"external_item_id"?: string | null,"id"?: string,"item_name": string,"line_no": number,"order_fact_id": string,"qty": number,"unit_price_cents": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"created_at"?: string,"external_item_id"?: string | null,"id"?: string,"item_name"?: string,"line_no"?: number,"order_fact_id"?: string,"qty"?: number,"unit_price_cents"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_item_fact_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "order_item_fact_account_id_order_fact_id_fkey"
+      columns: ["account_id","order_fact_id"]
+isOneToOne: false
+      referencedRelation: "order_fact"
+      referencedColumns: ["account_id","id"]
+    }
+                  ]
                 },"owner_authorization": {
                   Row: {
                     "account_id": string,"company_id": string,"created_at": string,"document_path": string | null,"id": string,"includes_ai": boolean,"includes_international": boolean,"scope": (string)[],"signed_at": string,"signed_by": string | null,"updated_at": string
@@ -651,6 +1043,20 @@ isOneToOne: false
                   }
                   Update: {
                     "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"trial_days"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"rule_param": {
+                  Row: {
+                    "created_at": string,"description": string,"key": string,"updated_at": string,"value": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"description": string,"key": string,"updated_at"?: string,"value": number
+                  }
+                  Update: {
+                    "created_at"?: string,"description"?: string,"key"?: string,"updated_at"?: string,"value"?: number
                   }
                   Relationships: [
                     
@@ -795,6 +1201,29 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"contestation_mark":
+{ Args: { "p_actor"?: string,"p_actor_kind": Database["public"]['Enums']["actor_kind"],"p_at"?: string,"p_contestation": string,"p_credited_entry"?: string,"p_event": string,"p_ip"?: unknown,"p_protocol"?: string,"p_user_agent"?: string }; Returns: {
+              "account_id": string,
+"claim_text": string | null,
+"closed_at": string | null,
+"created_at": string,
+"credited_entry_id": string | null,
+"deadline_on": string | null,
+"difference_id": string,
+"id": string,
+"marked_at": string | null,
+"marked_by": string | null,
+"marked_by_kind": Database["public"]['Enums']["actor_kind"] | null,
+"protocol": string | null,
+"status": Database["public"]['Enums']["contestation_status"],
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "contestation"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "finish_job":
 { Args: { "p_entry"?: Json,"p_job_id": string,"p_status": Database["public"]['Enums']["job_status"] }; Returns: boolean
                            },
@@ -817,7 +1246,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","channel": "ifood"|"food99"|"keeta"|"rappi","contact_channel": "email"|"whatsapp","flag_env": "sandbox"|"production","job_status": "queued"|"running"|"done"|"failed","member_role": "dono"|"financeiro"|"gerente","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free"
+            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","member_role": "dono"|"financeiro"|"gerente","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -937,7 +1366,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"channel": ["ifood", "food99", "keeta", "rappi"],"contact_channel": ["email", "whatsapp"],"flag_env": ["sandbox", "production"],"job_status": ["queued", "running", "done", "failed"],"member_role": ["dono", "financeiro", "gerente"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"]
+            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"member_role": ["dono", "financeiro", "gerente"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"]
           }
         }
 } as const

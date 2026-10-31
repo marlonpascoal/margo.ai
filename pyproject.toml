@@ -3,7 +3,7 @@ name = "margoai"
 version = "0.0.0"
 description = "MargoAI workspace root: workers and repo scripts"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-render"]
+dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-render[local]"]
 
 [tool.uv]
 package = false
@@ -18,7 +18,7 @@ margo-render = { workspace = true }
 members = ["workers/*", "packages/contracts"]
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = ["pytest>=8", "ruff>=0.6", "pypdf>=5"]
 
 [tool.pytest.ini_options]
 testpaths = ["scripts/tests", "workers", "packages/contracts/python/tests"]
@@ -38,3 +38,5 @@ select = ["E", "F", "I", "B", "UP"]
 # SQL column lists and the drawn copy read better unwrapped.
 "scripts/gen_g_syn_m1.py" = ["E501"]
 "workers/collector/src/margo_collector/repo.py" = ["E501"]
+"workers/render/src/margo_render/P01_raio_x.py" = ["E501"]
+"workers/render/src/margo_render/handlers.py" = ["E501"]

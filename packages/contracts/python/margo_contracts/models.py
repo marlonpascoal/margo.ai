@@ -72,6 +72,11 @@ class NotificationStatus(StrEnum):
     HELD_QUIET_HOURS = "held_quiet_hours"
 
 
+class SessionSurface(StrEnum):
+    CONSOLE = "console"
+    PORTAL = "portal"
+
+
 class StaffRole(StrEnum):
     FUNDADOR = "fundador"
     OPERACAO = "operacao"
@@ -133,6 +138,16 @@ class AuditLog(Row):
     ip: str | None
     updated_at: datetime
     user_agent: str | None
+
+
+class AuthCodeGuard(Row):
+    attempts: int
+    created_at: datetime
+    email: str
+    id: UUID
+    locked_until: datetime | None
+    sent_at: datetime | None
+    updated_at: datetime
 
 
 class BillingEvent(Row):
@@ -429,12 +444,15 @@ class SecurityLock(Row):
 
 
 class SessionDevice(Row):
+    auth_session_id: UUID | None
     created_at: datetime
+    device_key_hash: str | None
     id: UUID
     ip_city: str | None
     last_seen_at: datetime
     person_id: UUID
     revoked_at: datetime | None
+    surface: SessionSurface
     updated_at: datetime
     user_agent: str | None
 

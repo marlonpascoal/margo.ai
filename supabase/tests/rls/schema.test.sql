@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(25);
 
 -- 03 §1 and §5 tables exist.
 select tables_are('public', array[
@@ -11,8 +11,9 @@ select tables_are('public', array[
   'security_lock', 'owner_authorization',
   'plan', 'subscription', 'billing_event', 'pilot', 'pilot_charge', 'bpo_partner', 'bpo_client',
   'feature_flag', 'feature_override', 'feature_flag_log', 'notice_type', 'notice_pref',
-  'notification', 'alert', 'audit_log', 'job', 'extension_token'
-], 'A02: tables of 03 §1 and §5');
+  'notification', 'alert', 'audit_log', 'job', 'extension_token',
+  'auth_code_guard'
+], 'A02: tables of 03 §1 and §5, plus the login code guard (04 §8)');
 
 select is_empty($$
   select c.relname::text from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -133,6 +134,12 @@ select throws_ok($$
   insert into public.channel_store (account_id, channel, external_id, name, source)
   values ('a0000000-0000-0000-0000-000000000001', 'ifood', 'abc', 'Loja 2', 'api')
 $$, '23505', null, 'channel_store is unique by (channel, external_id)');
+
+-- E03: login code guard and sessions (04 §8).
+select is_empty($$ select 1 from pg_policies where tablename = 'auth_code_guard' $$,
+  'E03: code guard has no policy; only server code with the service role reads it');
+select col_is_unique('public', 'session_device', 'auth_session_id', 'E03: one device row per Supabase session');
+select col_type_is('public', 'session_device', 'surface', 'session_surface', 'E03: session surface sets its length');
 
 select * from finish();
 rollback;

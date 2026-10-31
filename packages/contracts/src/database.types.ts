@@ -83,6 +83,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"auth_code_guard": {
+                  Row: {
+                    "attempts": number,"created_at": string,"email": string,"id": string,"locked_until": string | null,"sent_at": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"created_at"?: string,"email": string,"id"?: string,"locked_until"?: string | null,"sent_at"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "attempts"?: number,"created_at"?: string,"email"?: string,"id"?: string,"locked_until"?: string | null,"sent_at"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"billing_event": {
                   Row: {
                     "account_id": string | null,"asaas_event": string,"asaas_event_id": string,"created_at": string,"id": string,"payload": NonNullable<Json>,"processed_at": string | null,"received_at": string,"updated_at": string
@@ -657,14 +671,14 @@ isOneToOne: false
                   ]
                 },"session_device": {
                   Row: {
-                    "created_at": string,"id": string,"ip_city": string | null,"last_seen_at": string,"person_id": string,"revoked_at": string | null,"updated_at": string,"user_agent": string | null
+                    "auth_session_id": string | null,"created_at": string,"device_key_hash": string | null,"id": string,"ip_city": string | null,"last_seen_at": string,"person_id": string,"revoked_at": string | null,"surface": Database["public"]['Enums']["session_surface"],"updated_at": string,"user_agent": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"ip_city"?: string | null,"last_seen_at"?: string,"person_id": string,"revoked_at"?: string | null,"updated_at"?: string,"user_agent"?: string | null
+                    "auth_session_id"?: string | null,"created_at"?: string,"device_key_hash"?: string | null,"id"?: string,"ip_city"?: string | null,"last_seen_at"?: string,"person_id": string,"revoked_at"?: string | null,"surface"?: Database["public"]['Enums']["session_surface"],"updated_at"?: string,"user_agent"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"ip_city"?: string | null,"last_seen_at"?: string,"person_id"?: string,"revoked_at"?: string | null,"updated_at"?: string,"user_agent"?: string | null
+                    "auth_session_id"?: string | null,"created_at"?: string,"device_key_hash"?: string | null,"id"?: string,"ip_city"?: string | null,"last_seen_at"?: string,"person_id"?: string,"revoked_at"?: string | null,"surface"?: Database["public"]['Enums']["session_surface"],"updated_at"?: string,"user_agent"?: string | null
                   }
                   Relationships: [
                     {
@@ -736,7 +750,7 @@ isOneToOne: false
             [_ in never]: never
           }
           Enums: {
-            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","channel": "ifood"|"food99"|"keeta"|"rappi","contact_channel": "email"|"whatsapp","flag_env": "sandbox"|"production","job_status": "queued"|"running"|"done"|"failed","member_role": "dono"|"financeiro"|"gerente","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free"
+            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","channel": "ifood"|"food99"|"keeta"|"rappi","contact_channel": "email"|"whatsapp","flag_env": "sandbox"|"production","job_status": "queued"|"running"|"done"|"failed","member_role": "dono"|"financeiro"|"gerente","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -856,7 +870,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"channel": ["ifood", "food99", "keeta", "rappi"],"contact_channel": ["email", "whatsapp"],"flag_env": ["sandbox", "production"],"job_status": ["queued", "running", "done", "failed"],"member_role": ["dono", "financeiro", "gerente"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"]
+            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"channel": ["ifood", "food99", "keeta", "rappi"],"contact_channel": ["email", "whatsapp"],"flag_env": ["sandbox", "production"],"job_status": ["queued", "running", "done", "failed"],"member_role": ["dono", "financeiro", "gerente"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"]
           }
         }
 } as const

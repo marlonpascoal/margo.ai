@@ -2,13 +2,15 @@
   "name": "margoai",
   "private": true,
   "packageManager": "pnpm@12.16.1",
-  "engines": { "node": ">=22 <23" },
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "pnpm --filter @margoai/web dev",
     "lint": "pnpm -r --if-present lint && uv run ruff check .",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test && uv run pytest -q && pnpm test:db",
-    "test:db": "supabase test db && MARGO_DB_TESTS=1 uv run pytest -q packages/contracts && supabase gen types typescript --local 2>/dev/null | diff -q - packages/contracts/src/database.types.ts",
+    "test:db": "supabase test db && pnpm --filter @margoai/web test:int && MARGO_DB_TESTS=1 uv run pytest -q packages/contracts && supabase gen types typescript --local 2>/dev/null | diff -q - packages/contracts/src/database.types.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test && uv run python scripts/check_screens.py && uv run python scripts/secret_scan.py",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > packages/contracts/src/database.types.ts"

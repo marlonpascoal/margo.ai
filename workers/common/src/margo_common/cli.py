@@ -13,9 +13,10 @@ import signal
 import sys
 from importlib.metadata import entry_points
 
+from .flags import flag_env
 from .jobs import NewJob
 from .log import log_event
-from .runner import Handler, JobRun, LocalRunner, LogValue
+from .runner import Handler, JobRun, LocalRunner, LogValue, job_flag_check
 
 LOCAL_DB_URL = os.environ.get("MARGO_LOCAL_DB_URL", "postgresql://postgres:postgres@127.0.0.1:54322/postgres")
 
@@ -55,7 +56,11 @@ def main(argv: list[str] | None = None) -> int:
 
     from .stores import PostgresJobStore
 
-    runner = LocalRunner(PostgresJobStore(LOCAL_DB_URL), args.type, interval_s=args.interval)
+    store = PostgresJobStore(LOCAL_DB_URL)
+    # A05: every job checks its flag (JOB_FLAGS) for its account before running.
+    runner = LocalRunner(
+        store, args.type, flag_check=job_flag_check(store.rpc, flag_env()), interval_s=args.interval
+    )
     runner.on_job(args.type, handler, getattr(handler, "payload_model", None))
     if args.enqueue:
         log_event("job_enqueued", job_id=str(runner.enqueue(NewJob(type=args.type))), type=args.type)

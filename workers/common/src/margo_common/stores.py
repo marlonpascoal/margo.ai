@@ -11,7 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 from uuid import UUID
@@ -188,6 +188,19 @@ class PostgresJobStore:
         rows = self._conn.execute("select * from public.requeue_stuck_jobs(%s)", (now,)).fetchall()
         return [_outcome(r) for r in rows]
 
+    def rpc(self, fn: str, args: Mapping[str, Any]) -> Any:
+        """Call a public SQL function with named arguments, like PostgREST's /rpc (flags.Rpc)."""
+        from psycopg import sql
+
+        params = sql.SQL(", ").join(
+            sql.SQL("{} => {}").format(sql.Identifier(k), sql.Placeholder()) for k in args
+        )
+        query = sql.SQL("select {}.{}({}) as result").format(
+            sql.Identifier("public"), sql.Identifier(fn), params
+        )
+        row = self._conn.execute(query, tuple(args.values())).fetchone()
+        return row["result"] if row else None
+
     def get(self, job_id: UUID) -> Job | None:
         return self._job("select * from public.job where id = %s", (job_id,))
 
@@ -238,8 +251,12 @@ class RestJobStore:
             raise RestStoreError(f"{method} {path.split('?')[0]} returned {status}")
         return status, (json.loads(raw) if raw else None)
 
-    def _rpc(self, fn: str, args: dict[str, Any]) -> Any:
-        return self._call("POST", f"/rpc/{fn}", args)[1]
+    def _rpc(self, fn: str, args: Mapping[str, Any]) -> Any:
+        return self._call("POST", f"/rpc/{fn}", dict(args))[1]
+
+    def rpc(self, fn: str, args: Mapping[str, Any]) -> Any:
+        """PostgREST /rpc with the service role (flags.Rpc)."""
+        return self._rpc(fn, args)
 
     def _first_job(self, rows: list[dict[str, Any]]) -> Job | None:
         return Job.model_validate(rows[0]) if rows else None

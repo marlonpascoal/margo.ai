@@ -18,6 +18,7 @@ from uuid import UUID
 from margo_contracts.models import Job
 from pydantic import BaseModel, ValidationError
 
+from .flags import FlagEnv, Rpc, flag_enabled
 from .jobs import JobStore, LogValue, NewJob, StuckOutcome
 from .log import log_event
 from .signing import verify_wakeup
@@ -37,13 +38,38 @@ FlagCheck = Callable[[Job], bool]
 Clock = Callable[[], datetime]
 Outcome = Literal["done", "failed", "not_claimed", "idle"]
 
-JOB_FLAGS: dict[str, str] = {}
-"""Job type to feature flag key (04 §6). Filled as job types land; the flag check reads it."""
+JOB_FLAGS: dict[str, str] = {
+    "collect": "m1.raio_x",  # 05 C02: "Buscar vizinhança" creates a collect job (worker-collector)
+    "import_ifood_api": "m2.ifood_api",  # 06: iFood official API import (worker-import)
+    "import_ifood_file": "m2.arquivo_ifood",  # 06: Portal do Parceiro export file (worker-import)
+    "import_99food_file": "m2.arquivo_99food",  # 06: 99Food statement file (worker-import)
+    "import_invoice_zip": "m3.notas_xml",  # accountant's invoice XML zip (worker-import)
+    "match_ai": "m3.depara_ia",  # AI ingredient matching (worker-match)
+}
+"""Job type to feature flag key (04 §6, A05). A type not listed here has no flag and always runs."""
 
 
 def allow_all(job: Job) -> bool:
-    """Default flag check. The real one evaluates `public.flag_enabled` for JOB_FLAGS[job.type] (A05)."""
+    """Flag check for tests and tools that bypass flags. Workers use `job_flag_check` (A05)."""
     return True
+
+
+def job_flag_check(rpc: Rpc, env: FlagEnv, job_flags: Mapping[str, str] = JOB_FLAGS) -> FlagCheck:
+    """A05: a job whose flag is off for its account refuses to run.
+
+    Evaluates `public.flag_enabled` for JOB_FLAGS[job.type] and the job's account. A system job
+    (account_id null) passes no account, so the SQL no-account rule applies: on when the flag is on in at
+    least one plan. RPC errors propagate; the job stays running and the stuck sweep retries it (A08).
+    """
+
+    def check(job: Job) -> bool:
+        key = job_flags.get(job.type)
+        if key is None:
+            return True
+        account = str(job.account_id) if job.account_id is not None else None
+        return flag_enabled(key, account, env, rpc=rpc)
+
+    return check
 
 
 def utc_now() -> datetime:

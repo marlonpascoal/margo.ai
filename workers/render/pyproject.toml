@@ -3,7 +3,8 @@ name = "margo-render"
 version = "0.0.0"
 description = "worker-render: PDFs (weasyprint) and xlsx (openpyxl). Wave 0 holds only the design tokens."
 requires-python = ">=3.12,<3.13"
-dependencies = []
+# fpdf2: pure-Python PDF for P06 (margo_render/p06.py); pypdf reads PDFs back in tests.
+dependencies = ["fpdf2>=2.8", "openpyxl>=3.1", "pypdf>=5"]
 
 [build-system]
 requires = ["hatchling"]

@@ -747,7 +747,18 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "flag_enabled":
+{ Args: { "p_account": string,"p_env": Database["public"]['Enums']["flag_env"],"p_key": string }; Returns: boolean
+                           },
+"flag_remove_override":
+{ Args: { "p_account": string,"p_actor": string,"p_env": Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_key": string,"p_user_agent"?: string }; Returns: undefined
+                           },
+"flag_set_default":
+{ Args: { "p_actor": string,"p_env": Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_key": string,"p_plan": string,"p_user_agent"?: string,"p_value": boolean }; Returns: undefined
+                           },
+"flag_set_override":
+{ Args: { "p_account": string,"p_actor": string,"p_env": Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_key": string,"p_reason": string,"p_user_agent"?: string,"p_value": boolean }; Returns: undefined
+                           }
           }
           Enums: {
             "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","channel": "ifood"|"food99"|"keeta"|"rappi","contact_channel": "email"|"whatsapp","flag_env": "sandbox"|"production","job_status": "queued"|"running"|"done"|"failed","member_role": "dono"|"financeiro"|"gerente","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free"

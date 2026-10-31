@@ -1597,6 +1597,16 @@ isOneToOne: false
 "people_lock_until":
 { Args: { "p_account": string,"p_at"?: string }; Returns: string
                            },
+"portal_accept_invite":
+{ Args: { "p_email": string,"p_ip": unknown,"p_name": string,"p_now"?: string,"p_token_hash": string,"p_user_agent": string }; Returns: {
+              "account_id": string,"email": string,"person_id": string,"status": string
+            }[]
+                           },
+"portal_sign_up":
+{ Args: { "p_cnpj": string,"p_email": string,"p_ip": unknown,"p_name": string,"p_now"?: string,"p_restaurant": string,"p_user_agent": string,"p_whatsapp": string,"p_xray": string }; Returns: {
+              "account_id": string,"created": boolean,"person_id": string
+            }[]
+                           },
 "requeue_stuck_jobs":
 { Args: { "p_now"?: string }; Returns: {
               "alert_id": string,"job_id": string,"outcome": string

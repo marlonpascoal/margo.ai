@@ -42,6 +42,11 @@ export function canConsoleScreen(role: StaffRole | null | undefined, code: strin
   return !!area && canConsole(role, area);
 }
 
+/** 04 §5: feature toggles (C20) are Fundador only. */
+export function canManageFlags(role: StaffRole | null | undefined): boolean {
+  return canConsole(role, "flags");
+}
+
 // Owner portal -------------------------------------------------------------------------------------
 
 /** Rows of the owner portal table in 04 §5. */

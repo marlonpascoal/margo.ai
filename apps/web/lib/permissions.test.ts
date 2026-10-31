@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canConsole, canConsoleScreen, canPortal, consoleScreenArea, portalScreenAllowed } from "./permissions";
+import { canConsole, canConsoleScreen, canManageFlags, canPortal, consoleScreenArea, portalScreenAllowed } from "./permissions";
 
 describe("console matrix (04 §5)", () => {
   it("C00_fundador_can_use_every_console_area", () => {
@@ -12,6 +12,13 @@ describe("console matrix (04 §5)", () => {
     for (const code of ["C01", "C02", "C07", "C10", "C16", "C18", "C19", "C21"]) {
       expect(canConsoleScreen("operacao", code)).toBe(true);
     }
+  });
+
+  it("C20_only_fundador_manages_flags", () => {
+    expect(canManageFlags("fundador")).toBe(true);
+    expect(canManageFlags("operacao")).toBe(false);
+    expect(canManageFlags(null)).toBe(false);
+    expect(canManageFlags(undefined)).toBe(false);
   });
 
   it("no_role_means_no_console", () => {

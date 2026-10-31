@@ -1,9 +1,10 @@
 // C20 changes: plan defaults and account exceptions (04 §5, §6, D34). Fundador only, checked here on the
 // server and again inside the SQL functions, which write the change, feature_flag_log and audit_log in one
 // transaction.
+import { canManageFlags, type StaffRole } from "@/lib/permissions";
 import { isFlagKey, isPlanCode, type FlagEnv, type FlagKey, type PlanCode } from "./keys";
 
-export type StaffRole = "fundador" | "operacao";
+export type { StaffRole };
 
 /** The staff member making the change, from the console session. */
 export interface Actor {
@@ -44,9 +45,6 @@ export const MESSAGES = {
 } as const;
 
 export type AdminResult = { ok: true } | { ok: false; error: "forbidden" | "invalid"; message: string };
-
-/** 04 §5: feature toggles (C20) are Fundador only. */
-export const canManageFlags = (role: StaffRole | null) => role === "fundador";
 
 const isEnv = (v: unknown): v is FlagEnv => v === "sandbox" || v === "production";
 const forbidden: AdminResult = { ok: false, error: "forbidden", message: MESSAGES.forbidden };

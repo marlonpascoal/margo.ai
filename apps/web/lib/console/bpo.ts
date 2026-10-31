@@ -74,7 +74,8 @@ export async function loadPartners(db: Db) {
   if (error) throw new Error(error.message);
   const accountIds = [...new Set((clients ?? []).map((c) => c.account_id))];
   const [{ data: stores }, { data: folderRuns }] = await Promise.all([
-    accountIds.length ? db.from("channel_store").select("account_id").in("account_id", accountIds) : Promise.resolve({ data: [] as { account_id: string }[] }),
+    // D29: only stores linked to a kitchen count.
+    accountIds.length ? db.from("channel_store").select("account_id").in("account_id", accountIds).not("kitchen_id", "is", null) : Promise.resolve({ data: [] as { account_id: string }[] }),
     accountIds.length
       ? db.from("import_run").select("account_id, created_at, import_source!inner(kind)").in("account_id", accountIds).eq("import_source.kind", "bpo_folder").order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as { account_id: string; created_at: string }[] }),

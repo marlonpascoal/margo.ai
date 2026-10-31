@@ -26,16 +26,15 @@ describe("P04 pairing", () => {
 });
 
 describe("P04 requested reports, as drawn", () => {
-  it("last month in São Paulo, with the API note when the account has the API", () => {
+  it("last month in São Paulo, as drawn", () => {
     const now = new Date("2026-10-31T02:00:00Z"); // 30/out 23:00 in São Paulo
     expect(previousMonthLabel(now)).toBe("set/2026");
     expect(previousMonthLabel(new Date("2027-01-10T12:00:00Z"))).toBe("dez/2026");
-    expect(requestedReports(now, true)).toEqual([
+    expect(requestedReports(now)).toEqual([
       { key: "vendas_por_item", name: "Vendas por item", period: "set/2026 · a API não traz este", requested: true },
       { key: "promocoes", name: "Extrato de promoções e campanhas", period: "set/2026", requested: true },
       { key: "avaliacoes", name: "Avaliações da loja", period: "não precisamos agora", requested: false },
     ]);
-    expect(requestedReports(now, false)[0].period).toBe("set/2026");
   });
 });
 

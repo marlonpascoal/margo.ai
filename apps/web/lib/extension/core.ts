@@ -63,10 +63,10 @@ export function previousMonthLabel(now: Date): string {
  * P04 "Relatórios que a MargoAI pediu", as drawn: item sales (the API does not bring them, D07) and the
  * promotions statement for last month; store reviews not needed now.
  */
-export function requestedReports(now: Date, hasApi: boolean): RequestedReport[] {
+export function requestedReports(now: Date): RequestedReport[] {
   const month = previousMonthLabel(now);
   return [
-    { key: "vendas_por_item", name: "Vendas por item", period: hasApi ? `${month} · a API não traz este` : month, requested: true },
+    { key: "vendas_por_item", name: "Vendas por item", period: `${month} · a API não traz este`, requested: true },
     { key: "promocoes", name: "Extrato de promoções e campanhas", period: month, requested: true },
     { key: "avaliacoes", name: "Avaliações da loja", period: "não precisamos agora", requested: false },
   ];

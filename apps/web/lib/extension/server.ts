@@ -188,7 +188,7 @@ export async function extensionStatus(db: Db, auth: ExtensionAuth, now: Date): P
     account: { name: must(account).name, synthetic: must(account).is_synthetic },
     person: must(person).name,
     stores: stores.map(({ id, name }) => ({ id, name })),
-    reports: requestedReports(now, src.some((s) => s.kind === "api")),
+    reports: requestedReports(now),
     lastUpload: src.find((s) => s.kind === "extension")?.last_ok_at ?? null,
   };
 }

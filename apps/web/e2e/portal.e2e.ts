@@ -99,6 +99,19 @@ test("E03_E05_A03_W01_W09_dono_logs_in_sees_the_month_sets_notices_and_the_sessi
   await expect(page.getByText("Registro de acesso")).toBeVisible();
   await expect(page.getByText("Você entrou com código por e-mail").first()).toBeVisible();
 
+  // Shell (05 §B): every MenuDono link opens its page inside the one menu, and W07 (not in the menu) too.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const menu = page.getByRole("navigation", { name: "Portal do dono" });
+  const links = await menu.getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent ?? "", a.getAttribute("href") ?? ""]));
+  expect(links.map(([, href]) => href)).toEqual(["/app", "/app/lojas", "/app/contestacoes", "/app/pessoas", "/app/plano", "/app/notificacoes", "/app/seguranca"]);
+  for (const [label, href] of [...links, ["", "/app/conectar"]]) {
+    const res = await page.goto(href);
+    expect(res!.status(), href).toBe(200);
+    await expect(page.getByRole("navigation", { name: "Portal do dono" }), href).toHaveCount(1);
+    await expect(page.getByRole("banner"), href).toHaveCount(1);
+    if (label) await expect(menu.getByRole("link", { name: label, exact: true }), href).toHaveAttribute("aria-current", "page");
+  }
+
   // E03: 30 days on the portal, then back to P15.
   await db.from("session_device").update({ created_at: new Date(Date.now() - 29 * 86_400_000).toISOString() }).eq("id", device!.id);
   await page.goto("/app");

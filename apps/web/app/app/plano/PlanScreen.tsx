@@ -89,7 +89,7 @@ export default function PlanScreen({ view }: { view: PlanView }) {
   );
 
   return (
-    <div className="min-h-screen bg-bg font-sans text-ink">
+    <div>
       {/* P09, phone */}
       <main className="box-border flex min-h-[844px] flex-col gap-3 px-4 py-5 md:hidden">
         <div className="flex items-center justify-between">

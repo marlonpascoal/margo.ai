@@ -1,11 +1,13 @@
 // W09 Segurança e acesso (phone: reached from P08). Devices and "Sair de todos os aparelhos" for everyone;
-// the access log for the Dono (04 §5, audit_log RLS). Changing a contact (E04), the data export and the
-// account deletion (E06) are drawn here and not built in this task: their buttons stay disabled.
+// the access log for the Dono (04 §5, audit_log RLS). For the Dono: "Trocar" the login e-mail (E04, code
+// on the new address, 24-hour lock), the data export and the account deletion with a code (E06). WhatsApp
+// "Trocar" stays disabled: no automatic WhatsApp to carry the code yet (D40).
 import Link from "next/link";
 import SignOutAll from "@/components/portal/SignOutAll";
+import { DeleteAccount, EmailChange, ExportButton } from "@/components/portal/W09Forms";
 import { canPortal } from "@/lib/permissions";
 import { maskWhatsapp } from "@/lib/portal/format";
-import { loadAccessLog, loadDevices } from "@/lib/portal/security";
+import { loadAccessLog, loadDevices, loadLatestExport } from "@/lib/portal/security";
 import { requireMember } from "@/lib/portal/session";
 import { adminClient } from "@/lib/supabase/admin";
 import { signOutDevice } from "./actions";
@@ -21,7 +23,11 @@ export default async function SegurancaPage() {
   const m = await requireMember();
   const db = adminClient();
   const dono = canPortal(m.role, "people");
-  const [devices, log] = await Promise.all([loadDevices(db, m.personId, m.sessionDeviceId), dono ? loadAccessLog(db, m.account.id, m.personId) : Promise.resolve([])]);
+  const [devices, log, latestExport] = await Promise.all([
+    loadDevices(db, m.personId, m.sessionDeviceId),
+    dono ? loadAccessLog(db, m.account.id, m.personId) : Promise.resolve([]),
+    dono ? loadLatestExport(db, m.account.id) : Promise.resolve(null),
+  ]);
   return (
     <main className="mx-auto box-border flex max-w-[1180px] flex-col gap-5 px-4 py-5 md:px-8 md:py-7">
       <Link href="/app" className="text-md md:hidden">
@@ -31,14 +37,7 @@ export default async function SegurancaPage() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
         <section className={`${card} gap-3`}>
           <b>Como você entra</b>
-          {m.email && (
-            <div className={line}>
-              <span>E-mail: {m.email}</span>
-              <button type="button" disabled className={small}>
-                Trocar
-              </button>
-            </div>
-          )}
+          {m.email && <EmailChange email={m.email} enabled={dono} />}
           {m.whatsappE164 && (
             <div className={line}>
               <span>WhatsApp: {maskWhatsapp(m.whatsappE164)}</span>
@@ -92,14 +91,22 @@ export default async function SegurancaPage() {
           <div className="text-md leading-normal">
             Revogar o acesso ao iFood: no Portal do Parceiro, em Aplicativos. Os dados que já temos ficam até você pedir para apagar.
           </div>
-          <button type="button" disabled className="min-h-10 rounded-md border border-border-strong bg-surface text-md text-ink disabled:opacity-60">
-            Baixar todos os meus dados
-          </button>
+          {dono ? (
+            <ExportButton />
+          ) : (
+            <button type="button" disabled className="min-h-10 rounded-md border border-border-strong bg-surface text-md text-ink disabled:opacity-60">
+              Baixar todos os meus dados
+            </button>
+          )}
+          {latestExport?.href && (
+            <a href={latestExport.href} className="text-sm">
+              Baixar o arquivo de {latestExport.day}
+            </a>
+          )}
+          {latestExport?.status === "preparing" && <span className="text-sm text-ink-muted">Arquivo de {latestExport.day} em preparação.</span>}
           {canPortal(m.role, "delete_account") && (
             <>
-              <button type="button" disabled className="min-h-10 rounded-md border border-danger bg-surface text-md text-danger disabled:opacity-60">
-                Excluir a conta e os dados
-              </button>
+              <DeleteAccount />
               <div className="text-xs text-ink-muted">Excluir pede confirmação com código e apaga tudo em até 90 dias. Só o Dono pode.</div>
             </>
           )}

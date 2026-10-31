@@ -2,7 +2,7 @@
 // P18 invite, E05 preferences (page side), W09 devices, A03 (Gerente sees only Cozinha Centro).
 import { createHash, randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { DONO_EMAIL, adminDb, clearMail, loginToPortal, mailCode, sid, withLoginEmail } from "./helpers";
+import { DONO_EMAIL, PANTANOS_EMAIL, adminDb, clearMail, loginToPortal, mailCode, sid, waitForResendWindow, withLoginEmail } from "./helpers";
 
 const tag = randomBytes(4).toString("hex");
 const SENT = "Mandamos um código de 6 números para o seu e-mail. Ele vale por 10 minutos.";
@@ -232,5 +232,75 @@ test("P18_accept_invite_logs_in_and_the_link_then_shows_the_clear_message", asyn
       if (p.auth_user_id) await db.auth.admin.deleteUser(p.auth_user_id);
     }
     await db.from("invite").delete().eq("id", inv!.id);
+  }
+});
+
+// W09 for the Dono of Pantanos (G-01): data export (E06), deletion with a code (E06), then "Trocar" the
+// login e-mail with a code on the new address (E04). Everything the test queues or changes is undone.
+test("E04_E06_W09_dono_exports_asks_deletion_with_code_and_changes_login_email", async ({ page }) => {
+  test.setTimeout(240_000);
+  const db = adminDb();
+  const since = new Date().toISOString();
+  const G01 = sid("G-01");
+  const dono = sid("p:g01-dono");
+  const newEmail = `e2e-troca-${tag}@teste.local`;
+  await loginToPortal(page, PANTANOS_EMAIL);
+  const { data: me } = await db.from("person").select("auth_user_id").eq("id", dono).single();
+  try {
+    await page.goto("/app/seguranca");
+
+    // E06 export: queued, audited, then "em preparação" on the page.
+    await page.getByRole("button", { name: "Baixar todos os meus dados" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Estamos preparando o arquivo" })).toBeVisible();
+    const { data: exp } = await db.from("job").select("id, status").eq("type", "account_export").eq("account_id", G01).gte("created_at", since);
+    expect(exp).toHaveLength(1);
+    await page.reload();
+    await expect(page.getByText(/^Arquivo de .* em preparação\.$/)).toBeVisible();
+
+    // E06 deletion: a code on the Dono's e-mail; a wrong one is refused, the right one queues account_delete.
+    await waitForResendWindow(PANTANOS_EMAIL);
+    await clearMail(PANTANOS_EMAIL);
+    await page.getByRole("button", { name: "Excluir a conta e os dados" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Mandamos um código" })).toBeVisible();
+    const delCode = await mailCode(PANTANOS_EMAIL);
+    expect(delCode, "deletion code in Mailpit").not.toBeNull();
+    await page.locator("#w09-codigo-excluir").fill(delCode === "000000" ? "111111" : "000000");
+    await page.getByRole("button", { name: "Confirmar a exclusão" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Código errado" })).toBeVisible();
+    await page.locator("#w09-codigo-excluir").fill(delCode!);
+    await page.getByRole("button", { name: "Confirmar a exclusão" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Pedido de exclusão recebido" })).toBeVisible();
+    const { data: del } = await db.from("job").select("payload").eq("type", "account_delete").gte("created_at", since);
+    expect(del).toEqual([{ payload: { account_id: G01, requested_by: dono } }]);
+    // The check did not replace the portal session.
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Segurança e acesso" })).toBeVisible();
+
+    // E04: "Trocar" the e-mail, code on the new address, 24-hour lock, notice to the old address.
+    await clearMail(newEmail);
+    await page.getByRole("button", { name: "Trocar" }).first().click();
+    await page.getByLabel("Novo e-mail").fill(newEmail);
+    await page.getByRole("button", { name: "Mandar código" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Mandamos um código" })).toBeVisible();
+    const code = await mailCode(newEmail);
+    expect(code, "code at the new address").not.toBeNull();
+    await page.locator("#w09-codigo-email").fill(code!);
+    await page.getByRole("button", { name: "Confirmar troca" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "E-mail trocado" })).toBeVisible();
+    expect((await db.from("person").select("email, auth_user_id").eq("id", dono).single()).data).toEqual({ email: newEmail, auth_user_id: me!.auth_user_id });
+    const { data: lock } = await db.from("security_lock").select("reason").eq("account_id", G01).gte("created_at", since);
+    expect(lock).toEqual([{ reason: "contact_change:email" }]);
+    const { data: told } = await db.from("notification").select("recipient").eq("person_id", dono).eq("subject", "Seu e-mail de login mudou").gte("created_at", since);
+    expect(told).toEqual([{ recipient: PANTANOS_EMAIL }]);
+    // Still signed in, now under the new e-mail.
+    await page.reload();
+    await expect(page.getByText(`E-mail: ${newEmail}`)).toBeVisible();
+  } finally {
+    await db.from("person").update({ email: PANTANOS_EMAIL }).eq("id", dono);
+    if (me?.auth_user_id) await db.auth.admin.updateUserById(me.auth_user_id, { email: PANTANOS_EMAIL, email_confirm: true });
+    await db.from("security_lock").delete().eq("account_id", G01).gte("created_at", since);
+    await db.from("job").delete().in("type", ["account_export", "account_delete"]).gte("created_at", since);
+    await db.from("notification").delete().eq("notice_code", "security_event").gte("created_at", since);
+    await db.from("auth_code_guard").delete().eq("email", newEmail);
   }
 });

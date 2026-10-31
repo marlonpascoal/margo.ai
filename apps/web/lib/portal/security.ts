@@ -5,6 +5,7 @@ import type { MemberRole } from "@/lib/permissions";
 import type { Db } from "@/lib/supabase/admin";
 import { accessWhen, deviceName, deviceWhen } from "./format";
 import { PROFILE_LABEL } from "./entry";
+import { dayMonSP } from "./scope";
 
 export interface SessionRow {
   id: string;
@@ -107,4 +108,35 @@ export async function loadAccessLog(db: Db, accountId: string, me: string, now =
     when: accessWhen(new Date(r.at), now),
     text: accessLine({ ...r, actorName: r.actor_person_id ? (names.get(r.actor_person_id) ?? null) : null, after: (r.after ?? null) as Record<string, unknown> | null }, me),
   }));
+}
+
+/** W09 data section copy. Not drawn; same style as P15. */
+export const W09_MESSAGES = {
+  exportQueued: "Estamos preparando o arquivo com todos os dados. Ele aparece aqui para baixar em alguns minutos.",
+  deletionQueued: "Pedido de exclusão recebido. Mandamos a confirmação por e-mail. Tudo é apagado em até 90 dias.",
+  noEmail: "Para confirmar com código, a conta precisa de um e-mail de login.",
+} as const;
+
+export interface LatestExport {
+  status: "preparing" | "ready";
+  href: string | null;
+  /** "20/nov" */
+  day: string;
+}
+
+/** E06: the account's last data export, to link "Baixar o arquivo" (route /app/dados/[job]). */
+export async function loadLatestExport(db: Db, accountId: string): Promise<LatestExport | null> {
+  const { data, error } = await db
+    .from("job")
+    .select("id, status, created_at")
+    .eq("account_id", accountId)
+    .eq("type", "account_export")
+    .in("status", ["queued", "running", "done"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const day = dayMonSP(data.created_at);
+  return data.status === "done" ? { status: "ready", href: `/app/dados/${data.id}`, day } : { status: "preparing", href: null, day };
 }

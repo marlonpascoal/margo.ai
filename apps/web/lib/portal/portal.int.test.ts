@@ -8,6 +8,7 @@ import { notifyDeps } from "@/lib/notify/deps";
 import { adminClient } from "@/lib/supabase/admin";
 import { closeFilePath, exportPath, requestDeletion, requestExport } from "./account-data";
 import { loadConnect, signAuthorization, TERMS_VERSION } from "./connect";
+import { changeLoginEmail, checkNewEmail, CONTACT_MESSAGES } from "./contact-change";
 import { loadOwnerContestations, markOwnerContestation, ownerTotals } from "./contestacoes";
 import { loadLojas } from "./lojas";
 import { loadPeople } from "./pessoas";
@@ -148,5 +149,48 @@ describe("E06 from the portal", () => {
     expect(j).toEqual({ type: "account_delete", account_id: null, payload: { account_id: G03, requested_by: who.personId } });
     const { data: n } = await db.from("notification").select("person_id, channel, subject").eq("notice_code", "security_event").gte("created_at", since);
     expect(n).toEqual(expect.arrayContaining([{ person_id: sid("p:g03-dono"), channel: "email", subject: "Pedido de exclusão da conta" }]));
+  });
+});
+
+describe("E04 login e-mail change from W09", () => {
+  // Grupo B (G-03): its Dono gets a throwaway auth user here, so G-02 stays as seeded.
+  const G03 = sid("G-03");
+  const person = sid("p:g03-dono");
+  const tag = Math.random().toString(36).slice(2, 8);
+
+  it("E04_new_email_must_be_valid_new_and_free", async () => {
+    expect(await checkNewEmail(db, person, "grupob@exemplo.com.br", "nada")).toEqual({ ok: false, message: CONTACT_MESSAGES.invalid });
+    expect(await checkNewEmail(db, person, "grupob@exemplo.com.br", " GrupoB@exemplo.com.br")).toEqual({ ok: false, message: CONTACT_MESSAGES.same });
+    expect(await checkNewEmail(db, person, "grupob@exemplo.com.br", "dono@exemplo.com.br")).toEqual({ ok: false, message: CONTACT_MESSAGES.taken });
+    expect(await checkNewEmail(db, person, "grupob@exemplo.com.br", `novo-${tag}@teste.local`)).toEqual({ ok: true, email: `novo-${tag}@teste.local` });
+  });
+
+  it("E04_change_moves_the_auth_user_locks_24_hours_audits_and_tells_the_old_address", async () => {
+    const since = new Date().toISOString();
+    const oldEmail = "grupob@exemplo.com.br";
+    const newEmail = `novo-${tag}@teste.local`;
+    const own = (await db.auth.admin.createUser({ email: `e2e-own-${tag}@teste.local`, email_confirm: true })).data.user!.id;
+    const proved = (await db.auth.admin.createUser({ email: newEmail, email_confirm: true })).data.user!.id;
+    await db.from("person").update({ auth_user_id: own }).eq("id", person);
+    cleanup.push(async () => {
+      await db.from("person").update({ email: oldEmail, auth_user_id: null }).eq("id", person);
+      await db.auth.admin.deleteUser(own);
+      await db.from("security_lock").delete().eq("account_id", G03).gte("created_at", since);
+      await db.from("notification").delete().eq("person_id", person).gte("created_at", since);
+    });
+
+    expect(await changeLoginEmail(db, { personId: person, personName: "Dono do Grupo B", accountId: G03, oldEmail, newEmail, provedBy: proved, meta: META })).toEqual({ ok: true });
+
+    expect((await db.from("person").select("email, auth_user_id").eq("id", person).single()).data).toEqual({ email: newEmail, auth_user_id: own });
+    expect((await db.auth.admin.getUserById(own)).data.user!.email).toBe(newEmail);
+    expect((await db.auth.admin.getUserById(proved)).data.user).toBeNull();
+    const { data: locks } = await db.from("security_lock").select("reason, until").eq("account_id", G03).gte("created_at", since);
+    expect(locks).toHaveLength(1);
+    expect(locks![0].reason).toBe("contact_change:email");
+    expect(new Date(locks![0].until).getTime() - Date.now()).toBeGreaterThan(23.9 * 3600_000);
+    const { data: audit } = await db.from("audit_log").select("action").eq("account_id", G03).gte("at", since);
+    expect(audit!.map((a) => a.action).sort()).toEqual(["person.email_change", "security_lock.contact_change"]);
+    const { data: n } = await db.from("notification").select("recipient, channel, notice_code").eq("person_id", person).gte("created_at", since);
+    expect(n).toEqual([{ recipient: oldEmail, channel: "email", notice_code: "security_event" }]);
   });
 });

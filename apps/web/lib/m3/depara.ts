@@ -30,7 +30,8 @@ export interface MatchRecord {
   status: Status;
   conversion_factor: number | null;
   confirmed_by: string | null;
-  rule: { ncm_prefix: string | null; unit: string | null } | null;
+  /** C11 "Como casou" of a rule match: "texto + NCM 0201" (ingredient_match.rule_note). */
+  rule_note: string | null;
 }
 
 export type RowState = "auto" | "person" | "suggested" | "none";
@@ -57,13 +58,11 @@ export interface Shares {
 }
 
 /** C11 "Como casou": "código de barras", "regra: texto + NCM 0201", "regra: texto + unidade", "sugestão da IA". */
-export function howLabel(m: Pick<MatchRecord, "method" | "rule">): string {
+export function howLabel(m: Pick<MatchRecord, "method" | "rule_note">): string {
   if (m.method === "gtin") return "código de barras";
   if (m.method === "ai") return "sugestão da IA";
   if (m.method === "manual") return "escolhido no console";
-  if (m.rule?.ncm_prefix) return `regra: texto + NCM ${m.rule.ncm_prefix.slice(0, 4)}`;
-  if (m.rule?.unit) return "regra: texto + unidade";
-  return "regra: texto";
+  return `regra: ${m.rule_note ?? "texto"}`;
 }
 
 const active = (l: LineRecord) => l.matches.find((m) => m.status === "confirmed") ?? l.matches.find((m) => m.status === "suggested") ?? null;
@@ -132,7 +131,7 @@ export async function loadLines(db: Db, accountId: string): Promise<LineRecord[]
   const { data, error } = await db
     .from("invoice_line")
     .select(
-      "id, description, ncm, unit, qty, total_cents, invoice!inner(issued_at), ingredient_match(id, ingredient_id, method, status, conversion_factor, confirmed_by, ingredient(name, base_unit), ingredient_rule(ncm_prefix, unit))",
+      "id, description, ncm, unit, qty, total_cents, invoice!inner(issued_at), ingredient_match(id, ingredient_id, method, status, conversion_factor, confirmed_by, rule_note, ingredient(name, base_unit))",
     )
     .eq("account_id", accountId)
     .limit(20000);
@@ -154,7 +153,7 @@ export async function loadLines(db: Db, accountId: string): Promise<LineRecord[]
       status: m.status,
       conversion_factor: m.conversion_factor === null ? null : Number(m.conversion_factor),
       confirmed_by: m.confirmed_by,
-      rule: m.ingredient_rule,
+      rule_note: m.rule_note,
     })),
   }));
 }

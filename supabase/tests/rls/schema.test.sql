@@ -18,7 +18,7 @@ select tables_are('public', array[
   'rule_param', 'import_source', 'import_run', 'column_mapping', 'order_fact', 'order_item_fact', 'ledger_entry',
   'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation',
   'invoice', 'invoice_line', 'ingredient', 'ingredient_match', 'ingredient_price', 'recipe', 'recipe_line',
-  'packaging_cost', 'contribution', 'invoice_import', 'ingredient_rule'
+  'packaging_cost', 'contribution', 'campaign_item', 'close_cost_line', 'close_decision', 'invoice_import', 'ingredient_rule'
 ], 'A02: tables of 03 §1 to §5, the login code guard (04 §8), the M1 page cache (D47) and M2 params and evidence');
 
 select is_empty($$
@@ -38,8 +38,9 @@ $$, 'every table has created_at and updated_at');
 select is_empty($$
   select table_name || '.' || column_name from information_schema.columns
   where table_schema = 'public' and column_name like '%\_cents' and data_type <> 'bigint'
-    and (table_name, column_name) <> ('ingredient_price', 'price_per_base_unit_cents')
-$$, 'money columns (_cents) are bigint centavos; only the per-base-unit price is fractional (03 §4)');
+    and (table_name, column_name) not in (('ingredient_price', 'price_per_base_unit_cents'),
+      ('recipe_line', 'price_per_base_unit_cents'), ('recipe_line', 'cost_cents'))
+$$, 'money columns (_cents) are bigint centavos; only the per-base-unit price and the unrounded CST-03 line cost are fractional (03 §4)');
 
 select is_empty($$
   select table_name::text from information_schema.columns

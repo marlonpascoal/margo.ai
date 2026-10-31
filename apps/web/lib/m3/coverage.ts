@@ -39,25 +39,46 @@ export interface Ranked {
   base_unit: BaseUnit;
 }
 
-/** The top insumos of the account (m3.top_ingredients, default 20), most weight first. */
-export async function rankedIngredients(db: Db, accountId: string): Promise<Ranked[]> {
-  const n = await param(db, "m3.top_ingredients", 20);
-  const { data, error } = await db
-    .from("recipe_line")
-    .select("ingredient_id, qty_base_units, yield_pct, ingredient(name, short_name, base_unit), recipe!inner(menu_item!inner(is_top20))")
-    .eq("account_id", accountId)
-    .eq("recipe.menu_item.is_top20", true);
+/** Units of each dish sold in the latest computed close (contribution.units, worker-cost). */
+async function unitsByDish(db: Db, accountId: string): Promise<Map<string, number>> {
+  const { data: close } = await db.from("close_period").select("id").eq("account_id", accountId).not("computed_at", "is", null).order("month", { ascending: false }).limit(1).maybeSingle();
+  const out = new Map<string, number>();
+  if (!close) return out;
+  const { data, error } = await db.from("contribution").select("menu_item_id, units").eq("close_period_id", close.id);
   if (error) throw new Error(error.message);
-  const weight = new Map<string, { r: Ranked; w: number }>();
-  for (const l of data ?? []) {
-    const cur = weight.get(l.ingredient_id) ?? { r: { id: l.ingredient_id, name: l.ingredient.name, short_name: l.ingredient.short_name, base_unit: l.ingredient.base_unit }, w: 0 };
-    cur.w += Number(l.qty_base_units) / Number(l.yield_pct);
-    weight.set(l.ingredient_id, cur);
-  }
-  return [...weight.values()].sort((a, b) => b.w - a.w || a.r.name.localeCompare(b.r.name)).slice(0, n).map((x) => x.r);
+  for (const r of data ?? []) out.set(r.menu_item_id, (out.get(r.menu_item_id) ?? 0) + r.units);
+  return out;
 }
 
-export async function topIngredients(db: Db, accountId: string, asOf: string): Promise<TopIngredient[]> {
-  const [ranked, prices] = await Promise.all([rankedIngredients(db, accountId), latestInvoicePrices(db, accountId, asOf)]);
+/** The insumos that weigh most in the cost of the dishes sold (m3.top_ingredients, default 20): line cost of
+ * the ready recipes (CST-03, written by worker-cost) times units of the dish sold, as margo_cost computes it
+ * for P06. Also returns the date those costs were computed, the date CST-01 is read at. */
+export async function rankedIngredients(db: Db, accountId: string): Promise<{ ranked: Ranked[]; asOf: string | null }> {
+  const n = await param(db, "m3.top_ingredients", 20);
+  const [units, lines] = await Promise.all([
+    unitsByDish(db, accountId),
+    db
+      .from("recipe_line")
+      .select("ingredient_id, cost_cents, ingredient(name, short_name, base_unit), recipe!inner(menu_item_id, status, cost_as_of)")
+      .eq("account_id", accountId)
+      .eq("recipe.status", "ready"),
+  ]);
+  if (lines.error) throw new Error(lines.error.message);
+  const weight = new Map<string, { r: Ranked; w: number }>();
+  let asOf: string | null = null;
+  for (const l of lines.data ?? []) {
+    if (l.recipe.cost_as_of && (!asOf || l.recipe.cost_as_of > asOf)) asOf = l.recipe.cost_as_of;
+    const cur = weight.get(l.ingredient_id) ?? { r: { id: l.ingredient_id, name: l.ingredient.name, short_name: l.ingredient.short_name, base_unit: l.ingredient.base_unit }, w: 0 };
+    cur.w += Number(l.cost_cents ?? 0) * (units.get(l.recipe.menu_item_id) ?? 0);
+    weight.set(l.ingredient_id, cur);
+  }
+  const ranked = [...weight.values()].sort((a, b) => b.w - a.w || a.r.id.localeCompare(b.r.id)).slice(0, n).map((x) => x.r);
+  return { ranked, asOf };
+}
+
+/** C10 rows: each top insumo with its CST-01 price at the date the costs were computed (else today). */
+export async function topIngredients(db: Db, accountId: string, today: string): Promise<TopIngredient[]> {
+  const { ranked, asOf } = await rankedIngredients(db, accountId);
+  const prices = await latestInvoicePrices(db, accountId, asOf ?? today);
   return ranked.map((r) => ({ ...r, price: prices.get(r.id) ?? null }));
 }

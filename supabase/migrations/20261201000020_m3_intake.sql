@@ -9,7 +9,6 @@
 --   ingredient.short_name: the name the owner reads in P05 ("queijo cheddar", not "Queijo cheddar fatiado");
 --   ingredient_rule: D14 step 2 (normalized text plus NCM plus unit), global like the catalog. Rows come from
 --     the catalog seed or are learned from a person's confirmation, so the next client maps alone (D14);
---   ingredient_match.rule_id: which rule matched (C11 "regra: texto + NCM 0201");
 --   invoice_line.ai_asked_at: the line went to the Claude API once; it is not sent again (cost, D14);
 --   public.confirm_ingredient_match: the one place where a match becomes a CST-01 price.
 
@@ -66,9 +65,6 @@ comment on table public.ingredient_rule is
   'D14 step 2: an invoice line matches when every keyword is a token of its normalized description, its NCM starts with ncm_prefix (if set) and its unit equals unit (if set). Global, no account_id.';
 
 alter table public.invoice_line add column ai_asked_at timestamptz;
-
-alter table public.ingredient_match
-  add column rule_id uuid references public.ingredient_rule (id) on delete set null;
 
 do $$
 declare t text;

@@ -3,7 +3,7 @@ name = "margoai"
 version = "0.0.0"
 description = "MargoAI workspace root: workers and repo scripts"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-import[local]", "margo-render[local]", "margo-account[local]", "margo-match[local]"]
+dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-import[local]", "margo-render[local]", "margo-account[local]", "margo-cost[local]", "margo-match[local]"]
 
 [tool.uv]
 package = false
@@ -15,6 +15,7 @@ margo-collector = { workspace = true }
 margo-import = { workspace = true }
 margo-render = { workspace = true }
 margo-account = { workspace = true }
+margo-cost = { workspace = true }
 margo-match = { workspace = true }
 
 [tool.uv.workspace]
@@ -40,6 +41,7 @@ select = ["E", "F", "I", "B", "UP"]
 "**/tests/**" = ["E501"]
 # SQL column lists and the drawn copy read better unwrapped.
 "scripts/gen_g_syn_m1.py" = ["E501"]
+"scripts/gen_g_syn_m3.py" = ["E501"]
 "workers/collector/src/margo_collector/repo.py" = ["E501"]
 "workers/render/src/margo_render/P01_raio_x.py" = ["E501"]
 "workers/render/src/margo_render/handlers.py" = ["E501"]

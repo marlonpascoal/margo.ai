@@ -108,15 +108,15 @@ def _insert_match(
     ingredient_id: str,
     method: str,
     conversion: Decimal | None,
-    rule_id: str | None = None,
+    rule_note: str | None = None,
     confidence: Decimal | None = None,
 ) -> str | None:
     row = conn.execute(
         """insert into public.ingredient_match
-             (account_id, invoice_line_id, ingredient_id, method, status, conversion_factor, rule_id, confidence)
+             (account_id, invoice_line_id, ingredient_id, method, status, conversion_factor, rule_note, confidence)
            values (%s, %s, %s, %s, 'suggested', %s, %s, %s)
            on conflict (invoice_line_id, ingredient_id) do nothing returning id""",
-        (account_id, line_id, ingredient_id, method, conversion, rule_id, confidence),
+        (account_id, line_id, ingredient_id, method, conversion, rule_note, confidence),
     ).fetchone()
     return str(row["id"]) if row else None
 
@@ -141,7 +141,7 @@ def run_auto(conn: Any, account_id: str) -> Counts:
             continue
         with conn.transaction():
             mid = _insert_match(
-                conn, account_id, m.line_id, m.ingredient_id, m.method, m.conversion_factor, m.rule_id
+                conn, account_id, m.line_id, m.ingredient_id, m.method, m.conversion_factor, m.rule_note
             )
             if mid and m.conversion_factor:
                 conn.execute("select public.confirm_ingredient_match(%s, null, null)", (mid,))

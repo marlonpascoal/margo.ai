@@ -23,13 +23,14 @@ select col_default_is('public', 'ingredient_match', 'status', 'suggested'::publi
 select enum_has_labels('public', 'yield_confidence', array['medido', 'declarado', 'estimado'], 'CST-04 yield confidence');
 select enum_has_labels('public', 'invoice_source', array['xml_zip', 'key_typed', 'qr_url', 'whatsapp_photo'], '03 §4 invoice sources');
 select col_is_unique('public', 'invoice', 'access_key', 'D11: invoices dedupe by access key');
-select col_is_unique('public', 'contribution', array['close_period_id', 'menu_item_id', 'channel'],
-  'C13: one contribution row per close, dish and channel');
+select col_is_unique('public', 'contribution', array['close_period_id', 'menu_item_id', 'channel', 'campaign_name'],
+  'C13: one contribution row per close, dish, channel and campaign (none: the dish without campaign)');
 
 -- Params (04 §4).
 select results_eq($$
   select key, value from public.rule_param where key like 'm3.%' order by key
-$$, $$ values ('m3.price_window_days', 90::numeric), ('m3.yield_error_pct.declarado', 0.05),
+$$, $$ values ('m3.price_window_days', 90::numeric), ('m3.regional_prior_error_pct', 0.30), ('m3.top_ingredients', 20),
+              ('m3.yield_error_pct.declarado', 0.05),
               ('m3.yield_error_pct.estimado', 0.10), ('m3.yield_error_pct.medido', 0.02) $$,
   'CST-01 window and CST-04 yield errors are params');
 

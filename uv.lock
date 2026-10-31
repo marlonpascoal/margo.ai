@@ -8,6 +8,7 @@ members = [
     "margo-collector",
     "margo-common",
     "margo-contracts",
+    "margo-cost",
     "margo-import",
     "margo-match",
     "margo-render",
@@ -333,6 +334,28 @@ requires-dist = [
 provides-extras = ["gen"]
 
 [[package]]
+name = "margo-cost"
+version = "0.0.0"
+source = { editable = "workers/cost" }
+dependencies = [
+    { name = "margo-common" },
+    { name = "margo-contracts" },
+]
+
+[package.optional-dependencies]
+local = [
+    { name = "psycopg", extra = ["binary"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "margo-common", editable = "workers/common" },
+    { name = "margo-contracts", editable = "packages/contracts" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'local'", specifier = ">=3.2" },
+]
+provides-extras = ["local"]
+
+[[package]]
 name = "margo-import"
 version = "0.0.0"
 source = { editable = "workers/import" }
@@ -421,6 +444,7 @@ dependencies = [
     { name = "margo-collector", extra = ["local"] },
     { name = "margo-common", extra = ["local"] },
     { name = "margo-contracts", extra = ["gen"] },
+    { name = "margo-cost", extra = ["local"] },
     { name = "margo-import", extra = ["local"] },
     { name = "margo-match", extra = ["local"] },
     { name = "margo-render", extra = ["local"] },
@@ -439,6 +463,7 @@ requires-dist = [
     { name = "margo-collector", extras = ["local"], editable = "workers/collector" },
     { name = "margo-common", extras = ["local"], editable = "workers/common" },
     { name = "margo-contracts", extras = ["gen"], editable = "packages/contracts" },
+    { name = "margo-cost", extras = ["local"], editable = "workers/cost" },
     { name = "margo-import", extras = ["local"], editable = "workers/import" },
     { name = "margo-match", extras = ["local"], editable = "workers/match" },
     { name = "margo-render", extras = ["local"], editable = "workers/render" },

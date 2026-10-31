@@ -68,6 +68,11 @@ class ContestationStatus(StrEnum):
     PRAZO_VENCIDO = "prazo_vencido"
 
 
+class DecisionKind(StrEnum):
+    CAMPAIGN = "campaign"
+    LOWEST = "lowest"
+
+
 class DeliveryModel(StrEnum):
     CANAL = "canal"
     LOJA = "loja"
@@ -371,6 +376,14 @@ class Campaign(Row):
     updated_at: datetime
 
 
+class CampaignItem(Row):
+    account_id: UUID
+    campaign_id: UUID
+    created_at: datetime
+    menu_item_id: UUID
+    updated_at: datetime
+
+
 class ChannelStore(Row):
     account_id: UUID
     authorized: bool
@@ -396,6 +409,33 @@ class ChannelStoreUrlHistory(Row):
     seen_at: datetime
     updated_at: datetime
     url: str
+
+
+class CloseCostLine(Row):
+    account_id: UUID
+    channel_store_id: UUID
+    close_period_id: UUID
+    created_at: datetime
+    id: UUID
+    ingredient_cents: int
+    packaging_cents: int
+    uncovered_units: int
+    units: int
+    updated_at: datetime
+
+
+class CloseDecision(Row):
+    account_id: UUID
+    base_left_cents: int | None
+    campaign_discount_pct: Decimal | None
+    campaign_name: str | None
+    channel: Channel
+    close_period_id: UUID
+    created_at: datetime
+    kind: DecisionKind
+    left_cents: int
+    menu_item_id: UUID
+    updated_at: datetime
 
 
 class CloseLine(Row):
@@ -490,6 +530,9 @@ class ContractTerms(Row):
 
 class Contribution(Row):
     account_id: UUID
+    campaign_discount_pct: Decimal | None
+    campaign_name: str | None
+    can_invert: bool
     channel: Channel
     channel_take_cents: int
     close_period_id: UUID
@@ -502,6 +545,8 @@ class Contribution(Row):
     menu_item_id: UUID
     packaging_cents: int
     price_cents: int
+    prices_as_of: date | None
+    units: int
     updated_at: datetime
 
 
@@ -644,7 +689,7 @@ class IngredientMatch(Row):
     ingredient_id: UUID
     invoice_line_id: UUID
     method: MatchMethod
-    rule_id: UUID | None
+    rule_note: str | None
     status: MatchStatus
     updated_at: datetime
 
@@ -819,6 +864,7 @@ class MenuItem(Row):
     id: UUID
     is_top20: bool
     name: str
+    top20_rank: int | None
     updated_at: datetime
 
 
@@ -1003,7 +1049,11 @@ class Recipe(Row):
     account_id: UUID
     built_by: UUID | None
     built_on: date | None
+    cost_as_of: date | None
+    cost_cents: int | None
+    cost_computed_at: datetime | None
     created_at: datetime
+    error_pct: Decimal | None
     id: UUID
     menu_item_id: UUID
     status: RecipeStatus
@@ -1012,9 +1062,13 @@ class Recipe(Row):
 
 class RecipeLine(Row):
     account_id: UUID
+    cost_cents: Decimal | None
     created_at: datetime
     id: UUID
     ingredient_id: UUID
+    price_observed_on: date | None
+    price_per_base_unit_cents: Decimal | None
+    price_source: PriceSource | None
     qty_base_units: Decimal
     recipe_id: UUID
     updated_at: datetime

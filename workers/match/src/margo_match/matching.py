@@ -88,13 +88,13 @@ class Rule:
         return not (self.unit and normalize(self.unit) != normalize(line.unit))
 
     @property
-    def label(self) -> str:
-        """C11 "Como casou": "regra: texto + NCM 0201", "regra: texto + unidade"."""
+    def note(self) -> str:
+        """ingredient_match.rule_note (C11 "regra: ..."): "texto + NCM 0201", "texto + unidade"."""
         if self.ncm_prefix:
-            return f"regra: texto + NCM {self.ncm_prefix[:4]}"
+            return f"texto + NCM {self.ncm_prefix[:4]}"
         if self.unit:
-            return "regra: texto + unidade"
-        return "regra: texto"
+            return "texto + unidade"
+        return "texto"
 
 
 @dataclass(frozen=True)
@@ -112,7 +112,7 @@ class Match:
     ingredient_id: str
     method: str  # gtin, rule, ai
     conversion_factor: Decimal | None
-    rule_id: str | None = None
+    rule_note: str | None = None
     confidence: Decimal | None = None
 
 
@@ -149,7 +149,11 @@ def auto_match(line: LineIn, catalog: list[CatalogItem], rules: list[Rule]) -> M
     if rule is not None and rule.ingredient_id in by_id:
         base = by_id[rule.ingredient_id].base_unit
         return Match(
-            line.id, rule.ingredient_id, "rule", conversion_factor(line.description, line.unit, base), rule.id
+            line.id,
+            rule.ingredient_id,
+            "rule",
+            conversion_factor(line.description, line.unit, base),
+            rule.note,
         )
     return None
 

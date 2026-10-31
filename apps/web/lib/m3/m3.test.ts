@@ -104,7 +104,7 @@ describe("C11 de-para", () => {
     status: "confirmed",
     conversion_factor: 1000,
     confirmed_by: null,
-    rule: null,
+    rule_note: null,
     ...o,
   });
   const l = (id: string, description: string, unit: string, qty: number, total: number, matches: MatchRecord[], issued = "2026-10-01T10:00:00-03:00"): LineRecord => ({
@@ -119,12 +119,12 @@ describe("C11 de-para", () => {
   });
 
   const lines = [
-    l("1", "CARNE BOV MOIDA PATINHO/ACEM 80/20 KG", "KG", 10, 38900, [m({ ingredient: "Carne bovina moída (blend)", rule: { ncm_prefix: "02013000", unit: null } })]),
+    l("1", "CARNE BOV MOIDA PATINHO/ACEM 80/20 KG", "KG", 10, 38900, [m({ ingredient: "Carne bovina moída (blend)", rule_note: "texto + NCM 0201" })]),
     l("2", "REFRIG COCA COLA LT 350ML", "UN", 100, 28500, [m({ ingredient: "Refrigerante lata 350 ml", method: "gtin", base_unit: "un", conversion_factor: 1 })]),
     l("3", "QJO PROC CHED FAT 2,27KG 160FT", "PC", 2, 23654, [m({ ingredient: "Queijo cheddar fatiado", method: "ai", status: "suggested", conversion_factor: 2270 })]),
     l("4", "PAO HAMB BRIOCHE GERG C/12", "PCT", 10, 13800, [m({ ingredient: "Pão brioche", method: "ai", status: "suggested", base_unit: "un", conversion_factor: 12 })]),
     l("5", "GAS GLP P13", "UN", 1, 11500, []),
-    l("6", "CARNE BOV MOIDA PATINHO/ACEM 80/20 KG", "KG", 5, 19450, [m({ ingredient: "Carne bovina moída (blend)", rule: { ncm_prefix: "02013000", unit: null } })], "2026-09-01T10:00:00-03:00"),
+    l("6", "CARNE BOV MOIDA PATINHO/ACEM 80/20 KG", "KG", 5, 19450, [m({ ingredient: "Carne bovina moída (blend)", rule_note: "texto + NCM 0201" })], "2026-09-01T10:00:00-03:00"),
   ];
 
   it("C11_rows_as_drawn_one_per_invoice_text", () => {
@@ -150,8 +150,8 @@ describe("C11 de-para", () => {
   });
 
   it("C11_how_labels", () => {
-    expect(howLabel({ method: "rule", rule: { ncm_prefix: null, unit: "PC" } })).toBe("regra: texto + unidade");
-    expect(howLabel({ method: "manual", rule: null })).toBe("escolhido no console");
+    expect(howLabel({ method: "rule", rule_note: "texto + unidade" })).toBe("regra: texto + unidade");
+    expect(howLabel({ method: "manual", rule_note: null })).toBe("escolhido no console");
   });
 
   it("CST01_line_price_per_base_unit", () => {

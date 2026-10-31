@@ -52,8 +52,13 @@ def test_D14_gtin_first_then_rules() -> None:
     m = auto_match(line("REFRIG COCA COLA LT 350ML", "UN", "22021000", "2000000001014"), CATALOG, RULES)
     assert m and (m.ingredient_id, m.method, m.conversion_factor) == ("refri", "gtin", 1)
     m = auto_match(line("CARNE BOV MOIDA PATINHO/ACEM 80/20 KG", "KG", "02013000"), CATALOG, RULES)
-    assert m and (m.ingredient_id, m.method, m.rule_id, m.conversion_factor) == ("carne", "rule", "r1", 1000)
-    assert RULES[0].label == "regra: texto + NCM 0201" and RULES[1].label == "regra: texto + unidade"
+    assert m and (m.ingredient_id, m.method, m.rule_note, m.conversion_factor) == (
+        "carne",
+        "rule",
+        "texto + NCM 0201",
+        1000,
+    )
+    assert RULES[1].note == "texto + unidade"
     m = auto_match(line("BAT PRE FRITA CONG 2,5KG PALITO 9MM", "PC", "20041000"), CATALOG, RULES)
     assert m and (m.ingredient_id, m.conversion_factor) == ("batata", Decimal("2500"))
     assert auto_match(line("BAT PRE FRITA CONG 2,5KG PALITO 9MM", "CX", "20041000"), CATALOG, RULES) is None

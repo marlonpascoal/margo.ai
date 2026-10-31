@@ -1,7 +1,7 @@
 // E-mail code login for console (C00) and portal (P15, W06): 04 §8, D35.
 // The same answer goes to every address, invited or not, so the form never reveals who has access.
 import { createHash } from "node:crypto";
-import { afterFailure, afterSend, canSend, canVerify, emptyGuard, type Guard, type Surface } from "./rules";
+import { afterFailure, afterSend, afterSuccess, canSend, canVerify, type Guard, type Surface } from "./rules";
 
 export const MESSAGES = {
   // P15 copy.
@@ -49,7 +49,15 @@ export interface LoginStore {
   audit(rows: AuditRow[]): Promise<void>;
 }
 
-/** Supabase Auth e-mail OTP, or a fake in tests. */
+/** Auth refused to send because it sent one too recently; answered like our own 60 s rule. */
+export class AuthRateLimited extends Error {
+  constructor(message = "auth rate limited") {
+    super(message);
+    this.name = "AuthRateLimited";
+  }
+}
+
+/** Supabase Auth e-mail OTP, or a fake in tests. `sendCode` throws AuthRateLimited when Auth refuses as too soon. */
 export interface AuthGateway {
   sendCode(email: string): Promise<void>;
   verifyCode(email: string, code: string): Promise<{ userId: string; sessionId: string } | null>;
@@ -88,7 +96,14 @@ export async function sendCode(deps: LoginDeps, input: { email: string; surface:
   // Record the send for every address, so timing and later answers match for unknown ones.
   await deps.store.saveGuard(email, afterSend(guard, now));
   const person = await deps.store.findPerson(email, input.surface);
-  if (person) await deps.gateway.sendCode(email);
+  if (person) {
+    try {
+      await deps.gateway.sendCode(email);
+    } catch (e) {
+      if (e instanceof AuthRateLimited) return { ok: false, message: MESSAGES.tooSoon };
+      throw e;
+    }
+  }
   return { ok: true, message: MESSAGES.sent };
 }
 
@@ -110,7 +125,7 @@ export async function verifyCode(
     return { ok: false, message: next.lockedUntil ? MESSAGES.locked : MESSAGES.wrong };
   }
 
-  await deps.store.saveGuard(email, emptyGuard());
+  await deps.store.saveGuard(email, afterSuccess(guard));
   if (person.authUserId === null) await deps.store.linkAuthUser(person.id, auth.userId);
 
   const deviceKeyHash = hashDeviceKey(input.ctx.deviceKey);

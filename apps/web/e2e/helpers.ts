@@ -41,7 +41,7 @@ export async function mailCode(email: string, timeoutMs = 8000): Promise<string 
 /** Codes can be resent after 60 seconds (04 §8); wait out a send from an earlier run. */
 export async function waitForResendWindow(email: string) {
   const db = adminDb();
-  // Our guard forgets the send after a good code; Supabase Auth still enforces its own 60 seconds.
+  // Our guard keeps the send time after a good code; Supabase Auth also keeps its own 60 seconds.
   const times: (string | null | undefined)[] = [];
   const { data: guard } = await db.from("auth_code_guard").select("sent_at").eq("email", email).maybeSingle();
   times.push(guard?.sent_at);

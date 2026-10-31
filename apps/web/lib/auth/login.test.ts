@@ -1,6 +1,6 @@
 // E03 and C00: login flow against in-memory fakes (the Supabase-backed store has its own integration test).
 import { beforeEach, describe, expect, it } from "vitest";
-import { MESSAGES, sendCode, verifyCode, type AuthGateway, type LoginDeps, type LoginPerson, type LoginStore } from "./login";
+import { AuthRateLimited, MESSAGES, sendCode, verifyCode, type AuthGateway, type LoginDeps, type LoginPerson, type LoginStore } from "./login";
 import { emptyGuard, type Guard } from "./rules";
 
 const MIN = 60_000;
@@ -103,6 +103,35 @@ describe("C00 and E03 sending codes", () => {
     expect(a).toEqual({ ok: false, message: MESSAGES.tooSoon });
     expect(b).toEqual(a);
     expect(gateway.sent).toHaveLength(1);
+  });
+});
+
+describe("E03 resend after a login", () => {
+  it("E03_second_code_within_60_seconds_after_a_login_is_too_soon_not_an_error", async () => {
+    await sendCode(deps, { email: "dono@exemplo.com.br", surface: "portal" });
+    await verifyCode(deps, { email: "dono@exemplo.com.br", code: "123456", surface: "portal", ctx: ctx() });
+    advance(20_000);
+    expect(await sendCode(deps, { email: "dono@exemplo.com.br", surface: "portal" })).toEqual({ ok: false, message: MESSAGES.tooSoon });
+    expect(gateway.sent).toHaveLength(1);
+    advance(40_000);
+    expect(await sendCode(deps, { email: "dono@exemplo.com.br", surface: "portal" })).toEqual({ ok: true, message: MESSAGES.sent });
+  });
+
+  it("E03_login_clears_the_tries_but_keeps_the_send_time", async () => {
+    await sendCode(deps, { email: "dono@exemplo.com.br", surface: "portal" });
+    await verifyCode(deps, { email: "dono@exemplo.com.br", code: "000000", surface: "portal", ctx: ctx() });
+    await verifyCode(deps, { email: "dono@exemplo.com.br", code: "123456", surface: "portal", ctx: ctx() });
+    expect(store.guards.get("dono@exemplo.com.br")).toEqual({ sentAt: now, attempts: 0, lockedUntil: null });
+  });
+
+  it("E03_auth_rate_limit_on_send_answers_too_soon", async () => {
+    gateway.sendCode = async () => { throw new AuthRateLimited(); };
+    expect(await sendCode(deps, { email: "dono@exemplo.com.br", surface: "portal" })).toEqual({ ok: false, message: MESSAGES.tooSoon });
+  });
+
+  it("E03_other_auth_errors_on_send_still_throw", async () => {
+    gateway.sendCode = async () => { throw new Error("boom"); };
+    await expect(sendCode(deps, { email: "dono@exemplo.com.br", surface: "portal" })).rejects.toThrow("boom");
   });
 });
 

@@ -84,6 +84,14 @@ describe("login against the local stack", () => {
     expect(audit.data).toEqual([{ action: "login", actor_kind: "person" }]);
   });
 
+  it("E03_int_second_code_right_after_a_login_is_too_soon_not_a_500", async () => {
+    // Runs right after the login above, inside Supabase's own 60 s max_frequency.
+    expect(await sendCode(deps(), { email: emails.dono, surface: "portal" })).toEqual({ ok: false, message: MESSAGES.tooSoon });
+    // Without our guard row, Supabase itself refuses; that refusal maps to the same answer.
+    await db.from("auth_code_guard").delete().eq("email", emails.dono);
+    expect(await sendCode(deps(), { email: emails.dono, surface: "portal" })).toEqual({ ok: false, message: MESSAGES.tooSoon });
+  });
+
   it("C00_int_non_invited_email_gets_no_email", async () => {
     const stranger = `int-stranger-${tag}@teste.local`;
     expect(await sendCode(deps(), { email: stranger, surface: "console" })).toEqual({ ok: true, message: MESSAGES.sent });

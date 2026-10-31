@@ -50,6 +50,14 @@ export function canVerify(guard: Guard, now: Date): Decision {
   return { ok: true };
 }
 
+/**
+ * After a successful login the tries start over, but the send time stays: Supabase Auth refuses another
+ * code within its own 60 s (max_frequency), so our 60 s rule must keep answering first.
+ */
+export function afterSuccess(guard: Guard): Guard {
+  return { sentAt: guard.sentAt, attempts: 0, lockedUntil: null };
+}
+
 export function afterFailure(guard: Guard, now: Date): Guard {
   const g = settle(guard, now);
   const attempts = g.attempts + 1;

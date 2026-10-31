@@ -12,6 +12,7 @@ const SCREENS: [file: string, url: string][] = [
   ["C14-Config", "/console/config"],
   ["C20-Funcionalidades", "/console/funcionalidades"],
   ["C21-Alertas", "/console/alertas"],
+  ["C15-Assinaturas", "/console/assinaturas"],
   ["C07-Conectar", "/console/contas/G-02/importacoes"],
   ["C08-Fechamento", "/console/contas/G-02/fechamento/2026-09"],
   ["C09-Diferencas", "/console/contas/G-02/fechamento/2026-09/diferencas"],
@@ -27,7 +28,7 @@ test("F02_C00_login", async ({ page }) => {
   }
 });
 
-test("F02_C01_C07_C08_C09_C14_C16_C17_C19_C20_C21_as_founder", async ({ page }) => {
+test("F02_C01_C07_C08_C09_C14_C15_C16_C17_C19_C20_C21_as_founder", async ({ page }) => {
   await loginToConsole(page, FOUNDER_EMAIL);
   for (const [file, url] of SCREENS) {
     for (const width of WIDTHS) {
@@ -136,5 +137,16 @@ test("F02_P13_W02_P12_W03_P14_W04_P03_W07_as_dono", async ({ page }) => {
       await page.goto(url);
       await page.screenshot({ path: path.join(OUT, `${file}-${width}.png`), fullPage: true, caret: "initial" });
     }
+  }
+});
+
+// P09 (phone) and W05 (computer) are one route, /app/plano, here for the Dono of Pantanos in trial (seed).
+test("F02_P09_W05_plano_as_dono", async ({ page }) => {
+  await loginToPortal(page, PANTANOS_EMAIL);
+  for (const width of WIDTHS) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await page.goto("/app/plano");
+    // Phone width is the P09 drawing, computer width the W05 drawing.
+    await page.screenshot({ path: path.join(OUT, `${width === 390 ? "P09-Plano" : "W05-Plano"}-${width}.png`), fullPage: true, caret: "initial" });
   }
 });

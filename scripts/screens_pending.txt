@@ -5,9 +5,6 @@
 
 # Wave 2 (owner portal, billing, extension, e-mails)
 P04
-P09
-W05
-C15
 C18
 E01
 E02

@@ -102,6 +102,14 @@ class ImportTrigger(StrEnum):
     MANUAL = "manual"
 
 
+class InvoiceStatus(StrEnum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    OVERDUE = "overdue"
+    REFUSED = "refused"
+    CANCELED = "canceled"
+
+
 class JobStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
@@ -259,9 +267,23 @@ class BillingEvent(Row):
     asaas_event_id: str
     created_at: datetime
     id: UUID
+    kind: str | None
     payload: JsonValue
     processed_at: datetime | None
     received_at: datetime
+    updated_at: datetime
+
+
+class BillingInvoice(Row):
+    account_id: UUID
+    amount_cents: int
+    asaas_payment_id: str
+    asaas_subscription_id: str | None
+    created_at: datetime
+    due_on: date | None
+    id: UUID
+    status: InvoiceStatus
+    units: int | None
     updated_at: datetime
 
 
@@ -531,6 +553,8 @@ class ImportSource(Row):
     id: UUID
     kind: ImportKind
     last_ok_at: datetime | None
+    paused_at: datetime | None
+    paused_reason: str | None
     schedule_cron: str | None
     stale_after_hours: int | None
     updated_at: datetime
@@ -755,6 +779,7 @@ class Plan(Row):
     id: UUID
     name: str
     price_cents: int | None
+    price_is_example: bool
     trial_days: int
     updated_at: datetime
 

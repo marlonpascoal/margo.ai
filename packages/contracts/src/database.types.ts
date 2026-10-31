@@ -753,7 +753,52 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "flag_enabled":
+            "claim_job":
+{ Args: { "p_job_id": string }; Returns: {
+              "account_id": string | null,
+"attempts": number,
+"claimed_at": string | null,
+"created_at": string,
+"dedupe_key": string | null,
+"finished_at": string | null,
+"id": string,
+"log": NonNullable<Json>,
+"payload": NonNullable<Json>,
+"status": Database["public"]['Enums']["job_status"],
+"type": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "job"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"claim_next_job":
+{ Args: { "p_type": string }; Returns: {
+              "account_id": string | null,
+"attempts": number,
+"claimed_at": string | null,
+"created_at": string,
+"dedupe_key": string | null,
+"finished_at": string | null,
+"id": string,
+"log": NonNullable<Json>,
+"payload": NonNullable<Json>,
+"status": Database["public"]['Enums']["job_status"],
+"type": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "job"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"finish_job":
+{ Args: { "p_entry"?: Json,"p_job_id": string,"p_status": Database["public"]['Enums']["job_status"] }; Returns: boolean
+                           },
+"flag_enabled":
 { Args: { "p_account": string,"p_env": Database["public"]['Enums']["flag_env"],"p_key": string }; Returns: boolean
                            },
 "flag_remove_override":
@@ -764,6 +809,11 @@ isOneToOne: false
                            },
 "flag_set_override":
 { Args: { "p_account": string,"p_actor": string,"p_env": Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_key": string,"p_reason": string,"p_user_agent"?: string,"p_value": boolean }; Returns: undefined
+                           },
+"requeue_stuck_jobs":
+{ Args: { "p_now"?: string }; Returns: {
+              "alert_id": string,"job_id": string,"outcome": string
+            }[]
                            }
           }
           Enums: {

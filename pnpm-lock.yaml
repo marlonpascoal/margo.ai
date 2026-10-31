@@ -231,6 +231,10 @@ importers:
         version: 5.0.5(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0))
 
   extension:
+    dependencies:
+      '@margoai/contracts':
+        specifier: workspace:*
+        version: link:../packages/contracts
     devDependencies:
       rolldown:
         specifier: 1.2.16

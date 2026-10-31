@@ -112,6 +112,13 @@ test("E03_E05_A03_W01_W09_dono_logs_in_sees_the_month_sets_notices_and_the_sessi
     if (label) await expect(menu.getByRole("link", { name: label, exact: true }), href).toHaveAttribute("aria-current", "page");
   }
 
+  // W07 step 2 (m2.extensao_chrome on for G-02): the pairing code for P04, through /api/extension/code.
+  await page.getByRole("button", { name: "Mostrar o código da extensão" }).click();
+  await expect(page.locator("[data-pairing-code]")).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+  const { data: tokens } = await db.from("extension_token").select("id, account_id").eq("person_id", dono).is("paired_at", null).gte("created_at", since);
+  expect(tokens!.map((t) => t.account_id)).toEqual([sid("G-02")]);
+  await db.from("extension_token").delete().in("id", tokens!.map((t) => t.id));
+
   // E03: 30 days on the portal, then back to P15.
   await db.from("session_device").update({ created_at: new Date(Date.now() - 29 * 86_400_000).toISOString() }).eq("id", device!.id);
   await page.goto("/app");

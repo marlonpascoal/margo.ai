@@ -3,6 +3,7 @@
 // terms version; without it no real file of that CNPJ is processed (C06, 04 §11). The iFood step is "feito"
 // once the merchant list returned stores (channel_store from the API); until then it shows "aguardando".
 // No call to iFood from here: the merchant list is worker-import's job (06 §1).
+import { PARTNER_PORTAL_ORIGIN } from "@margoai/contracts";
 import type { Db } from "@/lib/supabase/admin";
 import { cnpjTail } from "@/lib/m2/structure";
 import { dayMonSP } from "./scope";
@@ -12,7 +13,7 @@ export const TERMS_VERSION = "rascunho-2026-10-30";
 /** What the acceptance covers: the apps, the extension and purchase invoices (docs/legal §1). */
 export const AUTHORIZATION_SCOPE = ["ifood", "food99", "extensao", "notas"];
 /** The iFood Partner Portal, opened by the owner (we never act in it: D01a). */
-export const PARTNER_PORTAL_URL = "https://portal.ifood.com.br/";
+export const PARTNER_PORTAL_URL = `${PARTNER_PORTAL_ORIGIN}/`;
 
 export interface ConnectView {
   companies: { id: string; label: string; signedAt: string | null }[];

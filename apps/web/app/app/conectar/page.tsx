@@ -1,9 +1,11 @@
 // P03 / W07 Conectar os apps (design/P03-Autorizar.dc.html phone, design/W07-Autorizar.dc.html computer;
 // 05 §B, 06 §1, §9, D21, D48). Flags m2.ifood_api (step 1) and m2.extensao_chrome (step 2): the page shows
 // when either is on. Dono and Financeiro see it; only the Dono accepts the terms (decision in the report).
+// Step 2 also gives the person the extension's pairing code (POST /api/extension/code, P04).
 import Link from "next/link";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CARD, DeskFictitious, DeskTitle, Notice, PHONE_PRIMARY, PortalMain } from "@/components/portal";
+import PairingCode from "@/components/portal/PairingCode";
 import { isEnabled } from "@/lib/flags";
 import { appOrigin, requirePortal } from "@/lib/portal/session";
 import { loadConnect, PARTNER_PORTAL_URL } from "@/lib/portal/connect";
@@ -121,6 +123,7 @@ export default async function ConectarPage({ searchParams }: { searchParams: Pro
               </span>
             )}
             <div className="text-sm text-ink-muted">Está no celular? Mandamos este link por WhatsApp para abrir no computador.</div>
+            <PairingCode account={m.account.id} />
           </section>
         )}
       </div>

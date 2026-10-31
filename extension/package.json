@@ -9,6 +9,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@margoai/contracts": "workspace:*"
+  },
   "devDependencies": {
     "rolldown": "1.2.16",
     "typescript": "^6.0.3",

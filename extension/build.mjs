@@ -7,11 +7,12 @@ import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "no
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { rolldown } from "rolldown";
+// The one Partner Portal host constant (packages/contracts), read as TypeScript by Node.
+import { PARTNER_PORTAL_ORIGIN } from "../packages/contracts/src/hosts.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(HERE, process.env.MARGO_EXT_OUT ?? "dist");
 const API = (process.env.MARGO_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
-const PORTAL = "https://portal.ifood.com.br";
 
 /** `:root { --x: v; }` from apps/web/app/tokens.css, the one source of design tokens. */
 export function tokensCss(css) {
@@ -28,7 +29,7 @@ export function manifest(api) {
     description: "Manda para a MargoAI o relatório que você exportou do Portal do Parceiro do iFood.",
     action: { default_title: "MargoAI", default_popup: "P04-popup.html" },
     permissions: ["storage"],
-    host_permissions: [`${PORTAL}/*`, `${new URL(api).origin}/*`],
+    host_permissions: [`${PARTNER_PORTAL_ORIGIN}/*`, `${new URL(api).origin}/*`],
     content_security_policy: { extension_pages: `script-src 'self'; object-src 'self'; connect-src ${new URL(api).origin}` },
   };
 }

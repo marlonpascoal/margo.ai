@@ -89,3 +89,38 @@ export function xrayResult(items: ItemRow[]) {
     toRaise: Math.min(3, analyzed.filter((i) => i.reading === "pode_subir").length),
   };
 }
+
+// History (M1 history, M1-10 proposed) ----------------------------------------------------------------
+
+export interface HistoryRun {
+  xrayId: string;
+  collectedAt: string;
+  /** M1-10: the target's position by price index among the stores ranked in that run; null before the calculation. */
+  rank: { rank: number; of: number; priceIndex: number } | null;
+}
+
+export interface HistoryPrice {
+  xrayId: string;
+  itemId: string;
+  name: string;
+  priceCents: number;
+}
+
+/** C05 history: the last `max` runs, oldest first, and per item its price in each of them (null when the
+ * item was not on the menu that run). Items that changed price come first, then by name. */
+export function priceHistory(runs: HistoryRun[], prices: HistoryPrice[], max = 6) {
+  const shown = [...runs].sort((a, b) => a.collectedAt.localeCompare(b.collectedAt)).slice(-max);
+  const byItem = new Map<string, { name: string; cells: Map<string, number> }>();
+  for (const p of prices) {
+    const e = byItem.get(p.itemId) ?? { name: p.name, cells: new Map<string, number>() };
+    e.cells.set(p.xrayId, p.priceCents);
+    byItem.set(p.itemId, e);
+  }
+  const items = [...byItem.entries()].map(([id, e]) => {
+    const cells = shown.map((r) => e.cells.get(r.xrayId) ?? null);
+    const seen = cells.filter((c): c is number => c !== null);
+    return { id, name: e.name, cells, changed: new Set(seen).size > 1 };
+  });
+  items.sort((a, b) => Number(b.changed) - Number(a.changed) || a.name.localeCompare(b.name, "pt-BR"));
+  return { runs: shown, items };
+}

@@ -1,6 +1,6 @@
 // Reads for the M1 console screens, with the service role, after requireConsole("clients") (02 §5).
 import type { Db } from "@/lib/supabase/admin";
-import type { ItemRow, NeighborRow } from "./view";
+import type { HistoryPrice, HistoryRun, ItemRow, NeighborRow } from "./view";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = (s: string) => UUID.test(s);
@@ -29,6 +29,9 @@ export interface XrayHead {
   synthetic: boolean;
   pdfPath: string | null;
   collectedAt: string | null;
+  /** xray.target_kind: the account's own channel store, or another store. */
+  targetKind: "own" | "competitor";
+  targetStoreId: string;
 }
 
 /** The X-ray and its target store; null for an unknown id (the page answers 404). */
@@ -37,7 +40,7 @@ export async function loadXrayHead(db: Db, id: string): Promise<XrayHead | null>
   const x = check(
     await db
       .from("xray")
-      .select("id, account_id, status, radius_km, pdf_path, collected_at, public_store!xray_target_store_id_fkey(name, url, lat, lng), account(is_synthetic)")
+      .select("id, account_id, status, radius_km, pdf_path, collected_at, target_kind, target_store_id, public_store!xray_target_store_id_fkey(name, url, lat, lng), account(is_synthetic)")
       .eq("id", id)
       .maybeSingle(),
   );
@@ -54,6 +57,8 @@ export async function loadXrayHead(db: Db, id: string): Promise<XrayHead | null>
     synthetic: x.account?.is_synthetic ?? false,
     pdfPath: x.pdf_path,
     collectedAt: x.collected_at,
+    targetKind: x.target_kind === "own" ? "own" : "competitor",
+    targetStoreId: x.target_store_id,
   };
 }
 
@@ -164,4 +169,21 @@ export type Step = "vizinhanca" | "pareamento" | "entrega";
 export async function loadMinutes(db: Db, xrayId: string, personId: string): Promise<Partial<Record<Step, number>>> {
   const rows = list(await db.from("time_log").select("step, minutes").eq("xray_id", xrayId).eq("person_id", personId));
   return Object.fromEntries(rows.map((r) => [r.step, r.minutes]));
+}
+
+/** C05 history: every collected run of the same target store, with the target's M1-10 rank, and the
+ * target's item prices in each run (public_menu_item_snapshot, never rewritten). */
+export async function loadHistory(db: Db, targetStoreId: string): Promise<{ runs: HistoryRun[]; prices: HistoryPrice[] }> {
+  const xs = list(await db.from("xray").select("id, collected_at").eq("target_store_id", targetStoreId).not("collected_at", "is", null));
+  const ids = xs.map((x) => x.id);
+  if (ids.length === 0) return { runs: [], prices: [] };
+  const [ranks, prices] = await Promise.all([
+    db.from("xray_store_rank").select("xray_id, rank, stores_ranked, price_index").eq("public_store_id", targetStoreId).in("xray_id", ids),
+    db.from("public_menu_item_snapshot").select("xray_id, public_menu_item_id, name, price_cents").eq("public_store_id", targetStoreId).in("xray_id", ids),
+  ]);
+  const rankBy = new Map(list(ranks).map((r) => [r.xray_id, { rank: r.rank, of: r.stores_ranked, priceIndex: Number(r.price_index) }]));
+  return {
+    runs: xs.map((x) => ({ xrayId: x.id, collectedAt: x.collected_at!, rank: rankBy.get(x.id) ?? null })),
+    prices: list(prices).map((p) => ({ xrayId: p.xray_id, itemId: p.public_menu_item_id, name: p.name, priceCents: p.price_cents })),
+  };
 }

@@ -6,7 +6,7 @@ import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
 import { collectStopReason, pairStatusLabel } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
-import { examplePair, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, storeState, xrayResult, type ItemRow } from "./view";
+import { examplePair, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow } from "./view";
 
 const PANTANOS = "https://www.ifood.com.br/delivery/londrina-pr/pantanos-burguer-igapo/91a9c35d-0000-4000-8000-000000000000";
 
@@ -200,5 +200,39 @@ describe("commands (A04: every write through an audited function)", () => {
     ]);
     expect(calls.every(([, a]) => a.p_actor === "p-1")).toBe(true);
     expect(jobs.map((j) => j.type)).toEqual(["xray_pair", "xray_calc", "render_xray"]);
+  });
+});
+
+describe("C05 history (M1 history, M1-10)", () => {
+  it("B01_history: runs oldest first, a price per run, changed items first", () => {
+    const runs = [
+      { xrayId: "b", collectedAt: "2026-10-28T13:00:00Z", rank: { rank: 31, of: 85, priceIndex: 0.96 } },
+      { xrayId: "a", collectedAt: "2026-09-28T13:00:00Z", rank: { rank: 24, of: 80, priceIndex: 0.94 } },
+    ];
+    const prices = [
+      { xrayId: "a", itemId: "1", name: "Batata", priceCents: 1500 },
+      { xrayId: "b", itemId: "1", name: "Batata", priceCents: 1500 },
+      { xrayId: "a", itemId: "2", name: "X-Bacon", priceCents: 2900 },
+      { xrayId: "b", itemId: "2", name: "X-Bacon", priceCents: 3100 },
+      { xrayId: "b", itemId: "3", name: "Açaí", priceCents: 1200 },
+    ];
+    const h = priceHistory(runs, prices);
+    expect(h.runs.map((r) => r.xrayId)).toEqual(["a", "b"]);
+    expect(h.items.map((i) => [i.name, i.cells, i.changed])).toEqual([
+      ["X-Bacon", [2900, 3100], true],
+      ["Açaí", [null, 1200], false],
+      ["Batata", [1500, 1500], false],
+    ]);
+    expect(priceHistory(runs, prices, 1).runs.map((r) => r.xrayId)).toEqual(["b"]);
+  });
+});
+
+describe("history labels", () => {
+  it("run dates in São Paulo time and the target kind", async () => {
+    const { runDateLabel } = await import("./format");
+    const { TARGET_KIND_LABEL } = await import("./labels");
+    expect(runDateLabel("2026-10-28T13:00:00Z")).toBe("28/out");
+    expect(runDateLabel("2026-10-01T02:00:00Z")).toBe("30/set");
+    expect(TARGET_KIND_LABEL.own).toBe("loja própria");
   });
 });

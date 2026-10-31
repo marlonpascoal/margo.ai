@@ -196,6 +196,13 @@ test("B01_B02_C02_to_C06_pantanos_xray_end_to_end_on_the_seed", async ({ page, c
     await expect(pareto).toContainText("Molho especial extra80%");
     await expect(pareto).toContainText("Paridade = mediana dos itens comparáveis no raio de 3 km. Sem custo: subir item barato é seguro, baixar item caro não.");
 
+    // M1 history and M1-10: the September run's snapshot and this run's ranking; own store label.
+    await expect(page.locator("[data-target-kind]")).toHaveText("loja própria");
+    const history = page.locator("[data-history]");
+    await expect(history.locator("thead")).toHaveText("Coleta28/set28/out");
+    await expect(history.locator("[data-history-rank]")).toHaveText("Posição por preço24 de 8031 de 85");
+    await expect(history.locator('tr[data-history-item="Refrigerante lata 350 ml"]')).toContainText("R$ 5,00");
+
     await page.getByRole("button", { name: "Preparar entrega" }).click();
     await page.waitForURL(`**/console/raio-x/${SEED_XRAY}/entrega`);
     runWorker("render_xray");

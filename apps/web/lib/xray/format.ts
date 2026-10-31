@@ -36,3 +36,9 @@ export function parseHours(text: string): number | null {
   const h = Number(t);
   return h > 24 ? null : Math.round(h * 60);
 }
+
+/** History column date in America/Sao_Paulo: "28/out". */
+export function runDateLabel(iso: string): string {
+  const d = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", timeZone: "America/Sao_Paulo" }).format(new Date(iso));
+  return d.replace(/ de /, "/").replace(".", "");
+}

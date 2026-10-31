@@ -6,7 +6,7 @@ create extension if not exists pgtap with schema extensions;
 select plan(30);
 
 create temp view x as
-  select x.* from public.xray x join public.account a on a.id = x.account_id where a.code = 'G-01';
+  select x.* from public.xray x join public.account a on a.id = x.account_id where a.code = 'G-01' and x.id = '9aae2f75-4168-fde3-4570-d7bd0f4669d0';
 create temp view items as
   select i.*, m.name, m.price_cents as own_cents, (select count(*) from public.xray_pair p where p.xray_item_id = i.id) as k
   from public.xray_item i join public.public_menu_item m on m.id = i.public_menu_item_id

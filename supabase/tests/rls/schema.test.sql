@@ -14,7 +14,7 @@ select tables_are('public', array[
   'notification', 'alert', 'audit_log', 'job', 'extension_token',
   'auth_code_guard',
   'menu_item', 'public_store', 'public_menu_item', 'collector_page_cache', 'xray', 'xray_store', 'xray_item',
-  'xray_pair', 'time_log',
+  'xray_pair', 'time_log', 'public_store_snapshot', 'public_menu_item_snapshot', 'xray_store_rank',
   'rule_param', 'import_source', 'import_run', 'column_mapping', 'order_fact', 'order_item_fact', 'ledger_entry',
   'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation',
   'invoice', 'invoice_line', 'ingredient', 'ingredient_match', 'ingredient_price', 'recipe', 'recipe_line',

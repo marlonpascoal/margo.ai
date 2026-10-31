@@ -6,10 +6,10 @@ import { Notice, SecondaryLink, XrayTitle, card, primaryButton } from "@/compone
 import { requireFlag } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { adminClient } from "@/lib/supabase/admin";
-import { gapLabel, money, shareLabel } from "@/lib/xray/format";
-import { READING_LABEL, XRAY_MESSAGES } from "@/lib/xray/labels";
-import { latestJob, loadItems, loadNeighborhood, loadXrayHead } from "@/lib/xray/load";
-import { neighborhoodCounts, xrayResult } from "@/lib/xray/view";
+import { gapLabel, money, runDateLabel, shareLabel } from "@/lib/xray/format";
+import { READING_LABEL, TARGET_KIND_LABEL, XRAY_MESSAGES } from "@/lib/xray/labels";
+import { latestJob, loadHistory, loadItems, loadNeighborhood, loadXrayHead } from "@/lib/xray/load";
+import { neighborhoodCounts, priceHistory, xrayResult } from "@/lib/xray/view";
 import { prepareDeliveryAction } from "../actions";
 
 export const metadata = { title: "Raio-X de preço · MargoAI" };
@@ -25,7 +25,8 @@ export default async function XrayPage({ params }: { params: Promise<{ id: strin
   const x = await loadXrayHead(db, (await params).id);
   if (!x) notFound();
   await requireFlag("m1.raio_x", x.accountId);
-  const [items, hood, job] = await Promise.all([loadItems(db, x.id), loadNeighborhood(db, x.id), latestJob(db, "xray_calc", x.id)]);
+  const [items, hood, job, hist] = await Promise.all([loadItems(db, x.id), loadNeighborhood(db, x.id), latestJob(db, "xray_calc", x.id), loadHistory(db, x.targetStoreId)]);
+  const history = priceHistory(hist.runs, hist.prices);
   const r = xrayResult(items);
   const working = job && (job.status === "queued" || job.status === "running");
   const ready = r.analyzed > 0 && !working;
@@ -41,6 +42,9 @@ export default async function XrayPage({ params }: { params: Promise<{ id: strin
       <div className="flex flex-wrap items-end justify-between gap-4">
         <XrayTitle code="C05" step={4} store={x.storeName} title="Raio-X de preço" />
         <form action={prepareDeliveryAction} className="flex flex-wrap items-center gap-2.5">
+          <span className="rounded-full border border-border px-2.5 py-0.5 text-xs text-ink-muted" data-target-kind={x.targetKind}>
+            {TARGET_KIND_LABEL[x.targetKind]}
+          </span>
           {x.synthetic && <FictitiousLabel />}
           <SecondaryLink href={`/console/raio-x/${x.id}/pareamento`}>Rever pares</SecondaryLink>
           <input type="hidden" name="xray" value={x.id} />
@@ -104,6 +108,44 @@ export default async function XrayPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
           </div>
+          {history.runs.length > 1 && (
+            <section className={`${card} overflow-x-auto p-4`} data-history>
+              <h2 className="mb-1 font-bold">Histórico</h2>
+              <p className="mb-3 text-xs text-ink-muted">Posição por preço: 1 é a loja mais barata entre as comparadas.</p>
+              <table className="w-full min-w-[480px] border-collapse text-sm">
+                <thead>
+                  <tr className="text-left text-xs tracking-[0.04em] text-ink-muted uppercase">
+                    <th className={th}>Coleta</th>
+                    {history.runs.map((r) => (
+                      <th key={r.xrayId} className={`${th} text-right`}>
+                        {runDateLabel(r.collectedAt)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr data-history-rank>
+                    <td className={`${td} font-semibold`}>Posição por preço</td>
+                    {history.runs.map((r) => (
+                      <td key={r.xrayId} className={`${td} ${num}`}>
+                        {r.rank ? `${r.rank.rank} de ${r.rank.of}` : ""}
+                      </td>
+                    ))}
+                  </tr>
+                  {history.items.map((i) => (
+                    <tr key={i.id} data-history-item={i.name}>
+                      <td className={td}>{i.name}</td>
+                      {i.cells.map((c, k) => (
+                        <td key={history.runs[k].xrayId} className={`${td} ${num} ${i.changed ? "text-ink" : "text-ink-muted"}`}>
+                          {c === null ? "" : money(c)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
         </>
       )}
     </ConsoleMain>

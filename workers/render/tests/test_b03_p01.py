@@ -147,7 +147,7 @@ def test_B03_p01_from_the_seeded_xray():
         xid = str(
             conn.execute(
                 "select x.id from public.xray x join public.account a on a.id = x.account_id"
-                " where a.code = 'G-01'"
+                " where a.code = 'G-01' and x.id = '9aae2f75-4168-fde3-4570-d7bd0f4669d0'"
             ).fetchone()["id"]
         )
         before = conn.execute("select pdf_path from public.xray where id = %s", (xid,)).fetchone()["pdf_path"]

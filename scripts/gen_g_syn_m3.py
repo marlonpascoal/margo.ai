@@ -701,7 +701,7 @@ def emit(b: dict[str, object]) -> str:
         cnpj = SUPPLIER_CNPJ[inv.supplier]
         key = access_key(cnpj, inv.model, inv.issued, n + 1)
         company = COMPANIES[n % 2]
-        xml = f"invoices/G-02/{key}.xml" if inv.source == "xml_zip" else None
+        xml = None  # no XML file is stored for the synthetic invoices (the export and deletion jobs count files)
         vals.append(f"  (pg_temp.sid('inv:{n}'), pg_temp.sid('G-02'), {q(company)}, '{key}', {inv.model}, '{cnpj}', "
                     f"{q(SUPPLIER_NAME[inv.supplier])}, '{inv.issued.isoformat()} 10:00-03', {inv.total}, "
                     f"'{inv.source}', {q(xml)})")

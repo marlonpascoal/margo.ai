@@ -362,13 +362,15 @@ class NoticeType(Row):
 
 class Notification(Row):
     account_id: UUID | None
+    alert_id: UUID | None
     body: str
     channel: NotificationChannel
     created_at: datetime
     id: UUID
-    notice_code: str
+    notice_code: str | None
     person_id: UUID | None
     provider_id: str | None
+    recipient: str | None
     sent_at: datetime | None
     status: NotificationStatus
     subject: str | None

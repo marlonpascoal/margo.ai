@@ -519,14 +519,14 @@ isOneToOne: false
                   ]
                 },"notification": {
                   Row: {
-                    "account_id": string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at": string,"id": string,"notice_code": string,"person_id": string | null,"provider_id": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"],"subject": string | null,"updated_at": string
+                    "account_id": string | null,"alert_id": string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at": string,"id": string,"notice_code": string | null,"person_id": string | null,"provider_id": string | null,"recipient": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"],"subject": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id"?: string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at"?: string,"id"?: string,"notice_code": string,"person_id"?: string | null,"provider_id"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
+                    "account_id"?: string | null,"alert_id"?: string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at"?: string,"id"?: string,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string | null,"body"?: string,"channel"?: Database["public"]['Enums']["notification_channel"],"created_at"?: string,"id"?: string,"notice_code"?: string,"person_id"?: string | null,"provider_id"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
+                    "account_id"?: string | null,"alert_id"?: string | null,"body"?: string,"channel"?: Database["public"]['Enums']["notification_channel"],"created_at"?: string,"id"?: string,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -534,6 +534,12 @@ isOneToOne: false
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "notification_alert_id_fkey"
+      columns: ["alert_id"]
+isOneToOne: false
+      referencedRelation: "alert"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "notification_notice_code_fkey"

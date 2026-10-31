@@ -16,7 +16,7 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL, locale: "pt-BR", timezoneId: "America/Sao_Paulo" },
   projects: [
-    { name: "e2e", testMatch: [/.*\.e2e\.ts/, /flags\.spec\.ts/] },
+    { name: "e2e", testMatch: [/.*\.e2e\.ts/, /flags\.spec\.ts/, /permissions\.spec\.ts/] },
     { name: "screens", testMatch: /screens\.spec\.ts/ },
   ],
   webServer: {

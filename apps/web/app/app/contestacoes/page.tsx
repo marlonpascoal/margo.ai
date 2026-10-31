@@ -19,30 +19,44 @@ function Mark({ r, event, label, dark, className = "" }: { r: OwnerContestation;
     <form action={markContestationAction} className={`inline ${className}`}>
       <input type="hidden" name="contestacao" value={r.contestationId!} />
       <input type="hidden" name="evento" value={event} />
-      <button type="submit" className={`${dark ? SMALL_BUTTON_DARK : SMALL_BUTTON} w-full`}>
+      <button type="submit" className={dark ? SMALL_BUTTON_DARK : SMALL_BUTTON}>
         {label}
       </button>
     </form>
   );
 }
 
-/** "Já contestei" asks for the protocol, optional (05 P12/W03). */
-function Contested({ r, phone }: { r: OwnerContestation; phone?: boolean }) {
+/** "Já contestei" asks for the protocol, optional (05 P12/W03). Computer: inline in the row. */
+function Contested({ r }: { r: OwnerContestation }) {
   return (
-    <form action={markContestationAction} className={phone ? "flex flex-1 gap-1.5" : "inline-flex gap-1.5"}>
+    <form action={markContestationAction} className="inline-flex gap-1.5">
       <input type="hidden" name="contestacao" value={r.contestationId!} />
       <input type="hidden" name="evento" value="ja_contestei" />
-      <input
-        name="protocolo"
-        aria-label="Protocolo (opcional)"
-        placeholder="protocolo (opcional)"
-        maxLength={60}
-        className={`min-h-8.5 rounded-sm border border-border-strong px-2 text-sm ${phone ? "w-0 flex-1" : "w-36"}`}
-      />
-      <button type="submit" className={`${SMALL_BUTTON_DARK} ${phone ? "flex-1" : ""}`}>
+      <input name="protocolo" aria-label="Protocolo (opcional)" placeholder="protocolo (opcional)" maxLength={60} className="min-h-8.5 w-36 rounded-sm border border-border-strong px-2 text-sm" />
+      <button type="submit" className={SMALL_BUTTON_DARK}>
         Já contestei
       </button>
     </form>
+  );
+}
+
+/** Phone: the protocol on its own line, then "Copiar texto pronto" and "Já contestei" side by side, as drawn. */
+function ContestedPhone({ r }: { r: OwnerContestation }) {
+  const form = `jc-${r.contestationId}`;
+  return (
+    <>
+      <form id={form} action={markContestationAction} className="hidden">
+        <input type="hidden" name="contestacao" value={r.contestationId!} />
+        <input type="hidden" name="evento" value="ja_contestei" />
+      </form>
+      <input form={form} name="protocolo" aria-label="Protocolo (opcional)" placeholder="protocolo (opcional)" maxLength={60} className="min-h-9 rounded-sm border border-border-strong px-2 text-sm" />
+      <div className="flex gap-1.5">
+        {r.claimText && <CopyButton text={r.claimText} label="Copiar texto pronto" className={`${SMALL_BUTTON} min-h-9 flex-1`} />}
+        <button form={form} type="submit" className={`${SMALL_BUTTON_DARK} min-h-9 flex-1`}>
+          Já contestei
+        </button>
+      </div>
+    </>
   );
 }
 
@@ -100,12 +114,7 @@ export default async function ContestacoesPage({ searchParams }: { searchParams:
                 <span className={`rounded-full px-2 py-0.5 ${PILL_TONE[p]}`}>{PILL_LABEL[p].p12}</span>
                 <span className="text-ink-muted">{infoOf(r, day).p12}</span>
               </div>
-              {p === "contestar" && r.contestationId && (
-                <div className="flex gap-1.5">
-                  {r.claimText && <CopyButton text={r.claimText} label="Copiar texto pronto" className={`${SMALL_BUTTON} min-h-9 flex-1`} />}
-                  <Contested r={r} phone />
-                </div>
-              )}
+              {p === "contestar" && r.contestationId && <ContestedPhone r={r} />}
               {p === "analise" && r.contestationId && (
                 <div className="flex items-center gap-1.5 text-xs text-ink-muted">
                   <span className="flex-1">Conferimos o crédito no próximo repasse.</span>
@@ -144,7 +153,7 @@ export default async function ContestacoesPage({ searchParams }: { searchParams:
                 <tr key={r.differenceId} data-contestation={r.rule}>
                   <td className={TD}>{whatHappened(r)}</td>
                   <td className={`${TD} text-sm`}>{kitchenApp(r)}</td>
-                  <td className={`${TD} text-right font-mono`}>{money(r.amount)}</td>
+                  <td className={`${TD} text-right font-mono whitespace-nowrap`}>{money(r.amount)}</td>
                   <td className={TD}>
                     <span className={`rounded-full px-2.5 py-0.75 text-xs whitespace-nowrap ${PILL_TONE[p]}`}>{PILL_LABEL[p].w03}</span>
                   </td>

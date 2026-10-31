@@ -13,7 +13,7 @@ import { acceptTermsAction } from "./actions";
 
 export const metadata = { title: "Conectar os apps · MargoAI" };
 
-const OUTLINE = "inline-flex min-h-11 items-center justify-center rounded-md border border-ink font-semibold no-underline";
+const OUTLINE = "min-h-11 items-center justify-center rounded-md border border-ink font-semibold no-underline";
 const DARK = "inline-flex min-h-11 items-center justify-center rounded-md bg-ink font-semibold text-ink-inverse no-underline hover:text-ink-inverse";
 
 /** The Chrome Web Store listing is unlisted and not published yet (06 §9); set by the platform when it is. */
@@ -91,7 +91,7 @@ export default async function ConectarPage({ searchParams }: { searchParams: Pro
                 Abrir o Portal do Parceiro
               </a>
             )}
-            <Link href="/app/lojas" className={`${OUTLINE} mt-auto hidden md:inline-flex`}>
+            <Link href="/app/lojas" className={`${OUTLINE} mt-auto hidden md:flex`}>
               Ver as lojas encontradas
             </Link>
           </section>

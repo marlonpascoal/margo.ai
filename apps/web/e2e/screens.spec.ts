@@ -1,8 +1,9 @@
-// F02: each built console page at 390 px and 1280 px, saved next to the drawing's name for Marlon to compare.
+// F02: each built console and owner page at 390 px and 1280 px, saved next to the drawing's name for Marlon to compare.
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "@playwright/test";
 import { ARTIFACTS, DONO_EMAIL, FOUNDER_EMAIL, PANTANOS_EMAIL, adminDb, loginToConsole, loginToPortal, runWorker, sid } from "./helpers";
+import { portalSession } from "./portal-session";
 
 const OUT = path.join(ARTIFACTS, "screens");
 const WIDTHS = [390, 1280];
@@ -117,4 +118,23 @@ test("F02_P08_as_dono_of_pantanos_in_trial", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto("/app");
   await page.screenshot({ path: path.join(OUT, "P08-MinhaConta-Pantanos-390.png"), fullPage: true, caret: "initial" });
+});
+
+// Owner account pages (wave 2) as the Dono of Grupo Exemplo: the phone drawing's name at 390 px, the
+// computer drawing's name at 1280 px (one responsive page per pair, D32).
+test("F02_P13_W02_P12_W03_P14_W04_P03_W07_as_dono", async ({ page }) => {
+  await portalSession(page, "dono@exemplo.com.br");
+  const pairs: [phone: string, computer: string, url: string][] = [
+    ["P13-MinhasLojas", "W02-Lojas", "/app/lojas"],
+    ["P12-Contestacoes", "W03-Contestacoes", "/app/contestacoes"],
+    ["P14-Pessoas", "W04-Pessoas", "/app/pessoas"],
+    ["P03-Autorizar", "W07-Autorizar", "/app/conectar"],
+  ];
+  for (const [phone, computer, url] of pairs) {
+    for (const [width, file] of [[390, phone], [1280, computer]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(url);
+      await page.screenshot({ path: path.join(OUT, `${file}-${width}.png`), fullPage: true, caret: "initial" });
+    }
+  }
 });

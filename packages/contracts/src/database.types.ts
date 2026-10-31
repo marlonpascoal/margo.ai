@@ -659,14 +659,14 @@ isOneToOne: false
                   ]
                 },"invite": {
                   Row: {
-                    "accepted_at": string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at": string,"destination": string,"expires_at": string,"id": string,"invited_by": string | null,"kitchen_ids": (string)[],"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at": string
+                    "accepted_at": string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at": string,"destination": string,"expires_at": string,"id": string,"invited_by": string | null,"kitchen_ids": (string)[],"name": string | null,"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_at"?: string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at"?: string,"destination": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"kitchen_ids"?: (string)[],"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at"?: string
+                    "accepted_at"?: string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at"?: string,"destination": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"kitchen_ids"?: (string)[],"name"?: string | null,"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at"?: string
                   }
                   Update: {
-                    "accepted_at"?: string | null,"account_id"?: string,"channel"?: Database["public"]['Enums']["contact_channel"],"created_at"?: string,"destination"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"kitchen_ids"?: (string)[],"role"?: Database["public"]['Enums']["member_role"],"token_hash"?: string,"updated_at"?: string
+                    "accepted_at"?: string | null,"account_id"?: string,"channel"?: Database["public"]['Enums']["contact_channel"],"created_at"?: string,"destination"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"kitchen_ids"?: (string)[],"name"?: string | null,"role"?: Database["public"]['Enums']["member_role"],"token_hash"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -989,14 +989,14 @@ isOneToOne: false
                   ]
                 },"owner_authorization": {
                   Row: {
-                    "account_id": string,"company_id": string,"created_at": string,"document_path": string | null,"id": string,"includes_ai": boolean,"includes_international": boolean,"scope": (string)[],"signed_at": string,"signed_by": string | null,"updated_at": string
+                    "account_id": string,"company_id": string,"created_at": string,"document_path": string | null,"id": string,"includes_ai": boolean,"includes_international": boolean,"scope": (string)[],"signed_at": string,"signed_by": string | null,"terms_version": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"company_id": string,"created_at"?: string,"document_path"?: string | null,"id"?: string,"includes_ai"?: boolean,"includes_international"?: boolean,"scope"?: (string)[],"signed_at": string,"signed_by"?: string | null,"updated_at"?: string
+                    "account_id": string,"company_id": string,"created_at"?: string,"document_path"?: string | null,"id"?: string,"includes_ai"?: boolean,"includes_international"?: boolean,"scope"?: (string)[],"signed_at": string,"signed_by"?: string | null,"terms_version"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"company_id"?: string,"created_at"?: string,"document_path"?: string | null,"id"?: string,"includes_ai"?: boolean,"includes_international"?: boolean,"scope"?: (string)[],"signed_at"?: string,"signed_by"?: string | null,"updated_at"?: string
+                    "account_id"?: string,"company_id"?: string,"created_at"?: string,"document_path"?: string | null,"id"?: string,"includes_ai"?: boolean,"includes_international"?: boolean,"scope"?: (string)[],"signed_at"?: string,"signed_by"?: string | null,"terms_version"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1499,21 +1499,92 @@ isOneToOne: false
 "flag_set_override":
 { Args: { "p_account": string,"p_actor": string,"p_env": Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_key": string,"p_reason": string,"p_user_agent"?: string,"p_value": boolean }; Returns: undefined
                            },
-"portal_accept_invite":
-{ Args: { "p_email": string,"p_ip": unknown,"p_name": string,"p_now"?: string,"p_token_hash": string,"p_user_agent": string }; Returns: {
-              "account_id": string,"email": string,"person_id": string,"status": string
-            }[]
+"invite_create":
+{ Args: { "p_account": string,"p_actor": string,"p_at"?: string,"p_channel": Database["public"]['Enums']["contact_channel"],"p_destination": string,"p_ip"?: unknown,"p_kitchens": (string)[],"p_name": string,"p_role": Database["public"]['Enums']["member_role"],"p_token_hash": string,"p_user_agent"?: string }; Returns: {
+              "accepted_at": string | null,
+"account_id": string,
+"channel": Database["public"]['Enums']["contact_channel"],
+"created_at": string,
+"destination": string,
+"expires_at": string,
+"id": string,
+"invited_by": string | null,
+"kitchen_ids": (string)[],
+"name": string | null,
+"role": Database["public"]['Enums']["member_role"],
+"token_hash": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "invite"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"invite_resend":
+{ Args: { "p_actor": string,"p_at"?: string,"p_invite": string,"p_ip"?: unknown,"p_token_hash": string,"p_user_agent"?: string }; Returns: {
+              "accepted_at": string | null,
+"account_id": string,
+"channel": Database["public"]['Enums']["contact_channel"],
+"created_at": string,
+"destination": string,
+"expires_at": string,
+"id": string,
+"invited_by": string | null,
+"kitchen_ids": (string)[],
+"name": string | null,
+"role": Database["public"]['Enums']["member_role"],
+"token_hash": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "invite"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"membership_remove":
+{ Args: { "p_actor": string,"p_at"?: string,"p_ip"?: unknown,"p_membership": string,"p_user_agent"?: string }; Returns: undefined
                            },
-"portal_sign_up":
-{ Args: { "p_cnpj": string,"p_email": string,"p_ip": unknown,"p_name": string,"p_now"?: string,"p_restaurant": string,"p_user_agent": string,"p_whatsapp": string,"p_xray": string }; Returns: {
-              "account_id": string,"created": boolean,"person_id": string
-            }[]
+"membership_update":
+{ Args: { "p_actor": string,"p_all_kitchens": boolean,"p_at"?: string,"p_ip"?: unknown,"p_kitchens"?: (string)[],"p_membership": string,"p_role": Database["public"]['Enums']["member_role"],"p_user_agent"?: string }; Returns: {
+              "account_id": string,
+"all_kitchens": boolean,
+"created_at": string,
+"id": string,
+"person_id": string,
+"role": Database["public"]['Enums']["member_role"],
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "membership"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"people_lock_until":
+{ Args: { "p_account": string,"p_at"?: string }; Returns: string
                            },
 "requeue_stuck_jobs":
 { Args: { "p_now"?: string }; Returns: {
               "alert_id": string,"job_id": string,"outcome": string
             }[]
                            },
+"security_lock_contact_change":
+{ Args: { "p_at"?: string,"p_channel": Database["public"]['Enums']["contact_channel"],"p_ip"?: unknown,"p_person": string,"p_user_agent"?: string }; Returns: {
+              "account_id": string,
+"created_at": string,
+"id": string,
+"reason": string,
+"until": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "security_lock"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "time_log_save":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_minutes": Json,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
                            },

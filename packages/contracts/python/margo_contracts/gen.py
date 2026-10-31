@@ -6,9 +6,11 @@ Supabase stack, whose connection string is a public default (D44).
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
-LOCAL_DB_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+# Override with MARGO_LOCAL_DB_URL when a worktree runs its own stack on other ports.
+LOCAL_DB_URL = os.environ.get("MARGO_LOCAL_DB_URL", "postgresql://postgres:postgres@127.0.0.1:54322/postgres")
 MODELS_PATH = Path(__file__).with_name("models.py")
 
 SCALARS = {

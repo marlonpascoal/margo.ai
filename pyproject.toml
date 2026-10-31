@@ -3,7 +3,7 @@ name = "margoai"
 version = "0.0.0"
 description = "MargoAI workspace root: workers and repo scripts"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-import[local]", "margo-render[local]", "margo-account[local]", "margo-cost[local]"]
+dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-import[local]", "margo-render[local]", "margo-account[local]", "margo-cost[local]", "margo-match[local]"]
 
 [tool.uv]
 package = false
@@ -16,6 +16,7 @@ margo-import = { workspace = true }
 margo-render = { workspace = true }
 margo-account = { workspace = true }
 margo-cost = { workspace = true }
+margo-match = { workspace = true }
 
 [tool.uv.workspace]
 members = ["workers/*", "packages/contracts"]
@@ -48,3 +49,6 @@ select = ["E", "F", "I", "B", "UP"]
 "workers/import/src/margo_import/db.py" = ["E501"]
 "workers/cost/src/margo_cost/db.py" = ["E501"]
 "fixtures/m2/generate.py" = ["E501"]
+"fixtures/m3/generate.py" = ["E501"]
+"workers/import/src/margo_import/invoice_run.py" = ["E501"]
+"workers/match/src/margo_match/db.py" = ["E501"]

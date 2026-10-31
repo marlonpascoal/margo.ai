@@ -813,14 +813,14 @@ isOneToOne: false
                   ]
                 },"ingredient": {
                   Row: {
-                    "base_unit": Database["public"]['Enums']["base_unit"],"category": string,"created_at": string,"gtin": (string)[],"id": string,"name": string,"updated_at": string
+                    "base_unit": Database["public"]['Enums']["base_unit"],"category": string,"created_at": string,"gtin": (string)[],"id": string,"name": string,"short_name": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "base_unit": Database["public"]['Enums']["base_unit"],"category": string,"created_at"?: string,"gtin"?: (string)[],"id"?: string,"name": string,"updated_at"?: string
+                    "base_unit": Database["public"]['Enums']["base_unit"],"category": string,"created_at"?: string,"gtin"?: (string)[],"id"?: string,"name": string,"short_name"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "base_unit"?: Database["public"]['Enums']["base_unit"],"category"?: string,"created_at"?: string,"gtin"?: (string)[],"id"?: string,"name"?: string,"updated_at"?: string
+                    "base_unit"?: Database["public"]['Enums']["base_unit"],"category"?: string,"created_at"?: string,"gtin"?: (string)[],"id"?: string,"name"?: string,"short_name"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -895,6 +895,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"ingredient_rule": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix": string | null,"source": string,"unit": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix"?: string | null,"source": string,"unit"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id"?: string,"keywords"?: (string)[],"ncm_prefix"?: string | null,"source"?: string,"unit"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ingredient_rule_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ingredient_rule_ingredient_id_fkey"
+      columns: ["ingredient_id"]
+isOneToOne: false
+      referencedRelation: "ingredient"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"invite": {
                   Row: {
                     "accepted_at": string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at": string,"destination": string,"expires_at": string,"id": string,"invited_by": string | null,"kitchen_ids": (string)[],"name": string | null,"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at": string
@@ -923,14 +949,14 @@ isOneToOne: false
                   ]
                 },"invoice": {
                   Row: {
-                    "access_key": string,"account_id": string,"company_id": string,"created_at": string,"id": string,"issued_at": string,"issuer_cnpj": string,"issuer_name": string | null,"model": number,"source": Database["public"]['Enums']["invoice_source"],"total_cents": number,"updated_at": string,"xml_path": string | null
+                    "access_key": string,"account_id": string,"company_id": string,"created_at": string,"id": string,"invoice_import_id": string | null,"issued_at": string,"issuer_cnpj": string,"issuer_name": string | null,"model": number,"source": Database["public"]['Enums']["invoice_source"],"total_cents": number,"updated_at": string,"xml_path": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "access_key": string,"account_id": string,"company_id": string,"created_at"?: string,"id"?: string,"issued_at": string,"issuer_cnpj": string,"issuer_name"?: string | null,"model": number,"source": Database["public"]['Enums']["invoice_source"],"total_cents": number,"updated_at"?: string,"xml_path"?: string | null
+                    "access_key": string,"account_id": string,"company_id": string,"created_at"?: string,"id"?: string,"invoice_import_id"?: string | null,"issued_at": string,"issuer_cnpj": string,"issuer_name"?: string | null,"model": number,"source": Database["public"]['Enums']["invoice_source"],"total_cents": number,"updated_at"?: string,"xml_path"?: string | null
                   }
                   Update: {
-                    "access_key"?: string,"account_id"?: string,"company_id"?: string,"created_at"?: string,"id"?: string,"issued_at"?: string,"issuer_cnpj"?: string,"issuer_name"?: string | null,"model"?: number,"source"?: Database["public"]['Enums']["invoice_source"],"total_cents"?: number,"updated_at"?: string,"xml_path"?: string | null
+                    "access_key"?: string,"account_id"?: string,"company_id"?: string,"created_at"?: string,"id"?: string,"invoice_import_id"?: string | null,"issued_at"?: string,"issuer_cnpj"?: string,"issuer_name"?: string | null,"model"?: number,"source"?: Database["public"]['Enums']["invoice_source"],"total_cents"?: number,"updated_at"?: string,"xml_path"?: string | null
                   }
                   Relationships: [
                     {
@@ -945,18 +971,56 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "account"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoice_invoice_import_id_fkey"
+      columns: ["invoice_import_id"]
+isOneToOne: false
+      referencedRelation: "invoice_import"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"invoice_import": {
+                  Row: {
+                    "account_id": string,"created_at": string,"created_by": string | null,"duplicates": number | null,"duration_ms": number | null,"file_name": string | null,"file_path": string,"files_total": number | null,"id": string,"invoices_new": number | null,"invoices_total": number | null,"job_id": string | null,"log": NonNullable<Json>,"months_count": number | null,"nfce_count": number | null,"nfe_count": number | null,"rejected": number | null,"status": Database["public"]['Enums']["import_status"],"suppliers_count": number | null,"trigger": Database["public"]['Enums']["import_trigger"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"created_at"?: string,"created_by"?: string | null,"duplicates"?: number | null,"duration_ms"?: number | null,"file_name"?: string | null,"file_path": string,"files_total"?: number | null,"id"?: string,"invoices_new"?: number | null,"invoices_total"?: number | null,"job_id"?: string | null,"log"?: NonNullable<Json>,"months_count"?: number | null,"nfce_count"?: number | null,"nfe_count"?: number | null,"rejected"?: number | null,"status"?: Database["public"]['Enums']["import_status"],"suppliers_count"?: number | null,"trigger"?: Database["public"]['Enums']["import_trigger"],"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"created_at"?: string,"created_by"?: string | null,"duplicates"?: number | null,"duration_ms"?: number | null,"file_name"?: string | null,"file_path"?: string,"files_total"?: number | null,"id"?: string,"invoices_new"?: number | null,"invoices_total"?: number | null,"job_id"?: string | null,"log"?: NonNullable<Json>,"months_count"?: number | null,"nfce_count"?: number | null,"nfe_count"?: number | null,"rejected"?: number | null,"status"?: Database["public"]['Enums']["import_status"],"suppliers_count"?: number | null,"trigger"?: Database["public"]['Enums']["import_trigger"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "invoice_import_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoice_import_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoice_import_job_id_fkey"
+      columns: ["job_id"]
+isOneToOne: false
+      referencedRelation: "job"
+      referencedColumns: ["id"]
     }
                   ]
                 },"invoice_line": {
                   Row: {
-                    "account_id": string,"created_at": string,"description": string,"gtin": string | null,"id": string,"invoice_id": string,"line_no": number,"ncm": string | null,"qty": number,"total_cents": number,"unit": string,"unit_price_cents": number,"updated_at": string
+                    "account_id": string,"ai_asked_at": string | null,"created_at": string,"description": string,"gtin": string | null,"id": string,"invoice_id": string,"line_no": number,"ncm": string | null,"qty": number,"total_cents": number,"unit": string,"unit_price_cents": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"created_at"?: string,"description": string,"gtin"?: string | null,"id"?: string,"invoice_id": string,"line_no": number,"ncm"?: string | null,"qty": number,"total_cents": number,"unit": string,"unit_price_cents": number,"updated_at"?: string
+                    "account_id": string,"ai_asked_at"?: string | null,"created_at"?: string,"description": string,"gtin"?: string | null,"id"?: string,"invoice_id": string,"line_no": number,"ncm"?: string | null,"qty": number,"total_cents": number,"unit": string,"unit_price_cents": number,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"description"?: string,"gtin"?: string | null,"id"?: string,"invoice_id"?: string,"line_no"?: number,"ncm"?: string | null,"qty"?: number,"total_cents"?: number,"unit"?: string,"unit_price_cents"?: number,"updated_at"?: string
+                    "account_id"?: string,"ai_asked_at"?: string | null,"created_at"?: string,"description"?: string,"gtin"?: string | null,"id"?: string,"invoice_id"?: string,"line_no"?: number,"ncm"?: string | null,"qty"?: number,"total_cents"?: number,"unit"?: string,"unit_price_cents"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1931,6 +1995,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"confirm_ingredient_match":
+{ Args: { "p_conversion"?: number,"p_match": string,"p_person": string }; Returns: string
+                           },
 "contestation_mark":
 { Args: { "p_actor"?: string,"p_actor_kind": Database["public"]['Enums']["actor_kind"],"p_at"?: string,"p_contestation": string,"p_credited_entry"?: string,"p_event": string,"p_ip"?: unknown,"p_protocol"?: string,"p_user_agent"?: string }; Returns: {
               "account_id": string,

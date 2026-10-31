@@ -11,8 +11,8 @@ select has_table('public', t, '03 §4: table ' || t) from unnest(array[
 ]) t;
 select columns_are('public', 'invoice', array[
   'id', 'account_id', 'company_id', 'access_key', 'model', 'issuer_cnpj', 'issuer_name', 'issued_at', 'total_cents',
-  'source', 'xml_path', 'created_at', 'updated_at'
-], '03 §4: invoice columns');
+  'source', 'xml_path', 'created_at', 'updated_at', 'invoice_import_id'
+], '03 §4: invoice columns (invoice_import_id: 20261201000020)');
 select hasnt_column('public', 'ingredient', 'account_id', 'D14: ingredient is a global catalog without account_id');
 select has_column('public', 'menu_item', 'channel_item_ids', '03 §4: menu_item.channel_item_ids');
 select has_column('public', 'menu_item', 'is_top20', '03 §4: menu_item.is_top20');

@@ -18,7 +18,7 @@ select tables_are('public', array[
   'rule_param', 'import_source', 'import_run', 'column_mapping', 'order_fact', 'order_item_fact', 'ledger_entry',
   'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation',
   'invoice', 'invoice_line', 'ingredient', 'ingredient_match', 'ingredient_price', 'recipe', 'recipe_line',
-  'packaging_cost', 'contribution', 'campaign_item', 'close_cost_line', 'close_decision'
+  'packaging_cost', 'contribution', 'campaign_item', 'close_cost_line', 'close_decision', 'invoice_import', 'ingredient_rule'
 ], 'A02: tables of 03 §1 to §5, the login code guard (04 §8), the M1 page cache (D47) and M2 params and evidence');
 
 select is_empty($$

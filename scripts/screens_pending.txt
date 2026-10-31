@@ -6,9 +6,6 @@
 # Wave 2 (owner portal, billing, extension, e-mails)
 
 # Wave 3 (M3)
-C10
-C11
-P05
 
 # After 15/fev: reserved routes (05 §D)
 L01

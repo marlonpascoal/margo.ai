@@ -51,7 +51,11 @@ def storage(conn: Any) -> MemoryAccountFiles:
         "update public.close_period set pdf_path = 'closes/G-02/2026-09/fechamento-G-02-2026-09.pdf' where account_id = %s",
         (G02,),
     )
-    paths = conn.execute("select file_path from public.import_run where file_path is not null").fetchall()
+    paths = conn.execute(
+        """select file_path from public.import_run where file_path is not null
+           union select xml_path from public.invoice where xml_path is not null
+           union select file_path from public.invoice_import"""
+    ).fetchall()
     files = {r["file_path"]: b"conteudo " + r["file_path"].encode() for r in paths}
     files["closes/G-02/2026-09/fechamento-G-02-2026-09.pdf"] = b"%PDF-1.4 sintetico"
     files["exports/G-02/antigo.zip"] = b"PK"
@@ -98,7 +102,7 @@ def test_E06_export_zip_has_a_csv_per_table_of_the_account_and_its_files(conn: A
     assert not any(n in z for n in ("dados/job.csv", "dados/alert.csv", "dados/staff.csv"))
 
     stored = sorted(n.removeprefix("arquivos/") for n in z if n.startswith("arquivos/"))
-    assert stored == sorted(p for p in files.files if p.startswith(("imports/G-02/", "closes/G-02/")))
+    assert stored == sorted(p for p in files.files if p.startswith(("imports/G-02/", "closes/G-02/", "invoices/G-02/")))
     assert counts == {
         "tables": len([n for n in z if n.startswith("dados/")]),
         "files": len(stored),
@@ -129,6 +133,7 @@ def test_E06_deletion_removes_rows_and_files_and_keeps_a_receipt(conn: Any) -> N
         "select count(*) as n from public.person p join public.staff s on s.person_id = p.id"
     ).fetchone()["n"]
 
+    own_files = sum(1 for p in files.files if p.split("/")[1:2] == ["G-02"])
     receipt = delete_account(conn, files, G02, requested_by=sid("p:g02-dono"), job_id="job-9")
 
     for t in tenant_tables(conn):
@@ -151,7 +156,7 @@ def test_E06_deletion_removes_rows_and_files_and_keeps_a_receipt(conn: Any) -> N
     )
 
     assert sorted(files.files) == ["closes/G-01/2026-09/fechamento-G-01-2026-09.pdf"] + sorted(
-        p for p in files.files if p.startswith("imports/") and not p.startswith("imports/G-02/")
+        p for p in files.files if p.startswith(("imports/", "invoices/")) and p.split("/")[1] != "G-02"
     )
     [r] = conn.execute(
         "select actor_kind::text as kind, action, entity_id::text as e, after from public.audit_log where account_id = %s",
@@ -160,7 +165,7 @@ def test_E06_deletion_removes_rows_and_files_and_keeps_a_receipt(conn: Any) -> N
     assert (r["kind"], r["action"], r["e"]) == ("system", "account.deleted", G02)
     assert r["after"] == receipt
     assert receipt["rows"] == sum(before.values())
-    assert receipt["people_deleted"] == 3 and receipt["files"] == 5
+    assert receipt["people_deleted"] == 3 and receipt["files"] == own_files
     assert receipt["requested_by"] == sid("p:g02-dono") and receipt["job_id"] == "job-9"
     assert "Grupo Exemplo" not in str(receipt), "the receipt carries ids and counts only (02 §7)"
 

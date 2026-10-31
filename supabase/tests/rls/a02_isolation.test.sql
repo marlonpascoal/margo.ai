@@ -167,8 +167,8 @@ reset role;
 
 -- Console: Operação (04 §5, no billing, secrets or toggles).
 select tests.login('operacao');
-select is(tests.n($$ select 1 from public.account $$), 2, 'Operação sees every client');
-select is(tests.n($$ select 1 from public.alert $$), 2, 'Operação sees alerts');
+select is(tests.n($$ select 1 from public.account where id in (tests.id('X'), tests.id('Y')) $$), 2, 'Operação sees every client');
+select is(tests.n($$ select 1 from public.alert where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Operação sees alerts');
 select is(tests.n($$ select 1 from public.subscription $$), 0, 'Operação does not see subscriptions');
 select is(tests.n($$ select 1 from public.pilot $$), 0, 'Operação does not see pilots');
 select is(tests.n($$ select 1 from public.feature_flag $$), 0, 'Operação does not see feature toggles');
@@ -176,8 +176,8 @@ reset role;
 
 -- Console: Fundador.
 select tests.login('fundador');
-select is(tests.n($$ select 1 from public.subscription $$), 2, 'Fundador sees subscriptions');
-select is(tests.n($$ select 1 from public.billing_event $$), 2, 'Fundador sees Asaas events');
+select is(tests.n($$ select 1 from public.subscription where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees subscriptions');
+select is(tests.n($$ select 1 from public.billing_event where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees Asaas events');
 select is(tests.n($$ select 1 from public.feature_flag $$), 30, 'Fundador sees feature toggles');
 select is_empty($$ update public.feature_flag set default_raio_x = true returning id $$,
   'even Fundador writes only through audited server actions');

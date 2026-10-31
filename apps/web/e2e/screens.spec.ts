@@ -15,6 +15,8 @@ const SCREENS: [file: string, url: string][] = [
   ["C07-Conectar", "/console/contas/G-02/importacoes"],
   ["C08-Fechamento", "/console/contas/G-02/fechamento/2026-09"],
   ["C09-Diferencas", "/console/contas/G-02/fechamento/2026-09/diferencas"],
+  ["C12-Ficha", "/console/contas/G-02/fichas"],
+  ["C13-Contribuicao", "/console/contas/G-02/contribuicao/2026-09"],
   ["C16-Contestacao", "/console/contas/G-02/contestacoes"],
   ["C19-Estrutura", "/console/contas/G-02/estrutura"],
   ["C18-BPO", "/console/bpo"],
@@ -28,7 +30,7 @@ test("F02_C00_login", async ({ page }) => {
   }
 });
 
-test("F02_C01_C07_C08_C09_C14_C15_C16_C17_C18_C19_C20_C21_E01_E02_as_founder", async ({ page }) => {
+test("F02_C01_C07_C08_C09_C12_C13_C14_C15_C16_C17_C18_C19_C20_C21_E01_E02_as_founder", async ({ page }) => {
   await loginToConsole(page, FOUNDER_EMAIL);
   for (const [file, url] of SCREENS) {
     for (const width of WIDTHS) {

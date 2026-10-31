@@ -316,24 +316,77 @@ def compute_close(inputs: CloseInputs, params: CostParams) -> CloseResult:
     return CloseResult(recipes, rows, store_costs, dlv01_decision(econ))
 
 
-def ingredient_coverage(recipes: Sequence[RecipeResult], recipe_lines: Mapping[str, str],
-                        units_by_item: Mapping[str, int], top_n: int) -> tuple[int, int, int]:
+@dataclass(frozen=True)
+class IngredientUse:
+    """A recipe line of a dish sold: ingredient, cost per dish (CST-03), units of the dish, price source."""
+
+    ingredient_id: str
+    cost: Decimal | None
+    units: int
+    source: str | None
+
+
+def top_ingredient_coverage(uses: Sequence[IngredientUse], top_n: int) -> tuple[int, int, int]:
     """P06 and C10 "N de 20": of the `top_n` insumos that weigh most in the cost of the dishes sold
     (line cost times units of the dish), how many have a CST-01 invoice price, a CST-02 regional prior, none.
-
-    `recipe_lines` maps a recipe line id to its ingredient id.
     """
-    weight: Counter[str] = Counter()
+    weight: dict[str, Decimal] = defaultdict(Decimal)
     source: dict[str, str | None] = {}
-    for r in recipes:
-        n = units_by_item.get(r.menu_item_id, 0)
-        for ln in r.lines:
-            ing = recipe_lines[ln.line_id]
-            weight[ing] += (ln.cost or Decimal(0)) * n  # type: ignore[assignment]
-            src = ln.price.source if ln.price else None
-            if source.get(ing) != "invoice":
-                source[ing] = src
+    for u in uses:
+        weight[u.ingredient_id] += (u.cost or Decimal(0)) * u.units
+        source[u.ingredient_id] = u.source
     ranked = sorted(weight, key=lambda i: (-weight[i], i))[:top_n]
     invoice = sum(1 for i in ranked if source[i] == "invoice")
     prior = sum(1 for i in ranked if source[i] == "regional_prior")
     return invoice, prior, len(ranked) - invoice - prior
+
+
+def ingredient_coverage(recipes: Sequence[RecipeResult], recipe_lines: Mapping[str, str],
+                        units_by_item: Mapping[str, int], top_n: int) -> tuple[int, int, int]:
+    """top_ingredient_coverage over computed recipes; `recipe_lines` maps a line id to its ingredient id."""
+    return top_ingredient_coverage(
+        [
+            IngredientUse(recipe_lines[ln.line_id], ln.cost, units_by_item.get(r.menu_item_id, 0),
+                          ln.price.source if ln.price else None)
+            for r in recipes
+            for ln in r.lines
+        ],
+        top_n,
+    )
+
+
+@dataclass(frozen=True)
+class P06Row:
+    menu_item_id: str
+    channel: str
+    campaign_name: str | None
+    campaign_discount_pct: Decimal | None
+    units: int
+    price_cents: int
+    left_cents: int
+
+
+def p06_rows(rows: Sequence[P06Row], decision: Decision | None, limit: int = 4) -> list[P06Row]:
+    """P06 "O que sobra por pedido, nos itens que mais vendem" (choice listed for Marlon): the rows without
+    campaign of the dish sold most (units, all channels), highest contribution first; then the DLV-01 row;
+    then the lowest positive contribution without campaign. At most `limit` rows, no repeats.
+    """
+    base = [r for r in rows if r.campaign_name is None]
+    if not base:
+        return []
+    units: dict[str, int] = defaultdict(int)
+    for r in rows:
+        units[r.menu_item_id] += r.units
+    best = max(units, key=lambda i: (units[i], i))
+    out = sorted((r for r in base if r.menu_item_id == best), key=lambda r: -r.left_cents)
+
+    def add(r: P06Row | None) -> None:
+        if r is not None and r not in out:
+            out.append(r)
+
+    if decision is not None:
+        add(next((r for r in rows if r.menu_item_id == decision.menu_item_id and r.channel == decision.channel
+                  and r.campaign_name == decision.campaign_name), None))
+    positive = [r for r in base if r.left_cents > 0]
+    add(min(positive, key=lambda r: (r.left_cents, -r.units)) if positive else None)
+    return out[:limit]

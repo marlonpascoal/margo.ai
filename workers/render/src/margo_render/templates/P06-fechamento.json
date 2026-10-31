@@ -1,18 +1,43 @@
 {
-  "_doc": "P06 copy (design/P06-FechamentoPDF.dc.html). Drawn strings verbatim; the ones marked in p06.py as not drawn are listed for Marlon. No em dashes.",
+  "_doc": "P06 copy (design/P06-FechamentoPDF.dc.html). Drawn strings verbatim; the ones marked in p06.py as not drawn are listed for Marlon. No em dashes. Not drawn: cost_text_prior when 0, decision_compare less_than_half and other, decision_lowest.",
   "brand": "MargoAI",
   "header": "Fechamento de {mes}/{ano} · {conta}",
   "fictitious": "dados fictícios",
   "synthetic": "SINTÉTICO",
   "headline": "Você vendeu {vendido} no delivery e recebeu {recebido}",
-  "columns": ["Canal", "Vendido", "O app levou", "Recebido", "Sobrou"],
+  "columns": [
+    "Canal",
+    "Vendido",
+    "O app levou",
+    "Recebido",
+    "Sobrou"
+  ],
   "wrong_title": "Cobrado errado no mês",
   "wrong_text": "{voltou} já voltou. {abertos} contestados, resposta até {prazo}.",
   "wrong_text_none": "Nada cobrado errado neste mês.",
   "cost_title": "Custo dos insumos",
   "cost_missing": "falta custo",
   "cost_missing_text": "Sem notas de compra ainda. O lucro por item entra quando o custo dos insumos chegar.",
+  "cost_text": "itens com preço de nota.",
+  "cost_text_prior": "Os outros {n} por estimativa da região.",
   "items_title": "O que sobra por pedido, nos itens que mais vendem",
+  "items_columns": [
+    "Item e canal",
+    "Preço",
+    "Sobra"
+  ],
+  "item_campaign": "{item} com cupom de {pct}%, {canal}",
+  "item": "{item}, {canal}",
+  "decision_title": "Uma decisão para {mes}",
+  "decision_campaign": "Com o cupom de {pct}%, o {item} deixa {com} por pedido, {comparacao} {sem} sem cupom. Vale renovar a campanha?",
+  "decision_compare": {
+    "less_than_half": "menos da metade dos",
+    "almost_half": "quase a metade dos",
+    "other": "contra os"
+  },
+  "decision_lowest": "{item} deixa só {sobra} por pedido no {canal}, a menor sobra entre os itens que mais vendem. Vale rever o preço?",
   "sources": "Fontes: {fontes}.",
+  "sources_invoices": "notas de compra",
+  "cost_error": "Custo ± {pct}%.",
   "powered_by": "com tecnologia MargoAI"
 }

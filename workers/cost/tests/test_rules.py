@@ -153,3 +153,30 @@ def test_dlv01_lowest_positive_ignores_negative_rows_and_empty() -> None:
     d = dlv01_decision(rows)
     assert d is not None and (d.menu_item_id, d.channel) == ("refri", "food99")
     assert dlv01_decision([row("loss", -20)]) is None
+
+
+def test_p06_rows_best_seller_then_decision_then_lowest() -> None:
+    from margo_cost.compute import P06Row, p06_rows
+    from margo_cost.rules import Decision
+
+    xb_if = P06Row("xb", "ifood", None, None, 913, 3690, 1505)
+    xb_99 = P06Row("xb", "food99", None, None, 178, 3690, 1627)
+    combo = P06Row("combo", "ifood", None, None, 30, 7990, 2773)
+    coupon = P06Row("combo", "ifood", "Cupom", D("0.20"), 0, 6392, 1582)
+    refri = P06Row("refri", "ifood", None, None, 605, 500, 87)
+    batata = P06Row("batata", "ifood", None, None, 352, 1490, 800)
+    d = Decision("campaign", "combo", "ifood", "Cupom", D("0.20"), 1582, 2773)
+    # P06 as drawn: X-Bacon 99Food, X-Bacon iFood, Combo casal com cupom, Refrigerante lata.
+    assert p06_rows([xb_if, xb_99, combo, coupon, refri, batata], d) == [xb_99, xb_if, coupon, refri]
+    low = Decision("lowest", "refri", "ifood", None, None, 87, None)
+    assert p06_rows([xb_if, refri, batata], low) == [xb_if, refri]
+    assert p06_rows([], None) == []
+
+
+def test_top_ingredient_coverage_counts_the_heaviest() -> None:
+    from margo_cost.compute import IngredientUse, top_ingredient_coverage
+
+    uses = [IngredientUse("blend", D(732), 10, "invoice"), IngredientUse("bacon", D(138), 10, "regional_prior"),
+            IngredientUse("sal", D(1), 1, "invoice"), IngredientUse("x", None, 5, None)]
+    assert top_ingredient_coverage(uses, 2) == (1, 1, 0)
+    assert top_ingredient_coverage(uses, 20) == (2, 1, 1)

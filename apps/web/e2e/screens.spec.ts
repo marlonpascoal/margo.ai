@@ -8,6 +8,8 @@ const WIDTHS = [390, 1280];
 const SCREENS: [file: string, url: string][] = [
   ["C01-Clientes", "/console"],
   ["C14-Config", "/console/config"],
+  ["C20-Funcionalidades", "/console/funcionalidades"],
+  ["C21-Alertas", "/console/alertas"],
 ];
 
 test("F02_C00_login", async ({ page }) => {
@@ -18,7 +20,7 @@ test("F02_C00_login", async ({ page }) => {
   }
 });
 
-test("F02_C01_C14_as_founder", async ({ page }) => {
+test("F02_C01_C14_C20_C21_as_founder", async ({ page }) => {
   await loginToConsole(page, FOUNDER_EMAIL);
   for (const [file, url] of SCREENS) {
     for (const width of WIDTHS) {

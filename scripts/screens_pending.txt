@@ -1,10 +1,6 @@
 # Screens drawn in design/ but not built yet (F01, scripts/check_screens.py).
 # Remove a code when its route or template lands; check_screens fails if a built screen stays here.
 
-# Wave 0
-C20
-C21
-
 # Wave 1, lane A (M1)
 C02
 C03

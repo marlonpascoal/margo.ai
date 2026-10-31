@@ -42,8 +42,9 @@ def buyer_company(inv: Invoice, companies: dict[str, tuple[str, bool]]) -> tuple
     return None
 
 
-def xml_path(account_id: str, key: str) -> str:
-    return f"invoices/{account_id}/{key}.xml"
+def xml_path(account_code: str, key: str) -> str:
+    """Files of an account live under its code in each bucket (E06 export and deletion find them there)."""
+    return f"invoices/{account_code}/{key}.xml"
 
 
 def _update(conn: Any, import_id: str, **fields: Any) -> None:
@@ -57,7 +58,7 @@ def _update(conn: Any, import_id: str, **fields: Any) -> None:
 def process_invoice_zip(conn: Any, files: FileStore, import_id: str, now: datetime | None = None) -> Outcome:
     started = time.monotonic()
     run = conn.execute(
-        """select r.id, r.account_id::text, r.file_path, a.is_synthetic
+        """select r.id, r.account_id::text, r.file_path, a.is_synthetic, a.code
            from public.invoice_import r join public.account a on a.id = r.account_id where r.id = %s""",
         (import_id,),
     ).fetchone()
@@ -98,7 +99,7 @@ def process_invoice_zip(conn: Any, files: FileStore, import_id: str, now: dateti
         }
         new = [i for i in read.invoices if i.access_key in buyers and i.access_key not in known]
         for inv in new:
-            files.put(xml_path(account, inv.access_key), read.raw[inv.access_key], "application/xml")
+            files.put(xml_path(run["code"], inv.access_key), read.raw[inv.access_key], "application/xml")
         lines = 0
         with conn.transaction():
             for inv in new:
@@ -116,7 +117,7 @@ def process_invoice_zip(conn: Any, files: FileStore, import_id: str, now: dateti
                         inv.issuer_name,
                         inv.issued_at,
                         inv.total_cents,
-                        xml_path(account, inv.access_key),
+                        xml_path(run["code"], inv.access_key),
                         import_id,
                     ),
                 ).fetchone()

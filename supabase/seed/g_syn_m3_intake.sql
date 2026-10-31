@@ -56,7 +56,7 @@ on conflict (ingredient_id, keywords, ncm_prefix, unit) do nothing;
 insert into public.invoice_import (id, account_id, trigger, file_path, file_name, status, files_total, invoices_total,
                                    invoices_new, duplicates, rejected, nfe_count, nfce_count, months_count,
                                    suppliers_count, duration_ms, log, created_by, created_at)
-select pg_temp.sid('G-02:invoice_import:zip'), a.id, 'upload', 'invoices/' || a.id || '/zips/contador-SINTETICO.zip',
+select pg_temp.sid('G-02:invoice_import:zip'), a.id, 'upload', 'invoices/G-02/zips/contador-SINTETICO.zip',
        'contador-SINTETICO.zip', 'ok', count(*) + 9, count(*), count(*), 9, 0,
        count(*) filter (where i.model = 55), count(*) filter (where i.model = 65),
        count(distinct to_char(i.issued_at at time zone 'America/Sao_Paulo', 'YYYY-MM')),

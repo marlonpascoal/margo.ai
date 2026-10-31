@@ -129,7 +129,7 @@ export async function uploadZip(db: Db, account: M2Account, staffId: string, fil
   if (!file.name.toLowerCase().endsWith(".zip")) throw new NotasRefused("O arquivo precisa ser um .zip.");
   const id = crypto.randomUUID();
   const name = file.name.replace(/[^\p{L}\p{N}._ -]/gu, "_");
-  const objectPath = `${account.id}/zips/${id}/${name}`;
+  const objectPath = `${account.code}/zips/${id}/${name}`;
   const up = await db.storage.from("invoices").upload(objectPath, new Uint8Array(await file.arrayBuffer()), { contentType: "application/zip" });
   if (up.error) throw new Error(up.error.message);
   const ins = await db.from("invoice_import").insert({ id, account_id: account.id, file_path: `invoices/${objectPath}`, file_name: name, created_by: staffId });

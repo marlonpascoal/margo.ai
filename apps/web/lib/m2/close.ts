@@ -2,7 +2,9 @@
 // Numbers come from close_line and difference, which worker-import computes with REP-01 to REP-05 and
 // DIF-01 to DIF-05 (04 §2); this module only adds them up per channel and words them as drawn.
 import type { Database } from "@margoai/contracts";
+import { closeReadyEmail, emailSource } from "@/emails";
 import { notify } from "@/lib/notify/outbox";
+import type { MessageSource } from "@/lib/notify/templates";
 import { SupabaseNotifyStore } from "@/lib/notify/supabase-store";
 import { enqueueJob } from "@/lib/jobs/enqueue";
 import { enqueueDeps } from "@/lib/jobs/deps";
@@ -192,6 +194,32 @@ export async function loadDifferences(db: Db, closeId: string): Promise<Differen
   );
 }
 
+/** Differences still to contest: no contestation yet, or waiting for the owner (04 §3). */
+const toContest = (d: DifferenceRecord) => !d.contestation || (!d.contestation.closed_at && ["a_contestar", "precisa_resposta"].includes(d.contestation.status));
+
+/** E01 for one close: C08 totals (REP), differences to contest (DIF), the P06 PDF attached. No cost yet (M3). */
+export async function closeReadyMessage(db: Db, account: M2Account, close: ClosePeriod): Promise<MessageSource> {
+  const [{ lines }, diffs, kitchens] = await Promise.all([
+    loadClose(db, close.id),
+    loadDifferences(db, close.id),
+    db.from("kitchen").select("id", { count: "exact", head: true }).eq("account_id", account.id).eq("in_analysis", true),
+  ]);
+  const channels = CHANNEL_ORDER.filter((c) => lines.some((l) => l.channel === c)).map((c) => CHANNEL_LABEL[c]);
+  const ym = close.month.slice(0, 7);
+  const content = closeReadyEmail({
+    accountName: account.name,
+    month: close.month,
+    kitchens: kitchens.count ?? 0,
+    channels,
+    grossCents: lines.reduce((a, l) => a + l.gross, 0),
+    payoutCents: lines.reduce((a, l) => a + l.payout, 0),
+    leftCents: null,
+    wrongCents: diffs.filter(toContest).reduce((a, d) => a + d.amount_cents, 0),
+  });
+  // worker-render writes the PDF at this path (render_close); the outbox attaches it once it exists.
+  return emailSource(content, { synthetic: account.isSynthetic, attachmentPath: `closes/${account.code}/${ym}/fechamento-${account.code}-${ym}.pdf` });
+}
+
 /**
  * C09 "Gerar fechamento mensal": status computed, P06 and xlsx rendered by worker-render (render_close),
  * and close_ready queued when the 5th of the next month has come (04 §9); before that the day-5 schedule
@@ -213,12 +241,9 @@ export async function generateClose(
   const fifth = new Date(Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 5, 3));
   let notified = false;
   if (now >= fifth) {
-    const { lines } = await loadClose(db, close.id);
-    const gross = lines.reduce((a, l) => a + l.gross, 0);
-    const payout = lines.reduce((a, l) => a + l.payout, 0);
     await notify(
       { store: new SupabaseNotifyStore(db), now: () => now },
-      { code: "close_ready", accountId: account.id, message: { subject: `Fechamento de ${monthShort(close.month)} pronto`, body: `Você vendeu ${brl(gross)} no delivery e recebeu ${brl(payout)}.` } },
+      { code: "close_ready", accountId: account.id, message: await closeReadyMessage(db, account, close) },
     );
     notified = true;
   }

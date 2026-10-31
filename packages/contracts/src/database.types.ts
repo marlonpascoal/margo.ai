@@ -165,14 +165,14 @@ isOneToOne: false
                   ]
                 },"bpo_partner": {
                   Row: {
-                    "created_at": string,"folder_url": string | null,"id": string,"logo_path": string | null,"name": string,"price_per_store_cents": number | null,"primary_color": string | null,"show_powered_by": boolean,"updated_at": string
+                    "created_at": string,"folder_url": string | null,"id": string,"logo_path": string | null,"name": string,"pipeline_note": string | null,"price_per_store_cents": number | null,"primary_color": string | null,"show_powered_by": boolean,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"folder_url"?: string | null,"id"?: string,"logo_path"?: string | null,"name": string,"price_per_store_cents"?: number | null,"primary_color"?: string | null,"show_powered_by"?: boolean,"updated_at"?: string
+                    "created_at"?: string,"folder_url"?: string | null,"id"?: string,"logo_path"?: string | null,"name": string,"pipeline_note"?: string | null,"price_per_store_cents"?: number | null,"primary_color"?: string | null,"show_powered_by"?: boolean,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"folder_url"?: string | null,"id"?: string,"logo_path"?: string | null,"name"?: string,"price_per_store_cents"?: number | null,"primary_color"?: string | null,"show_powered_by"?: boolean,"updated_at"?: string
+                    "created_at"?: string,"folder_url"?: string | null,"id"?: string,"logo_path"?: string | null,"name"?: string,"pipeline_note"?: string | null,"price_per_store_cents"?: number | null,"primary_color"?: string | null,"show_powered_by"?: boolean,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -517,14 +517,14 @@ isOneToOne: false
                   ]
                 },"extension_token": {
                   Row: {
-                    "account_id": string,"created_at": string,"id": string,"last_used_at": string | null,"person_id": string,"revoked_at": string | null,"token_hash": string,"updated_at": string
+                    "account_id": string,"created_at": string,"created_by": string | null,"id": string,"last_used_at": string | null,"paired_at": string | null,"pairing_expires_at": string | null,"person_id": string,"revoked_at": string | null,"token_hash": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"created_at"?: string,"id"?: string,"last_used_at"?: string | null,"person_id": string,"revoked_at"?: string | null,"token_hash": string,"updated_at"?: string
+                    "account_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_used_at"?: string | null,"paired_at"?: string | null,"pairing_expires_at"?: string | null,"person_id": string,"revoked_at"?: string | null,"token_hash": string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"id"?: string,"last_used_at"?: string | null,"person_id"?: string,"revoked_at"?: string | null,"token_hash"?: string,"updated_at"?: string
+                    "account_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_used_at"?: string | null,"paired_at"?: string | null,"pairing_expires_at"?: string | null,"person_id"?: string,"revoked_at"?: string | null,"token_hash"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -532,6 +532,12 @@ isOneToOne: false
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "extension_token_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "extension_token_person_id_fkey"
@@ -913,14 +919,14 @@ isOneToOne: false
                   ]
                 },"notification": {
                   Row: {
-                    "account_id": string | null,"alert_id": string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at": string,"id": string,"notice_code": string | null,"person_id": string | null,"provider_id": string | null,"recipient": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"],"subject": string | null,"updated_at": string
+                    "account_id": string | null,"alert_id": string | null,"attachment_path": string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at": string,"html": string | null,"id": string,"manual_sent_at": string | null,"manual_sent_by": string | null,"notice_code": string | null,"person_id": string | null,"provider_id": string | null,"recipient": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"],"subject": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id"?: string | null,"alert_id"?: string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at"?: string,"id"?: string,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
+                    "account_id"?: string | null,"alert_id"?: string | null,"attachment_path"?: string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at"?: string,"html"?: string | null,"id"?: string,"manual_sent_at"?: string | null,"manual_sent_by"?: string | null,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string | null,"alert_id"?: string | null,"body"?: string,"channel"?: Database["public"]['Enums']["notification_channel"],"created_at"?: string,"id"?: string,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
+                    "account_id"?: string | null,"alert_id"?: string | null,"attachment_path"?: string | null,"body"?: string,"channel"?: Database["public"]['Enums']["notification_channel"],"created_at"?: string,"html"?: string | null,"id"?: string,"manual_sent_at"?: string | null,"manual_sent_by"?: string | null,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -934,6 +940,12 @@ isOneToOne: false
       columns: ["alert_id"]
 isOneToOne: false
       referencedRelation: "alert"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "notification_manual_sent_by_fkey"
+      columns: ["manual_sent_by"]
+isOneToOne: false
+      referencedRelation: "person"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "notification_notice_code_fkey"

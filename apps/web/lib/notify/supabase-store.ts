@@ -78,6 +78,8 @@ export class SupabaseNotifyStore implements NotifyStore {
             body: r.body,
             status: r.status,
             recipient: r.recipient,
+            html: r.html ?? null,
+            attachment_path: r.attachmentPath ?? null,
           })),
         )
         .select("id"),
@@ -89,7 +91,7 @@ export class SupabaseNotifyStore implements NotifyStore {
     const rows = must(
       await this.db
         .from("notification")
-        .select("id, account_id, person_id, notice_code, alert_id, channel, subject, body, status, recipient")
+        .select("id, account_id, person_id, notice_code, alert_id, channel, subject, body, status, recipient, html, attachment_path")
         .in("status", ["queued", "held_quiet_hours"])
         .order("created_at")
         .limit(limit),
@@ -105,6 +107,8 @@ export class SupabaseNotifyStore implements NotifyStore {
       body: r.body,
       status: r.status,
       recipient: r.recipient,
+      html: r.html,
+      attachmentPath: r.attachment_path,
     }));
   }
 

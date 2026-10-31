@@ -74,7 +74,15 @@ export async function processOutbox(deps: NotifyDeps & { notifier: Notifier }, l
       continue;
     }
     try {
-      const { providerId } = await notifier.deliver({ notificationId: row.id, channel: row.channel, to, subject: row.subject, body: row.body });
+      const { providerId } = await notifier.deliver({
+        notificationId: row.id,
+        channel: row.channel,
+        to,
+        subject: row.subject,
+        body: row.body,
+        html: row.html ?? null,
+        attachmentPath: row.attachmentPath ?? null,
+      });
       if (await store.setStatus(row.id, from, "sent", { at: now, providerId })) {
         result.sent++;
         if (from === "held_quiet_hours") result.released++;

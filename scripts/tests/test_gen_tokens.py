@@ -11,5 +11,5 @@ def test_parse_reads_declarations_and_skips_resets_and_comments():
     assert gen_tokens.parse(css) == {"color-ink": "#1C1C1A", "text-sm": "13px"}
 
 
-def test_generated_python_tokens_match_the_css():
+def test_generated_python_and_email_tokens_match_the_css():
     assert gen_tokens.main(["--check"]) == 0

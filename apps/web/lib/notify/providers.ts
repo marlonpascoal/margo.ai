@@ -11,6 +11,8 @@ export interface OutgoingMessage {
   to: string;
   subject: string | null;
   body: string;
+  html?: string | null;
+  attachmentPath?: string | null;
 }
 
 export interface EmailProvider {
@@ -79,6 +81,54 @@ export class ManualWhatsAppProvider implements WhatsAppProvider {
   async send(msg: OutgoingMessage) {
     const providerId = whatsappLink(msg.to, msg.body);
     this.inbox?.append({ provider: "whatsapp-manual", providerId, ...msg });
+    return { providerId };
+  }
+}
+
+/** A file to attach, read from Storage by "<bucket>/<path>". */
+export interface Attachment {
+  filename: string;
+  contentType: string;
+  bytes: Uint8Array;
+}
+export type AttachmentLoader = (path: string) => Promise<Attachment | null>;
+
+type Fetch = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
+
+/** E01, E02 sender (D36). */
+export const SENDER = { Name: "MargoAI", Email: "avisos@margoai.com" } as const;
+
+/**
+ * Local only: hands each e-mail (HTML, text, attachment) to the local stack's Mailpit through its send API,
+ * so the dev inbox shows it as the owner would see it. Nothing leaves the machine.
+ */
+export class MailpitProvider implements EmailProvider {
+  constructor(
+    private baseUrl: string,
+    private fetchImpl: Fetch = fetch as unknown as Fetch,
+    private attachments: AttachmentLoader | null = null,
+    private inbox: DevInbox | null = null,
+  ) {}
+
+  async send(msg: OutgoingMessage) {
+    const files = msg.attachmentPath && this.attachments ? await this.attachments(msg.attachmentPath) : null;
+    const res = await this.fetchImpl(`${this.baseUrl.replace(/\/$/, "")}/api/v1/send`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        From: SENDER,
+        To: [{ Email: msg.to }],
+        Subject: msg.subject ?? "",
+        Text: msg.body,
+        ...(msg.html ? { HTML: msg.html } : {}),
+        ...(files ? { Attachments: [{ Filename: files.filename, ContentType: files.contentType, Content: Buffer.from(files.bytes).toString("base64") }] } : {}),
+        Headers: { "X-MargoAI-Notification": msg.notificationId },
+      }),
+    });
+    if (!res.ok) throw new Error(`mailpit send returned ${res.status}`);
+    const { ID } = (await res.json()) as { ID?: string };
+    const providerId = `mailpit:${ID ?? msg.notificationId}`;
+    this.inbox?.append({ provider: "mailpit", providerId, ...msg, html: undefined });
     return { providerId };
   }
 }

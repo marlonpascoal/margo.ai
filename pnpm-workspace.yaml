@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - extension
 
 # Packages allowed to run install scripts (pnpm blocks all others).
 allowBuilds:

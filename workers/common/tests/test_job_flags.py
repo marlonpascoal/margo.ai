@@ -55,6 +55,7 @@ def test_A05_job_flags_map_the_job_types_the_spec_names() -> None:
         "import_99food_file": "m2.arquivo_99food",
         "import_invoice_zip": "m3.notas_xml",
         "match_ai": "m3.depara_ia",
+        "render_close_bpo": "bpo.marca_propria",
     }
 
 

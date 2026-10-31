@@ -301,6 +301,7 @@ class BpoPartner(Row):
     id: UUID
     logo_path: str | None
     name: str
+    pipeline_note: str | None
     price_per_store_cents: int | None
     primary_color: str | None
     show_powered_by: bool
@@ -476,8 +477,11 @@ class DifferenceOrder(Row):
 class ExtensionToken(Row):
     account_id: UUID
     created_at: datetime
+    created_by: UUID | None
     id: UUID
     last_used_at: datetime | None
+    paired_at: datetime | None
+    pairing_expires_at: datetime | None
     person_id: UUID
     revoked_at: datetime | None
     token_hash: str
@@ -677,10 +681,14 @@ class NoticeType(Row):
 class Notification(Row):
     account_id: UUID | None
     alert_id: UUID | None
+    attachment_path: str | None
     body: str
     channel: NotificationChannel
     created_at: datetime
+    html: str | None
     id: UUID
+    manual_sent_at: datetime | None
+    manual_sent_by: UUID | None
     notice_code: str | None
     person_id: UUID | None
     provider_id: str | None

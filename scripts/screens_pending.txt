@@ -4,10 +4,6 @@
 # Wave 1, lane B (M2 from files)
 
 # Wave 2 (owner portal, billing, extension, e-mails)
-P04
-C18
-E01
-E02
 
 # Wave 3 (M3)
 C10

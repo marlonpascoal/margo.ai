@@ -1,0 +1,23 @@
+/* P04 popup, as drawn (380 x 560). Only design tokens (tokens.css, generated from apps/web/app/tokens.css). */
+body { margin: 0; background: var(--color-surface); color: var(--color-ink); font-family: var(--font-sans); }
+.popup { width: 380px; min-height: 560px; box-sizing: border-box; border: 1px solid var(--color-border); display: flex; flex-direction: column; }
+.top { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--color-border); }
+.brand { font-size: 16px; }
+.pill { font-size: var(--text-xs); padding: 3px 10px; border-radius: var(--radius-full); background: var(--color-ok-bg); color: var(--color-ok); }
+.pill.off { background: var(--color-sunken); color: var(--color-ink-muted); }
+.body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.lead { font-size: var(--text-md); line-height: 1.45; margin: 0; }
+.label { font-size: var(--text-sm); color: var(--color-ink-muted); }
+.report { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); }
+.report input { width: 18px; height: 18px; margin: 2px 0 0; }
+.report span { font-size: var(--text-md); line-height: 1.4; }
+.report small { display: block; font-size: var(--text-xs); color: var(--color-ink-muted); }
+.primary { display: flex; align-items: center; justify-content: center; min-height: 44px; width: 100%; border: 0; background: var(--color-ink); color: var(--color-ink-inverse); border-radius: var(--radius-md); font: inherit; font-weight: 700; cursor: pointer; }
+.primary:disabled { background: var(--color-ink-faint); cursor: default; }
+.note { font-size: var(--text-xs); color: var(--color-ink-muted); line-height: 1.5; margin: 0; }
+.msg { font-size: var(--text-sm); line-height: 1.45; margin: 0; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--color-ok-bg); }
+.msg.bad { background: var(--color-danger-bg); color: var(--color-danger); }
+.field { min-height: 40px; padding: 0 10px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); font: inherit; font-family: var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
+select.field { font-family: var(--font-sans); letter-spacing: normal; text-transform: none; }
+.foot { padding: 10px 16px; border-top: 1px solid var(--color-border-subtle); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-ink-muted); min-height: 14px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

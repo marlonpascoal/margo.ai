@@ -83,6 +83,8 @@ export const UPLOAD_MESSAGES = {
   badToken: "Extensão não conectada. Gere um código novo no portal.",
   badCode: "Código inválido ou vencido. Gere um código novo no portal.",
   store: "Loja não encontrada nesta conta.",
+  // E02, 04 §7: not drawn.
+  paused: "As importações desta conta estão pausadas. Escolha um plano no portal da MargoAI para voltar.",
 } as const;
 
 /** Size limit and file type of an extension upload. */

@@ -378,3 +378,44 @@ def test_C06_real_file_refused_when_its_cnpj_has_no_authorization(conn: Any) -> 
     out = process_run(conn, files, run, "ifood")
     assert (out.status, out.reason) == ("failed", "no_owner_authorization")
     assert run_status(conn, run)["rows_new"] is None, "nothing was written"
+
+
+@pytestmark_db
+def test_E02_run_of_a_paused_source_is_skipped_and_writes_nothing(conn: Any) -> None:
+    from margo_common.files import MemoryFileStore
+    from margo_import.process import process_run
+
+    files = MemoryFileStore({"imports/t/ifood.csv": data(IFOOD)})
+    source = conn.execute(
+        """insert into public.import_source (account_id, channel, kind, paused_at, paused_reason)
+           select id, 'ifood', 'upload', now(), 'trial_ended' from public.account where code = 'G-02'
+           on conflict (account_id, channel, kind) do update set paused_at = now(), paused_reason = 'trial_ended'
+           returning id"""
+    ).fetchone()["id"]
+    run = new_run(conn, "ifood", "imports/t/ifood.csv", IFOOD)
+    conn.execute("update public.import_run set source_id = %s where id = %s", (source, run))
+    out = process_run(conn, files, run, "ifood")
+    assert (out.status, out.reason) == ("failed", "source_paused")
+    assert run_status(conn, run)["rows_new"] is None, "nothing was written"
+
+    # 04 §7: resuming the source (a plan was chosen) lets the same run through.
+    conn.execute("update public.import_source set paused_at = null, paused_reason = null where id = %s", (source,))
+    run2 = new_run(conn, "ifood", "imports/t/ifood.csv", IFOOD)
+    conn.execute("update public.import_run set source_id = %s where id = %s", (source, run2))
+    assert process_run(conn, files, run2, "ifood").status == "ok"
+
+
+@pytestmark_db
+def test_E02_run_without_source_is_skipped_while_the_account_is_paused(conn: Any) -> None:
+    from margo_common.files import MemoryFileStore
+    from margo_import.process import process_run
+
+    files = MemoryFileStore({"imports/t/ifood.csv": data(IFOOD)})
+    conn.execute(
+        """insert into public.import_source (account_id, channel, kind, paused_at, paused_reason)
+           select id, 'ifood', 'extension', now(), 'trial_ended' from public.account where code = 'G-02'
+           on conflict (account_id, channel, kind) do update set paused_at = now(), paused_reason = 'trial_ended'"""
+    )
+    run = new_run(conn, "ifood", "imports/t/ifood.csv", IFOOD)
+    out = process_run(conn, files, run, "ifood")
+    assert (out.status, out.reason) == ("failed", "source_paused")

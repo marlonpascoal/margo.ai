@@ -1,5 +1,6 @@
 """One import run, from the stored file to canonical rows and the month's close (04 §11, D31, C06, C17).
 
+paused source (E02, 04 §7)? -> failed "source_paused", nothing read or written
 read file -> header signature -> saved column_mapping?
    no  -> needs_mapping, with the C17 proposal and check block in import_run.log, and a team alert
    yes -> canonical rows -> payout total of the file must equal the mapped payout total
@@ -98,6 +99,8 @@ def process_run(
     account = run["account_id"]
     db.update_run(conn, run_id, status="running")
     try:
+        if db.source_paused(conn, run_id):
+            raise Refused("source_paused")
         data = files.get(run["file_path"])
         try:
             table = read_table(data, run["file_name"] or run["file_path"])

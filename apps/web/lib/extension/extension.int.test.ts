@@ -12,7 +12,7 @@ import { GET as statusRoute } from "@/app/api/extension/status/route";
 import { POST as uploadRoute } from "@/app/api/extension/upload/route";
 import { POST as legacyUploadRoute } from "@/app/api/ext/upload/route";
 import { adminClient } from "@/lib/supabase/admin";
-import { sha256Hex } from "./core";
+import { sha256Hex, UPLOAD_MESSAGES } from "./core";
 import { createPairingCode, revokeExtensionToken } from "./server";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
@@ -31,19 +31,19 @@ const people: string[] = [];
 const created = { g02Runs: [] as string[], g02Tokens: [] as string[] };
 let g02ExtOk: string | null = null;
 
-async function makeAccount(plan: "lucro" | "raio_x", synthetic: boolean) {
+async function makeAccount(plan: "lucro" | "raio_x", synthetic: boolean, suffix = "") {
   const { data: p } = await db.from("plan").select("id").eq("code", plan).single();
-  const acc = await db.from("account").insert({ name: `Conta extensão ${plan}`, code: `T-EXT-${plan}-${synthetic ? "s" : "r"}-${tag}`, is_synthetic: synthetic, plan_id: p!.id }).select("id").single();
+  const acc = await db.from("account").insert({ name: `Conta extensão ${plan}`, code: `T-EXT-${plan}-${synthetic ? "s" : "r"}${suffix}-${tag}`, is_synthetic: synthetic, plan_id: p!.id }).select("id").single();
   const accountId = acc.data!.id;
   accounts.push(accountId);
-  const person = await db.from("person").insert({ name: "Dono extensão", email: `ext-${plan}-${synthetic}-${tag}@teste.local` }).select("id").single();
+  const person = await db.from("person").insert({ name: "Dono extensão", email: `ext-${plan}-${synthetic}${suffix}-${tag}@teste.local` }).select("id").single();
   people.push(person.data!.id);
   await db.from("membership").insert({ account_id: accountId, person_id: person.data!.id, role: "dono" });
   const company = await db.from("company").insert({ account_id: accountId, cnpj: `9${String(parseInt(tag, 16)).padStart(13, "0").slice(-13)}`, legal_name: "Teste Ltda" }).select("id").single();
   const kitchen = await db.from("kitchen").insert({ account_id: accountId, company_id: company.data!.id, name: "Cozinha teste", in_analysis: true }).select("id").single();
   const store = await db
     .from("channel_store")
-    .insert({ account_id: accountId, kitchen_id: kitchen.data!.id, channel: "ifood", external_id: `ext-${plan}-${synthetic}-${tag}`, name: "Loja teste", source: "manual" })
+    .insert({ account_id: accountId, kitchen_id: kitchen.data!.id, channel: "ifood", external_id: `ext-${plan}-${synthetic}${suffix}-${tag}`, name: "Loja teste", source: "manual" })
     .select("id")
     .single();
   return { accountId, personId: person.data!.id, companyId: company.data!.id, storeId: store.data!.id };
@@ -183,6 +183,27 @@ describe("C06 and upload limits", () => {
     expect((await upload(token, { name: "a.csv", body: "x" }, { loja: real.storeId })).status).toBe(400);
     const big = await uploadRoute(new Request(`${URL_BASE}/upload`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-length": String(30 * 1024 * 1024) }, body: "x" }));
     expect(big.status).toBe(413);
+  });
+});
+
+describe("E02 paused sources", () => {
+  it("E02_int_upload_is_refused_while_the_account_sources_are_paused", async () => {
+    const acc = await makeAccount("lucro", true, "-pausa");
+    const token = await pairedToken(acc.accountId, acc.personId);
+    const csv = { name: "conciliacao.csv", body: "a;b\n1;2\n" };
+    // Trial ended with only the upload source: the extension's first upload is refused too.
+    await db.from("import_source").insert({ account_id: acc.accountId, channel: "ifood", kind: "upload", paused_at: new Date().toISOString(), paused_reason: "trial_ended" });
+    const first = await upload(token, csv);
+    expect(first.status).toBe(409);
+    expect(((await first.json()) as { error: string }).error).toBe(UPLOAD_MESSAGES.paused);
+    expect((await db.from("import_run").select("id").eq("account_id", acc.accountId)).data).toEqual([]);
+
+    // The extension's own source paused: refused; resumed (a plan was chosen): accepted.
+    await db.from("import_source").update({ paused_at: null, paused_reason: null }).eq("account_id", acc.accountId);
+    await db.from("import_source").insert({ account_id: acc.accountId, channel: "ifood", kind: "extension", paused_at: new Date().toISOString(), paused_reason: "subscription_canceled" });
+    expect((await upload(token, csv)).status).toBe(409);
+    await db.from("import_source").update({ paused_at: null, paused_reason: null }).eq("account_id", acc.accountId);
+    expect((await upload(token, csv)).status).toBe(201);
   });
 });
 

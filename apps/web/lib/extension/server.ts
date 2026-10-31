@@ -193,7 +193,7 @@ export async function extensionStatus(db: Db, auth: ExtensionAuth, now: Date): P
   };
 }
 
-export type UploadResult = { ok: true; importRunId: string } | { ok: false; status: 400 | 403 | 413 | 415; message: string };
+export type UploadResult = { ok: true; importRunId: string } | { ok: false; status: 400 | 403 | 409 | 413 | 415; message: string };
 
 /**
  * POST /api/extension/upload: the report file the owner chose, into the iFood import queue (trigger
@@ -201,6 +201,16 @@ export type UploadResult = { ok: true; importRunId: string } | { ok: false; stat
  * no store chosen, for some CNPJ of the account); worker-import checks every CNPJ in the file again.
  * Duplicate rows count once (natural keys, D31).
  */
+/**
+ * E02, 04 §7: the account's iFood extension source is paused (trial ended, subscription canceled); before
+ * that source exists, any paused source of the account counts, so a first upload cannot skip the pause.
+ */
+async function uploadsPaused(db: Db, accountId: string): Promise<boolean> {
+  const sources = must(await db.from("import_source").select("channel, kind, paused_at").eq("account_id", accountId));
+  const own = sources.find((s) => s.channel === "ifood" && s.kind === "extension");
+  return own ? own.paused_at !== null : sources.some((s) => s.paused_at !== null);
+}
+
 export async function uploadFromExtension(
   db: Db,
   auth: ExtensionAuth,
@@ -212,6 +222,7 @@ export async function uploadFromExtension(
   const check = checkUpload(file.name, file.size);
   if (!check.ok) return check;
 
+  if (await uploadsPaused(db, auth.accountId)) return { ok: false, status: 409, message: UPLOAD_MESSAGES.paused };
   const acc = must(await db.from("account").select("id, code, name, is_synthetic").eq("id", auth.accountId).single());
   const account: M2Account = { id: acc.id, code: acc.code, name: acc.name, isSynthetic: acc.is_synthetic };
   const stores = await visibleStores(db, auth);

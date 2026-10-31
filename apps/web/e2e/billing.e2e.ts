@@ -3,9 +3,8 @@
 // Asaas sandbox is Marlon's run on the preview (fixtures/asaas/README.md).
 import { randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { loginToPortal } from "./billing-helpers";
 import { E2E_FAKE_SECRETS } from "./fake-secrets";
-import { FOUNDER_EMAIL, adminDb, createStaff, loginToConsole, sid } from "./helpers";
+import { FOUNDER_EMAIL, adminDb, createStaff, loginToConsole, portalSession, sid } from "./helpers";
 
 const tag = randomBytes(4).toString("hex");
 const G01 = sid("G-01");
@@ -59,7 +58,7 @@ test("P09_W05_without_session_goes_to_entrar", async ({ page }) => {
 
 test.describe("as Dono of Pantanos (G-01, trial)", () => {
   test("P09_phone_picks_a_plan_and_W05_rede_creates_an_alert", async ({ page }) => {
-    await loginToPortal(page, PANTANOS_DONO);
+    await portalSession(page, PANTANOS_DONO);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/app/plano");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Seu teste grátis acaba (em \d+ dias?|hoje)$/);
@@ -85,7 +84,7 @@ test.describe("as Dono of Pantanos (G-01, trial)", () => {
 
   test("E01_W05_checkout_to_processando_then_webhook_active_and_replay_changes_nothing", async ({ page }) => {
     const db = adminDb();
-    await loginToPortal(page, PANTANOS_DONO);
+    await portalSession(page, PANTANOS_DONO);
     await page.goto("/teste-e2e/asaas?acao=ligar");
     await expect(page.locator("[data-asaas-fake=on]")).toBeVisible();
 
@@ -147,7 +146,7 @@ test.describe("as Dono of Pantanos (G-01, trial)", () => {
 });
 
 test("P09_W05_financeiro_gets_404", async ({ page }) => {
-  await loginToPortal(page, G02_FINANCEIRO);
+  await portalSession(page, G02_FINANCEIRO);
   expect((await page.goto("/app/plano"))?.status()).toBe(404);
 });
 

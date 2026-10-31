@@ -2,8 +2,7 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "@playwright/test";
-import { ARTIFACTS, DONO_EMAIL, FOUNDER_EMAIL, PANTANOS_EMAIL, adminDb, loginToConsole, loginToPortal, runWorker, sid } from "./helpers";
-import { portalSession } from "./portal-session";
+import { ARTIFACTS, DONO_EMAIL, FOUNDER_EMAIL, PANTANOS_EMAIL, adminDb, loginToConsole, loginToPortal, portalSession, runWorker, sid } from "./helpers";
 
 const OUT = path.join(ARTIFACTS, "screens");
 const WIDTHS = [390, 1280];
@@ -131,7 +130,7 @@ test("F02_P08_as_dono_of_pantanos_in_trial", async ({ page }) => {
 // Owner account pages (wave 2) as the Dono of Grupo Exemplo: the phone drawing's name at 390 px, the
 // computer drawing's name at 1280 px (one responsive page per pair, D32).
 test("F02_P13_W02_P12_W03_P14_W04_P03_W07_as_dono", async ({ page }) => {
-  await portalSession(page, "dono@exemplo.com.br");
+  await portalSession(page, DONO_EMAIL);
   const pairs: [phone: string, computer: string, url: string][] = [
     ["P13-MinhasLojas", "W02-Lojas", "/app/lojas"],
     ["P12-Contestacoes", "W03-Contestacoes", "/app/contestacoes"],

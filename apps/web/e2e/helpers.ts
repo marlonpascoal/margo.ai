@@ -103,6 +103,16 @@ export function runWorker(type: string) {
 export const DONO_EMAIL = "dono@exemplo.com.br";
 export const PANTANOS_EMAIL = "pantanos@exemplo.com.br";
 
+/** Portal sign-in without driving P15: the same /api/auth/code and /api/auth/verify calls, code from Mailpit. */
+export async function portalSession(page: Page, email: string) {
+  await waitForResendWindow(email);
+  await clearMail(email);
+  expect((await page.request.post("/api/auth/code", { data: { email, surface: "portal" } })).ok(), "code sent").toBe(true);
+  const code = await mailCode(email);
+  expect(code, "code e-mail in Mailpit").not.toBeNull();
+  expect((await page.request.post("/api/auth/verify", { data: { email, code, surface: "portal" } })).ok(), "code accepted").toBe(true);
+}
+
 /** P15 end to end: e-mail, code from Mailpit, lands on the portal (or the group chooser). */
 export async function loginToPortal(page: Page, email: string) {
   await waitForResendWindow(email);

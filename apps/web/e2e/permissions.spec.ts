@@ -2,8 +2,7 @@
 // G-SYN: Gerente do Centro (Cozinha Centro only) against the Dono of Grupo Exemplo. The P06 close of
 // September is rendered by worker-render and the data export by worker-account first.
 import { expect, test, type Page } from "@playwright/test";
-import { adminDb, runWorker, sid } from "./helpers";
-import { portalSession } from "./portal-session";
+import { adminDb, portalSession, runWorker, sid } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 

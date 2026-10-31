@@ -7,7 +7,7 @@ You are building MargoAI from the spec in `spec/`. Read `spec/01-product.md` and
 1. **No secrets.** Do not read, print or create any `.env*` file with real values. Do not run `vercel env`, `maritime` secret or env commands, `supabase link`, or anything that fetches credentials. Local development uses the Supabase local stack only.
 2. **No real restaurant data.** Work only with the `G-SYN` seed and files in `fixtures/`. Never call the preview or production database.
 3. **No live external calls.** iFood, Asaas, Anthropic, e-mail, Maritime: tests replay recorded fixtures. If a task needs a live call, stop and ask Marlon to run it.
-4. **No `git push`**, no force operations, no history rewrites. Commit locally with clear messages; Marlon pushes.
+4. **Push only plain fast-forward pushes** of `main` and working branches to `origin` (Marlon authorized this on 31/out). No force push, no branch deletion, no history rewrites. Commit with clear messages.
 5. **No automation of logged-in portal sessions, no captcha circumvention, no password handling for restaurants.** The extension acts only on the page the owner opened.
 6. **No certificate (A1) custody.**
 7. Do not edit `docs/decisions.md` or anything in `design/`. If the spec is ambiguous or contradicts a decision, stop and ask.
@@ -35,4 +35,4 @@ You are building MargoAI from the spec in `spec/`. Read `spec/01-product.md` and
 
 ## When you finish a task
 
-Summarize: files changed, acceptance rows now passing, what needs Marlon (live call, decision, push). Keep it short.
+Summarize: files changed, acceptance rows now passing, what needs Marlon (live call, decision). Keep it short.

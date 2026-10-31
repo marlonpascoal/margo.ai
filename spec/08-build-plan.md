@@ -1,6 +1,6 @@
 # 08. Build plan
 
-How the build runs (D02): Claude Code in VS Code on the Mac mini, permissions file auto-accepting edits and build commands, risky commands blocked (`.claude/settings.json`). Marlon watches live. Marlon pushes to GitHub; Vercel builds previews from branches and production from `main`.
+How the build runs (D02): Claude Code in VS Code on the Mac mini, permissions file auto-accepting edits and build commands, risky commands blocked (`.claude/settings.json`). Marlon watches live. Claude pushes to GitHub (fast-forward only, authorized by Marlon on 31/out); Vercel builds previews from branches and production from `main`.
 
 ## 1. Session protocol (every task)
 
@@ -8,8 +8,8 @@ How the build runs (D02): Claude Code in VS Code on the Mac mini, permissions fi
 2. Write or extend tests first (acceptance row IDs in the test names, e.g. `test_C04_contestation_transitions`).
 3. Implement until the tests pass on the local stack.
 4. Run `pnpm check` (lint, types, unit, `check_screens`, `secret_scan`).
-5. Stop and summarize: what changed, which acceptance rows now pass, anything that needs Marlon (live call, decision, push).
-6. Never: read secrets, call preview or production services, `git push`, change `docs/decisions.md`. If the spec is ambiguous or contradicts a decision, stop and ask.
+5. Stop and summarize: what changed, which acceptance rows now pass, anything that needs Marlon (live call, decision).
+6. Never: read secrets, call preview or production services, force push or rewrite history, change `docs/decisions.md`. If the spec is ambiguous or contradicts a decision, stop and ask.
 
 ## 2. Waves (D45)
 

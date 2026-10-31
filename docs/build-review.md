@@ -186,3 +186,46 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
   - the owner saves their own store page and uploads it
   - ask iFood for permission or an official channel
   - a founder types the prices for the first X-rays
+
+### Wave 3 lanes: commands only Marlon runs
+- **Anthropic recording:** `ANTHROPIC_API_KEY=... uv run record-anthropic [model-id]` writes `fixtures/anthropic/match-<date>.json`; check it before committing. Env names: `ANTHROPIC_API_KEY` (without it, the AI step is skipped) and `MARGO_MATCH_MODEL` (default `claude-sonnet-5-5`).
+
+### Wave 3 lanes: decisions to confirm
+- **What the AI prompt sends:** 06 §6 and D14 say supplier name and price; my brief to the agent was stricter, so it sends only the line description, NCM, unit and catalog names. Add supplier and price?
+- **Lines sent to the AI** on a real account only when the owner's authorization has `includes_ai`.
+- **Matching and learning:**
+  - GTIN and rule matches confirm automatically only when the unit conversion is known
+  - every confirmation by a person becomes a global `ingredient_rule`
+  - C11 shows one row per invoice text, and confirming applies to every line with that text
+- **Invoice intake:**
+  - zip imports have their own table `invoice_import`
+  - invoices to another buyer are skipped
+  - a real account needs authorization with scope `notas` for every buyer CNPJ, or the whole run is refused
+  - typed keys and QR links are only for single-company accounts
+  - the P05 link opens WhatsApp with no number chosen
+- **C10 against C12:** C10 draws cheddar and pão as "falta nota", but C12 prices them from notes. The build follows C11 and C12, so C10's four missing items are bacon, embalagem kraft, copo 400 ml and balde de papel; "16 de 20" still holds.
+- **Channel take (CTB-01):** the drawn values only come out with the channel's whole share, (gross − payout) / gross, including delivery and anticipation. That is broader than 04 §4's commission, payment fee and promotion.
+- **Error bar (CST-04):** each line's error is weighted by its cost, plus a new param `m3.regional_prior_error_pct = 0.30` for regional estimates. This reproduces the drawn ± 9%.
+- **Coupon:** the store is assumed to pay the full discount, as drawn, while M2 records it co-funded 50/50. Coupons apply to single dishes through a new `campaign_item` table, with no screen to link them yet.
+- **Packaging:** "embalagem kraft" is a recipe line; `packaging_cost` holds a channel's extra packaging.
+- **W01 "sobrou"** is payout minus the cost of the dishes sold. Any dish without a ficha makes it "falta custo". The decision box shows only to people who see all kitchens.
+- **E01 subject:** now "Setembro fechado: sobrou R$ X de R$ Y" once cost exists.
+- **Order of rows:** C13 follows C12's order. P06 shows the best seller, the decision row and the lowest positive row, with full dish names.
+- **Flags:** no 04 §6 flag covers C12, C13 or the contribution job. "Gerar fechamento mensal" in C13 uses `m2.contestacao`.
+- **Not built:**
+  - the recipe xlsx import (D15)
+  - a screen that uses the P05 reply after a QR is read
+  - iFood homologation prep (needs the developer account)
+  - G01 / `G-REAL-1` (needs the anonymized real case)
+
+### Copy written without a drawing (Wave 3)
+- **C10:** import states and failure reasons, key and authorization warnings, the receipt form, "Falta 1 insumo" / "Nenhum insumo faltando".
+- **C11:**
+  - buttons: "Salvar troca", "Recusar sugestão", "Insumo novo no catálogo"
+  - the new-ingredient fields
+  - "escolhido no console"
+  - the validation messages
+- **P05:** "Falta 1 item", plus "Agora falta 1." and "Agora não falta nenhum." in the reply after a QR is read.
+- **C12:** "custo recalculando", "sem preço", "Editar ficha", "Embalagem extra por canal", validation, empty states, "cupom de dd/mmm", error-bar explanation variants.
+- **C13:** "pode inverter" and its notes, the empty month text, the DLV-01 second sentence (also on W01).
+- **P06:** "menos da metade dos", "contra os", "Vale rever o preço?", the xlsx sheet "Sobra por pedido".

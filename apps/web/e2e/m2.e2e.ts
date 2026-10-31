@@ -187,6 +187,14 @@ test("C03_C08_close_and_C09_differences_match_the_seed_and_each_difference_lists
   await expect(page.locator('tr[data-contestation="DIF-02"]').first()).toContainText("MargoAI, repasse de 14/out");
 });
 
+test("A05_M2_screens_answer_404_when_their_flags_are_off", async () => {
+  // Grupo C (G-04) is on the Raio-X plan: m2.arquivo_*, m2.ifood_api, m2.extensao_chrome and m2.contestacao are off.
+  for (const url of ["/console/contas/G-04/importacoes", "/console/contas/G-04/fechamento/2026-09", "/console/contas/G-04/contestacoes"]) {
+    expect((await page.request.get(url)).status(), url).toBe(404);
+  }
+  expect((await page.request.get("/console/contas/G-02/contestacoes")).status()).toBe(200);
+});
+
 test("C16_staff_cannot_set_creditada_and_C19_shows_the_structure", async () => {
   const db = adminDb();
   // The database refuses creditada from staff (04 §3); only the system sets it.

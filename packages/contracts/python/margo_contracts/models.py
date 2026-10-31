@@ -59,6 +59,13 @@ class MemberRole(StrEnum):
     GERENTE = "gerente"
 
 
+class MenuUnit(StrEnum):
+    UN = "un"
+    G = "g"
+    ML = "ml"
+    PACK = "pack"
+
+
 class NotificationChannel(StrEnum):
     EMAIL = "email"
     WHATSAPP = "whatsapp"
@@ -70,6 +77,13 @@ class NotificationStatus(StrEnum):
     SENT = "sent"
     FAILED = "failed"
     HELD_QUIET_HOURS = "held_quiet_hours"
+
+
+class PairStatus(StrEnum):
+    AUTO = "auto"
+    REVISAR = "revisar"
+    NORMALIZADO = "normalizado"
+    MANUAL = "manual"
 
 
 class SessionSurface(StrEnum):
@@ -96,6 +110,20 @@ class SubscriptionStatus(StrEnum):
     PAST_DUE = "past_due"
     CANCELED = "canceled"
     FREE = "free"
+
+
+class XrayReading(StrEnum):
+    PODE_SUBIR = "pode_subir"
+    NA_MEDIA = "na_media"
+    NAO_MEXER = "nao_mexer"
+
+
+class XrayStatus(StrEnum):
+    DRAFT = "draft"
+    COLLECTING = "collecting"
+    PAIRING = "pairing"
+    READY = "ready"
+    DELIVERED = "delivered"
 
 
 class Account(Row):
@@ -213,6 +241,16 @@ class ChannelStoreUrlHistory(Row):
     created_at: datetime
     id: UUID
     seen_at: datetime
+    updated_at: datetime
+    url: str
+
+
+class CollectorPageCache(Row):
+    body: bytes
+    created_at: datetime
+    expires_at: datetime
+    fetched_at: datetime
+    status: int
     updated_at: datetime
     url: str
 
@@ -337,6 +375,17 @@ class MembershipKitchen(Row):
     updated_at: datetime
 
 
+class MenuItem(Row):
+    account_id: UUID
+    brand_id: UUID
+    channel_item_ids: JsonValue
+    created_at: datetime
+    id: UUID
+    is_top20: bool
+    name: str
+    updated_at: datetime
+
+
 class NoticePref(Row):
     account_id: UUID
     created_at: datetime
@@ -436,6 +485,36 @@ class Plan(Row):
     updated_at: datetime
 
 
+class PublicMenuItem(Row):
+    collected_at: datetime
+    created_at: datetime
+    description: str | None
+    external_item_id: str
+    id: UUID
+    name: str
+    price_cents: int
+    public_store_id: UUID
+    unit: MenuUnit
+    unit_qty: Decimal | None
+    updated_at: datetime
+
+
+class PublicStore(Row):
+    area: str | None
+    category: str | None
+    channel: Channel
+    created_at: datetime
+    external_id: str
+    id: UUID
+    is_national_chain: bool
+    last_seen_open_at: datetime | None
+    lat: Decimal | None
+    lng: Decimal | None
+    name: str | None
+    updated_at: datetime
+    url: str | None
+
+
 class SecurityLock(Row):
     account_id: UUID
     created_at: datetime
@@ -481,3 +560,76 @@ class Subscription(Row):
     status: SubscriptionStatus
     units_billed: int
     updated_at: datetime
+
+
+class TimeLog(Row):
+    account_id: UUID | None
+    created_at: datetime
+    id: UUID
+    minutes: int
+    person_id: UUID | None
+    step: str
+    updated_at: datetime
+    xray_id: UUID | None
+
+
+class Xray(Row):
+    account_id: UUID | None
+    categories: list[str]
+    collected_at: datetime | None
+    created_at: datetime
+    created_by: UUID | None
+    delivered_at: datetime | None
+    id: UUID
+    pdf_path: str | None
+    radius_km: int
+    rules: JsonValue
+    status: XrayStatus
+    target_store_id: UUID
+    updated_at: datetime
+
+
+class XrayItem(Row):
+    created_at: datetime
+    gap_pct: Decimal | None
+    id: UUID
+    loss_cents: int | None
+    menu_item_id: UUID | None
+    norm_price_cents: int
+    norm_unit: str
+    pair_note: str | None
+    pair_status: PairStatus
+    pareto_cum_share: Decimal | None
+    pareto_rank: int | None
+    parity_cents: int | None
+    public_menu_item_id: UUID
+    reading: XrayReading | None
+    reviewed_at: datetime | None
+    reviewed_by: UUID | None
+    skipped: bool
+    updated_at: datetime
+    weekly_units: Decimal | None
+    xray_id: UUID
+
+
+class XrayPair(Row):
+    accepted: bool
+    by: UUID | None
+    created_at: datetime
+    id: UUID
+    public_menu_item_id: UUID
+    similarity: Decimal
+    updated_at: datetime
+    xray_item_id: UUID
+
+
+class XrayStore(Row):
+    created_at: datetime
+    delivers_to_target: bool | None
+    distance_m: int
+    exclusion_reason: str | None
+    id: UUID
+    included: bool
+    public_store_id: UUID
+    updated_at: datetime
+    xray_id: UUID

@@ -12,8 +12,10 @@ select tables_are('public', array[
   'plan', 'subscription', 'billing_event', 'pilot', 'pilot_charge', 'bpo_partner', 'bpo_client',
   'feature_flag', 'feature_override', 'feature_flag_log', 'notice_type', 'notice_pref',
   'notification', 'alert', 'audit_log', 'job', 'extension_token',
-  'auth_code_guard'
-], 'A02: tables of 03 §1 and §5, plus the login code guard (04 §8)');
+  'auth_code_guard',
+  'menu_item', 'public_store', 'public_menu_item', 'collector_page_cache', 'xray', 'xray_store', 'xray_item',
+  'xray_pair', 'time_log'
+], 'A02: tables of 03 §1, §2 (M1, with menu_item of §4) and §5, the login code guard (04 §8) and the M1 page cache (D47)');
 
 select is_empty($$
   select c.relname::text from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -37,8 +39,9 @@ $$, 'money columns (_cents) are bigint centavos');
 select is_empty($$
   select table_name::text from information_schema.columns
   where table_schema = 'public' and column_name = 'account_id' and is_nullable = 'YES'
-    and table_name not in ('notification', 'alert', 'audit_log', 'job', 'feature_flag_log', 'billing_event')
-$$, 'tenant tables have account_id not null; only 03 §5 system tables allow null');
+    and table_name not in ('notification', 'alert', 'audit_log', 'job', 'feature_flag_log', 'billing_event',
+                           'xray', 'time_log')
+$$, 'tenant tables have account_id not null; only 03 §5 system tables and 03 §2 xray, time_log (leads) allow null');
 
 -- Reference data (04 §6, §9; D40 placeholders).
 select results_eq($$ select code from public.plan order by code $$,

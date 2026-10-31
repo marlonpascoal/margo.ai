@@ -229,6 +229,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"collector_page_cache": {
+                  Row: {
+                    "body": string,"created_at": string,"expires_at": string,"fetched_at": string,"status": number,"updated_at": string,"url": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"created_at"?: string,"expires_at": string,"fetched_at": string,"status": number,"updated_at"?: string,"url": string
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"expires_at"?: string,"fetched_at"?: string,"status"?: number,"updated_at"?: string,"url"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"company": {
                   Row: {
                     "account_id": string,"cnpj": string,"created_at": string,"id": string,"legal_name": string,"updated_at": string
@@ -471,6 +485,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"menu_item": {
+                  Row: {
+                    "account_id": string,"brand_id": string,"channel_item_ids": NonNullable<Json>,"created_at": string,"id": string,"is_top20": boolean,"name": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"brand_id": string,"channel_item_ids"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"is_top20"?: boolean,"name": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"brand_id"?: string,"channel_item_ids"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"is_top20"?: boolean,"name"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "menu_item_account_id_brand_id_fkey"
+      columns: ["account_id","brand_id"]
+isOneToOne: false
+      referencedRelation: "brand"
+      referencedColumns: ["account_id","id"]
+    },{
+      foreignKeyName: "menu_item_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"notice_pref": {
                   Row: {
                     "account_id": string,"created_at": string,"email": boolean,"id": string,"notice_code": string,"person_id": string,"updated_at": string,"whatsapp": boolean
@@ -655,6 +695,40 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"public_menu_item": {
+                  Row: {
+                    "collected_at": string,"created_at": string,"description": string | null,"external_item_id": string,"id": string,"name": string,"price_cents": number,"public_store_id": string,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty": number | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "collected_at"?: string,"created_at"?: string,"description"?: string | null,"external_item_id": string,"id"?: string,"name": string,"price_cents": number,"public_store_id": string,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "collected_at"?: string,"created_at"?: string,"description"?: string | null,"external_item_id"?: string,"id"?: string,"name"?: string,"price_cents"?: number,"public_store_id"?: string,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "public_menu_item_public_store_id_fkey"
+      columns: ["public_store_id"]
+isOneToOne: false
+      referencedRelation: "public_store"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"public_store": {
+                  Row: {
+                    "area": string | null,"category": string | null,"channel": Database["public"]['Enums']["channel"],"created_at": string,"external_id": string,"id": string,"is_national_chain": boolean,"last_seen_open_at": string | null,"lat": number | null,"lng": number | null,"name": string | null,"updated_at": string,"url": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "area"?: string | null,"category"?: string | null,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"external_id": string,"id"?: string,"is_national_chain"?: boolean,"last_seen_open_at"?: string | null,"lat"?: number | null,"lng"?: number | null,"name"?: string | null,"updated_at"?: string,"url"?: string | null
+                  }
+                  Update: {
+                    "area"?: string | null,"category"?: string | null,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"external_id"?: string,"id"?: string,"is_national_chain"?: boolean,"last_seen_open_at"?: string | null,"lat"?: number | null,"lng"?: number | null,"name"?: string | null,"updated_at"?: string,"url"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"security_lock": {
                   Row: {
                     "account_id": string,"created_at": string,"id": string,"reason": string,"until": string,"updated_at": string
@@ -747,6 +821,166 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"time_log": {
+                  Row: {
+                    "account_id": string | null,"created_at": string,"id": string,"minutes": number,"person_id": string | null,"step": string,"updated_at": string,"xray_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id"?: string | null,"created_at"?: string,"id"?: string,"minutes": number,"person_id"?: string | null,"step": string,"updated_at"?: string,"xray_id"?: string | null
+                  }
+                  Update: {
+                    "account_id"?: string | null,"created_at"?: string,"id"?: string,"minutes"?: number,"person_id"?: string | null,"step"?: string,"updated_at"?: string,"xray_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "time_log_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "time_log_person_id_fkey"
+      columns: ["person_id"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "time_log_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"xray": {
+                  Row: {
+                    "account_id": string | null,"categories": (string)[],"collected_at": string | null,"created_at": string,"created_by": string | null,"delivered_at": string | null,"id": string,"pdf_path": string | null,"radius_km": number,"rules": NonNullable<Json>,"status": Database["public"]['Enums']["xray_status"],"target_store_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id"?: string | null,"categories"?: (string)[],"collected_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"delivered_at"?: string | null,"id"?: string,"pdf_path"?: string | null,"radius_km"?: number,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["xray_status"],"target_store_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string | null,"categories"?: (string)[],"collected_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"delivered_at"?: string | null,"id"?: string,"pdf_path"?: string | null,"radius_km"?: number,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["xray_status"],"target_store_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_target_store_id_fkey"
+      columns: ["target_store_id"]
+isOneToOne: false
+      referencedRelation: "public_store"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"xray_item": {
+                  Row: {
+                    "created_at": string,"gap_pct": number | null,"id": string,"loss_cents": number | null,"menu_item_id": string | null,"norm_price_cents": number,"norm_unit": string,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"public_menu_item_id": string,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"reviewed_by": string | null,"skipped": boolean,"updated_at": string,"weekly_units": number | null,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"gap_pct"?: number | null,"id"?: string,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents": number,"norm_unit": string,"pair_note"?: string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"public_menu_item_id": string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"gap_pct"?: number | null,"id"?: string,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents"?: number,"norm_unit"?: string,"pair_note"?: string | null,"pair_status"?: Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"public_menu_item_id"?: string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_item_menu_item_id_fkey"
+      columns: ["menu_item_id"]
+isOneToOne: false
+      referencedRelation: "menu_item"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_item_public_menu_item_id_fkey"
+      columns: ["public_menu_item_id"]
+isOneToOne: false
+      referencedRelation: "public_menu_item"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_item_reviewed_by_fkey"
+      columns: ["reviewed_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_item_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"xray_pair": {
+                  Row: {
+                    "accepted": boolean,"by": string | null,"created_at": string,"id": string,"public_menu_item_id": string,"similarity": number,"updated_at": string,"xray_item_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted": boolean,"by"?: string | null,"created_at"?: string,"id"?: string,"public_menu_item_id": string,"similarity": number,"updated_at"?: string,"xray_item_id": string
+                  }
+                  Update: {
+                    "accepted"?: boolean,"by"?: string | null,"created_at"?: string,"id"?: string,"public_menu_item_id"?: string,"similarity"?: number,"updated_at"?: string,"xray_item_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_pair_by_fkey"
+      columns: ["by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_pair_public_menu_item_id_fkey"
+      columns: ["public_menu_item_id"]
+isOneToOne: false
+      referencedRelation: "public_menu_item"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_pair_xray_item_id_fkey"
+      columns: ["xray_item_id"]
+isOneToOne: false
+      referencedRelation: "xray_item"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"xray_store": {
+                  Row: {
+                    "created_at": string,"delivers_to_target": boolean | null,"distance_m": number,"exclusion_reason": string | null,"id": string,"included": boolean,"public_store_id": string,"updated_at": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m": number,"exclusion_reason"?: string | null,"id"?: string,"included": boolean,"public_store_id": string,"updated_at"?: string,"xray_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m"?: number,"exclusion_reason"?: string | null,"id"?: string,"included"?: boolean,"public_store_id"?: string,"updated_at"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_store_public_store_id_fkey"
+      columns: ["public_store_id"]
+isOneToOne: false
+      referencedRelation: "public_store"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "xray_store_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -814,10 +1048,37 @@ isOneToOne: false
 { Args: { "p_now"?: string }; Returns: {
               "alert_id": string,"job_id": string,"outcome": string
             }[]
+                           },
+"time_log_save":
+{ Args: { "p_actor": string,"p_ip"?: unknown,"p_minutes": Json,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
+                           },
+"xray_calculate":
+{ Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
+                           },
+"xray_confirm_stores":
+{ Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
+                           },
+"xray_create":
+{ Args: { "p_actor": string,"p_categories": (string)[],"p_external_id": string,"p_ip"?: unknown,"p_radius_km": number,"p_rules": Json,"p_url": string,"p_user_agent"?: string }; Returns: string
+                           },
+"xray_item_review":
+{ Args: { "p_accepted": (string)[],"p_actor": string,"p_ip"?: unknown,"p_item": string,"p_user_agent"?: string }; Returns: undefined
+                           },
+"xray_item_set_skipped":
+{ Args: { "p_actor": string,"p_ip"?: unknown,"p_item": string,"p_skipped": boolean,"p_user_agent"?: string }; Returns: undefined
+                           },
+"xray_mark_delivered":
+{ Args: { "p_actor": string,"p_ip"?: unknown,"p_message": string,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
+                           },
+"xray_prepare_delivery":
+{ Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
+                           },
+"xray_store_set_included":
+{ Args: { "p_actor": string,"p_included": boolean,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray_store": string }; Returns: undefined
                            }
           }
           Enums: {
-            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","channel": "ifood"|"food99"|"keeta"|"rappi","contact_channel": "email"|"whatsapp","flag_env": "sandbox"|"production","job_status": "queued"|"running"|"done"|"failed","member_role": "dono"|"financeiro"|"gerente","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free"
+            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","channel": "ifood"|"food99"|"keeta"|"rappi","contact_channel": "email"|"whatsapp","flag_env": "sandbox"|"production","job_status": "queued"|"running"|"done"|"failed","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","pair_status": "auto"|"revisar"|"normalizado"|"manual","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -937,7 +1198,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"channel": ["ifood", "food99", "keeta", "rappi"],"contact_channel": ["email", "whatsapp"],"flag_env": ["sandbox", "production"],"job_status": ["queued", "running", "done", "failed"],"member_role": ["dono", "financeiro", "gerente"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"]
+            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"channel": ["ifood", "food99", "keeta", "rappi"],"contact_channel": ["email", "whatsapp"],"flag_env": ["sandbox", "production"],"job_status": ["queued", "running", "done", "failed"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"]
           }
         }
 } as const

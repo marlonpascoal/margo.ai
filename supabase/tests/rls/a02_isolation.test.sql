@@ -62,6 +62,10 @@ begin
   insert into public.audit_log (actor_person_id, actor_kind, account_id, action, entity) values (dono, 'person', acc, 'test', 'account');
   insert into public.job (type, payload, account_id, dedupe_key) values ('import', '{}', acc, a || '-job');
   insert into public.extension_token (person_id, account_id, token_hash) values (dono, acc, md5(a || 'ext'));
+  insert into public.menu_item (account_id, brand_id, name) values (acc, tests.id(a || ':brand'), 'Prato ' || a);
+  insert into public.public_store (id, channel, external_id, name) values (tests.id(a || ':pub'), 'ifood', a || '-pub', 'Loja ' || a);
+  insert into public.xray (id, account_id, target_store_id) values (tests.id(a || ':xray'), acc, tests.id(a || ':pub'));
+  insert into public.time_log (account_id, xray_id, step, minutes, person_id) values (acc, tests.id(a || ':xray'), 'entrega', 10, dono);
 end $$;
 
 -- Tables with an account_id column where account `acc` has no row (fixture guard).

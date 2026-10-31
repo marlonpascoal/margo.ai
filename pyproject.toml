@@ -3,7 +3,7 @@ name = "margoai"
 version = "0.0.0"
 description = "MargoAI workspace root: workers and repo scripts"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common[local]", "margo-contracts[gen]"]
+dependencies = ["margo-common[local]", "margo-contracts[gen]", "margo-collector[local]", "margo-render"]
 
 [tool.uv]
 package = false
@@ -11,6 +11,8 @@ package = false
 [tool.uv.sources]
 margo-common = { workspace = true }
 margo-contracts = { workspace = true }
+margo-collector = { workspace = true }
+margo-render = { workspace = true }
 
 [tool.uv.workspace]
 members = ["workers/*", "packages/contracts"]
@@ -33,3 +35,5 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.ruff.lint.per-file-ignores]
 # Expected messages and sample values read better unwrapped.
 "**/tests/**" = ["E501"]
+# SQL column lists and the drawn copy read better unwrapped.
+"scripts/gen_g_syn_m1.py" = ["E501"]

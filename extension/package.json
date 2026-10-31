@@ -1,0 +1,20 @@
+{
+  "name": "@margoai/extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "P04 Chrome extension (Manifest V3): sends the report file the owner chose on the iFood Partner Portal to MargoAI.",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@margoai/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "rolldown": "1.2.16",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

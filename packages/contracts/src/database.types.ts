@@ -99,18 +99,38 @@ isOneToOne: false
                   ]
                 },"billing_event": {
                   Row: {
-                    "account_id": string | null,"asaas_event": string,"asaas_event_id": string,"created_at": string,"id": string,"payload": NonNullable<Json>,"processed_at": string | null,"received_at": string,"updated_at": string
+                    "account_id": string | null,"asaas_event": string,"asaas_event_id": string,"created_at": string,"id": string,"kind": string | null,"payload": NonNullable<Json>,"processed_at": string | null,"received_at": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id"?: string | null,"asaas_event": string,"asaas_event_id": string,"created_at"?: string,"id"?: string,"payload": NonNullable<Json>,"processed_at"?: string | null,"received_at"?: string,"updated_at"?: string
+                    "account_id"?: string | null,"asaas_event": string,"asaas_event_id": string,"created_at"?: string,"id"?: string,"kind"?: string | null,"payload": NonNullable<Json>,"processed_at"?: string | null,"received_at"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string | null,"asaas_event"?: string,"asaas_event_id"?: string,"created_at"?: string,"id"?: string,"payload"?: NonNullable<Json>,"processed_at"?: string | null,"received_at"?: string,"updated_at"?: string
+                    "account_id"?: string | null,"asaas_event"?: string,"asaas_event_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string | null,"payload"?: NonNullable<Json>,"processed_at"?: string | null,"received_at"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "billing_event_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"billing_invoice": {
+                  Row: {
+                    "account_id": string,"amount_cents": number,"asaas_payment_id": string,"asaas_subscription_id": string | null,"created_at": string,"due_on": string | null,"id": string,"status": Database["public"]['Enums']["invoice_status"],"units": number | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"amount_cents": number,"asaas_payment_id": string,"asaas_subscription_id"?: string | null,"created_at"?: string,"due_on"?: string | null,"id"?: string,"status": Database["public"]['Enums']["invoice_status"],"units"?: number | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"amount_cents"?: number,"asaas_payment_id"?: string,"asaas_subscription_id"?: string | null,"created_at"?: string,"due_on"?: string | null,"id"?: string,"status"?: Database["public"]['Enums']["invoice_status"],"units"?: number | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "billing_invoice_account_id_fkey"
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
@@ -145,14 +165,14 @@ isOneToOne: false
                   ]
                 },"bpo_partner": {
                   Row: {
-                    "created_at": string,"folder_url": string | null,"id": string,"logo_path": string | null,"name": string,"price_per_store_cents": number | null,"primary_color": string | null,"show_powered_by": boolean,"updated_at": string
+                    "created_at": string,"folder_url": string | null,"id": string,"logo_path": string | null,"name": string,"pipeline_note": string | null,"price_per_store_cents": number | null,"primary_color": string | null,"show_powered_by": boolean,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"folder_url"?: string | null,"id"?: string,"logo_path"?: string | null,"name": string,"price_per_store_cents"?: number | null,"primary_color"?: string | null,"show_powered_by"?: boolean,"updated_at"?: string
+                    "created_at"?: string,"folder_url"?: string | null,"id"?: string,"logo_path"?: string | null,"name": string,"pipeline_note"?: string | null,"price_per_store_cents"?: number | null,"primary_color"?: string | null,"show_powered_by"?: boolean,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"folder_url"?: string | null,"id"?: string,"logo_path"?: string | null,"name"?: string,"price_per_store_cents"?: number | null,"primary_color"?: string | null,"show_powered_by"?: boolean,"updated_at"?: string
+                    "created_at"?: string,"folder_url"?: string | null,"id"?: string,"logo_path"?: string | null,"name"?: string,"pipeline_note"?: string | null,"price_per_store_cents"?: number | null,"primary_color"?: string | null,"show_powered_by"?: boolean,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -497,14 +517,14 @@ isOneToOne: false
                   ]
                 },"extension_token": {
                   Row: {
-                    "account_id": string,"created_at": string,"id": string,"last_used_at": string | null,"person_id": string,"revoked_at": string | null,"token_hash": string,"updated_at": string
+                    "account_id": string,"created_at": string,"created_by": string | null,"id": string,"last_used_at": string | null,"paired_at": string | null,"pairing_expires_at": string | null,"person_id": string,"revoked_at": string | null,"token_hash": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"created_at"?: string,"id"?: string,"last_used_at"?: string | null,"person_id": string,"revoked_at"?: string | null,"token_hash": string,"updated_at"?: string
+                    "account_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_used_at"?: string | null,"paired_at"?: string | null,"pairing_expires_at"?: string | null,"person_id": string,"revoked_at"?: string | null,"token_hash": string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"id"?: string,"last_used_at"?: string | null,"person_id"?: string,"revoked_at"?: string | null,"token_hash"?: string,"updated_at"?: string
+                    "account_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_used_at"?: string | null,"paired_at"?: string | null,"pairing_expires_at"?: string | null,"person_id"?: string,"revoked_at"?: string | null,"token_hash"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -512,6 +532,12 @@ isOneToOne: false
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "extension_token_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "extension_token_person_id_fkey"
@@ -639,14 +665,14 @@ isOneToOne: false
                   ]
                 },"import_source": {
                   Row: {
-                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at": string,"id": string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at": string | null,"schedule_cron": string | null,"stale_after_hours": number | null,"updated_at": string
+                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at": string,"id": string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at": string | null,"paused_at": string | null,"paused_reason": string | null,"schedule_cron": string | null,"stale_after_hours": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
+                    "account_id": string,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"paused_at"?: string | null,"paused_reason"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
+                    "account_id"?: string,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["import_kind"],"last_ok_at"?: string | null,"paused_at"?: string | null,"paused_reason"?: string | null,"schedule_cron"?: string | null,"stale_after_hours"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -659,14 +685,14 @@ isOneToOne: false
                   ]
                 },"invite": {
                   Row: {
-                    "accepted_at": string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at": string,"destination": string,"expires_at": string,"id": string,"invited_by": string | null,"kitchen_ids": (string)[],"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at": string
+                    "accepted_at": string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at": string,"destination": string,"expires_at": string,"id": string,"invited_by": string | null,"kitchen_ids": (string)[],"name": string | null,"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_at"?: string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at"?: string,"destination": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"kitchen_ids"?: (string)[],"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at"?: string
+                    "accepted_at"?: string | null,"account_id": string,"channel": Database["public"]['Enums']["contact_channel"],"created_at"?: string,"destination": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"kitchen_ids"?: (string)[],"name"?: string | null,"role": Database["public"]['Enums']["member_role"],"token_hash": string,"updated_at"?: string
                   }
                   Update: {
-                    "accepted_at"?: string | null,"account_id"?: string,"channel"?: Database["public"]['Enums']["contact_channel"],"created_at"?: string,"destination"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"kitchen_ids"?: (string)[],"role"?: Database["public"]['Enums']["member_role"],"token_hash"?: string,"updated_at"?: string
+                    "accepted_at"?: string | null,"account_id"?: string,"channel"?: Database["public"]['Enums']["contact_channel"],"created_at"?: string,"destination"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"kitchen_ids"?: (string)[],"name"?: string | null,"role"?: Database["public"]['Enums']["member_role"],"token_hash"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -893,14 +919,14 @@ isOneToOne: false
                   ]
                 },"notification": {
                   Row: {
-                    "account_id": string | null,"alert_id": string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at": string,"id": string,"notice_code": string | null,"person_id": string | null,"provider_id": string | null,"recipient": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"],"subject": string | null,"updated_at": string
+                    "account_id": string | null,"alert_id": string | null,"attachment_path": string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at": string,"html": string | null,"id": string,"manual_sent_at": string | null,"manual_sent_by": string | null,"notice_code": string | null,"person_id": string | null,"provider_id": string | null,"recipient": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"],"subject": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id"?: string | null,"alert_id"?: string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at"?: string,"id"?: string,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
+                    "account_id"?: string | null,"alert_id"?: string | null,"attachment_path"?: string | null,"body": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at"?: string,"html"?: string | null,"id"?: string,"manual_sent_at"?: string | null,"manual_sent_by"?: string | null,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string | null,"alert_id"?: string | null,"body"?: string,"channel"?: Database["public"]['Enums']["notification_channel"],"created_at"?: string,"id"?: string,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
+                    "account_id"?: string | null,"alert_id"?: string | null,"attachment_path"?: string | null,"body"?: string,"channel"?: Database["public"]['Enums']["notification_channel"],"created_at"?: string,"html"?: string | null,"id"?: string,"manual_sent_at"?: string | null,"manual_sent_by"?: string | null,"notice_code"?: string | null,"person_id"?: string | null,"provider_id"?: string | null,"recipient"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"],"subject"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -914,6 +940,12 @@ isOneToOne: false
       columns: ["alert_id"]
 isOneToOne: false
       referencedRelation: "alert"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "notification_manual_sent_by_fkey"
+      columns: ["manual_sent_by"]
+isOneToOne: false
+      referencedRelation: "person"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "notification_notice_code_fkey"
@@ -989,14 +1021,14 @@ isOneToOne: false
                   ]
                 },"owner_authorization": {
                   Row: {
-                    "account_id": string,"company_id": string,"created_at": string,"document_path": string | null,"id": string,"includes_ai": boolean,"includes_international": boolean,"scope": (string)[],"signed_at": string,"signed_by": string | null,"updated_at": string
+                    "account_id": string,"company_id": string,"created_at": string,"document_path": string | null,"id": string,"includes_ai": boolean,"includes_international": boolean,"scope": (string)[],"signed_at": string,"signed_by": string | null,"terms_version": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"company_id": string,"created_at"?: string,"document_path"?: string | null,"id"?: string,"includes_ai"?: boolean,"includes_international"?: boolean,"scope"?: (string)[],"signed_at": string,"signed_by"?: string | null,"updated_at"?: string
+                    "account_id": string,"company_id": string,"created_at"?: string,"document_path"?: string | null,"id"?: string,"includes_ai"?: boolean,"includes_international"?: boolean,"scope"?: (string)[],"signed_at": string,"signed_by"?: string | null,"terms_version"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"company_id"?: string,"created_at"?: string,"document_path"?: string | null,"id"?: string,"includes_ai"?: boolean,"includes_international"?: boolean,"scope"?: (string)[],"signed_at"?: string,"signed_by"?: string | null,"updated_at"?: string
+                    "account_id"?: string,"company_id"?: string,"created_at"?: string,"document_path"?: string | null,"id"?: string,"includes_ai"?: boolean,"includes_international"?: boolean,"scope"?: (string)[],"signed_at"?: string,"signed_by"?: string | null,"terms_version"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1075,14 +1107,14 @@ isOneToOne: false
                   ]
                 },"plan": {
                   Row: {
-                    "billing_unit": Database["public"]['Enums']["billing_unit"],"code": string,"created_at": string,"features": NonNullable<Json>,"id": string,"name": string,"price_cents": number | null,"trial_days": number,"updated_at": string
+                    "billing_unit": Database["public"]['Enums']["billing_unit"],"code": string,"created_at": string,"features": NonNullable<Json>,"id": string,"name": string,"price_cents": number | null,"price_is_example": boolean,"trial_days": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code": string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name": string,"price_cents"?: number | null,"trial_days"?: number,"updated_at"?: string
+                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code": string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name": string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"trial_days"?: number,"updated_at"?: string
+                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -1499,11 +1531,102 @@ isOneToOne: false
 "flag_set_override":
 { Args: { "p_account": string,"p_actor": string,"p_env": Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_key": string,"p_reason": string,"p_user_agent"?: string,"p_value": boolean }; Returns: undefined
                            },
+"invite_create":
+{ Args: { "p_account": string,"p_actor": string,"p_at"?: string,"p_channel": Database["public"]['Enums']["contact_channel"],"p_destination": string,"p_ip"?: unknown,"p_kitchens": (string)[],"p_name": string,"p_role": Database["public"]['Enums']["member_role"],"p_token_hash": string,"p_user_agent"?: string }; Returns: {
+              "accepted_at": string | null,
+"account_id": string,
+"channel": Database["public"]['Enums']["contact_channel"],
+"created_at": string,
+"destination": string,
+"expires_at": string,
+"id": string,
+"invited_by": string | null,
+"kitchen_ids": (string)[],
+"name": string | null,
+"role": Database["public"]['Enums']["member_role"],
+"token_hash": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "invite"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"invite_resend":
+{ Args: { "p_actor": string,"p_at"?: string,"p_invite": string,"p_ip"?: unknown,"p_token_hash": string,"p_user_agent"?: string }; Returns: {
+              "accepted_at": string | null,
+"account_id": string,
+"channel": Database["public"]['Enums']["contact_channel"],
+"created_at": string,
+"destination": string,
+"expires_at": string,
+"id": string,
+"invited_by": string | null,
+"kitchen_ids": (string)[],
+"name": string | null,
+"role": Database["public"]['Enums']["member_role"],
+"token_hash": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "invite"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"membership_remove":
+{ Args: { "p_actor": string,"p_at"?: string,"p_ip"?: unknown,"p_membership": string,"p_user_agent"?: string }; Returns: undefined
+                           },
+"membership_update":
+{ Args: { "p_actor": string,"p_all_kitchens": boolean,"p_at"?: string,"p_ip"?: unknown,"p_kitchens"?: (string)[],"p_membership": string,"p_role": Database["public"]['Enums']["member_role"],"p_user_agent"?: string }; Returns: {
+              "account_id": string,
+"all_kitchens": boolean,
+"created_at": string,
+"id": string,
+"person_id": string,
+"role": Database["public"]['Enums']["member_role"],
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "membership"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"people_lock_until":
+{ Args: { "p_account": string,"p_at"?: string }; Returns: string
+                           },
+"portal_accept_invite":
+{ Args: { "p_email": string,"p_ip": unknown,"p_name": string,"p_now"?: string,"p_token_hash": string,"p_user_agent": string }; Returns: {
+              "account_id": string,"email": string,"person_id": string,"status": string
+            }[]
+                           },
+"portal_sign_up":
+{ Args: { "p_cnpj": string,"p_email": string,"p_ip": unknown,"p_name": string,"p_now"?: string,"p_restaurant": string,"p_user_agent": string,"p_whatsapp": string,"p_xray": string }; Returns: {
+              "account_id": string,"created": boolean,"person_id": string
+            }[]
+                           },
 "requeue_stuck_jobs":
 { Args: { "p_now"?: string }; Returns: {
               "alert_id": string,"job_id": string,"outcome": string
             }[]
                            },
+"security_lock_contact_change":
+{ Args: { "p_at"?: string,"p_channel": Database["public"]['Enums']["contact_channel"],"p_ip"?: unknown,"p_person": string,"p_user_agent"?: string }; Returns: {
+              "account_id": string,
+"created_at": string,
+"id": string,
+"reason": string,
+"until": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "security_lock"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "time_log_save":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_minutes": Json,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
                            },
@@ -1533,7 +1656,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered"
+            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","invoice_status": "pending"|"confirmed"|"overdue"|"refused"|"canceled","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1653,7 +1776,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"]
+            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"invoice_status": ["pending", "confirmed", "overdue", "refused", "canceled"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"]
           }
         }
 } as const

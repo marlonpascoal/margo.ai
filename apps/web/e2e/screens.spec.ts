@@ -1,8 +1,8 @@
-// F02: each built console page at 390 px and 1280 px, saved next to the drawing's name for Marlon to compare.
+// F02: each built console and owner page at 390 px and 1280 px, saved next to the drawing's name for Marlon to compare.
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "@playwright/test";
-import { ARTIFACTS, FOUNDER_EMAIL, adminDb, loginToConsole, runWorker, sid } from "./helpers";
+import { ARTIFACTS, DONO_EMAIL, FOUNDER_EMAIL, PANTANOS_EMAIL, adminDb, loginToConsole, loginToPortal, portalSession, runWorker, sid } from "./helpers";
 
 const OUT = path.join(ARTIFACTS, "screens");
 const WIDTHS = [390, 1280];
@@ -11,11 +11,13 @@ const SCREENS: [file: string, url: string][] = [
   ["C14-Config", "/console/config"],
   ["C20-Funcionalidades", "/console/funcionalidades"],
   ["C21-Alertas", "/console/alertas"],
+  ["C15-Assinaturas", "/console/assinaturas"],
   ["C07-Conectar", "/console/contas/G-02/importacoes"],
   ["C08-Fechamento", "/console/contas/G-02/fechamento/2026-09"],
   ["C09-Diferencas", "/console/contas/G-02/fechamento/2026-09/diferencas"],
   ["C16-Contestacao", "/console/contas/G-02/contestacoes"],
   ["C19-Estrutura", "/console/contas/G-02/estrutura"],
+  ["C18-BPO", "/console/bpo"],
 ];
 
 test("F02_C00_login", async ({ page }) => {
@@ -26,7 +28,7 @@ test("F02_C00_login", async ({ page }) => {
   }
 });
 
-test("F02_C01_C07_C08_C09_C14_C16_C17_C19_C20_C21_as_founder", async ({ page }) => {
+test("F02_C01_C07_C08_C09_C14_C15_C16_C17_C18_C19_C20_C21_E01_E02_as_founder", async ({ page }) => {
   await loginToConsole(page, FOUNDER_EMAIL);
   for (const [file, url] of SCREENS) {
     for (const width of WIDTHS) {
@@ -34,6 +36,12 @@ test("F02_C01_C07_C08_C09_C14_C16_C17_C19_C20_C21_as_founder", async ({ page }) 
       await page.goto(url);
       await page.screenshot({ path: path.join(OUT, `${file}-${width}.png`), fullPage: true, caret: "initial" });
     }
+  }
+  // E01, E02: the e-mail as the mail client gets it, at the drawn width (640 px).
+  for (const [file, code] of [["E01-EmailFechamento", "close_ready"], ["E02-EmailPrazo", "deadline_soon"]]) {
+    await page.setViewportSize({ width: 640, height: 900 });
+    await page.goto(`/console/emails/${code}/html`);
+    await page.screenshot({ path: path.join(OUT, `${file}-640.png`), fullPage: true, caret: "initial" });
   }
   // C17: the seeded 99Food upload of 28/out waiting for its new columns.
   const { data } = await adminDb().from("import_run").select("id").eq("status", "needs_mapping").order("created_at").limit(1).single();
@@ -73,4 +81,78 @@ test("F02_C02_to_C06_and_P01_as_founder", async ({ page }) => {
   }
   const pdf = await page.request.get(`/console/raio-x/${xray}/pdf`);
   writeFileSync(path.join(OUT, "P01-RaioXPDF.pdf"), await pdf.body());
+});
+
+// Owner portal (05 §B, D32): one responsive route per P/W pair. The 390 px shot goes next to the phone
+// drawing (P..) and the 1280 px shot next to the computer drawing (W..); single drawings get both widths.
+type PortalShot = [url: string, phone: string, computer: string];
+const PUBLIC_PORTAL: PortalShot[] = [
+  ["/entrar", "P15-Entrar", "W06-Entrar"],
+  ["/criar-conta", "P07-CriarConta", "P07-CriarConta"],
+  ["/nao-consigo-entrar", "P17-Recuperar", "P17-Recuperar"],
+  // Seed invite for the Contador (G-02), valid until 05/nov.
+  ["/convite/g-syn-convite-contador", "P18-Convite", "P18-Convite"],
+  ["/termos", "P11-Termos", "P11-Termos"],
+];
+const OWNER_PORTAL: PortalShot[] = [
+  ["/app", "P08-MinhaConta", "W01-Inicio"],
+  ["/app/notificacoes", "P16-Notificacoes", "W08-Notificacoes"],
+  ["/app/seguranca", "W09-Seguranca", "W09-Seguranca"],
+];
+
+async function shootPortal(page: import("@playwright/test").Page, shots: PortalShot[], suffix = "") {
+  for (const [url, phone, computer] of shots) {
+    for (const width of WIDTHS) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(url);
+      await page.screenshot({ path: path.join(OUT, `${width === 390 ? phone : computer}${suffix}-${width}.png`), fullPage: true, caret: "initial" });
+    }
+  }
+}
+
+test("F02_P07_P11_P15_P17_P18_W06_public", async ({ page }) => {
+  await shootPortal(page, PUBLIC_PORTAL);
+});
+
+test("F02_P08_P16_W01_W08_W09_as_dono_of_grupo_exemplo", async ({ page }) => {
+  await loginToPortal(page, DONO_EMAIL);
+  await shootPortal(page, OWNER_PORTAL);
+});
+
+// P08 is drawn for Pantanos Burguer in its trial.
+test("F02_P08_as_dono_of_pantanos_in_trial", async ({ page }) => {
+  await loginToPortal(page, PANTANOS_EMAIL);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/app");
+  await page.screenshot({ path: path.join(OUT, "P08-MinhaConta-Pantanos-390.png"), fullPage: true, caret: "initial" });
+});
+
+// Owner account pages (wave 2) as the Dono of Grupo Exemplo: the phone drawing's name at 390 px, the
+// computer drawing's name at 1280 px (one responsive page per pair, D32).
+test("F02_P13_W02_P12_W03_P14_W04_P03_W07_as_dono", async ({ page }) => {
+  await portalSession(page, DONO_EMAIL);
+  const pairs: [phone: string, computer: string, url: string][] = [
+    ["P13-MinhasLojas", "W02-Lojas", "/app/lojas"],
+    ["P12-Contestacoes", "W03-Contestacoes", "/app/contestacoes"],
+    ["P14-Pessoas", "W04-Pessoas", "/app/pessoas"],
+    ["P03-Autorizar", "W07-Autorizar", "/app/conectar"],
+  ];
+  for (const [phone, computer, url] of pairs) {
+    for (const [width, file] of [[390, phone], [1280, computer]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(url);
+      await page.screenshot({ path: path.join(OUT, `${file}-${width}.png`), fullPage: true, caret: "initial" });
+    }
+  }
+});
+
+// P09 (phone) and W05 (computer) are one route, /app/plano, here for the Dono of Pantanos in trial (seed).
+test("F02_P09_W05_plano_as_dono", async ({ page }) => {
+  await loginToPortal(page, PANTANOS_EMAIL);
+  for (const width of WIDTHS) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await page.goto("/app/plano");
+    // Phone width is the P09 drawing, computer width the W05 drawing.
+    await page.screenshot({ path: path.join(OUT, `${width === 390 ? "P09-Plano" : "W05-Plano"}-${width}.png`), fullPage: true, caret: "initial" });
+  }
 });

@@ -11,6 +11,7 @@ local = ["psycopg[binary]>=3.2"]
 [project.entry-points."margo.jobs"]
 render_xray = "margo_render.handlers:render_xray"
 render_close = "margo_render.close_job:render_close"
+render_close_bpo = "margo_render.bpo:render_close_bpo"
 
 [build-system]
 requires = ["hatchling"]

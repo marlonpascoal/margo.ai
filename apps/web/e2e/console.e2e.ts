@@ -90,7 +90,8 @@ test.describe("as Fundador", () => {
     await expect(page.locator("tr[data-alert]")).toHaveCount(7);
     await expect(page.locator("tr[data-alert]").first()).toContainText("Importação da API falhou 2 vezes: token expirado");
     await expect(page.locator("tr[data-alert]").first()).toContainText("e-mail e WhatsApp da equipe");
-    await expect(page.getByText("Ver e-mail que o dono recebe")).toHaveAttribute("aria-disabled", "true");
+    // E02 opens from C21 (wave 2, apps/web/emails).
+    await expect(page.getByRole("link", { name: "Ver e-mail que o dono recebe" })).toHaveAttribute("href", "/console/emails/deadline_soon");
   });
 
   test("A06_saved_responses_pass_secret_scan", () => {

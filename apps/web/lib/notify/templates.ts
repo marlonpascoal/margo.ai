@@ -1,6 +1,6 @@
-// Template slot for the 10 notices (04 §9). E01 (close_ready) and E02 (deadline_soon) are drawn; their
-// full layouts come with the modules that compute their numbers. Every notice e-mail ends with the
-// drawn footer saying why the person receives it.
+// Notice codes and the plain-text footer (04 §9). The e-mails themselves (E01, E02 drawn, the other eight in
+// the same layout) live in apps/web/emails; every notice e-mail ends with the drawn footer saying why the
+// person receives it.
 import type { NoticeMessage, Recipient, Role } from "./plan";
 
 export type NoticeCode =
@@ -30,8 +30,9 @@ export function emailFooter(to: Recipient): string {
   return `Você recebe este e-mail porque é ${ROLE_LABEL[to.role]} no ${to.accountName}.\nMudar notificações: ${NOTIFICATIONS_PATH}`;
 }
 
-/** The message for one person, with the footer added to the e-mail body. */
+/** The message for one person, with the footer added to the e-mail body (templates of apps/web/emails have it). */
 export function messageFor(source: MessageSource, to: Recipient): NoticeMessage {
   const m = typeof source === "function" ? source(to) : source;
+  if (m.html) return { ...m, whatsapp: m.whatsapp ?? m.body };
   return { ...m, whatsapp: m.whatsapp ?? m.body, body: `${m.body}\n\n${emailFooter(to)}` };
 }

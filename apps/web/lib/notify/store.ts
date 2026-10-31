@@ -14,6 +14,8 @@ export interface OutboxRow {
   body: string;
   status: NotificationStatus;
   recipient: string | null;
+  html?: string | null;
+  attachmentPath?: string | null;
 }
 
 export interface AlertRow {

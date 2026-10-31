@@ -55,6 +55,17 @@ class ChannelRow:
 
 
 @dataclass(frozen=True)
+class Brand:
+    """C18: a BPO partner's brand on its clients' P06 (flag bpo.marca_propria). See bpo.py."""
+
+    name: str
+    #: The partner's primary color, "#RRGGBB" as saved in C18 (data, not a design token).
+    color: str | None = None
+    logo: bytes | None = None
+    show_powered_by: bool = True
+
+
+@dataclass(frozen=True)
 class P06Data:
     account: str
     month: date
@@ -67,6 +78,8 @@ class P06Data:
     sources: list[str] = field(default_factory=list)
     store_lines: list[tuple[str, str, dict[str, int]]] = field(default_factory=list)
     differences: list[tuple[str, str, str, int, int, str, str]] = field(default_factory=list)
+    #: None: MargoAI's own P06. Set: the BPO variant, with only the partner's logo and color.
+    brand: Brand | None = None
 
     @property
     def gross_cents(self) -> int:
@@ -100,6 +113,30 @@ def _rgb(name: str) -> tuple[int, int, int]:
     return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
 
 
+def _hex_rgb(h: str) -> tuple[int, int, int]:
+    h = h.lstrip("#")
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+def _brand_header(
+    pdf: FPDF, d: P06Data, x: float, y: float, w: float, ink: tuple[int, int, int]
+) -> tuple[int, int, int]:
+    """Header brand and accent color: MargoAI's wordmark in ink, or the BPO's logo (or name) and color."""
+    if d.brand is None:
+        pdf.set_text_color(*ink)
+        pdf.set_font("Helvetica", "B", 20 * 0.75)
+        pdf.cell(w, 8, _t(str(COPY["brand"])))
+        return ink
+    accent = _hex_rgb(d.brand.color) if d.brand.color else ink
+    if d.brand.logo:
+        pdf.image(io.BytesIO(d.brand.logo), x=x, y=y, h=8, keep_aspect_ratio=True)
+    else:
+        pdf.set_text_color(*accent)
+        pdf.set_font("Helvetica", "B", 20 * 0.75)
+        pdf.cell(w, 8, _t(d.brand.name))
+    return accent
+
+
 def _t(s: str) -> str:
     """Core fonts are Latin-1; product text never has an em dash (CLAUDE.md)."""
     assert "—" not in s
@@ -112,7 +149,7 @@ def render_pdf(d: P06Data) -> bytes:
     pdf.set_margins(64 * PX, 64 * PX, 64 * PX)
     pdf.add_page()
     pdf.set_title(f"Fechamento {MON[d.month.month - 1]}/{d.month.year} {d.account}")
-    pdf.set_creator("MargoAI worker-render P06")
+    pdf.set_creator(d.brand.name if d.brand else "MargoAI worker-render P06")
     ink, muted, border, danger = (
         _rgb("color-ink"),
         _rgb("color-ink-muted"),
@@ -122,11 +159,9 @@ def render_pdf(d: P06Data) -> bytes:
     width = 210 - 2 * 64 * PX
     left = 64 * PX
 
-    # Header: brand left, month, account and labels right.
+    # Header: brand left (MargoAI, or the BPO's logo and color), month, account and labels right.
     pdf.set_y(64 * PX)
-    pdf.set_text_color(*ink)
-    pdf.set_font("Helvetica", "B", 20 * 0.75)
-    pdf.cell(width / 3, 8, _t(str(COPY["brand"])))
+    accent = _brand_header(pdf, d, left, 64 * PX, width / 3, ink)
     pdf.set_font("Courier", "", 12 * 0.75)
     pdf.set_text_color(*muted)
     head = str(COPY["header"]).format(mes=MONTHS[d.month.month - 1], ano=d.month.year, conta=d.account)
@@ -134,7 +169,7 @@ def render_pdf(d: P06Data) -> bytes:
     pdf.set_xy(left + width / 3, 64 * PX)
     pdf.multi_cell(2 * width / 3, 4, _t(head + ("\n" + labels if labels else "")), align="R")
     y = max(pdf.get_y(), 64 * PX + 8) + 1
-    pdf.set_draw_color(*ink)
+    pdf.set_draw_color(*accent)
     pdf.set_line_width(0.5)
     pdf.line(left, y, left + width, y)
 
@@ -222,6 +257,9 @@ def render_pdf(d: P06Data) -> bytes:
     pdf.set_font("Courier", "", 11 * 0.75)
     pdf.set_text_color(*muted)
     pdf.cell(width, 5, _t(str(COPY["sources"]).format(fontes=", ".join(d.sources) or "-")))
+    if d.brand and d.brand.show_powered_by:
+        pdf.set_xy(left, 297 - 48 * PX - 6)
+        pdf.cell(width, 5, _t(str(COPY["powered_by"])), align="R")
     return bytes(pdf.output())
 
 

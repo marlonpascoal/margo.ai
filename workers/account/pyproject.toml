@@ -1,0 +1,24 @@
+[project]
+name = "margo-account"
+version = "0.0.0"
+description = "worker-account: data export zip and account deletion (E06, 02 §7, D48)"
+requires-python = ">=3.12,<3.13"
+dependencies = ["margo-common", "margo-contracts"]
+
+[project.optional-dependencies]
+local = ["psycopg[binary]>=3.2"]
+
+[project.entry-points."margo.jobs"]
+account_export = "margo_account.jobs:account_export"
+account_delete = "margo_account.jobs:account_delete"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/margo_account"]
+
+[tool.uv.sources]
+margo-common = { workspace = true }
+margo-contracts = { workspace = true }

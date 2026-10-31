@@ -98,3 +98,45 @@ export function sid(tag: string): string {
 export function runWorker(type: string) {
   execFileSync("node", ["scripts/with-local-env.mjs", "uv", "run", "worker", type, "--local", "--once"], { cwd: ROOT, stdio: "pipe", timeout: 120_000 });
 }
+
+/** Seed people of Grupo Exemplo (G-02) and Pantanos (G-01). */
+export const DONO_EMAIL = "dono@exemplo.com.br";
+export const PANTANOS_EMAIL = "pantanos@exemplo.com.br";
+
+/** Portal sign-in without driving P15: the same /api/auth/code and /api/auth/verify calls, code from Mailpit. */
+export async function portalSession(page: Page, email: string) {
+  await waitForResendWindow(email);
+  await clearMail(email);
+  expect((await page.request.post("/api/auth/code", { data: { email, surface: "portal" } })).ok(), "code sent").toBe(true);
+  const code = await mailCode(email);
+  expect(code, "code e-mail in Mailpit").not.toBeNull();
+  expect((await page.request.post("/api/auth/verify", { data: { email, code, surface: "portal" } })).ok(), "code accepted").toBe(true);
+}
+
+/** P15 end to end: e-mail, code from Mailpit, lands on the portal (or the group chooser). */
+export async function loginToPortal(page: Page, email: string) {
+  await waitForResendWindow(email);
+  await clearMail(email);
+  await page.goto("/entrar");
+  await page.getByRole("textbox", { name: /^(Seu e-mail|E-mail)$/ }).fill(email);
+  await page.getByRole("button", { name: "Mandar código" }).click();
+  await expect(page.getByRole("status")).toHaveText("Mandamos um código de 6 números para o seu e-mail. Ele vale por 10 minutos.");
+  const code = await mailCode(email);
+  expect(code, "code e-mail in Mailpit").not.toBeNull();
+  await page.getByLabel("Código", { exact: true }).fill(code!);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await page.waitForURL(/\/(app|entrar\/conta)$/);
+}
+
+/** Gives a seed person a temporary login e-mail (the seed Gerente has WhatsApp only); returns the undo. */
+export async function withLoginEmail(personId: string, email: string) {
+  const db = adminDb();
+  const { data: before } = await db.from("person").select("email, auth_user_id").eq("id", personId).single();
+  await db.from("person").update({ email }).eq("id", personId);
+  return async () => {
+    const { data } = await db.from("person").select("auth_user_id").eq("id", personId).single();
+    await db.from("person").update({ email: before!.email, auth_user_id: before!.auth_user_id }).eq("id", personId);
+    if (data?.auth_user_id && data.auth_user_id !== before!.auth_user_id) await db.auth.admin.deleteUser(data.auth_user_id);
+    await db.from("auth_code_guard").delete().eq("email", email);
+  };
+}

@@ -90,6 +90,21 @@ def authorized_cnpjs(conn: Any, account_id: str) -> set[str]:
     return {r["cnpj"] for r in rows}
 
 
+def source_paused(conn: Any, run_id: str) -> bool:
+    """E02, 04 §7: the run's source is paused (trial ended, subscription canceled); a run without a source
+    counts as paused while any source of its account is."""
+    row = conn.execute(
+        """select exists (
+             select 1 from public.import_source s
+             where s.paused_at is not null
+               and (s.id = r.source_id or (r.source_id is null and s.account_id = r.account_id))
+           ) as paused
+           from public.import_run r where r.id = %s""",
+        (run_id,),
+    ).fetchone()
+    return bool(row and row["paused"])
+
+
 def is_synthetic(conn: Any, account_id: str) -> bool:
     row = conn.execute("select is_synthetic from public.account where id = %s", (account_id,)).fetchone()
     return bool(row and row["is_synthetic"])

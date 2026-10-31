@@ -61,8 +61,10 @@ select results_eq($$ select role::text || ' · ' || channel from public.invite w
 select is((select email from public.person where name = 'Dono do grupo'), 'dono@exemplo.com.br', 'W09: Dono login e-mail');
 select is((select count(*)::int from public.session_device sd join public.person p on p.id = sd.person_id
            where p.name = 'Dono do grupo' and sd.revoked_at is null), 3, 'W09: three connected devices');
--- Contestation marks (g_syn_m2.sql) are audited too, but they are not part of the W09 access log.
-select is((select count(*)::int from public.audit_log where account_id = (select id from g02) and entity <> 'contestation'), 4,
+-- The W09 access log reads only these actions (apps/web/lib/portal/security.ts ACCESS_ACTIONS); other
+-- seeded audit rows (contestation marks, people and billing changes) are not part of it.
+select is((select count(*)::int from public.audit_log where account_id = (select id from g02)
+           and action in ('login', 'login.new_device', 'invite.create', 'invite.accept', 'logout_all', 'session.revoke')), 4,
   'W09: four access log rows');
 
 -- C14: founders and owner authorizations.

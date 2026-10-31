@@ -102,6 +102,14 @@ class ImportTrigger(StrEnum):
     MANUAL = "manual"
 
 
+class InvoiceStatus(StrEnum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    OVERDUE = "overdue"
+    REFUSED = "refused"
+    CANCELED = "canceled"
+
+
 class JobStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
@@ -259,9 +267,23 @@ class BillingEvent(Row):
     asaas_event_id: str
     created_at: datetime
     id: UUID
+    kind: str | None
     payload: JsonValue
     processed_at: datetime | None
     received_at: datetime
+    updated_at: datetime
+
+
+class BillingInvoice(Row):
+    account_id: UUID
+    amount_cents: int
+    asaas_payment_id: str
+    asaas_subscription_id: str | None
+    created_at: datetime
+    due_on: date | None
+    id: UUID
+    status: InvoiceStatus
+    units: int | None
     updated_at: datetime
 
 
@@ -279,6 +301,7 @@ class BpoPartner(Row):
     id: UUID
     logo_path: str | None
     name: str
+    pipeline_note: str | None
     price_per_store_cents: int | None
     primary_color: str | None
     show_powered_by: bool
@@ -454,8 +477,11 @@ class DifferenceOrder(Row):
 class ExtensionToken(Row):
     account_id: UUID
     created_at: datetime
+    created_by: UUID | None
     id: UUID
     last_used_at: datetime | None
+    paired_at: datetime | None
+    pairing_expires_at: datetime | None
     person_id: UUID
     revoked_at: datetime | None
     token_hash: str
@@ -531,6 +557,8 @@ class ImportSource(Row):
     id: UUID
     kind: ImportKind
     last_ok_at: datetime | None
+    paused_at: datetime | None
+    paused_reason: str | None
     schedule_cron: str | None
     stale_after_hours: int | None
     updated_at: datetime
@@ -546,6 +574,7 @@ class Invite(Row):
     id: UUID
     invited_by: UUID | None
     kitchen_ids: list[UUID]
+    name: str | None
     role: MemberRole
     token_hash: str
     updated_at: datetime
@@ -652,10 +681,14 @@ class NoticeType(Row):
 class Notification(Row):
     account_id: UUID | None
     alert_id: UUID | None
+    attachment_path: str | None
     body: str
     channel: NotificationChannel
     created_at: datetime
+    html: str | None
     id: UUID
+    manual_sent_at: datetime | None
+    manual_sent_by: UUID | None
     notice_code: str | None
     person_id: UUID | None
     provider_id: str | None
@@ -709,6 +742,7 @@ class OwnerAuthorization(Row):
     scope: list[str]
     signed_at: datetime
     signed_by: UUID | None
+    terms_version: str | None
     updated_at: datetime
 
 
@@ -753,6 +787,7 @@ class Plan(Row):
     id: UUID
     name: str
     price_cents: int | None
+    price_is_example: bool
     trial_days: int
     updated_at: datetime
 

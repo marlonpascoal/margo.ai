@@ -9,7 +9,7 @@ select tables_are('public', array[
   'account', 'company', 'kitchen', 'brand', 'channel_store', 'channel_store_url_history',
   'person', 'membership', 'membership_kitchen', 'invite', 'staff', 'session_device',
   'security_lock', 'owner_authorization',
-  'plan', 'subscription', 'billing_event', 'pilot', 'pilot_charge', 'bpo_partner', 'bpo_client',
+  'plan', 'subscription', 'billing_event', 'billing_invoice', 'pilot', 'pilot_charge', 'bpo_partner', 'bpo_client',
   'feature_flag', 'feature_override', 'feature_flag_log', 'notice_type', 'notice_pref',
   'notification', 'alert', 'audit_log', 'job', 'extension_token',
   'auth_code_guard',

@@ -47,6 +47,7 @@ select = ["E", "F", "I", "B", "UP"]
 "workers/render/src/margo_render/handlers.py" = ["E501"]
 # SQL statements and generated value lists read better unwrapped.
 "workers/import/src/margo_import/db.py" = ["E501"]
+"workers/cost/src/margo_cost/db.py" = ["E501"]
 "fixtures/m2/generate.py" = ["E501"]
 "fixtures/m3/generate.py" = ["E501"]
 "workers/import/src/margo_import/invoice_run.py" = ["E501"]

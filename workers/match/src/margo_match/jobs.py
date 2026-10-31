@@ -6,6 +6,8 @@ Steps: learn rules from confirmations, GTIN and rules, then Claude suggestions f
 
 from __future__ import annotations
 
+import os
+
 from margo_common.runner import JobRun, LogValue
 from pydantic import BaseModel
 
@@ -17,10 +19,12 @@ class MatchPayload(BaseModel):
     account_id: str
 
 
-def run_match(conn: object, account_id: str, suggester: Suggester) -> dict[str, LogValue]:
+def run_match(conn: object, account_id: str, suggester: Suggester | None) -> dict[str, LogValue]:
+    """Without a suggester (no ANTHROPIC_API_KEY, e.g. local development) the AI step is skipped and the
+    lines stay for the next run."""
     learned = db.learn_rules(conn)
     auto = db.run_auto(conn, account_id)
-    ai = db.run_ai(conn, account_id, suggester)
+    ai = db.run_ai(conn, account_id, suggester) if suggester is not None else db.Counts()
     return {
         "account_id": account_id,
         "rules_learned": learned,
@@ -28,6 +32,7 @@ def run_match(conn: object, account_id: str, suggester: Suggester) -> dict[str, 
         "auto_suggested": auto.auto_suggested,
         "ai_lines_sent": ai.ai_lines_sent,
         "ai_suggested": ai.ai_suggested,
+        "ai_skipped": suggester is None,
     }
 
 
@@ -36,7 +41,8 @@ def match_ai(job: JobRun[MatchPayload]) -> dict[str, LogValue]:
         raise ValueError("payload account differs from the job's account")
     conn = db.connect()
     try:
-        return run_match(conn, job.payload.account_id, ClaudeSuggester())
+        suggester = ClaudeSuggester() if os.environ.get("ANTHROPIC_API_KEY") else None
+        return run_match(conn, job.payload.account_id, suggester)
     finally:
         conn.close()
 

@@ -109,6 +109,7 @@ begin
     values (acc, tests.id(a || ':il'), tests.id(a || ':ing'), 'rule', 'confirmed', 1000);
   insert into public.ingredient_price (account_id, ingredient_id, price_per_base_unit_cents, observed_on, source, invoice_line_id)
     values (acc, tests.id(a || ':ing'), 5, '2026-09-05', 'invoice', tests.id(a || ':il'));
+  insert into public.invoice_import (account_id, file_path, status) values (acc, 'invoices/' || a || '/zips/t.zip', 'ok');
   insert into public.menu_item (id, account_id, brand_id, name) values (tests.id(a || ':dish'), acc, tests.id(a || ':brand'), 'Burger ' || a);
   insert into public.recipe (id, account_id, menu_item_id, status) values (tests.id(a || ':rec'), acc, tests.id(a || ':dish'), 'ready');
   insert into public.recipe_line (account_id, recipe_id, ingredient_id, qty_base_units, yield_pct, yield_confidence)

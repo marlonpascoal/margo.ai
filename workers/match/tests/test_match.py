@@ -126,6 +126,12 @@ def test_D14_model_is_a_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
     assert ClaudeSuggester(client=object(), model="m").model == "m"
 
 
+def test_D14_real_client_needs_the_key_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
+        ClaudeSuggester()
+
+
 def test_D14_suggestions_are_validated_against_what_was_sent() -> None:
     items = [
         {

@@ -124,8 +124,12 @@ class ClaudeSuggester:
         if client is None:
             import anthropic
 
-            # ANTHROPIC_API_KEY by name only; never logged or stored.
-            client = anthropic.Anthropic()
+            # ANTHROPIC_API_KEY by name only, never logged or stored. Passed explicitly so a local
+            # `ant auth login` profile is never picked up by accident (no live calls outside Maritime).
+            key = os.environ.get("ANTHROPIC_API_KEY")
+            if not key:
+                raise RuntimeError("ANTHROPIC_API_KEY is not set")
+            client = anthropic.Anthropic(api_key=key)
         self.client = client
         self.model = model or os.environ.get("MARGO_MATCH_MODEL") or DEFAULT_MODEL
 

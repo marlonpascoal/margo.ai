@@ -546,6 +546,7 @@ class Invite(Row):
     id: UUID
     invited_by: UUID | None
     kitchen_ids: list[UUID]
+    name: str | None
     role: MemberRole
     token_hash: str
     updated_at: datetime
@@ -709,6 +710,7 @@ class OwnerAuthorization(Row):
     scope: list[str]
     signed_at: datetime
     signed_by: UUID | None
+    terms_version: str | None
     updated_at: datetime
 
 

@@ -6,6 +6,7 @@ requires-python = "==3.12.*"
 members = [
     "margo-common",
     "margo-contracts",
+    "margo-render",
     "margoai",
 ]
 
@@ -60,6 +61,11 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.8" },
 ]
 provides-extras = ["gen"]
+
+[[package]]
+name = "margo-render"
+version = "0.0.0"
+source = { editable = "workers/render" }
 
 [[package]]
 name = "margoai"

@@ -1,1 +1,18 @@
 @import "tailwindcss";
+@import "./tokens.css";
+
+@layer base {
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  a {
+    color: var(--color-ink);
+  }
+  a:hover {
+    color: var(--color-ink-muted);
+  }
+}

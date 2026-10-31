@@ -1,0 +1,72 @@
+/*
+ * Design tokens (02 §9, D40). Neutral theme taken from the wireframes in design/.
+ * The visual direction, when chosen, replaces this file only. Components use these tokens, never raw hex:
+ * Tailwind turns each one into utilities (bg-surface, text-ink-muted, border-border, rounded-xl, text-sm...)
+ * and `static` emits every variable on :root for plain CSS.
+ * PDFs read the same values from workers/render (scripts/gen_tokens.py; keep one declaration per line).
+ */
+@theme static {
+  /* Color: only these, no default palette */
+  --color-*: initial;
+
+  /* Color: surfaces */
+  --color-bg: #F6F4EF;
+  --color-sunken: #EFECE5;
+  --color-surface: #FFFFFF;
+  --color-muted-bg: #E5E3DE;
+
+  /* Color: ink */
+  --color-ink: #1C1C1A;
+  --color-ink-2: #3F3D38;
+  --color-ink-muted: #5D5A52;
+  --color-ink-faint: #8A8378;
+  --color-ink-inverse: #FFFFFF;
+
+  /* Color: lines */
+  --color-border: #D6D2C4;
+  --color-border-subtle: #ECE8DF;
+  --color-border-strong: #BDB7A9;
+
+  /* Color: status */
+  --color-ok: #1F7A62;
+  --color-ok-strong: #2A8C72;
+  --color-ok-bg: #E3F2EC;
+  --color-ok-border: #A9D3C4;
+  --color-warn: #8A5A00;
+  --color-warn-bg: #FFF4E0;
+  --color-warn-border: #E3C48A;
+  --color-danger: #B4443A;
+  --color-danger-bg: #FBEAE7;
+  --color-danger-border: #E8B9B1;
+  --color-link: #1351B4;
+
+  /* Type */
+  --font-sans: "Public Sans Variable", "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 28px;
+  --text-4xl: 30px;
+
+  /* Spacing: utilities are multiples of 4px (p-4 = 16px) */
+  --spacing: 4px;
+
+  /* Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 999px;
+
+  /* Layout (w-sidebar, max-w-card) */
+  --container-sidebar: 232px;
+  --container-card: 440px;
+}

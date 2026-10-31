@@ -10,7 +10,13 @@ export async function sessionClient() {
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll: () => store.getAll(),
-      setAll: (list) => list.forEach(({ name, value, options }) => store.set(name, value, options)),
+      setAll: (list) => {
+        try {
+          list.forEach(({ name, value, options }) => store.set(name, value, options));
+        } catch {
+          // Server Components cannot write cookies; proxy.ts refreshes the session before render.
+        }
+      },
     },
   });
 }

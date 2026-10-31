@@ -100,10 +100,9 @@ export default async function ImportsPage({ params, searchParams }: { params: Pr
             </div>
             <div className="text-sm text-ink-2">Vendas por item e promoções. Envia sozinha uma vez por dia, quando o dono abre o Portal do Parceiro.</div>
             {cards.extension?.stale && <div className="font-mono text-xs text-warn">sem envio há 3 dias: lembrar o dono</div>}
-            {/* P04 (the extension) is wave 2; the link opens it once it exists. */}
-            <span aria-disabled="true" className="text-sm text-ink-faint underline">
+            <Link href={`/console/contas/${account.code}/extensao`} className="text-sm">
               Ver a extensão
-            </span>
+            </Link>
           </Card>
         )}
         {fileChannels.length > 0 && (

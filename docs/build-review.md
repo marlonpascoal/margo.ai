@@ -177,3 +177,12 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
   - a monthly re-run for paying plans
   - competitor tracking as an upgrade
   - what a free account keeps after the trial (E02 already pauses imports and keeps data)
+
+### M1 history (branch m1/real-pages, merged 31/out)
+- **M1-10, the price-index ranking:** approve it before it is written into spec 04.
+- **Synthetic history in the seed:** an earlier 28/set Pantanos run, kept only as snapshots. Is that fine under D46?
+- **C02 label:** should it show the own-store or competitor label?
+- **Live collection after iFood's 403:** the first real request was blocked. The collector stopped and recorded nothing, as D47 requires. Options that don't work around the block:
+  - the owner saves their own store page and uploads it
+  - ask iFood for permission or an official channel
+  - a founder types the prices for the first X-rays

@@ -162,3 +162,18 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
   - `account_id` on `invoice_line`, `ingredient_match` and `recipe_line` (for account isolation)
 - **No upper limit on `yield_pct`:** cooked rice can yield more than 100%.
 - **`invoice_line.unit_price_cents` is an integer.** Computations use `total_cents / qty` where precision matters.
+
+## Product decisions raised by Marlon (31/out)
+
+- **Live M1 collection before the legal consult.** Marlon released the X-ray on real public pages and the legal consult (D01b) comes later. CLAUDE.md now allows Claude to fetch public iFood pages within D47. Record this in `docs/decisions.md` as an amendment to D47; the rest of D47 still holds.
+- **X-ray history.** Being built: dated snapshots per run, per-item price over time, and the store's overall ranking over time. Confirm the definition of "ranking geral da loja" when it lands.
+- **X-ray of another store (competitor).** `xray` will record whether the target is an own channel store or another store. Open: should owners run X-rays on stores that are not theirs, and how many per plan? Proposal to discuss:
+  - Raio-X grátis: own store only, 1 a month.
+  - Lucro: own stores plus N competitors.
+  - Rede: more.
+  It would be a plan field, like `billing_unit` (D40), plus a flag. Legal weight is higher for third-party stores (D01b).
+- **Retention strategy by plan** (later). To evaluate:
+  - X-ray history as the reason to stay
+  - a monthly re-run for paying plans
+  - competitor tracking as an upgrade
+  - what a free account keeps after the trial (E02 already pauses imports and keeps data)

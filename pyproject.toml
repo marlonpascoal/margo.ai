@@ -3,18 +3,23 @@ name = "margoai"
 version = "0.0.0"
 description = "MargoAI workspace root: workers and repo scripts"
 requires-python = ">=3.12,<3.13"
+dependencies = ["margo-common", "margo-contracts[gen]"]
 
 [tool.uv]
 package = false
 
+[tool.uv.sources]
+margo-common = { workspace = true }
+margo-contracts = { workspace = true }
+
 [tool.uv.workspace]
-members = ["workers/*"]
+members = ["workers/*", "packages/contracts"]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6"]
 
 [tool.pytest.ini_options]
-testpaths = ["scripts/tests", "workers"]
+testpaths = ["scripts/tests", "workers", "packages/contracts/python/tests"]
 addopts = "--import-mode=importlib"
 
 [tool.ruff]

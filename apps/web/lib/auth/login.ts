@@ -126,28 +126,42 @@ export async function verifyCode(
   }
 
   await deps.store.saveGuard(email, afterSuccess(guard));
-  if (person.authUserId === null) await deps.store.linkAuthUser(person.id, auth.userId);
+  const sessionDeviceId = await startSession(deps.store, person, auth.userId, { surface: input.surface, authSessionId: auth.sessionId, ctx: input.ctx });
+  return { ok: true, personId: person.id, sessionDeviceId };
+}
 
-  const deviceKeyHash = hashDeviceKey(input.ctx.deviceKey);
-  const history = await deps.store.deviceHistory(person.id, deviceKeyHash);
-  const sessionDeviceId = await deps.store.createSession({
+/**
+ * After the person proved who they are (code, or the P18 invite link): links the auth user, records the
+ * device, raises security_event for a new device (P15) and audits the login. Returns the session_device id.
+ */
+export async function startSession(
+  store: LoginStore,
+  person: LoginPerson,
+  authUserId: string,
+  s: { surface: Surface; authSessionId: string; ctx: RequestContext },
+): Promise<string> {
+  if (person.authUserId === null) await store.linkAuthUser(person.id, authUserId);
+
+  const deviceKeyHash = hashDeviceKey(s.ctx.deviceKey);
+  const history = await store.deviceHistory(person.id, deviceKeyHash);
+  const sessionDeviceId = await store.createSession({
     personId: person.id,
-    surface: input.surface,
-    authSessionId: auth.sessionId,
+    surface: s.surface,
+    authSessionId: s.authSessionId,
     deviceKeyHash,
-    userAgent: input.ctx.userAgent,
-    ipCity: input.ctx.ipCity,
+    userAgent: s.ctx.userAgent,
+    ipCity: s.ctx.ipCity,
   });
 
   // P15: a login on a device this person never used raises security_event. The very first login does not.
-  if (input.surface === "portal" && history.anyDevice && !history.thisDevice) {
-    await deps.store.notifyNewDevice(person.id, person.accountIds, input.ctx.userAgent);
+  if (s.surface === "portal" && history.anyDevice && !history.thisDevice) {
+    await store.notifyNewDevice(person.id, person.accountIds, s.ctx.userAgent);
   }
 
-  await deps.store.audit(
-    input.surface === "console"
+  await store.audit(
+    s.surface === "console"
       ? [{ action: "login", personId: person.id, accountId: null, actorKind: "staff" }]
       : person.accountIds.map((accountId) => ({ action: "login", personId: person.id, accountId, actorKind: "person" as const })),
   );
-  return { ok: true, personId: person.id, sessionDeviceId };
+  return sessionDeviceId;
 }

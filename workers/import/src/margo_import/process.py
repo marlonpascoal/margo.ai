@@ -180,10 +180,11 @@ def process_run(
                 **settled,
             },
         )
+        # The run's own source (upload, extension or BPO folder); C07 cards and data_stale read it.
         conn.execute(
             """update public.import_source set last_ok_at = now()
-               where account_id = %s and channel = %s and kind = 'upload'""",
-            (account, channel),
+               where id = (select source_id from public.import_run where id = %s)""",
+            (run_id,),
         )
         return Outcome("ok")
     except Refused as r:

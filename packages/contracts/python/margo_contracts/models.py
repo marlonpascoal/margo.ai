@@ -1029,6 +1029,20 @@ class PublicMenuItem(Row):
     updated_at: datetime
 
 
+class PublicMenuItemSnapshot(Row):
+    collected_at: datetime
+    created_at: datetime
+    id: UUID
+    name: str
+    price_cents: int
+    public_menu_item_id: UUID
+    public_store_id: UUID
+    unit: MenuUnit
+    unit_qty: Decimal | None
+    updated_at: datetime
+    xray_id: UUID
+
+
 class PublicStore(Row):
     area: str | None
     category: str | None
@@ -1043,6 +1057,20 @@ class PublicStore(Row):
     name: str | None
     updated_at: datetime
     url: str | None
+
+
+class PublicStoreSnapshot(Row):
+    area: str | None
+    category: str | None
+    collected_at: datetime
+    created_at: datetime
+    id: UUID
+    is_national_chain: bool
+    last_seen_open_at: datetime | None
+    name: str | None
+    public_store_id: UUID
+    updated_at: datetime
+    xray_id: UUID
 
 
 class Recipe(Row):
@@ -1154,6 +1182,7 @@ class Xray(Row):
     radius_km: int
     rules: JsonValue
     status: XrayStatus
+    target_kind: str
     target_store_id: UUID
     updated_at: datetime
 
@@ -1200,5 +1229,18 @@ class XrayStore(Row):
     id: UUID
     included: bool
     public_store_id: UUID
+    updated_at: datetime
+    xray_id: UUID
+
+
+class XrayStoreRank(Row):
+    created_at: datetime
+    id: UUID
+    is_target: bool
+    items_compared: int
+    price_index: Decimal
+    public_store_id: UUID
+    rank: int
+    stores_ranked: int
     updated_at: datetime
     xray_id: UUID

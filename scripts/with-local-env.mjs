@@ -11,6 +11,8 @@ const env = {
   SUPABASE_SERVICE_ROLE_KEY: status.SECRET_KEY ?? status.SERVICE_ROLE_KEY,
   MAILPIT_URL: status.MAILPIT_URL ?? status.INBUCKET_URL,
   MARGO_ENV: "local",
+  // Workers and DB tests connect straight to Postgres (this worktree may run its stack on other ports).
+  MARGO_LOCAL_DB_URL: process.env.MARGO_LOCAL_DB_URL ?? status.DB_URL,
 };
 const [cmd, ...args] = process.argv.slice(2);
 const child = spawn(cmd, args, { env, stdio: "inherit" });

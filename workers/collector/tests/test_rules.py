@@ -32,7 +32,9 @@ COLLECTED = datetime(2026, 10, 28, 13, 0, tzinfo=UTC)
 
 def at_km(id_: str, km_north: float, **kw) -> Store:
     # One degree of latitude is 111.195 km on the mean sphere.
-    return Store(id_, id_, "Lanches", Decimal(str(-23.33 + km_north / 111.19508)), Decimal("-51.150000"), **kw)
+    return Store(
+        id_, id_, "Lanches", Decimal(str(-23.33 + km_north / 111.19508)), Decimal("-51.150000"), **kw
+    )
 
 
 def test_M1_01_distance_is_great_circle_in_metres():
@@ -41,8 +43,14 @@ def test_M1_01_distance_is_great_circle_in_metres():
 
 
 def test_M1_01_neighborhood_keeps_stores_within_radius_nearest_first():
-    stores = [at_km("far", 3.2), at_km("b", 2.9), at_km("a", 0.4), at_km("edge", 2.999), TARGET,
-              Store("nocoords", "x", "Lanches", None, None)]
+    stores = [
+        at_km("far", 3.2),
+        at_km("b", 2.9),
+        at_km("a", 0.4),
+        at_km("edge", 2.999),
+        TARGET,
+        Store("nocoords", "x", "Lanches", None, None),
+    ]
     got = neighborhood_m1_01(TARGET, stores, 3)
     assert [s.id for s, _ in got] == ["a", "b", "edge"]
     assert [round(d / 100) / 10 for _, d in got] == [0.4, 2.9, 3.0]
@@ -52,16 +60,25 @@ def test_M1_01_neighborhood_keeps_stores_within_radius_nearest_first():
 def test_M1_02_national_chain_closed_and_not_delivering_are_excluded_in_order():
     s = Settings()
     chain = at_km("c", 1, is_national_chain=True, last_seen_open_at=datetime(2026, 9, 1, tzinfo=UTC))
-    assert exclusion_m1_02(chain, collected_at=COLLECTED, delivers_to_target=None, settings=s) == "regra: rede tabelada"
+    assert (
+        exclusion_m1_02(chain, collected_at=COLLECTED, delivers_to_target=None, settings=s)
+        == "regra: rede tabelada"
+    )
     closed = at_km("k", 1, last_seen_open_at=datetime(2026, 9, 18, 15, tzinfo=UTC))
-    assert exclusion_m1_02(closed, collected_at=COLLECTED, delivers_to_target=None, settings=s) == "regra: fechada há 40 dias"
+    assert (
+        exclusion_m1_02(closed, collected_at=COLLECTED, delivers_to_target=None, settings=s)
+        == "regra: fechada há 40 dias"
+    )
     # Exactly 30 days is not "more than 30 days".
     thirty = at_km("k30", 1, last_seen_open_at=datetime(2026, 9, 28, 15, tzinfo=UTC))
     assert exclusion_m1_02(thirty, collected_at=COLLECTED, delivers_to_target=None, settings=s) is None
     far = at_km("f", 1)
     assert exclusion_m1_02(far, collected_at=COLLECTED, delivers_to_target=False, settings=s) is None
     only_hood = Settings(same_neighborhood_only=True)
-    assert exclusion_m1_02(far, collected_at=COLLECTED, delivers_to_target=False, settings=only_hood) == "regra: não entrega no bairro"
+    assert (
+        exclusion_m1_02(far, collected_at=COLLECTED, delivers_to_target=False, settings=only_hood)
+        == "regra: não entrega no bairro"
+    )
     assert exclusion_m1_02(far, collected_at=COLLECTED, delivers_to_target=None, settings=only_hood) is None
 
 
@@ -73,7 +90,12 @@ def test_M1_02_toggles_off_keep_the_store():
 
 def test_M1_03_weight_volume_and_pack_go_to_price_per_base_unit():
     fries = normalize_m1_03(Item("i", "s", "Batata frita média", 1490, "g", 300))
-    assert (fries.unit, fries.per_base, fries.display_cents, fries.by_weight_or_pack) == ("100g", Fraction(1490, 300), 497, True)
+    assert (fries.unit, fries.per_base, fries.display_cents, fries.by_weight_or_pack) == (
+        "100g",
+        Fraction(1490, 300),
+        497,
+        True,
+    )
     shake = normalize_m1_03(Item("i", "s", "Milkshake 400 ml", 1690, "ml", 400))
     assert (shake.unit, shake.display_cents) == ("100ml", 423)
     six = normalize_m1_03(Item("i", "s", "Pack 6 latas", 2700, "pack", 6))
@@ -137,7 +159,11 @@ def test_M1_05_parity_is_the_median_of_accepted_pairs_in_the_items_terms():
     assert median([Fraction(3), Fraction(1), Fraction(2)]) == 2
     assert median([Fraction(1), Fraction(2), Fraction(3), Fraction(10)]) == Fraction(5, 2)
     own = Item("own", "t", "Batata frita média", 1490, "g", 300)
-    pairs = [Item("a", "s", "Fritas", 2200, "g", 400), Item("b", "s", "Fritas", 1840, "g", 300), Item("c", "s", "Fritas", 3000, "g", 400)]
+    pairs = [
+        Item("a", "s", "Fritas", 2200, "g", 400),
+        Item("b", "s", "Fritas", 1840, "g", 300),
+        Item("c", "s", "Fritas", 3000, "g", 400),
+    ]
     # Per gram: 5.5, 6.133.., 7.5; median 6.133.. times 300 g.
     assert parity_m1_05(own, pairs) == 1840
     assert parity_m1_05(own, []) is None
@@ -175,5 +201,10 @@ def test_rounding_is_half_away_from_zero():
 
 def test_settings_from_xray_rules_uses_defaults_for_missing_keys():
     s = Settings.from_xray(5, {"exclude_closed": False, "min_pairs": 7, "similarity_threshold": "0.7"})
-    assert (s.radius_km, s.exclude_closed, s.exclude_national_chains, s.min_pairs, s.similarity_threshold) == (
-        5, False, True, 7, Fraction(7, 10))
+    assert (
+        s.radius_km,
+        s.exclude_closed,
+        s.exclude_national_chains,
+        s.min_pairs,
+        s.similarity_threshold,
+    ) == (5, False, True, 7, Fraction(7, 10))

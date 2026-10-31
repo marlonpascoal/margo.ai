@@ -40,6 +40,9 @@ Outcome = Literal["done", "failed", "not_claimed", "idle"]
 
 JOB_FLAGS: dict[str, str] = {
     "collect": "m1.raio_x",  # 05 C02: "Buscar vizinhança" creates a collect job (worker-collector)
+    "xray_pair": "m1.raio_x",  # 05 C03: "Confirmar N lojas" starts pairing (worker-collector)
+    "xray_calc": "m1.raio_x",  # 05 C04: "Calcular raio-X" (worker-collector)
+    "render_xray": "m1.raio_x",  # 05 C05: "Preparar entrega" renders P01 (worker-render)
     "import_ifood_api": "m2.ifood_api",  # 06: iFood official API import (worker-import)
     "import_ifood_file": "m2.arquivo_ifood",  # 06: Portal do Parceiro export file (worker-import)
     "import_99food_file": "m2.arquivo_99food",  # 06: 99Food statement file (worker-import)

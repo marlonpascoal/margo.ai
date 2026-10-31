@@ -37,3 +37,4 @@ select = ["E", "F", "I", "B", "UP"]
 "**/tests/**" = ["E501"]
 # SQL column lists and the drawn copy read better unwrapped.
 "scripts/gen_g_syn_m1.py" = ["E501"]
+"workers/collector/src/margo_collector/repo.py" = ["E501"]

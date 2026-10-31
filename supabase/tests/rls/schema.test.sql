@@ -16,8 +16,10 @@ select tables_are('public', array[
   'menu_item', 'public_store', 'public_menu_item', 'collector_page_cache', 'xray', 'xray_store', 'xray_item',
   'xray_pair', 'time_log',
   'rule_param', 'import_source', 'import_run', 'column_mapping', 'order_fact', 'order_item_fact', 'ledger_entry',
-  'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation'
-], 'A02: tables of 03 §1 to §3 and §5 (M1 with menu_item of §4), the login code guard (04 §8), the M1 page cache (D47) and M2 params and evidence');
+  'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation',
+  'invoice', 'invoice_line', 'ingredient', 'ingredient_match', 'ingredient_price', 'recipe', 'recipe_line',
+  'packaging_cost', 'contribution'
+], 'A02: tables of 03 §1 to §5, the login code guard (04 §8), the M1 page cache (D47) and M2 params and evidence');
 
 select is_empty($$
   select c.relname::text from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -36,7 +38,8 @@ $$, 'every table has created_at and updated_at');
 select is_empty($$
   select table_name || '.' || column_name from information_schema.columns
   where table_schema = 'public' and column_name like '%\_cents' and data_type <> 'bigint'
-$$, 'money columns (_cents) are bigint centavos');
+    and (table_name, column_name) <> ('ingredient_price', 'price_per_base_unit_cents')
+$$, 'money columns (_cents) are bigint centavos; only the per-base-unit price is fractional (03 §4)');
 
 select is_empty($$
   select table_name::text from information_schema.columns

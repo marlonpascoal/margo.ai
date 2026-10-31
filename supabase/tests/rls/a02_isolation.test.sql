@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(49);
+select plan(56);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated;
@@ -95,6 +95,28 @@ begin
     (acc, tests.id(a || ':d1'), tests.id(a || ':o1'), 600), (acc, tests.id(a || ':d2'), tests.id(a || ':o2'), 600);
   insert into public.contestation (account_id, difference_id, status) values
     (acc, tests.id(a || ':d1'), 'a_contestar'), (acc, tests.id(a || ':d2'), 'a_contestar');
+  -- M3 (03 §4): one invoice, matched line, price, recipe, packaging and contribution. Each account
+  -- refers to its own catalog ingredient; ingredient 'free' is referenced by nobody.
+  insert into public.ingredient (id, name, category, base_unit) values (tests.id(a || ':ing'), 'Insumo ' || a, 'carnes', 'g');
+  insert into public.invoice (id, account_id, company_id, access_key, model, issuer_cnpj, issued_at, total_cents, source)
+    values (tests.id(a || ':inv'), acc, tests.id(a || ':co'),
+            case a when 'X' then '41260900000000000190550010000001231123456789'
+                   else '41260900000000000190550010000001241123456786' end,
+            55, '00000000000190', '2026-09-05 10:00-03', 5000, 'xml_zip');
+  insert into public.invoice_line (id, account_id, invoice_id, line_no, description, unit, qty, unit_price_cents, total_cents)
+    values (tests.id(a || ':il'), acc, tests.id(a || ':inv'), 1, 'CARNE MOIDA KG', 'KG', 1, 5000, 5000);
+  insert into public.ingredient_match (account_id, invoice_line_id, ingredient_id, method, status, conversion_factor)
+    values (acc, tests.id(a || ':il'), tests.id(a || ':ing'), 'rule', 'confirmed', 1000);
+  insert into public.ingredient_price (account_id, ingredient_id, price_per_base_unit_cents, observed_on, source, invoice_line_id)
+    values (acc, tests.id(a || ':ing'), 5, '2026-09-05', 'invoice', tests.id(a || ':il'));
+  insert into public.menu_item (id, account_id, brand_id, name) values (tests.id(a || ':dish'), acc, tests.id(a || ':brand'), 'Burger ' || a);
+  insert into public.recipe (id, account_id, menu_item_id, status) values (tests.id(a || ':rec'), acc, tests.id(a || ':dish'), 'ready');
+  insert into public.recipe_line (account_id, recipe_id, ingredient_id, qty_base_units, yield_pct, yield_confidence)
+    values (acc, tests.id(a || ':rec'), tests.id(a || ':ing'), 150, 0.8, 'declarado');
+  insert into public.packaging_cost (account_id, menu_item_id, channel, cost_cents) values (acc, tests.id(a || ':dish'), 'ifood', 150);
+  insert into public.contribution (account_id, close_period_id, menu_item_id, channel, price_cents, channel_take_cents,
+      ingredient_cents, ingredient_error_pct, packaging_cents, left_cents, left_pct)
+    values (acc, tests.id(a || ':cp'), tests.id(a || ':dish'), 'ifood', 3000, 900, 938, 0.05, 150, 1012, 0.3373);
 end $$;
 
 -- Tables with an account_id column where account `acc` has no row (fixture guard).
@@ -139,6 +161,7 @@ select tests.person('fundador', 'fundador@teste.local');
 select tests.person('operacao', 'operacao@teste.local');
 select tests.person('sem-conta', 'nada@teste.local');
 insert into public.staff (person_id, role) values (tests.id('fundador'), 'fundador'), (tests.id('operacao'), 'operacao');
+insert into public.ingredient (id, name, category, base_unit) values (tests.id('free'), 'Insumo sem uso', 'laticinios', 'g');
 
 select is_empty($$ select tests.tables_without_rows(tests.id('Y')) $$,
   'fixture: account Y has a row in every table with account_id');
@@ -162,6 +185,8 @@ select is(tests.n($$ select 1 from public.audit_log $$), 1, 'Dono sees the accou
 select is(tests.n($$ select 1 from public.billing_event $$), 0, 'raw Asaas events are console only');
 select is(tests.n($$ select 1 from public.feature_override $$), 0, 'feature overrides are console only');
 select is(tests.n($$ select 1 from public.job $$), 0, 'jobs are console only');
+select is(tests.n($$ select 1 from public.ingredient $$), 1, 'A02: Dono sees only catalog ingredients own rows refer to');
+select is(tests.n($$ select 1 from public.invoice_line $$), 1, 'Dono sees own invoice lines');
 select throws_ok($$ insert into public.company (account_id, cnpj, legal_name) values (tests.id('X'), '00000000000999', 'Nova') $$,
   '42501', null, 'portal users cannot write directly; writes go through audited server actions');
 select is_empty($$ update public.account set name = 'mudou' where id = tests.id('X') returning id $$,
@@ -183,6 +208,8 @@ select is(tests.n($$ select 1 from public.order_fact $$), 1, 'A03: Gerente sees 
 select is(tests.n($$ select 1 from public.contestation $$), 1, 'A03: Gerente sees contestations of own kitchen only');
 select is(tests.n($$ select 1 from public.close_period $$), 0, 'A03: the whole-account close needs all kitchens');
 select is(tests.n($$ select 1 from public.import_run $$), 0, 'import history is console only');
+select is(tests.n($$ select 1 from public.invoice $$), 1, 'A03: Gerente sees invoices of the company of own kitchen');
+select is(tests.n($$ select 1 from public.contribution $$), 0, 'A03: contribution of the whole-account close needs all kitchens');
 reset role;
 
 -- Dono of Y, the other direction.
@@ -195,6 +222,7 @@ select tests.login('sem-conta');
 select is_empty($$ select tests.leaks(tests.id('X')) $$, 'A02: a person without membership reads nothing of X');
 select is_empty($$ select tests.leaks(tests.id('Y')) $$, 'A02: a person without membership reads nothing of Y');
 select is(tests.n($$ select 1 from public.person $$), 1, 'and sees only self');
+select is(tests.n($$ select 1 from public.ingredient $$), 0, 'a person without membership reads no catalog ingredient');
 reset role;
 
 -- Anonymous.
@@ -211,6 +239,9 @@ select is(tests.n($$ select 1 from public.alert where account_id in (tests.id('X
 select is(tests.n($$ select 1 from public.subscription $$), 0, 'Operação does not see subscriptions');
 select is(tests.n($$ select 1 from public.pilot $$), 0, 'Operação does not see pilots');
 select is(tests.n($$ select 1 from public.feature_flag $$), 0, 'Operação does not see feature toggles');
+select is(tests.n($$ select 1 from public.ingredient where id in (tests.id('X:ing'), tests.id('Y:ing'), tests.id('free')) $$), 3,
+  'Operação reads the whole ingredient catalog (C11 de-para)');
+select is(tests.n($$ select 1 from public.invoice where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Operação sees every invoice');
 reset role;
 
 -- Console: Fundador.

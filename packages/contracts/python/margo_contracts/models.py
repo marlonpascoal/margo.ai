@@ -24,6 +24,12 @@ class AlertSeverity(StrEnum):
     BAIXO = "baixo"
 
 
+class BaseUnit(StrEnum):
+    G = "g"
+    ML = "ml"
+    UN = "un"
+
+
 class BillingUnit(StrEnum):
     KITCHEN = "kitchen"
     CHANNEL_STORE = "channel_store"
@@ -102,6 +108,13 @@ class ImportTrigger(StrEnum):
     MANUAL = "manual"
 
 
+class InvoiceSource(StrEnum):
+    XML_ZIP = "xml_zip"
+    KEY_TYPED = "key_typed"
+    QR_URL = "qr_url"
+    WHATSAPP_PHOTO = "whatsapp_photo"
+
+
 class InvoiceStatus(StrEnum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
@@ -129,6 +142,19 @@ class LedgerType(StrEnum):
     ADJUSTMENT = "adjustment"
     PAYOUT = "payout"
     OTHER = "other"
+
+
+class MatchMethod(StrEnum):
+    GTIN = "gtin"
+    RULE = "rule"
+    AI = "ai"
+    MANUAL = "manual"
+
+
+class MatchStatus(StrEnum):
+    SUGGESTED = "suggested"
+    CONFIRMED = "confirmed"
+    REJECTED = "rejected"
 
 
 class MemberRole(StrEnum):
@@ -169,6 +195,16 @@ class PairStatus(StrEnum):
     MANUAL = "manual"
 
 
+class PriceSource(StrEnum):
+    INVOICE = "invoice"
+    REGIONAL_PRIOR = "regional_prior"
+
+
+class RecipeStatus(StrEnum):
+    DRAFT = "draft"
+    READY = "ready"
+
+
 class SessionSurface(StrEnum):
     CONSOLE = "console"
     PORTAL = "portal"
@@ -207,6 +243,12 @@ class XrayStatus(StrEnum):
     PAIRING = "pairing"
     READY = "ready"
     DELIVERED = "delivered"
+
+
+class YieldConfidence(StrEnum):
+    MEDIDO = "medido"
+    DECLARADO = "declarado"
+    ESTIMADO = "estimado"
 
 
 class Account(Row):
@@ -446,6 +488,23 @@ class ContractTerms(Row):
     valid_to: date | None
 
 
+class Contribution(Row):
+    account_id: UUID
+    channel: Channel
+    channel_take_cents: int
+    close_period_id: UUID
+    created_at: datetime
+    id: UUID
+    ingredient_cents: int
+    ingredient_error_pct: Decimal
+    left_cents: int
+    left_pct: Decimal | None
+    menu_item_id: UUID
+    packaging_cents: int
+    price_cents: int
+    updated_at: datetime
+
+
 class Difference(Row):
     account_id: UUID
     amount_cents: int
@@ -564,6 +623,42 @@ class ImportSource(Row):
     updated_at: datetime
 
 
+class Ingredient(Row):
+    base_unit: BaseUnit
+    category: str
+    created_at: datetime
+    gtin: list[str]
+    id: UUID
+    name: str
+    updated_at: datetime
+
+
+class IngredientMatch(Row):
+    account_id: UUID
+    confidence: Decimal | None
+    confirmed_by: UUID | None
+    conversion_factor: Decimal | None
+    created_at: datetime
+    id: UUID
+    ingredient_id: UUID
+    invoice_line_id: UUID
+    method: MatchMethod
+    status: MatchStatus
+    updated_at: datetime
+
+
+class IngredientPrice(Row):
+    account_id: UUID
+    created_at: datetime
+    id: UUID
+    ingredient_id: UUID
+    invoice_line_id: UUID | None
+    observed_on: date
+    price_per_base_unit_cents: Decimal
+    source: PriceSource
+    updated_at: datetime
+
+
 class Invite(Row):
     accepted_at: datetime | None
     account_id: UUID
@@ -577,6 +672,38 @@ class Invite(Row):
     name: str | None
     role: MemberRole
     token_hash: str
+    updated_at: datetime
+
+
+class Invoice(Row):
+    access_key: str
+    account_id: UUID
+    company_id: UUID
+    created_at: datetime
+    id: UUID
+    issued_at: datetime
+    issuer_cnpj: str
+    issuer_name: str | None
+    model: int
+    source: InvoiceSource
+    total_cents: int
+    updated_at: datetime
+    xml_path: str | None
+
+
+class InvoiceLine(Row):
+    account_id: UUID
+    created_at: datetime
+    description: str
+    gtin: str | None
+    id: UUID
+    invoice_id: UUID
+    line_no: int
+    ncm: str | None
+    qty: Decimal
+    total_cents: int
+    unit: str
+    unit_price_cents: int
     updated_at: datetime
 
 
@@ -746,6 +873,16 @@ class OwnerAuthorization(Row):
     updated_at: datetime
 
 
+class PackagingCost(Row):
+    account_id: UUID
+    channel: Channel
+    cost_cents: int
+    created_at: datetime
+    id: UUID
+    menu_item_id: UUID
+    updated_at: datetime
+
+
 class Person(Row):
     auth_user_id: UUID | None
     created_at: datetime
@@ -820,6 +957,29 @@ class PublicStore(Row):
     name: str | None
     updated_at: datetime
     url: str | None
+
+
+class Recipe(Row):
+    account_id: UUID
+    built_by: UUID | None
+    built_on: date | None
+    created_at: datetime
+    id: UUID
+    menu_item_id: UUID
+    status: RecipeStatus
+    updated_at: datetime
+
+
+class RecipeLine(Row):
+    account_id: UUID
+    created_at: datetime
+    id: UUID
+    ingredient_id: UUID
+    qty_base_units: Decimal
+    recipe_id: UUID
+    updated_at: datetime
+    yield_confidence: YieldConfidence
+    yield_pct: Decimal
 
 
 class RuleParam(Row):

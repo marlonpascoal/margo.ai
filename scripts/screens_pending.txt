@@ -11,12 +11,6 @@ P01
 P02
 
 # Wave 1, lane B (M2 from files)
-C07
-C08
-C09
-C16
-C17
-C19
 
 # Wave 2 (owner portal, billing, extension, e-mails)
 P03

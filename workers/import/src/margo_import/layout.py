@@ -361,10 +361,13 @@ def examples(table: Table) -> dict[str, str]:
 
 
 def _display(v: Any) -> str:
-    if isinstance(v, float):
-        return f"{v:.2f}".replace(".", ",")
+    """C17 example cell: numbers as money with a decimal comma, midnight dates without the time."""
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, int | float | Decimal):
+        return f"{Decimal(str(v)):.2f}".replace(".", ",")
     if isinstance(v, datetime):
-        return v.strftime("%d/%m/%Y %H:%M")
+        return v.strftime("%d/%m/%Y" if (v.hour, v.minute) == (0, 0) else "%d/%m/%Y %H:%M")
     return str(v)
 
 

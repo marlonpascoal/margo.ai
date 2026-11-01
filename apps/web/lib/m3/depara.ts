@@ -169,6 +169,59 @@ export async function loadCatalog(db: Db): Promise<CatalogOption[]> {
   return data ?? [];
 }
 
+// Global rules flagged for a founder (D14 step 2, Marlon 31/out) ----------------------------------------
+// A learned global rule only suggests until m3.global_rule_min_accounts accounts agree. When a person picks
+// another ingredient for a line it matches, worker-match flags it (disputed_at): it stays suggest-only and is
+// listed in C11 until a founder marks it reviewed. Global rules carry no account data and no price.
+
+export interface RuleRecord {
+  id: string;
+  keywords: string[];
+  ncm_prefix: string | null;
+  unit: string | null;
+  ingredient: string;
+  disputed_ingredient: string | null;
+  disputed_at: string;
+}
+
+export interface FlaggedRuleRow {
+  id: string;
+  rule: string;
+  ingredient: string;
+  chosen: string;
+}
+
+/** A rule as a founder reads it: "CHED QJO · NCM 04063000 · PC". */
+export function ruleText(r: Pick<RuleRecord, "keywords" | "ncm_prefix" | "unit">): string {
+  return [r.keywords.join(" "), r.ncm_prefix ? `NCM ${r.ncm_prefix}` : null, r.unit].filter(Boolean).join(" · ");
+}
+
+/** C11 "Regras gerais em revisão": newest flag first. */
+export function flaggedRuleRows(rules: RuleRecord[]): FlaggedRuleRow[] {
+  return [...rules]
+    .sort((a, b) => b.disputed_at.localeCompare(a.disputed_at))
+    .map((r) => ({ id: r.id, rule: ruleText(r), ingredient: r.ingredient, chosen: r.disputed_ingredient ?? "outro insumo" }));
+}
+
+export async function loadFlaggedRules(db: Db): Promise<RuleRecord[]> {
+  const { data, error } = await db
+    .from("ingredient_rule")
+    .select("id, keywords, ncm_prefix, unit, disputed_at, ingredient:ingredient!ingredient_rule_ingredient_id_fkey(name), disputed:ingredient!ingredient_rule_disputed_ingredient_id_fkey(name)")
+    .eq("source", "confirmation")
+    .not("disputed_at", "is", null)
+    .limit(500);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    keywords: r.keywords,
+    ncm_prefix: r.ncm_prefix,
+    unit: r.unit,
+    ingredient: r.ingredient.name,
+    disputed_ingredient: r.disputed?.name ?? null,
+    disputed_at: r.disputed_at!,
+  }));
+}
+
 // Writes (audited, A04) -------------------------------------------------------------------------------
 
 export class DeparaRefused extends Error {}
@@ -263,4 +316,24 @@ export async function swapGroup(
     await audit(db, { actor: staffId, accountId: account.id, action: "ingredient_match.swap", entity: "ingredient_match", entityId: done[0], after: { matches: done, ingredient_id: ingredientId, conversion }, meta });
   }
   return done.length;
+}
+
+/** "Revisada": a founder clears the flag of a disputed global rule. It stays suggest-only; worker-match
+ * promotes it again only when m3.global_rule_min_accounts accounts hold it (D14). */
+export async function reviewRule(db: Db, account: M2Account, staffId: string, ruleId: string, meta: Meta): Promise<void> {
+  const before = await db.from("ingredient_rule").select("disputed_at, disputed_ingredient_id").eq("id", ruleId).eq("source", "confirmation").maybeSingle();
+  if (before.error) throw new Error(before.error.message);
+  if (!before.data?.disputed_at) throw new DeparaRefused("Essa regra já foi revisada.");
+  const { error } = await db.from("ingredient_rule").update({ disputed_at: null, disputed_ingredient_id: null }).eq("id", ruleId);
+  if (error) throw new Error(error.message);
+  await audit(db, {
+    actor: staffId,
+    accountId: account.id,
+    action: "ingredient_rule.review",
+    entity: "ingredient_rule",
+    entityId: ruleId,
+    before: before.data,
+    after: { disputed_at: null, disputed_ingredient_id: null },
+    meta,
+  });
 }

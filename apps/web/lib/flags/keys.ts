@@ -1,9 +1,11 @@
 // Feature flag keys and the server setting that picks their environment (04 §6, D34).
 import type { Database } from "@margoai/contracts";
 
-/** The 15 keys of 04 §6, as seeded in supabase/migrations/20261031000003_reference_data.sql. */
+/** The 17 keys of 04 §6, as seeded in supabase/migrations/20261031000003_reference_data.sql,
+ * 20261211000001_m3_custo_flag.sql (m3.custo) and 20261212000001_competitor_xray_limit.sql (m1.concorrente). */
 export const FLAG_KEYS = [
   "m1.raio_x",
+  "m1.concorrente",
   "m2.ifood_api",
   "m2.extensao_chrome",
   "m2.arquivo_99food",
@@ -12,6 +14,7 @@ export const FLAG_KEYS = [
   "m3.notas_xml",
   "m3.nfce_qr_auto",
   "m3.depara_ia",
+  "m3.custo",
   "conta.multi_cozinha",
   "conta.pessoas",
   "bpo.marca_propria",

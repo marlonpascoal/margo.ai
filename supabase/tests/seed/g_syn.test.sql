@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(31);
 
 -- C01: four restaurants in the funnel, all synthetic.
 select results_eq($$ select code || ' ' || name from public.account order by code $$,
@@ -76,10 +76,14 @@ select is((select count(*)::int from public.owner_authorization), 3, 'C14: autho
 select results_eq($$
   select a.code || ' · ' || p.code || ' · ' || s.status || ' · ' || s.units_billed
   from public.subscription s join public.account a on a.id = s.account_id join public.plan p on p.id = s.plan_id order by a.code
-$$, array['G-01 · lucro · trial · 1', 'G-02 · lucro · active · 6', 'G-03 · lucro · trial · 3', 'G-04 · raio_x · free · 2'],
+$$, array['G-01 · lucro · trial · 1', 'G-02 · lucro · active · 5', 'G-03 · lucro · trial · 3', 'G-04 · raio_x · free · 2'],
   'C15: plan, status and active stores per account');
 select is((select sum(s.units_billed * p.price_cents)::bigint from public.subscription s join public.plan p on p.id = s.plan_id
-           where s.status = 'active'), 180000::bigint, 'C15: monthly revenue R$ 1.800 (6 stores x R$ 300)');
+           where s.status = 'active'), 150000::bigint, 'E01 C15: monthly revenue R$ 1.500 (5 billed stores x R$ 300, Marlon 31/out)');
+select is((select s.units_billed from public.subscription s join public.account a on a.id = s.account_id where a.code = 'G-02'),
+  (select count(*)::int from public.channel_store cs join public.kitchen k on k.id = cs.kitchen_id join public.account a on a.id = cs.account_id
+    where a.code = 'G-02' and k.in_analysis),
+  'E01 C15: G-02 units_billed are its channel stores of kitchens in analysis, so the units cron changes nothing');
 select is((select billing_unit::text from public.plan where code = 'lucro'), 'channel_store',
   'G-SYN bills per channel store (decision for the seed, D40 still open)');
 select is((select pct_months_1_2 from public.pilot p join public.account a on a.id = p.account_id where a.code = 'G-03'),

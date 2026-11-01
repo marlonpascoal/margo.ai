@@ -1,8 +1,9 @@
 "use server";
 // C12 writes: a recipe line (quantity, yield) and the packaging of a dish per channel. Staff only, audited (A04);
-// worker-cost recomputes costs and contribution (compute_contribution).
+// worker-cost recomputes costs and contribution (compute_contribution). Flag m3.custo (04 §6).
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireFlag } from "@/lib/flags";
 import { accountByCode } from "@/lib/m2/account";
 import { CHANNEL_ORDER, type Channel } from "@/lib/m2/format";
 import {
@@ -21,6 +22,7 @@ export async function saveLinesAction(form: FormData): Promise<void> {
   const staff = await requireConsole("clients");
   const db = adminClient();
   const account = await accountByCode(db, s(form, "conta"));
+  await requireFlag("m3.custo", account.id);
   const dish = s(form, "prato");
   const back = `/console/contas/${account.code}/fichas?prato=${encodeURIComponent(dish)}`;
   const who = {

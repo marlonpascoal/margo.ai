@@ -8,11 +8,14 @@ Choices where 04 §4 leaves a gap (listed for Marlon in the M3 report):
   - CST-01 "latest": the most recent invoice date; two confirmed prices on the same day, the higher one.
   - CST-04 "combination": the cost-weighted mean of each line's error, where a line's error is its yield
     error (medido, declarado, estimado) plus `m3.regional_prior_error_pct` when its price is CST-02.
-  - CTB-01 "channel take": per order, the channel's share of what it kept in the month's close
-    ((gross - payout) / gross of the channel, so commission, payment fee, delivery, promotion and
-    anticipation), at the 0,1 percentage point P06 prints ("Recebido 74,5%" takes 25,5%).
-  - CTB-01 with a campaign: the price the customer pays (price minus the discount); conservative, as if the
-    store paid the whole discount (DIF-03 shows the channel's share does not always come back).
+  - CTB-01 "channel take" is the three parts 04 §4 names (Marlon, 31/out): commission and payment fee, each
+    as its share of the channel's gross in the month's close (C08 commission and payment columns), at 0,1
+    percentage point; plus the store's share of the promotion. Delivery and anticipation are not in it:
+    04 §4 puts them in no contribution line (REP-03 makes the delivery fee the channel's, outside the dish
+    price), so they reach the owner only through the payout (W01 "sobrou", C08).
+  - CTB-01 with a campaign: the row's price is the menu price; commission on it (REP-01 base is the items),
+    payment fee on what the customer pays (REP-02), and the store's share of the discount as M2 records it,
+    1 - campaign.channel_share_pct (REP-04), so M2 and M3 agree on who pays the coupon.
   - CTB-02: the error bar in centavos (error_pct times ingredient cost) is larger than |left|.
 """
 
@@ -116,23 +119,45 @@ def cst04_error_pct(lines: Sequence[LineCost], params: CostParams) -> Decimal:
     return frac4(weighted / total)
 
 
-def channel_take_rate(gross_cents: int, payout_cents: int) -> Decimal:
-    """CTB-01 channel take rate: (gross - payout) / gross of the channel in the close, at 0,1 point."""
+@dataclass(frozen=True)
+class ChannelShares:
+    """CTB-01 inputs of one channel: commission and payment fee as fractions of its gross in the close."""
+
+    commission_pct: Decimal
+    payment_fee_pct: Decimal
+
+
+def _share(part_cents: int, gross_cents: int) -> Decimal:
+    share = Decimal(abs(part_cents)) / Decimal(gross_cents)
+    return share.quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+
+
+def ctb01_channel_shares(gross_cents: int, commission_cents: int, payment_cents: int) -> ChannelShares:
+    """CTB-01: commission and payment fee shares of the channel's gross (close columns, debits signed or not),
+    each at 0,1 point. Delivery and anticipation are left out (04 §4 lists neither)."""
     if gross_cents == 0:
-        return ZERO
-    return (Decimal(gross_cents - payout_cents) / Decimal(gross_cents)).quantize(
-        Decimal("0.001"), rounding=ROUND_HALF_UP
+        return ChannelShares(ZERO, ZERO)
+    return ChannelShares(_share(commission_cents, gross_cents), _share(payment_cents, gross_cents))
+
+
+def campaign_discount_cents(price_cents: int, discount_pct: Decimal) -> int:
+    """REP-04 discount of one dish under a campaign, in centavos."""
+    return cents(Decimal(price_cents) * discount_pct)
+
+
+def ctb01_channel_take_cents(
+    price_cents: int,
+    shares: ChannelShares,
+    discount_cents: int = 0,
+    channel_share_pct: Decimal = ZERO,
+) -> int:
+    """CTB-01 channel take of one order of the dish: commission on the menu price (REP-01), payment fee on
+    what the customer pays (REP-02) and the store's share, 1 - channel_share_pct, of the discount (REP-04)."""
+    return cents(
+        shares.commission_pct * price_cents
+        + shares.payment_fee_pct * (price_cents - discount_cents)
+        + (1 - channel_share_pct) * discount_cents
     )
-
-
-def channel_take_cents(price_cents: int, rate: Decimal) -> int:
-    """CTB-01: what the channel takes from one order of the dish."""
-    return cents(Decimal(price_cents) * rate)
-
-
-def campaign_price_cents(price_cents: int, discount_pct: Decimal) -> int:
-    """CTB-01 with a campaign: the price after the discount (the store pays it all, conservative)."""
-    return cents(Decimal(price_cents) * (1 - discount_pct))
 
 
 def ctb01_left_cents(

@@ -6,7 +6,7 @@ import type { AuditEntry } from "@/lib/notify/store";
 import type { Db } from "@/lib/supabase/admin";
 import type { BillingEventKind } from "./asaas-parse";
 import { spDate, type BillingUnit, type PlanRow, type SubscriptionStatus } from "./rules";
-import type { AccountRow, BillingStore, InvoiceUpsert, PilotChargeRow, PilotChargeStatus, PilotRow, StoredEvent, SubscriptionPatch, SubscriptionRow } from "./store";
+import type { AccountRow, BillingStore, InvoiceUpsert, PilotChargeKind, PilotChargeRow, PilotChargeStatus, PilotRow, StoredEvent, SubscriptionPatch, SubscriptionRow } from "./store";
 
 function check<T>(res: { data: T; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -52,15 +52,26 @@ export const toPlan = (p: {
   billing_unit: BillingUnit;
   trial_days: number;
   price_is_example: boolean;
-}): PlanRow => ({ id: p.id, code: p.code, name: p.name, priceCents: p.price_cents, billingUnit: p.billing_unit, trialDays: p.trial_days, priceIsExample: p.price_is_example });
+  competitor_xrays_per_month: number;
+}): PlanRow => ({
+  id: p.id,
+  code: p.code,
+  name: p.name,
+  priceCents: p.price_cents,
+  billingUnit: p.billing_unit,
+  trialDays: p.trial_days,
+  priceIsExample: p.price_is_example,
+  competitorXraysPerMonth: p.competitor_xrays_per_month,
+});
 
-export const PLAN_COLUMNS = "id, code, name, price_cents, billing_unit, trial_days, price_is_example";
+export const PLAN_COLUMNS = "id, code, name, price_cents, billing_unit, trial_days, price_is_example, competitor_xrays_per_month";
 
 const PLAN_ORDER = ["raio_x", "lucro", "rede"];
 
 const toCharge = (r: {
   id: string;
   pilot_id: string;
+  kind: string;
   month: string;
   credited_cents: number;
   charge_cents: number;
@@ -69,13 +80,14 @@ const toCharge = (r: {
 }): PilotChargeRow => ({
   id: r.id,
   pilotId: r.pilot_id,
+  kind: r.kind as PilotChargeKind,
   month: r.month,
   creditedCents: r.credited_cents,
   chargeCents: r.charge_cents,
   asaasPaymentId: r.asaas_payment_id,
   status: r.status as PilotChargeStatus | null,
 });
-const CHARGE_COLUMNS = "id, pilot_id, month, credited_cents, charge_cents, asaas_payment_id, status";
+const CHARGE_COLUMNS = "id, pilot_id, kind, month, credited_cents, charge_cents, asaas_payment_id, status";
 
 export class SupabaseBillingStore implements BillingStore {
   private readonly audits: SupabaseNotifyStore;
@@ -159,10 +171,11 @@ export class SupabaseBillingStore implements BillingStore {
     return { name: company.legal_name, cnpj: company.cnpj, email: dono?.person?.email ?? null };
   }
 
-  async hasActiveLock(accountId: string, at: Date) {
-    const { count, error } = await this.db.from("security_lock").select("id", { count: "exact", head: true }).eq("account_id", accountId).gt("until", at.toISOString());
+  /** 04 §8, E04: public.people_lock_until, the lock of this person only (Marlon, 01/nov). */
+  async hasActiveLock(accountId: string, personId: string, at: Date) {
+    const { data, error } = await this.db.rpc("people_lock_until", { p_account: accountId, p_person: personId, p_at: at.toISOString() });
     if (error) throw new Error(error.message);
-    return (count ?? 0) > 0;
+    return data !== null;
   }
 
   async storeEvent(ev: { eventId: string; asaasEvent: string; kind: BillingEventKind; accountId: string | null; payload: unknown }): Promise<StoredEvent> {
@@ -207,7 +220,7 @@ export class SupabaseBillingStore implements BillingStore {
   }
 
   async pilots(): Promise<PilotRow[]> {
-    const rows = must(await this.db.from("pilot").select("id, account_id, pct_months_1_2, cap_cents, fixed_from_day_61_cents, started_on").order("created_at"));
+    const rows = must(await this.db.from("pilot").select("id, account_id, pct_months_1_2, cap_cents, fixed_from_day_61_cents, started_on, created_at").order("created_at"));
     return rows.map((p) => ({
       id: p.id,
       accountId: p.account_id,
@@ -215,6 +228,7 @@ export class SupabaseBillingStore implements BillingStore {
       capCents: p.cap_cents,
       fixedFromDay61Cents: p.fixed_from_day_61_cents,
       startedOn: p.started_on,
+      createdOn: spDate(new Date(p.created_at)),
     }));
   }
 
@@ -235,8 +249,8 @@ export class SupabaseBillingStore implements BillingStore {
       .filter((c) => c.creditedOn >= from && c.creditedOn < to);
   }
 
-  async pilotCharge(pilotId: string, month: string) {
-    const r = check(await this.db.from("pilot_charge").select(CHARGE_COLUMNS).eq("pilot_id", pilotId).eq("month", month).maybeSingle());
+  async pilotCharge(pilotId: string, month: string, kind: PilotChargeKind) {
+    const r = check(await this.db.from("pilot_charge").select(CHARGE_COLUMNS).eq("pilot_id", pilotId).eq("month", month).eq("kind", kind).maybeSingle());
     return r ? toCharge(r) : null;
   }
 
@@ -252,13 +266,14 @@ export class SupabaseBillingStore implements BillingStore {
         .upsert(
           {
             pilot_id: row.pilotId,
+            kind: row.kind,
             month: row.month,
             credited_cents: row.creditedCents,
             charge_cents: row.chargeCents,
             asaas_payment_id: row.asaasPaymentId,
             status: row.status,
           },
-          { onConflict: "pilot_id,month", ignoreDuplicates: true },
+          { onConflict: "pilot_id,month,kind", ignoreDuplicates: true },
         )
         .select("id"),
     );

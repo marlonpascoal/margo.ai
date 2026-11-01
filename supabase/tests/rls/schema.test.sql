@@ -18,7 +18,8 @@ select tables_are('public', array[
   'rule_param', 'import_source', 'import_run', 'column_mapping', 'order_fact', 'order_item_fact', 'ledger_entry',
   'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation',
   'invoice', 'invoice_line', 'ingredient', 'ingredient_match', 'ingredient_price', 'recipe', 'recipe_line',
-  'packaging_cost', 'contribution', 'campaign_item', 'close_cost_line', 'close_decision', 'invoice_import', 'ingredient_rule'
+  'packaging_cost', 'contribution', 'campaign_item', 'close_cost_line', 'close_decision', 'invoice_import', 'ingredient_rule',
+  'ingredient_account_rule'
 ], 'A02: tables of 03 §1 to §5, the login code guard (04 §8), the M1 page cache (D47) and M2 params and evidence');
 
 select is_empty($$
@@ -54,7 +55,7 @@ select results_eq($$ select code from public.plan order by code $$,
   array['lucro', 'raio_x', 'rede'], 'three plans');
 select results_eq($$ select trial_days from public.plan where code = 'lucro' $$,
   array[14], 'trial placeholder of 14 days (D40)');
-select is((select count(*)::int from public.feature_flag), 30, '15 flags in sandbox and production');
+select is((select count(*)::int from public.feature_flag), 34, '17 flags in sandbox and production (m3.custo: 20261211000001, m1.concorrente: 20261212000001)');
 select results_eq($$
   select default_raio_x, default_lucro, default_rede from public.feature_flag
   where key = 'm2.ifood_api' and env = 'production'

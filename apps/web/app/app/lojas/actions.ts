@@ -11,7 +11,7 @@ import { adminClient } from "@/lib/supabase/admin";
 const PATH = "/app/lojas";
 const back = (aviso?: string): never => redirect(aviso ? `${PATH}?aviso=${encodeURIComponent(aviso)}` : PATH);
 
-/** W02 "Na análise" checkbox. Blocked during a security_lock, like plan changes (04 §8). */
+/** W02 "Na análise" checkbox. Blocked during the person's own security_lock, like plan changes (04 §8). */
 export async function setInAnalysisAction(form: FormData): Promise<void> {
   const m = await requirePortal({ action: "choose_kitchens" });
   const db = adminClient();
@@ -20,7 +20,7 @@ export async function setInAnalysisAction(form: FormData): Promise<void> {
   const { data: k } = await db.from("kitchen").select("id, in_analysis").eq("id", kitchenId).eq("account_id", m.account.id).maybeSingle();
   if (!k) back();
   if (k!.in_analysis === on) back();
-  if (await peopleLockUntil(db, m.account.id)) back("Mudanças no plano ficam bloqueadas por 24 horas depois de trocar um contato de login.");
+  if (await peopleLockUntil(db, m.account.id, m.personId)) back("Você trocou um contato de login. Por 24 horas, você não pode mudar o plano.");
   if (on && !(await isEnabled("conta.multi_cozinha", m.account.id))) {
     const { count } = await db.from("kitchen").select("id", { count: "exact", head: true }).eq("account_id", m.account.id).eq("in_analysis", true);
     if ((count ?? 0) >= 1) back("Seu plano analisa uma cozinha. Para incluir mais, mude o plano.");

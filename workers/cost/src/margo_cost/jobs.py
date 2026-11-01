@@ -2,7 +2,7 @@
 
 Payload {"close_period_id": "<uuid>"} recomputes one close; {"account_id": "<uuid>"} (a C12 edit) recomputes
 the recipe costs and the account's latest close. "as_of" (yyyy-mm-dd) fixes the price date; default today in
-São Paulo. No feature flag applies (04 §6 has none for recipes or contribution), so it is not in JOB_FLAGS.
+São Paulo. The runner checks m3.custo for the job's account first (JOB_FLAGS, A05).
 """
 
 from __future__ import annotations

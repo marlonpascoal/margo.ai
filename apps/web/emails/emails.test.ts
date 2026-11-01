@@ -41,6 +41,16 @@ describe("E01 fechamento do mês pronto", () => {
     expect(m.body).toContain("Cobrado errado, para contestar: R$ 1.184");
   });
 
+  it("E01_A05_without_cost_no_sobrou_in_subject_body_or_whatsapp", () => {
+    // m3.custo off (04 §6): no "sobrou R$" anywhere; the drawn row keeps its label and says "falta custo", as W01 does.
+    const c = closeReadyEmail({ accountName: "Grupo Exemplo", month: "2026-09-01", kitchens: 2, channels: ["iFood"], grossCents: 11_100_000, payoutCents: 8_330_000, leftCents: null, wrongCents: 0 });
+    const m = renderEmail(c, dono, { synthetic: false, baseUrl: BASE });
+    expect(m.subject).not.toContain("sobrou");
+    expect(m.whatsapp).not.toContain("sobrou");
+    expect(m.body).toContain("Sobrou depois dos insumos: falta custo");
+    expect(`${m.subject}\n${m.body}\n${m.whatsapp}`).not.toMatch(/sobrou R\$/i);
+  });
+
   it("E01_carries_the_pdf_attachment_path", () => {
     const m = renderEmail(EXAMPLES.close_ready, dono, { synthetic: true, attachmentPath: "closes/G-02/2026-09/fechamento-G-02-2026-09.pdf" });
     expect(m.attachmentPath).toBe("closes/G-02/2026-09/fechamento-G-02-2026-09.pdf");

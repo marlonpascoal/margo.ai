@@ -115,6 +115,11 @@ export async function scopeKitchens(db: Db, m: Pick<Member, "account" | "kitchen
   return (data ?? []).map((k) => ({ id: k.id, name: k.name, inAnalysis: k.in_analysis })).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 }
 
+/** W01 with flag m3.custo off (04 §6): the lines without insumos, so "sobrou" shows "falta custo". */
+export function withoutCost(lines: HomeLine[]): HomeLine[] {
+  return lines.map((l) => ({ ...l, insumos: null }));
+}
+
 /** A03: close lines of one account-level close, only for stores of kitchens in scope (all, with "sem cozinha", when allKitchens). */
 export async function loadHomeLines(db: Db, closeId: string, m: Pick<Member, "allKitchens" | "kitchenIds">): Promise<HomeLine[]> {
   const [{ data, error }, { data: costs, error: costError }] = await Promise.all([

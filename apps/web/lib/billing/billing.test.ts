@@ -8,7 +8,7 @@ import { CHECKOUT_MESSAGES, requestRede, startCheckout } from "./checkout";
 import { FakeAsaasClient } from "./fake-asaas";
 import { FakeBillingStore } from "./fake-store";
 import { runPilotCharges, runTrialEnd, runUnitsSync } from "./jobs";
-import { addMonth, firstDueDate, pilotChargeCents, pilotWindowInMonth, trialDaysLeft, trialReminderDue } from "./rules";
+import { addMonth, firstDueDate, pilotChargeCents, pilotDay61, pilotFixedCycleDue, pilotWindowInMonth, trialDaysLeft, trialReminderDue } from "./rules";
 import { ALERT_TITLES, type BillingDeps } from "./service";
 import { handleAsaasWebhook, tokenMatches } from "./webhook";
 
@@ -50,6 +50,18 @@ describe("rules (04 §7, D37)", () => {
     expect(firstDueDate(sp("2026-11-08T23:59:59"), "trial", sp("2026-10-30T10:00:00"))).toBe("2026-11-08");
     expect(firstDueDate(sp("2026-11-08T23:59:59"), "free", sp("2026-11-20T10:00:00"))).toBe("2026-11-20");
     expect(firstDueDate(null, "free", sp("2026-11-20T23:30:00"))).toBe("2026-11-20");
+  });
+
+  it("E01_pilot_day_61_and_monthly_cycle_from_it", () => {
+    expect(pilotDay61({ startedOn: "2026-10-10", createdOn: "2026-10-01", pct: 0.2, capCents: 0 })).toBe("2026-12-09");
+    expect(pilotDay61({ startedOn: null, createdOn: "2026-09-01", pct: null, capCents: null })).toBe("2026-10-31");
+    // A start date alone is not the terms: pct and cap are open, so day 61 counts from the creation.
+    expect(pilotDay61({ startedOn: "2026-10-10", createdOn: "2026-09-01", pct: null, capCents: null })).toBe("2026-10-31");
+    expect(pilotFixedCycleDue("2026-10-31", "2026-10-30")).toBeNull();
+    expect(pilotFixedCycleDue("2026-10-31", "2026-10-31")).toBe("2026-10-31");
+    expect(pilotFixedCycleDue("2026-10-31", "2026-11-29")).toBe("2026-10-31");
+    expect(pilotFixedCycleDue("2026-10-31", "2026-11-30")).toBe("2026-11-30");
+    expect(pilotFixedCycleDue("2026-10-31", "2026-12-31")).toBe("2026-12-31"); // day of the month kept, not drifting to 30
   });
 
   it("monthly cycle clamps to the month end", () => {
@@ -273,8 +285,16 @@ describe("P09/W05 checkout (06 §4)", () => {
     expect(asaas.checkouts[0].nextDueDate).toBe("2026-11-20");
   });
 
+  it("E04_A03_another_person_lock_does_not_block_the_dono_checkout", async () => {
+    // 04 §8 (Marlon, 01/nov): a Financeiro who changed their e-mail is locked, not the Dono.
+    store.locks.push({ accountId: "g01", personId: "financeiro-g01", until: new Date(now.getTime() + 3600_000) });
+    const r = await startCheckout(deps, actor, "g01", "http://x");
+    store.locks = [];
+    expect(r.ok).toBe(true);
+  });
+
   it("P09_checkout_refused_under_security_lock_without_units_or_when_already_lucro", async () => {
-    store.locks.push({ accountId: "g01", until: new Date(now.getTime() + 3600_000) });
+    store.locks.push({ accountId: "g01", personId: actor.personId, until: new Date(now.getTime() + 3600_000) });
     expect(await startCheckout(deps, actor, "g01", "http://x")).toEqual({ ok: false, message: CHECKOUT_MESSAGES.locked });
     store.locks = [];
     store.units.set("g01", { kitchen: 0, channel_store: 0 });
@@ -320,7 +340,7 @@ describe("units (04 §7, 06 §4)", () => {
 describe("pilot charges (D37)", () => {
   beforeEach(() => {
     store.addAccount({ id: "g03", status: "trial", asaasCustomerId: "cus_g03" });
-    store.pilotRows.push({ id: "pilot-g03", accountId: "g03", pct: 0.2, capCents: 10000, fixedFromDay61Cents: 30000, startedOn: "2026-10-10" });
+    store.pilotRows.push({ id: "pilot-g03", accountId: "g03", pct: 0.2, capCents: 10000, fixedFromDay61Cents: 30000, startedOn: "2026-10-10", createdOn: "2026-10-01" });
     store.credited.set("g03", [
       { amountCents: 23800, creditedOn: "2026-10-20" },
       { amountCents: 1000, creditedOn: "2026-10-05" }, // before the pilot
@@ -345,10 +365,11 @@ describe("pilot charges (D37)", () => {
 
     now = sp("2027-01-02T06:00:00");
     await runPilotCharges(deps);
-    expect(store.charges[2]).toMatchObject({ month: "2026-12-01", creditedCents: 0, chargeCents: 0, status: "no_charge" }); // 12/dez is after day 60
+    const pct = () => store.charges.filter((c) => c.kind === "pct");
+    expect(pct()[2]).toMatchObject({ month: "2026-12-01", creditedCents: 0, chargeCents: 0, status: "no_charge" }); // 12/dez is after day 60
     now = sp("2027-02-02T06:00:00");
     await runPilotCharges(deps);
-    expect(store.charges).toHaveLength(3); // from day 61, the fixed subscription
+    expect(pct()).toHaveLength(3); // from day 61, the fixed monthly charge instead
   });
 
   it("pilot_with_open_values_or_synthetic_account_is_not_charged", async () => {
@@ -369,6 +390,93 @@ describe("pilot charges (D37)", () => {
     expect(notifyStore.alerts.map((a) => a.title)).toEqual([ALERT_TITLES.pilotNotSent]);
     await runPilotCharges(deps);
     expect(asaas.payments).toEqual([]);
+  });
+
+  // Marlon 31/out: pilots charge from day 61. With terms set (pct, cap, start) the pilot's terms apply: day 61
+  // counts from the start and the price is fixed_from_day_61 per unit (plan price when not set).
+  it("E01_pilot_with_terms_charges_its_fixed_price_per_unit_from_day_61_of_its_start", async () => {
+    store.units.set("g03", { kitchen: 2, channel_store: 2 });
+    now = sp("2026-12-08T06:00:00"); // day 60
+    expect((await runPilotCharges(deps)).fixedCharged).toEqual([]);
+    now = sp("2026-12-09T06:00:00"); // day 61
+    expect((await runPilotCharges(deps)).fixedCharged).toEqual(["g03"]);
+    const fixed = () => store.charges.filter((c) => c.kind === "fixed");
+    expect(fixed()).toEqual([expect.objectContaining({ month: "2026-12-01", chargeCents: 60000, creditedCents: 0, status: "charged" })]);
+    expect(asaas.payments.at(-1)).toMatchObject({ customerId: "cus_g03", valueCents: 60000, dueDate: "2026-12-09", externalReference: `pilot_charge:${fixed()[0].id}` });
+    expect(store.audits.map((a) => a.action)).toContain("pilot_charge.fixed");
+    await runPilotCharges(deps); // same day again
+    now = sp("2026-12-30T06:00:00");
+    await runPilotCharges(deps); // same cycle
+    expect(fixed()).toHaveLength(1);
+    now = sp("2027-01-09T06:00:00"); // next cycle, same day of the month
+    await runPilotCharges(deps);
+    expect(fixed().map((c) => c.month)).toEqual(["2026-12-01", "2027-01-01"]);
+  });
+
+  it("E01_pilot_with_terms_and_no_fixed_price_uses_the_plan_price", async () => {
+    store.pilotRows[0].fixedFromDay61Cents = null;
+    store.planRows.find((p) => p.code === "lucro")!.priceCents = 35000;
+    now = sp("2026-12-09T06:00:00");
+    await runPilotCharges(deps);
+    expect(store.charges.find((c) => c.kind === "fixed")).toMatchObject({ chargeCents: 35000 });
+  });
+
+  // Without terms the pilot converts to the plan price on day 61 counted from the pilot's creation.
+  it("E01_pilot_without_terms_converts_to_the_plan_price_on_day_61", async () => {
+    Object.assign(store.pilotRows[0], { pct: null, capCents: null, startedOn: null, fixedFromDay61Cents: 50000, createdOn: "2026-09-01" });
+    store.units.set("g03", { kitchen: 3, channel_store: 3 });
+    now = sp("2026-10-30T06:00:00"); // day 60
+    const before = await runPilotCharges(deps);
+    expect(before.skippedOpenValues).toEqual(["g03"]); // no percentage charge
+    expect(before.fixedCharged).toEqual([]);
+    now = sp("2026-10-31T06:00:00"); // day 61
+    expect((await runPilotCharges(deps)).fixedCharged).toEqual(["g03"]);
+    // The founder's fixed price is not a term set: the plan price applies (R$ 300 x 3).
+    expect(store.charges).toEqual([expect.objectContaining({ kind: "fixed", month: "2026-10-01", chargeCents: 90000, status: "charged" })]);
+    now = sp("2026-11-30T06:00:00"); // 31/out + 1 month, clamped
+    await runPilotCharges(deps);
+    expect(store.charges.map((c) => c.month)).toEqual(["2026-10-01", "2026-11-01"]);
+  });
+
+  it("E01_pilot_fixed_charge_failure_raises_an_alert_and_is_never_resent", async () => {
+    now = sp("2026-12-09T06:00:00");
+    store.credited.set("g03", []); // no percentage charge this run, so the failing call is the fixed one
+    asaas.failNext.createPayment = true;
+    expect((await runPilotCharges(deps)).failed).toEqual(["g03"]);
+    expect(store.charges.find((c) => c.kind === "fixed")!.status).toBe("pending");
+    expect(notifyStore.alerts.map((a) => a.title)).toEqual([ALERT_TITLES.pilotNotSent]);
+    const payments = asaas.payments.length;
+    now = sp("2026-12-10T06:00:00");
+    await runPilotCharges(deps);
+    expect(asaas.payments).toHaveLength(payments);
+  });
+
+  it("E01_pilot_fixed_charge_skips_synthetic_accounts_accounts_with_their_own_subscription_and_zero_units", async () => {
+    now = sp("2026-12-09T06:00:00");
+    store.accounts[0].isSynthetic = true;
+    await runPilotCharges(deps);
+    expect(store.charges.filter((c) => c.kind === "fixed")).toEqual([]);
+    store.accounts[0].isSynthetic = false;
+    store.sub("g03").asaasSubscriptionId = "sub_g03";
+    store.sub("g03").status = "active";
+    await runPilotCharges(deps);
+    expect(store.charges.filter((c) => c.kind === "fixed")).toEqual([]);
+    store.sub("g03").asaasSubscriptionId = null;
+    store.sub("g03").status = "trial";
+    store.units.set("g03", { kitchen: 0, channel_store: 0 });
+    expect((await runPilotCharges(deps)).noCharge).toEqual(["g03"]);
+    expect(store.charges.find((c) => c.kind === "fixed")).toMatchObject({ chargeCents: 0, status: "no_charge" });
+  });
+
+  it("E01_pilot_fixed_charge_result_reaches_the_dono_as_billing_result", async () => {
+    now = sp("2026-12-09T06:00:00");
+    await runPilotCharges(deps);
+    const charge = store.charges.find((c) => c.kind === "fixed")!;
+    const r = await deliver(event({ eventId: "evt_f", customerId: "cus_g03", subscriptionId: null, paymentId: charge.asaasPaymentId!, valueCents: 30000, externalReference: `pilot_charge:${charge.id}` }));
+    expect(r.outcome).toBe("applied");
+    expect(store.charges.find((c) => c.id === charge.id)!.status).toBe("paid");
+    expect(notices("billing_result").map((n) => n.subject)).toEqual(["Cobrança aprovada"]);
+    expect(notices("billing_result")[0].body).toContain("plano Lucro, piloto a partir do dia 61");
   });
 
   it("pilot_payment_webhook_updates_the_charge_not_the_subscription", async () => {

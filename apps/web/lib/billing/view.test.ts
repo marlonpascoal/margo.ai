@@ -36,7 +36,8 @@ describe("P09/W05", () => {
     const lucro = FAKE_PLANS[1];
     expect(lucroCalc(lucro, 2)).toBe("2 cozinhas na análise = R$ 600/mês");
     expect(lucroCalc(lucro, 1)).toBe("1 cozinha na análise = R$ 300/mês");
-    expect(lucroCalc({ ...lucro, billingUnit: "channel_store" }, 6)).toBe("6 lojas na análise = R$ 1.800/mês");
+    // G-02 on the seed: 5 stores of kitchens in analysis (D40, Marlon 31/out).
+    expect(lucroCalc({ ...lucro, billingUnit: "channel_store" }, 5)).toBe("5 lojas na análise = R$ 1.500/mês");
   });
 
   it("P09_W05_trial_as_drawn", () => {
@@ -93,24 +94,25 @@ describe("C15", () => {
     sub({ accountId: "g04", planId: "plan-raio_x", status: "free", unitsBilled: 2 }),
     sub({ accountId: "g03", status: "trial", asaasCustomerId: "cus_0000000b4e", unitsBilled: 3, lastEvent: "aviso de fim enviado", lastEventAt: sp("2026-10-28T09:00:00") }),
     sub({ accountId: "g01", status: "trial", asaasCustomerId: "cus_000000077c2", unitsBilled: 1, lastEvent: "conta criada", lastEventAt: sp("2026-10-25T10:00:00") }),
-    sub({ accountId: "g02", status: "active", asaasCustomerId: "cus_000000g02c", asaasSubscriptionId: "sub_00000000a91f", nextDueOn: "2026-11-05", unitsBilled: 6, lastEvent: "pagamento confirmado", lastEventAt: sp("2026-10-05T09:00:00") }),
+    sub({ accountId: "g02", status: "active", asaasCustomerId: "cus_000000g02c", asaasSubscriptionId: "sub_00000000a91f", nextDueOn: "2026-11-05", unitsBilled: 5, lastEvent: "pagamento confirmado", lastEventAt: sp("2026-10-05T09:00:00") }),
   ];
 
-  it("C15_kpis_and_table_as_drawn_on_30_out", () => {
+  // As drawn, except G-02 bills 5 stores (R$ 1.500), not the drawn 6 (R$ 1.800): D40, Marlon 31/out.
+  it("E01_C15_kpis_and_table_as_drawn_on_30_out_with_billed_stores", () => {
     const v = buildC15View({
       plans,
       accounts,
       subs,
-      pilots: [{ id: "p1", accountId: "g03", pct: 0.2, capCents: null, fixedFromDay61Cents: null, startedOn: null }],
+      pilots: [{ id: "p1", accountId: "g03", pct: 0.2, capCents: null, fixedFromDay61Cents: null, startedOn: null, createdOn: "2026-10-28" }],
       credited: new Map([["g03", [{ amountCents: 23800, creditedOn: "2026-10-20" }]]]),
       asaas: { baseUrl: ASAAS_SANDBOX_URL, apiKey: null },
       now: sp("2026-10-30T10:00:00"),
     });
-    expect(v.kpis).toEqual({ trial: 2, trialDays: 14, paying: 1, revenue: "R$ 1.800", pastDue: 0 });
+    expect(v.kpis).toEqual({ trial: 2, trialDays: 14, paying: 1, revenue: "R$ 1.500", pastDue: 0 });
     expect(v.unit).toBe("loja");
     expect(v.labels).toEqual(["dados fictícios", "Asaas sandbox"]);
     expect(v.rows.map((r) => [r.account, r.plan, r.units, r.status, r.next, r.asaas, r.lastEvent])).toEqual([
-      ["Grupo Exemplo (G-02)", "Lucro", "6", "ativa", "05/nov · R$ 1.800", "sub_…a91f", "pagamento confirmado 05/out"],
+      ["Grupo Exemplo (G-02)", "Lucro", "5", "ativa", "05/nov · R$ 1.500", "sub_…a91f", "pagamento confirmado 05/out"],
       ["Pantanos Burguer (G-01)", "Lucro (teste)", "1", "teste: faltam 9 dias", "sem cartão ainda", "cus_…77c2", "conta criada 25/out"],
       ["Grupo B (G-03)", "Lucro (teste)", "3", "teste: faltam 2 dias", "sem cartão ainda", "cus_…0b4e", "aviso de fim enviado 28/out"],
       ["Grupo C (G-04)", "Raio-X", "2", "grátis", "não cobra", "", ""],

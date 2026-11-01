@@ -13,7 +13,7 @@ export type CheckoutResult = { ok: true; url: string } | { ok: false; message: s
 
 /** Not drawn; short, in the drawings' voice. */
 export const CHECKOUT_MESSAGES = {
-  locked: "Mudanças de plano ficam bloqueadas por 24 horas depois de uma troca de contato.",
+  locked: "Você trocou um contato de login. Por 24 horas, você não pode mudar o plano.",
   alreadyLucro: "Sua conta já tem o plano Lucro.",
   noUnits: (word: string) => `Escolha ao menos uma ${word} para a análise antes de assinar.`,
   noCompany: "Cadastre o CNPJ da empresa antes de assinar.",
@@ -35,7 +35,7 @@ export function returnUrls(origin: string) {
 export async function startCheckout(deps: BillingDeps, actor: OwnerActor, accountId: string, origin: string): Promise<CheckoutResult> {
   const { store } = deps;
   const now = deps.now();
-  if (await store.hasActiveLock(accountId, now)) return { ok: false, message: CHECKOUT_MESSAGES.locked };
+  if (await store.hasActiveLock(accountId, actor.personId, now)) return { ok: false, message: CHECKOUT_MESSAGES.locked };
   const sub = await store.subscription(accountId);
   const account = await store.account(accountId);
   if (!sub || !account) throw new Error(`account ${accountId} has no subscription`);

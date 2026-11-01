@@ -1,9 +1,10 @@
 """D14 step 3: ingredient suggestions from the Claude API (06 §6), behind the `Suggester` interface.
 
-Only what a fiscal item line says goes out: description, NCM and unit, plus the catalog names. Never the
-restaurant, its CNPJ, the supplier or any person (06 §6, D14; supplier name and price are left out too, the
-most conservative reading). The answer is a suggestion with a confidence; it is stored as `suggested` and
-counts in no cost until a founder confirms it in C11 (D02).
+What goes out (06 §6, D14; Marlon, 31/out): the supplier name, the item description, NCM and unit, and the
+unit price, plus the catalog names. The supplier name only when the issuer is a company (14-digit CNPJ) and
+the name carries no CPF (an MEI name is a person's name); an individual (CPF) issuer goes with no supplier
+name. Never the restaurant, any CNPJ or CPF, or a person. The answer is a suggestion with a confidence; it is
+stored as `suggested` and counts in no cost until a founder confirms it in C11 (D02).
 
 Tests use a fake `Suggester`; no test calls the API or replays invented responses (06, D40). The real client
 reads ANTHROPIC_API_KEY from the environment by name (Maritime env, D44). `fixtures/anthropic/README.md`
@@ -14,9 +15,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Any, Protocol
 
 from .matching import CatalogItem
@@ -28,6 +30,7 @@ BATCH_SIZE = 25
 SYSTEM = (
     "Você mapeia itens de notas fiscais de compra de restaurantes para insumos de um catálogo. "
     "Para cada item, escolha o insumo do catálogo que é o mesmo produto, ou nenhum quando não houver. "
+    "O fornecedor e o preço unitário (em reais, por unidade da nota) ajudam a reconhecer o produto. "
     "Use exatamente o nome do catálogo. A confiança vai de 0 a 1. "
     "Quando a descrição disser o tamanho da embalagem, informe quantas unidades base do insumo "
     "(g, ml ou un) cabem em uma unidade da nota; senão, null."
@@ -58,12 +61,43 @@ OUTPUT_SCHEMA: dict[str, Any] = {
 
 @dataclass(frozen=True)
 class AiLine:
-    """One distinct line text sent to the model; `ref` is a local index, never a database id."""
+    """One distinct line text sent to the model; `ref` is a local index, never a database id.
+
+    `supplier` comes from `supplier_for_prompt`, `unit_price` from `unit_price_text`; None sends null."""
 
     ref: str
     description: str
     ncm: str | None
     unit: str
+    supplier: str | None = None
+    unit_price: str | None = None
+
+
+_CPF_IN_TEXT = re.compile(r"\d{3}\.?\d{3}\.?\d{3}-?\d{2}")
+
+
+def supplier_for_prompt(issuer_cnpj: str | None, issuer_name: str | None) -> str | None:
+    """D14: the supplier name sent to the model, or None. Only a company issuer (14-digit CNPJ) whose name has
+    no CPF in it (MEI names are a person's name followed by the CPF); a CPF issuer is a person: no name."""
+    if not issuer_cnpj or not re.fullmatch(r"\d{14}", issuer_cnpj):
+        return None
+    name = " ".join((issuer_name or "").split())
+    if not name or _CPF_IN_TEXT.search(name) or re.search(r"\d{11,}", re.sub(r"[.\-/ ]", "", name)):
+        return None
+    return name
+
+
+def unit_price_text(total_cents: int | None, qty: Decimal | None, unit: str) -> str | None:
+    """D14: the line's unit price in reais as a decimal string with the invoice unit, "118.27 R$/PC".
+
+    Derived from integer centavos as total_cents / qty (not the rounded unit_price_cents), kept to four
+    decimals of reais when it is not a whole centavo, never fewer than two."""
+    if total_cents is None or qty is None or qty <= 0:
+        return None
+    reais = (Decimal(total_cents) / Decimal(qty) / 100).quantize(Decimal("0.0001"), rounding=ROUND_HALF_EVEN)
+    if reais == reais.quantize(Decimal("0.01")):
+        reais = reais.quantize(Decimal("0.01"))
+    return f"{reais} R$/{unit}"
 
 
 @dataclass(frozen=True)
@@ -79,11 +113,19 @@ class Suggester(Protocol):
 
 
 def build_request(lines: Sequence[AiLine], catalog: Sequence[CatalogItem], model: str) -> dict[str, Any]:
-    """Messages API arguments. Only line text, NCM, unit and catalog names (06 §6)."""
+    """Messages API arguments: supplier name, line text, NCM, unit, unit price and catalog names (06 §6)."""
     payload = {
         "catalogo": [{"nome": c.name, "categoria": c.category, "unidade_base": c.base_unit} for c in catalog],
         "itens": [
-            {"ref": li.ref, "descricao": li.description, "ncm": li.ncm, "unidade": li.unit} for li in lines
+            {
+                "ref": li.ref,
+                "descricao": li.description,
+                "ncm": li.ncm,
+                "unidade": li.unit,
+                "fornecedor": li.supplier,
+                "preco_unitario": li.unit_price,
+            }
+            for li in lines
         ],
     }
     return {

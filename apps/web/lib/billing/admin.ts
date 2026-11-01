@@ -19,6 +19,7 @@ export const ADMIN_MESSAGES = {
   forbidden: "Só o papel Fundador muda planos e pilotos.",
   price: "Preço inválido. Use reais, por exemplo 300 ou 300,00.",
   trialDays: "Dias de teste: um número de 0 a 90.",
+  competitorXrays: "Raio-X de concorrente por mês: um número de 0 a 99.",
   pct: "Percentual inválido. Use, por exemplo, 20%.",
   cap: "Teto inválido. Use reais, por exemplo 500.",
   fixed: "Valor a partir do mês 3 inválido. Use reais, por exemplo 300.",
@@ -62,23 +63,33 @@ export interface PlanEdit {
   billingUnit: string;
   trialDays: string;
   priceIsExample: boolean;
+  /** B01 competitor X-rays per month (Marlon, 31/out); absent keeps the current value. */
+  competitorXrays?: string;
 }
 
-/** C15 plan editor (D40): price, trial days, billing unit and the "preços de exemplo" mark are data. */
+/** C15 plan editor (D40): price, trial days, billing unit, the "preços de exemplo" mark and the monthly
+ * competitor X-ray limit (31/out) are data. */
 export async function updatePlan(db: Db, actor: StaffActor, edit: PlanEdit): Promise<AdminResult> {
   if (!(await isFundador(db, actor.personId))) return { ok: false, message: ADMIN_MESSAGES.forbidden };
   const price = parseMoney(edit.price);
   if (price === undefined) return { ok: false, message: ADMIN_MESSAGES.price };
   const trialDays = Number(edit.trialDays);
   if (!/^\d{1,2}$/.test(edit.trialDays.trim()) || trialDays > 90) return { ok: false, message: ADMIN_MESSAGES.trialDays };
+  const competitorText = edit.competitorXrays?.trim();
+  if (competitorText !== undefined && !/^\d{1,2}$/.test(competitorText)) return { ok: false, message: ADMIN_MESSAGES.competitorXrays };
   const unit: BillingUnit = edit.billingUnit === "channel_store" ? "channel_store" : "kitchen";
   const { data: row, error } = await db.from("plan").select(PLAN_COLUMNS).eq("id", edit.planId).maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return { ok: false, message: ADMIN_MESSAGES.notFound };
   const before = toPlan(row);
-  const after = { price_cents: price, billing_unit: unit, trial_days: trialDays, price_is_example: edit.priceIsExample };
+  const competitor = competitorText === undefined ? before.competitorXraysPerMonth : Number(competitorText);
+  const after = { price_cents: price, billing_unit: unit, trial_days: trialDays, price_is_example: edit.priceIsExample, competitor_xrays_per_month: competitor };
   const same =
-    before.priceCents === price && before.billingUnit === unit && before.trialDays === trialDays && before.priceIsExample === edit.priceIsExample;
+    before.priceCents === price &&
+    before.billingUnit === unit &&
+    before.trialDays === trialDays &&
+    before.priceIsExample === edit.priceIsExample &&
+    before.competitorXraysPerMonth === competitor;
   if (same) return { ok: true };
   const upd = await db.from("plan").update(after).eq("id", edit.planId);
   if (upd.error) throw new Error(upd.error.message);
@@ -89,7 +100,13 @@ export async function updatePlan(db: Db, actor: StaffActor, edit: PlanEdit): Pro
     "plan.update",
     "plan",
     edit.planId,
-    { price_cents: before.priceCents, billing_unit: before.billingUnit, trial_days: before.trialDays, price_is_example: before.priceIsExample },
+    {
+      price_cents: before.priceCents,
+      billing_unit: before.billingUnit,
+      trial_days: before.trialDays,
+      price_is_example: before.priceIsExample,
+      competitor_xrays_per_month: before.competitorXraysPerMonth,
+    },
     after,
   );
   return { ok: true };

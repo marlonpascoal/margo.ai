@@ -4,6 +4,12 @@ Order (D14): 1. GTIN present and in the catalog; 2. a rule (normalized text toke
 3. an AI suggestion for what is left (margo_match.ai). GTIN and rule matches are confirmed without a person
 ("casado sem mão"); an AI suggestion stays `suggested` until a founder confirms it in C11 and never enters a
 cost before that (D02).
+
+Rules come in three scopes (D14, Marlon 31/out): `account` rules, learned from a person's confirmation in
+that account, auto-confirm there and win over every global rule there; `catalog` rules (seeded) always
+auto-confirm; `global` rules learned from confirmations auto-confirm only once enough accounts agreed
+(`auto`), else they only suggest. Two rules of the deciding scope that name different ingredients confirm
+nothing: the line goes to C11 as a suggestion to review.
 """
 
 from __future__ import annotations
@@ -78,6 +84,8 @@ class Rule:
     keywords: tuple[str, ...]
     ncm_prefix: str | None = None
     unit: str | None = None
+    scope: str = "catalog"  # catalog, global (learned) or account
+    auto: bool = True  # False: a learned global rule below m3.global_rule_min_accounts, or disputed
 
     def matches(self, line: LineIn) -> bool:
         words = set(tokens(line.description))
@@ -104,6 +112,11 @@ class LineIn:
     ncm: str | None
     gtin: str | None
     unit: str
+    # For the AI step only (D14): the invoice issuer and the line amounts. Never used by GTIN or rules.
+    issuer_cnpj: str | None = None
+    issuer_name: str | None = None
+    qty: Decimal | None = None
+    total_cents: int | None = None
 
 
 @dataclass(frozen=True)
@@ -114,6 +127,11 @@ class Match:
     conversion_factor: Decimal | None
     rule_note: str | None = None
     confidence: Decimal | None = None
+    suggest_only: bool = False  # D14: a rule match that waits for a person in C11 (no price until then)
+
+
+GLOBAL_SUGGESTION_NOTE = "sugestão da regra geral"
+CONFLICT_NOTE = "conflito entre regras, revisar"
 
 
 def match_gtin(line: LineIn, catalog: list[CatalogItem]) -> CatalogItem | None:
@@ -123,20 +141,22 @@ def match_gtin(line: LineIn, catalog: list[CatalogItem]) -> CatalogItem | None:
     return hits[0] if len(hits) == 1 else None
 
 
-def match_rule(line: LineIn, rules: list[Rule]) -> Rule | None:
-    """The most specific rule that matches; a tie between different ingredients is no match."""
+def _weight(r: Rule) -> tuple[int, int, int]:
+    return (len(r.keywords), len(r.ncm_prefix or ""), 1 if r.unit else 0)
+
+
+def match_rule(line: LineIn, rules: list[Rule]) -> tuple[Rule, bool] | None:
+    """D14 step 2: the rule that decides the line and whether its scope disagrees.
+
+    Account rules decide alone when any matches (they win over global rules in their account); otherwise the
+    catalog and global rules decide. Within the deciding scope, rules naming different ingredients are a
+    conflict: (most specific rule, True), and nothing is confirmed."""
     hits = [r for r in rules if r.matches(line)]
     if not hits:
         return None
-
-    def weight(r: Rule) -> tuple[int, int, int]:
-        return (len(r.keywords), len(r.ncm_prefix or ""), 1 if r.unit else 0)
-
-    best = max(weight(r) for r in hits)
-    top = {r.ingredient_id for r in hits if weight(r) == best}
-    if len(top) != 1:
-        return None
-    return next(r for r in hits if weight(r) == best)
+    tier = [r for r in hits if r.scope == "account"] or hits
+    best = max(tier, key=lambda r: (_weight(r), r.ingredient_id))
+    return best, len({r.ingredient_id for r in tier}) > 1
 
 
 def auto_match(line: LineIn, catalog: list[CatalogItem], rules: list[Rule]) -> Match | None:
@@ -145,17 +165,26 @@ def auto_match(line: LineIn, catalog: list[CatalogItem], rules: list[Rule]) -> M
     hit = match_gtin(line, catalog)
     if hit is not None:
         return Match(line.id, hit.id, "gtin", conversion_factor(line.description, line.unit, hit.base_unit))
-    rule = match_rule(line, rules)
-    if rule is not None and rule.ingredient_id in by_id:
-        base = by_id[rule.ingredient_id].base_unit
+    decided = match_rule(line, rules)
+    if decided is None:
+        return None
+    rule, conflict = decided
+    if rule.ingredient_id not in by_id:
+        return None
+    conv = conversion_factor(line.description, line.unit, by_id[rule.ingredient_id].base_unit)
+    if conflict:
+        return Match(line.id, rule.ingredient_id, "rule", conv, CONFLICT_NOTE, suggest_only=True)
+    agreeing = [r for r in rules if r.matches(line) and r.ingredient_id == rule.ingredient_id]
+    if rule.scope != "account" and not any(r.auto for r in agreeing if r.scope != "account"):
         return Match(
             line.id,
             rule.ingredient_id,
             "rule",
-            conversion_factor(line.description, line.unit, base),
-            rule.note,
+            conv,
+            f"{rule.note}, {GLOBAL_SUGGESTION_NOTE}",
+            suggest_only=True,
         )
-    return None
+    return Match(line.id, rule.ingredient_id, "rule", conv, rule.note)
 
 
 def learned_rule(description: str, ncm: str | None, unit: str, ingredient_id: str) -> Rule:

@@ -1,6 +1,6 @@
 // Pure parts of C10, C11 and P05, against the drawn values (design/C10-Notas, C11-Depara, P05-WhatsNota).
 import { describe, expect, it } from "vitest";
-import { deparaRows, howLabel, spendShares, type LineRecord, type MatchRecord } from "./depara";
+import { deparaRows, flaggedRuleRows, howLabel, ruleText, spendShares, type LineRecord, type MatchRecord } from "./depara";
 import { linePricePerBase, unitPriceLabel } from "./format";
 import { keyCheckDigit, keyFromInput, keyIssuer, keyModel, keyValid } from "./keys";
 import { coverage, missingLine, parseReais, zipStatsLines, type TopIngredient } from "./notas";
@@ -152,6 +152,31 @@ describe("C11 de-para", () => {
   it("C11_how_labels", () => {
     expect(howLabel({ method: "rule", rule_note: "texto + unidade" })).toBe("regra: texto + unidade");
     expect(howLabel({ method: "manual", rule_note: null })).toBe("escolhido no console");
+  });
+
+  it("D02_C11_global_rule_suggestion_and_rule_conflict_wait_for_a_person", () => {
+    const rows = deparaRows([
+      l("7", "TQ XCHED 2,27KG", "PC", 2, 23654, [m({ ingredient: "Queijo cheddar fatiado", status: "suggested", conversion_factor: 2270, rule_note: "texto + NCM 0406, sugestão da regra geral" })]),
+      l("8", "TQ XPRATO", "KG", 1, 4000, [m({ ingredient: "Queijo prato", status: "suggested", rule_note: "conflito entre regras, revisar" })]),
+    ]);
+    expect(rows.map((r) => [r.description, r.how, r.state])).toEqual([
+      ["TQ XCHED 2,27KG", "regra: texto + NCM 0406, sugestão da regra geral", "suggested"],
+      ["TQ XPRATO", "regra: conflito entre regras, revisar", "suggested"],
+    ]);
+  });
+
+  it("D14_C11_flagged_global_rules_for_a_founder", () => {
+    expect(ruleText({ keywords: ["CHED", "QJO"], ncm_prefix: "04063000", unit: "PC" })).toBe("CHED QJO · NCM 04063000 · PC");
+    expect(ruleText({ keywords: ["GAS"], ncm_prefix: null, unit: null })).toBe("GAS");
+    const rows = flaggedRuleRows([
+      { id: "r1", keywords: ["CHED", "QJO"], ncm_prefix: "04063000", unit: "PC", ingredient: "Queijo cheddar fatiado", disputed_ingredient: "Queijo prato", disputed_at: "2026-11-02T10:00:00-03:00" },
+      { id: "r2", keywords: ["GAS"], ncm_prefix: null, unit: null, ingredient: "Gás", disputed_ingredient: null, disputed_at: "2026-11-03T10:00:00-03:00" },
+    ]);
+    expect(rows.map((r) => [r.id, r.rule, r.ingredient, r.chosen])).toEqual([
+      ["r2", "GAS", "Gás", "outro insumo"],
+      ["r1", "CHED QJO · NCM 04063000 · PC", "Queijo cheddar fatiado", "Queijo prato"],
+    ]);
+    expect(rows.flatMap((r) => [r.rule, r.chosen]).join(" ")).not.toMatch(/\u2014/);
   });
 
   it("CST01_line_price_per_base_unit", () => {

@@ -51,13 +51,19 @@ export interface PilotRow {
   capCents: number | null;
   fixedFromDay61Cents: number | null;
   startedOn: string | null;
+  /** yyyy-mm-dd (São Paulo) the pilot was created: day 61 counts from here when the terms are open. */
+  createdOn: string;
 }
 
 export type PilotChargeStatus = "pending" | "charged" | "no_charge" | "paid" | "refused";
 
+/** pct: share of the credited amount in days 1 to 60. fixed: monthly charge from day 61 (Marlon 31/out). */
+export type PilotChargeKind = "pct" | "fixed";
+
 export interface PilotChargeRow {
   id: string;
   pilotId: string;
+  kind: PilotChargeKind;
   month: string;
   creditedCents: number;
   chargeCents: number;
@@ -90,8 +96,8 @@ export interface BillingStore {
 
   /** The first CNPJ of the account and the Dono's e-mail, for the Asaas customer (06 §4). */
   customerData(accountId: string): Promise<{ name: string; cnpj: string; email: string | null } | null>;
-  /** 04 §8: a security lock in force blocks plan changes. */
-  hasActiveLock(accountId: string, at: Date): Promise<boolean>;
+  /** 04 §8: the person's own security lock in force blocks their plan changes (not the whole account's). */
+  hasActiveLock(accountId: string, personId: string, at: Date): Promise<boolean>;
 
   /** Stores a raw webhook; a replay (same Asaas event id) returns inserted false and changes nothing. */
   storeEvent(ev: { eventId: string; asaasEvent: string; kind: BillingEventKind; accountId: string | null; payload: unknown }): Promise<StoredEvent>;
@@ -103,9 +109,9 @@ export interface BillingStore {
 
   pilots(): Promise<PilotRow[]>;
   creditedItems(accountId: string, from: string, to: string): Promise<CreditedItem[]>;
-  pilotCharge(pilotId: string, month: string): Promise<PilotChargeRow | null>;
+  pilotCharge(pilotId: string, month: string, kind: PilotChargeKind): Promise<PilotChargeRow | null>;
   pilotChargeById(id: string): Promise<PilotChargeRow | null>;
-  /** Inserts the month's row; null when it already exists (unique pilot_id, month). */
+  /** Inserts the month's row; null when it already exists (unique pilot_id, month, kind). */
   insertPilotCharge(row: Omit<PilotChargeRow, "id">): Promise<string | null>;
   updatePilotCharge(id: string, patch: Partial<Pick<PilotChargeRow, "asaasPaymentId" | "status">>): Promise<void>;
 

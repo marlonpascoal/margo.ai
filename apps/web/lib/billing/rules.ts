@@ -16,6 +16,8 @@ export interface PlanRow {
   billingUnit: BillingUnit;
   trialDays: number;
   priceIsExample: boolean;
+  /** B01 competitor X-rays per São Paulo month (m1.concorrente, migration 20261212000001). */
+  competitorXraysPerMonth: number;
 }
 
 /** yyyy-mm-dd of an instant in São Paulo. */
@@ -109,6 +111,36 @@ export function pilotWindowInMonth(startedOn: string, month: string): { from: st
 export function pilotChargeCents(creditedCents: number, pct: number, capCents: number | null): number {
   const raw = Math.round(creditedCents * pct);
   return capCents === null ? raw : Math.min(raw, capCents);
+}
+
+/** D37: the pilot terms a founder sets in C15. A start alone is not enough: percentage and cap too. */
+export const pilotTermsSet = (p: { pct: number | null; capCents: number | null; startedOn: string | null }) =>
+  p.pct !== null && p.capCents !== null && p.startedOn !== null;
+
+/**
+ * Marlon 31/out (04 §7, D37): pilots charge from day 61. With terms set, day 61 counts from the pilot start;
+ * without, from the day the pilot was created.
+ */
+export function pilotDay61(p: { pct: number | null; capCents: number | null; startedOn: string | null; createdOn: string }): string {
+  return addDays(pilotTermsSet(p) && p.startedOn ? p.startedOn : p.createdOn, PILOT_PERCENT_DAYS);
+}
+
+/** Same day of the month `k` months later, clamped to the month's last day (no drift after a short month). */
+export function addMonths(isoDay: string, k: number): string {
+  const y = Number(isoDay.slice(0, 4));
+  const m0 = Number(isoDay.slice(5, 7)) - 1 + k;
+  const ny = y + Math.floor(m0 / 12);
+  const nm = (m0 % 12) + 1;
+  const last = new Date(Date.UTC(ny, nm, 0)).getUTCDate();
+  return `${ny}-${String(nm).padStart(2, "0")}-${String(Math.min(Number(isoDay.slice(8, 10)), last)).padStart(2, "0")}`;
+}
+
+/** The due day of the fixed monthly cycle that `today` falls in (day 61, then monthly), or null before day 61. */
+export function pilotFixedCycleDue(day61: string, today: string): string | null {
+  if (today < day61) return null;
+  let k = 0;
+  while (addMonths(day61, k + 1) <= today) k++;
+  return addMonths(day61, k);
 }
 
 // Display --------------------------------------------------------------------------------------------

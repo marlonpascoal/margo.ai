@@ -9,10 +9,10 @@ import { requestMeta } from "@/lib/console/request";
 import { requireConsole } from "@/lib/console/staff";
 import { adminClient } from "@/lib/supabase/admin";
 import * as cmd from "@/lib/xray/commands";
-import { accountOfStore, xrayDeps } from "@/lib/xray/deps";
+import { accountByCode, accountOfStore, xrayDeps } from "@/lib/xray/deps";
 import { parseHours } from "@/lib/xray/format";
 import { storeIdFromUrl } from "@/lib/xray/ifood-url";
-import { XRAY_MESSAGES } from "@/lib/xray/labels";
+import { competitorRefusal, XRAY_MESSAGES } from "@/lib/xray/labels";
 import { isUuid, loadXrayHead, lookupStore, type XrayHead } from "@/lib/xray/load";
 
 const text = (form: FormData, name: string) => String(form.get(name) ?? "");
@@ -52,6 +52,11 @@ export type CreateState = { message: string | null };
 export async function createXrayAction(_prev: CreateState, form: FormData): Promise<CreateState> {
   const a = await actor();
   await requireFlag("m1.raio_x", null);
+  // C02 ?conta=: an X-ray for this account. A store that is not the account's own is a competitor X-ray,
+  // which xray_create checks against flag m1.concorrente and the plan's monthly limit.
+  const code = text(form, "conta").trim();
+  const account = code ? await accountByCode(code) : null;
+  if (code && !account) return { message: XRAY_MESSAGES.unknownAccount };
   const r = await cmd.createXray(
     xrayDeps(),
     a,
@@ -62,10 +67,15 @@ export async function createXrayAction(_prev: CreateState, form: FormData): Prom
       excludeClosed: form.get("fechadas") === "on",
       excludeChains: form.get("redes") === "on",
       sameNeighborhoodOnly: form.get("bairro") === "on",
+      accountId: account?.id ?? null,
     },
     accountOfStore,
   );
-  if (!r.ok) return { message: r.field === "url" ? XRAY_MESSAGES.invalidUrl : XRAY_MESSAGES.invalidForm };
+  if (!r.ok) {
+    if (r.field === "competitor") return { message: competitorRefusal(r.limit) };
+    if (r.field === "account") return { message: XRAY_MESSAGES.unknownAccount };
+    return { message: r.field === "url" ? XRAY_MESSAGES.invalidUrl : XRAY_MESSAGES.invalidForm };
+  }
   redirect(`${base(r.xrayId)}/vizinhanca`);
 }
 

@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 
 from .compute import (
     CampaignIn,
+    ChannelClose,
     CloseInputs,
     CloseResult,
     MenuItem,
@@ -107,16 +108,18 @@ def load_inputs(conn: Any, close_period_id: str, as_of: date) -> tuple[str, Clos
         raise LookupError(f"close_period {close_period_id} not found")
     acc, month = cp["account_id"], cp["month"]
     store_rows = conn.execute(
-        """select cs.id::text, cs.channel::text, cs.brand_id::text, cl.gross_cents, cl.payout_cents
+        """select cs.id::text, cs.channel::text, cs.brand_id::text, cl.gross_cents, cl.commission_cents,
+                  cl.payment_cents
            from public.close_line cl join public.channel_store cs on cs.id = cl.channel_store_id
            where cl.close_period_id = %s""",
         (close_period_id,),
     ).fetchall()
     stores = [StoreIn(r["id"], r["channel"], r["brand_id"]) for r in store_rows]
-    channel_close: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    channel_close: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0])
     for r in store_rows:
         channel_close[r["channel"]][0] += r["gross_cents"]
-        channel_close[r["channel"]][1] += r["payout_cents"]
+        channel_close[r["channel"]][1] += r["commission_cents"]
+        channel_close[r["channel"]][2] += r["payment_cents"]
     store_ids = [s.id for s in stores]
     items = [
         MenuItem(r["id"], r["name"], r["brand_id"], r["top20_rank"] if r["is_top20"] else None,
@@ -141,9 +144,10 @@ def load_inputs(conn: Any, close_period_id: str, as_of: date) -> tuple[str, Clos
         camp_items[r["campaign_id"]].add(r["menu_item_id"])
     campaigns = [
         CampaignIn(r["id"], r["channel_store_id"], r["name"], Decimal(r["discount_pct"]), r["starts_on"],
-                   r["ends_on"], frozenset(camp_items.get(r["id"], ())))
+                   r["ends_on"], frozenset(camp_items.get(r["id"], ())), Decimal(r["channel_share_pct"]))
         for r in conn.execute(
-            """select id::text, channel_store_id::text, name, discount_pct, starts_on, ends_on from public.campaign
+            """select id::text, channel_store_id::text, name, discount_pct, channel_share_pct, starts_on, ends_on
+               from public.campaign
                where account_id = %s and channel_store_id = any(%s::uuid[])""",
             (acc, store_ids),
         )
@@ -172,7 +176,7 @@ def load_inputs(conn: Any, close_period_id: str, as_of: date) -> tuple[str, Clos
         packaging=packaging,
         campaigns=campaigns,
         sold=sold,
-        channel_close={k: (v[0], v[1]) for k, v in channel_close.items()},
+        channel_close={k: ChannelClose(v[0], v[1], v[2]) for k, v in channel_close.items()},
     )
     return acc, inputs
 

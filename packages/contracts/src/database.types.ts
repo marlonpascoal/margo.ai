@@ -825,16 +825,48 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
-                },"ingredient_match": {
+                },"ingredient_account_rule": {
                   Row: {
-                    "account_id": string,"confidence": number | null,"confirmed_by": string | null,"conversion_factor": number | null,"created_at": string,"id": string,"ingredient_id": string,"invoice_line_id": string,"method": Database["public"]['Enums']["match_method"],"rule_note": string | null,"status": Database["public"]['Enums']["match_status"],"updated_at": string
+                    "account_id": string,"confirmations": number,"created_at": string,"created_by": string | null,"id": string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix": string | null,"unit": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id": string,"invoice_line_id": string,"method": Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
+                    "account_id": string,"confirmations"?: number,"created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix"?: string | null,"unit"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id"?: string,"invoice_line_id"?: string,"method"?: Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
+                    "account_id"?: string,"confirmations"?: number,"created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id"?: string,"keywords"?: (string)[],"ncm_prefix"?: string | null,"unit"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ingredient_account_rule_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ingredient_account_rule_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ingredient_account_rule_ingredient_id_fkey"
+      columns: ["ingredient_id"]
+isOneToOne: false
+      referencedRelation: "ingredient"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ingredient_match": {
+                  Row: {
+                    "account_id": string,"confidence": number | null,"confirmed_by": string | null,"conversion_factor": number | null,"created_at": string,"id": string,"ingredient_id": string,"invoice_line_id": string,"learned_at": string | null,"method": Database["public"]['Enums']["match_method"],"rule_note": string | null,"status": Database["public"]['Enums']["match_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id": string,"invoice_line_id": string,"learned_at"?: string | null,"method": Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id"?: string,"invoice_line_id"?: string,"learned_at"?: string | null,"method"?: Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -897,14 +929,14 @@ isOneToOne: false
                   ]
                 },"ingredient_rule": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"id": string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix": string | null,"source": string,"unit": string | null,"updated_at": string
+                    "auto_confirm": boolean,"created_at": string,"created_by": string | null,"disputed_at": string | null,"disputed_ingredient_id": string | null,"id": string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix": string | null,"source": string,"unit": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix"?: string | null,"source": string,"unit"?: string | null,"updated_at"?: string
+                    "auto_confirm"?: boolean,"created_at"?: string,"created_by"?: string | null,"disputed_at"?: string | null,"disputed_ingredient_id"?: string | null,"id"?: string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix"?: string | null,"source": string,"unit"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id"?: string,"keywords"?: (string)[],"ncm_prefix"?: string | null,"source"?: string,"unit"?: string | null,"updated_at"?: string
+                    "auto_confirm"?: boolean,"created_at"?: string,"created_by"?: string | null,"disputed_at"?: string | null,"disputed_ingredient_id"?: string | null,"id"?: string,"ingredient_id"?: string,"keywords"?: (string)[],"ncm_prefix"?: string | null,"source"?: string,"unit"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -912,6 +944,12 @@ isOneToOne: false
       columns: ["created_by"]
 isOneToOne: false
       referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ingredient_rule_disputed_ingredient_id_fkey"
+      columns: ["disputed_ingredient_id"]
+isOneToOne: false
+      referencedRelation: "ingredient"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "ingredient_rule_ingredient_id_fkey"
@@ -1441,14 +1479,14 @@ isOneToOne: true
                   ]
                 },"pilot_charge": {
                   Row: {
-                    "asaas_payment_id": string | null,"charge_cents": number,"created_at": string,"credited_cents": number,"id": string,"month": string,"pilot_id": string,"status": string | null,"updated_at": string
+                    "asaas_payment_id": string | null,"charge_cents": number,"created_at": string,"credited_cents": number,"id": string,"kind": string,"month": string,"pilot_id": string,"status": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "asaas_payment_id"?: string | null,"charge_cents"?: number,"created_at"?: string,"credited_cents"?: number,"id"?: string,"month": string,"pilot_id": string,"status"?: string | null,"updated_at"?: string
+                    "asaas_payment_id"?: string | null,"charge_cents"?: number,"created_at"?: string,"credited_cents"?: number,"id"?: string,"kind"?: string,"month": string,"pilot_id": string,"status"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "asaas_payment_id"?: string | null,"charge_cents"?: number,"created_at"?: string,"credited_cents"?: number,"id"?: string,"month"?: string,"pilot_id"?: string,"status"?: string | null,"updated_at"?: string
+                    "asaas_payment_id"?: string | null,"charge_cents"?: number,"created_at"?: string,"credited_cents"?: number,"id"?: string,"kind"?: string,"month"?: string,"pilot_id"?: string,"status"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1461,14 +1499,14 @@ isOneToOne: false
                   ]
                 },"plan": {
                   Row: {
-                    "billing_unit": Database["public"]['Enums']["billing_unit"],"code": string,"created_at": string,"features": NonNullable<Json>,"id": string,"name": string,"price_cents": number | null,"price_is_example": boolean,"trial_days": number,"updated_at": string
+                    "billing_unit": Database["public"]['Enums']["billing_unit"],"code": string,"competitor_xrays_per_month": number,"created_at": string,"features": NonNullable<Json>,"id": string,"name": string,"price_cents": number | null,"price_is_example": boolean,"trial_days": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code": string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name": string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
+                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code": string,"competitor_xrays_per_month"?: number,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name": string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
+                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"competitor_xrays_per_month"?: number,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -1645,14 +1683,14 @@ isOneToOne: false
                   ]
                 },"security_lock": {
                   Row: {
-                    "account_id": string,"created_at": string,"id": string,"reason": string,"until": string,"updated_at": string
+                    "account_id": string,"created_at": string,"id": string,"person_id": string | null,"reason": string,"until": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"created_at"?: string,"id"?: string,"reason": string,"until": string,"updated_at"?: string
+                    "account_id": string,"created_at"?: string,"id"?: string,"person_id"?: string | null,"reason": string,"until": string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"id"?: string,"reason"?: string,"until"?: string,"updated_at"?: string
+                    "account_id"?: string,"created_at"?: string,"id"?: string,"person_id"?: string | null,"reason"?: string,"until"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1660,6 +1698,12 @@ isOneToOne: false
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "security_lock_person_id_fkey"
+      columns: ["person_id"]
+isOneToOne: false
+      referencedRelation: "person"
       referencedColumns: ["id"]
     }
                   ]
@@ -2100,7 +2144,7 @@ isOneToOne: false
         isSetofReturn: false
       } },
 "people_lock_until":
-{ Args: { "p_account": string,"p_at"?: string }; Returns: string
+{ Args: { "p_account": string,"p_at"?: string,"p_person": string }; Returns: string
                            },
 "portal_accept_invite":
 { Args: { "p_email": string,"p_ip": unknown,"p_name": string,"p_now"?: string,"p_token_hash": string,"p_user_agent": string }; Returns: {
@@ -2122,6 +2166,7 @@ isOneToOne: false
               "account_id": string,
 "created_at": string,
 "id": string,
+"person_id": string | null,
 "reason": string,
 "until": string,
 "updated_at": string
@@ -2142,7 +2187,7 @@ isOneToOne: false
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
                            },
 "xray_create":
-{ Args: { "p_actor": string,"p_categories": (string)[],"p_external_id": string,"p_ip"?: unknown,"p_radius_km": number,"p_rules": Json,"p_url": string,"p_user_agent"?: string }; Returns: string
+{ Args: { "p_account"?: string,"p_actor": string,"p_categories": (string)[],"p_env"?: Database["public"]['Enums']["flag_env"],"p_external_id": string,"p_ip"?: unknown,"p_radius_km": number,"p_rules": Json,"p_url": string,"p_user_agent"?: string }; Returns: string
                            },
 "xray_item_review":
 { Args: { "p_accepted": (string)[],"p_actor": string,"p_ip"?: unknown,"p_item": string,"p_user_agent"?: string }; Returns: undefined

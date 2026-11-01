@@ -110,6 +110,8 @@ begin
   insert into public.ingredient_price (account_id, ingredient_id, price_per_base_unit_cents, observed_on, source, invoice_line_id)
     values (acc, tests.id(a || ':ing'), 5, '2026-09-05', 'invoice', tests.id(a || ':il'));
   insert into public.invoice_import (account_id, file_path, status) values (acc, 'invoices/' || a || '/zips/t.zip', 'ok');
+  insert into public.ingredient_account_rule (account_id, ingredient_id, keywords, ncm_prefix, unit)
+    values (acc, tests.id(a || ':ing'), array['CARNE', 'MOIDA'], '0201', 'KG');
   insert into public.menu_item (id, account_id, brand_id, name) values (tests.id(a || ':dish'), acc, tests.id(a || ':brand'), 'Burger ' || a);
   insert into public.recipe (id, account_id, menu_item_id, status) values (tests.id(a || ':rec'), acc, tests.id(a || ':dish'), 'ready');
   insert into public.recipe_line (account_id, recipe_id, ingredient_id, qty_base_units, yield_pct, yield_confidence)
@@ -256,7 +258,7 @@ reset role;
 select tests.login('fundador');
 select is(tests.n($$ select 1 from public.subscription where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees subscriptions');
 select is(tests.n($$ select 1 from public.billing_event where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees Asaas events');
-select is(tests.n($$ select 1 from public.feature_flag $$), 30, 'Fundador sees feature toggles');
+select is(tests.n($$ select 1 from public.feature_flag $$), 34, 'Fundador sees feature toggles');
 select is_empty($$ update public.feature_flag set default_raio_x = true returning id $$,
   'even Fundador writes only through audited server actions');
 reset role;

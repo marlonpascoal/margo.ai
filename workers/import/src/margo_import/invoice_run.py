@@ -5,7 +5,8 @@ read zip -> distinct keys -> buyer company of each invoice (dest CNPJ; none: the
    buyer not in the account -> the invoice is rejected (counted, not saved)
    real account: every buyer company needs an owner_authorization with scope "notas" (C06) -> else the
    whole run fails "no_owner_authorization" and nothing is written
--> keys already in the database are duplicates (D11) -> XML to the invoices bucket, invoice and lines
+-> keys this account already has are duplicates (D11, per account since 31/out: another account's
+   invoices are never looked at, so no run reveals them) -> XML to the invoices bucket, invoice and lines
 -> GTIN and rule matches now (D14), one match_ai job for the rest (flag m3.depara_ia, A05)
 """
 
@@ -94,7 +95,8 @@ def process_invoice_zip(conn: Any, files: FileStore, import_id: str, now: dateti
         known = {
             r["access_key"]
             for r in conn.execute(
-                "select access_key from public.invoice where access_key = any(%s)", (keys,)
+                "select access_key from public.invoice where account_id = %s and access_key = any(%s)",
+                (account, keys),
             ).fetchall()
         }
         new = [i for i in read.invoices if i.access_key in buyers and i.access_key not in known]
@@ -107,7 +109,7 @@ def process_invoice_zip(conn: Any, files: FileStore, import_id: str, now: dateti
                     """insert into public.invoice (account_id, company_id, access_key, model, issuer_cnpj, issuer_name,
                                                    issued_at, total_cents, source, xml_path, invoice_import_id)
                        values (%s, %s, %s, %s, %s, %s, %s, %s, 'xml_zip', %s, %s)
-                       on conflict (access_key) do nothing returning id""",
+                       on conflict (account_id, access_key) do nothing returning id""",
                     (
                         account,
                         buyers[inv.access_key][0],

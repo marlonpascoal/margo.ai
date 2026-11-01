@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { calculate, confirmStores, createXray, markDelivered, prepareDelivery, reviewItem, saveMinutes, setStoreIncluded, type XrayDeps } from "./commands";
 import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./format";
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
-import { collectStopReason, pairStatusLabel } from "./labels";
+import { collectStopReason, competitorRefusal, pairStatusLabel, XRAY_MESSAGES } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
 import { examplePair, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow } from "./view";
 
@@ -162,6 +162,39 @@ describe("commands (A04: every write through an audited function)", () => {
       },
     ]);
     expect(jobs).toEqual([{ type: "collect", payload: { xray_id: "x-1" }, accountId: "acc-1", dedupeKey: "collect:x-1" }]);
+  });
+
+  it("B01_C02_competitor_xray_for_an_account_passes_the_account_and_flag_env", async () => {
+    const { calls, jobs, deps } = fake();
+    const r = await createXray(
+      { ...deps, env: "production" },
+      actor,
+      { url: PANTANOS, radiusKm: 3, category: "hamburguer", excludeClosed: true, excludeChains: true, sameNeighborhoodOnly: false, accountId: "acc-2" },
+      async () => "acc-1",
+    );
+    expect(r).toEqual({ ok: true, xrayId: "x-1" });
+    expect(calls[0][1]).toMatchObject({ p_account: "acc-2", p_env: "production" });
+    expect(jobs[0].accountId).toBe("acc-2");
+  });
+
+  it("B01_C02_competitor_refusals_from_the_server_become_messages", async () => {
+    const refusing = (message: string): XrayDeps => ({
+      rpc: async () => {
+        throw new Error(message);
+      },
+      enqueue: async () => {
+        throw new Error("no job for a refused X-ray");
+      },
+    });
+    const input = { url: PANTANOS, radiusKm: 3, category: "lanches", excludeClosed: true, excludeChains: true, sameNeighborhoodOnly: false, accountId: "acc-2" };
+    expect(await createXray(refusing("competitor_xray_limit:3"), actor, input, async () => null)).toEqual({ ok: false, field: "competitor", limit: 3 });
+    expect(await createXray(refusing("competitor_xray_not_in_plan"), actor, input, async () => null)).toEqual({ ok: false, field: "competitor", limit: 0 });
+    expect(await createXray(refusing("unknown account"), actor, input, async () => null)).toEqual({ ok: false, field: "account" });
+    await expect(createXray(refusing("boom"), actor, input, async () => null)).rejects.toThrow("boom");
+    expect(competitorRefusal(3)).toBe("Limite do plano atingido: 3 raio-X de concorrente por mês. O próximo fica para o mês que vem.");
+    expect(competitorRefusal(1)).toBe("Limite do plano atingido: 1 raio-X de concorrente por mês. O próximo fica para o mês que vem.");
+    expect(competitorRefusal(0)).toBe("Raio-X de concorrente fora do plano desta conta.");
+    for (const m of [competitorRefusal(0), competitorRefusal(3), XRAY_MESSAGES.unknownAccount]) expect(m).not.toMatch(/\u2014/);
   });
 
   it("C02_invalid_or_non_ifood_url_is_rejected_without_writing", async () => {

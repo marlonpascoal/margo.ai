@@ -1,5 +1,5 @@
 "use server";
-// C13 "Gerar fechamento mensal" (as C09): staff, m2.contestacao, status computed, P06 queued, close_ready, audit_log.
+// C13 "Gerar fechamento mensal" (as C09): staff, m3.custo, status computed, P06 queued, close_ready, audit_log.
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import { requireFlag } from "@/lib/flags";
@@ -16,7 +16,7 @@ export async function generateCloseFromC13Action(
   const staff = await requireConsole("clients");
   const db = adminClient();
   const account = await accountByCode(db, String(form.get("conta") ?? ""));
-  await requireFlag("m2.contestacao", account.id);
+  await requireFlag("m3.custo", account.id);
   const ym = String(form.get("mes") ?? "");
   const close = (await closePeriods(db, account.id)).find(
     (c) => c.month === parseMonth(ym),
@@ -29,6 +29,7 @@ export async function generateCloseFromC13Action(
     staff.personId,
     new Date(),
     await requestMeta(),
+    true, // m3.custo is required above
   );
   const path = `/console/contas/${account.code}/contribuicao/${ym}`;
   revalidatePath(path);

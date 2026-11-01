@@ -7,6 +7,7 @@ import type {
   BillingStore,
   CreditedItem,
   InvoiceUpsert,
+  PilotChargeKind,
   PilotChargeRow,
   PilotRow,
   StoredEvent,
@@ -15,9 +16,9 @@ import type {
 } from "./store";
 
 export const FAKE_PLANS: PlanRow[] = [
-  { id: "plan-raio_x", code: "raio_x", name: "Raio-X", priceCents: 0, billingUnit: "kitchen", trialDays: 14, priceIsExample: true },
-  { id: "plan-lucro", code: "lucro", name: "Lucro", priceCents: 30000, billingUnit: "kitchen", trialDays: 14, priceIsExample: true },
-  { id: "plan-rede", code: "rede", name: "Rede", priceCents: null, billingUnit: "kitchen", trialDays: 14, priceIsExample: true },
+  { id: "plan-raio_x", code: "raio_x", name: "Raio-X", priceCents: 0, billingUnit: "kitchen", trialDays: 14, priceIsExample: true, competitorXraysPerMonth: 0 },
+  { id: "plan-lucro", code: "lucro", name: "Lucro", priceCents: 30000, billingUnit: "kitchen", trialDays: 14, priceIsExample: true, competitorXraysPerMonth: 3 },
+  { id: "plan-rede", code: "rede", name: "Rede", priceCents: null, billingUnit: "kitchen", trialDays: 14, priceIsExample: true, competitorXraysPerMonth: 10 },
 ];
 
 export interface FakeSource {
@@ -33,7 +34,7 @@ export class FakeBillingStore implements BillingStore {
   units = new Map<string, { kitchen: number; channel_store: number }>();
   sources: FakeSource[] = [];
   customers = new Map<string, { name: string; cnpj: string; email: string | null }>();
-  locks: { accountId: string; until: Date }[] = [];
+  locks: { accountId: string; personId: string | null; until: Date }[] = [];
   events: { id: string; eventId: string; asaasEvent: string; kind: BillingEventKind; accountId: string | null; payload: unknown; processedAt: Date | null }[] = [];
   invoices: InvoiceUpsert[] = [];
   pilotRows: PilotRow[] = [];
@@ -93,7 +94,7 @@ export class FakeBillingStore implements BillingStore {
     return list.length;
   }
   async customerData(accountId: string) { return this.customers.get(accountId) ?? null; }
-  async hasActiveLock(accountId: string, at: Date) { return this.locks.some((l) => l.accountId === accountId && l.until > at); }
+  async hasActiveLock(accountId: string, personId: string, at: Date) { return this.locks.some((l) => l.accountId === accountId && (l.personId === null || l.personId === personId) && l.until > at); }
 
   async storeEvent(ev: { eventId: string; asaasEvent: string; kind: BillingEventKind; accountId: string | null; payload: unknown }): Promise<StoredEvent> {
     const found = this.events.find((e) => e.eventId === ev.eventId);
@@ -119,10 +120,12 @@ export class FakeBillingStore implements BillingStore {
   async creditedItems(accountId: string, from: string, to: string) {
     return (this.credited.get(accountId) ?? []).filter((c) => c.creditedOn >= from && c.creditedOn < to);
   }
-  async pilotCharge(pilotId: string, month: string) { return this.charges.find((c) => c.pilotId === pilotId && c.month === month) ?? null; }
+  async pilotCharge(pilotId: string, month: string, kind: PilotChargeKind) {
+    return this.charges.find((c) => c.pilotId === pilotId && c.month === month && c.kind === kind) ?? null;
+  }
   async pilotChargeById(id: string) { return this.charges.find((c) => c.id === id) ?? null; }
   async insertPilotCharge(row: Omit<PilotChargeRow, "id">) {
-    if (this.charges.some((c) => c.pilotId === row.pilotId && c.month === row.month)) return null;
+    if (this.charges.some((c) => c.pilotId === row.pilotId && c.month === row.month && c.kind === row.kind)) return null;
     const id = `00000000-0000-4000-8000-${String(++this.seq).padStart(12, "0")}`;
     this.charges.push({ ...row, id });
     return id;

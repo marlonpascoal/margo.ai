@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(47);
+select plan(49);
 
 -- Fixtures: one account per evaluation branch, a fundador, an operação and a restaurant person.
 insert into public.account (id, name, code, plan_id) values
@@ -83,6 +83,10 @@ select is(public.flag_enabled('m2.ifood_api', (select id from public.account whe
   'A05_seed: G-04 (free, Raio-X) has no iFood API');
 select is(public.flag_enabled('m3.nfce_qr_auto', (select id from public.account where code = 'G-01'), 'production'), true,
   'A05_seed: Pantanos has its QR exception');
+select is(public.flag_enabled('m3.custo', (select id from public.account where code = 'G-02'), 'sandbox'), true,
+  'A05_seed: m3.custo is on for Grupo Exemplo (Lucro), which shows M3');
+select is(public.flag_enabled('m3.custo', (select id from public.account where code = 'G-04'), 'sandbox'), false,
+  'A05_seed: m3.custo is off on Raio-X');
 
 -- Security ------------------------------------------------------------------------------------------
 select ok((select prosecdef from pg_proc where oid = 'public.flag_enabled(text, uuid, public.flag_env)'::regprocedure),

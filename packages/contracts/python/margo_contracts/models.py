@@ -679,6 +679,19 @@ class Ingredient(Row):
     updated_at: datetime
 
 
+class IngredientAccountRule(Row):
+    account_id: UUID
+    confirmations: int
+    created_at: datetime
+    created_by: UUID | None
+    id: UUID
+    ingredient_id: UUID
+    keywords: list[str]
+    ncm_prefix: str | None
+    unit: str | None
+    updated_at: datetime
+
+
 class IngredientMatch(Row):
     account_id: UUID
     confidence: Decimal | None
@@ -688,6 +701,7 @@ class IngredientMatch(Row):
     id: UUID
     ingredient_id: UUID
     invoice_line_id: UUID
+    learned_at: datetime | None
     method: MatchMethod
     rule_note: str | None
     status: MatchStatus
@@ -707,8 +721,11 @@ class IngredientPrice(Row):
 
 
 class IngredientRule(Row):
+    auto_confirm: bool
     created_at: datetime
     created_by: UUID | None
+    disputed_at: datetime | None
+    disputed_ingredient_id: UUID | None
     id: UUID
     ingredient_id: UUID
     keywords: list[str]
@@ -996,6 +1013,7 @@ class PilotCharge(Row):
     created_at: datetime
     credited_cents: int
     id: UUID
+    kind: str
     month: date
     pilot_id: UUID
     status: str | None
@@ -1005,6 +1023,7 @@ class PilotCharge(Row):
 class Plan(Row):
     billing_unit: BillingUnit
     code: str
+    competitor_xrays_per_month: int
     created_at: datetime
     features: JsonValue
     id: UUID
@@ -1116,6 +1135,7 @@ class SecurityLock(Row):
     account_id: UUID
     created_at: datetime
     id: UUID
+    person_id: UUID | None
     reason: str
     until: datetime
     updated_at: datetime

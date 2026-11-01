@@ -9,6 +9,7 @@ const row = (over: Partial<ManualRecord> = {}): ManualRecord => ({
   person_id: "dono",
   notice_code: "deadline_soon",
   alert_id: null,
+  alert_severity: null,
   status: "queued",
   body: "Faltam 3 dias",
   recipient: "+5543900001234",
@@ -33,7 +34,12 @@ describe("E05 manual WhatsApp queue", () => {
   });
 
   it("E05_team_alert_whatsapp_to_the_founder_on_duty_is_not_held", () => {
-    expect(manualState(row({ notice_code: null, alert_id: "al" }), sp("2026-10-30T23:30:00"))).toBe("ready");
+    expect(manualState(row({ notice_code: null, alert_id: "al", alert_severity: "urgente" }), sp("2026-10-30T23:30:00"))).toBe("ready");
+  });
+
+  it("E05_non_urgent_alert_whatsapp_waits_for_8h_in_the_console_queue", () => {
+    expect(manualState(row({ notice_code: null, alert_id: "al", alert_severity: "medio" }), sp("2026-10-30T23:30:00"))).toBe("held");
+    expect(manualState(row({ notice_code: null, alert_id: "al", alert_severity: "medio" }), sp("2026-10-31T08:00:00"))).toBe("ready");
   });
 
   it("a row without number cannot be sent; a marked row is done", () => {

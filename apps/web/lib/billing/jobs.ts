@@ -4,16 +4,22 @@
 import { notify } from "@/lib/notify/outbox";
 import { raiseAlert } from "@/lib/notify/alerts";
 import {
+  ddMon,
   monthOf,
   monthlyTotalCents,
   pilotChargeCents,
+  pilotDay61,
+  pilotFixedCycleDue,
+  pilotTermsSet,
   pilotWindowInMonth,
   previousMonth,
   spDate,
   trialAlertDue,
   trialOver,
   trialReminderDue,
+  unitWord,
 } from "./rules";
+import type { PilotRow } from "./store";
 import { ALERT_TITLES, auditSubscription, C15_PATH, ensureCustomer, returnToFree, systemAudit, trialEndingMessage, type BillingDeps } from "./service";
 
 export const TRIAL_NOTICE_EVENT = "aviso de fim enviado";
@@ -105,12 +111,15 @@ export interface PilotResult {
   /** Pilots skipped because a value is still open (D37: percentage, cap or start not set). */
   skippedOpenValues: string[];
   failed: string[];
+  /** Fixed monthly charges created from day 61 (Marlon 31/out). */
+  fixedCharged: string[];
 }
 
 /**
- * D37 and 04 §7 pilot: for the month that just ended, a separate Asaas charge of pct of what was credited
- * (creditada contestations, C16) inside the pilot's first 60 days, capped at cap_cents. One row per pilot
- * and month (unique), so a second run never charges twice. A row left `pending` after a failed Asaas call
+ * D37 and 04 §7 pilot. Days 1 to 60, terms set only: for the month that just ended, a separate Asaas charge
+ * of pct of what was credited (creditada contestations, C16) inside the pilot's first 60 days, capped at
+ * cap_cents. From day 61: the fixed monthly charge (pilotFixedCharge). One row per pilot, month and kind
+ * (unique), so a second run never charges twice. A row left `pending` after a failed Asaas call
  * is not resent automatically: a founder checks Asaas first (alert).
  */
 export async function runPilotCharges(deps: BillingDeps): Promise<PilotResult> {
@@ -118,53 +127,114 @@ export async function runPilotCharges(deps: BillingDeps): Promise<PilotResult> {
   const now = deps.now();
   const today = spDate(now);
   const month = previousMonth(monthOf(today));
-  const out: PilotResult = { charged: [], noCharge: [], skippedOpenValues: [], failed: [] };
+  const out: PilotResult = { charged: [], noCharge: [], skippedOpenValues: [], failed: [], fixedCharged: [] };
   for (const pilot of await store.pilots()) {
-    if (pilot.pct === null || pilot.capCents === null || pilot.startedOn === null) {
-      out.skippedOpenValues.push(pilot.accountId);
-      continue;
-    }
     // G-SYN accounts carry made-up Asaas ids (seed): never charged.
-    if ((await store.account(pilot.accountId))?.isSynthetic) continue;
-    const window = pilotWindowInMonth(pilot.startedOn, month);
-    if (!window) continue;
-    if (await store.pilotCharge(pilot.id, month)) continue;
-    const credited = (await store.creditedItems(pilot.accountId, window.from, window.to)).reduce((s, c) => s + c.amountCents, 0);
-    const charge = pilotChargeCents(credited, pilot.pct, pilot.capCents);
-    const id = await store.insertPilotCharge({
-      pilotId: pilot.id,
-      month,
-      creditedCents: credited,
-      chargeCents: charge,
-      asaasPaymentId: null,
-      status: charge > 0 ? "pending" : "no_charge",
-    });
-    if (!id) continue;
-    await store.audit([systemAudit(pilot.accountId, "pilot_charge.compute", "pilot_charge", id, null, { month, credited_cents: credited, charge_cents: charge })]);
-    if (charge === 0) {
-      out.noCharge.push(pilot.accountId);
-      continue;
-    }
-    try {
-      const customerId = await ensureCustomer(deps, pilot.accountId, { actorPersonId: null, actorKind: "system", ip: null, userAgent: null });
-      const pct = Math.round(pilot.pct * 10000) / 100;
-      const { id: paymentId } = await deps.asaas.createPayment({
-        customerId,
-        valueCents: charge,
-        dueDate: today,
-        description: `MargoAI piloto, ${month.slice(5, 7)}/${month.slice(0, 4)}: ${String(pct).replace(".", ",")}% do creditado`,
-        externalReference: `pilot_charge:${id}`,
-      });
-      await store.updatePilotCharge(id, { asaasPaymentId: paymentId, status: "charged" });
-      await store.audit([systemAudit(pilot.accountId, "pilot_charge.charge", "pilot_charge", id, { status: "pending" }, { status: "charged", asaas_payment_id: paymentId })]);
-      out.charged.push(pilot.accountId);
-    } catch (err) {
-      console.error(JSON.stringify({ service: "billing_jobs", job: "pilot_charges", pilot_charge: id, error: String(err) }));
-      await raiseAlert(deps.notify, "medio", ALERT_TITLES.pilotNotSent, pilot.accountId, C15_PATH);
-      out.failed.push(pilot.accountId);
-    }
+    const synthetic = (await store.account(pilot.accountId))?.isSynthetic ?? false;
+    if (!pilotTermsSet(pilot)) out.skippedOpenValues.push(pilot.accountId);
+    else if (!synthetic) await pilotPercentCharge(deps, pilot, month, today, out);
+    if (!synthetic) await pilotFixedCharge(deps, pilot, today, out);
   }
   return out;
+}
+
+/** D37 months 1 and 2: pct of the credited amount of `month`, capped. */
+async function pilotPercentCharge(deps: BillingDeps, pilot: PilotRow, month: string, today: string, out: PilotResult) {
+  const { store } = deps;
+  if (pilot.pct === null || pilot.capCents === null || pilot.startedOn === null) return;
+  const window = pilotWindowInMonth(pilot.startedOn, month);
+  if (!window) return;
+  if (await store.pilotCharge(pilot.id, month, "pct")) return;
+  const credited = (await store.creditedItems(pilot.accountId, window.from, window.to)).reduce((s, c) => s + c.amountCents, 0);
+  const charge = pilotChargeCents(credited, pilot.pct, pilot.capCents);
+  const id = await store.insertPilotCharge({
+    pilotId: pilot.id,
+    month,
+    creditedCents: credited,
+    kind: "pct",
+    chargeCents: charge,
+    asaasPaymentId: null,
+    status: charge > 0 ? "pending" : "no_charge",
+  });
+  if (!id) return;
+  await store.audit([systemAudit(pilot.accountId, "pilot_charge.compute", "pilot_charge", id, null, { month, credited_cents: credited, charge_cents: charge })]);
+  if (charge === 0) {
+    out.noCharge.push(pilot.accountId);
+    return;
+  }
+  try {
+    const customerId = await ensureCustomer(deps, pilot.accountId, { actorPersonId: null, actorKind: "system", ip: null, userAgent: null });
+    const pct = Math.round(pilot.pct * 10000) / 100;
+    const { id: paymentId } = await deps.asaas.createPayment({
+      customerId,
+      valueCents: charge,
+      dueDate: today,
+      description: `MargoAI piloto, ${month.slice(5, 7)}/${month.slice(0, 4)}: ${String(pct).replace(".", ",")}% do creditado`,
+      externalReference: `pilot_charge:${id}`,
+    });
+    await store.updatePilotCharge(id, { asaasPaymentId: paymentId, status: "charged" });
+    await store.audit([systemAudit(pilot.accountId, "pilot_charge.charge", "pilot_charge", id, { status: "pending" }, { status: "charged", asaas_payment_id: paymentId })]);
+    out.charged.push(pilot.accountId);
+  } catch (err) {
+    console.error(JSON.stringify({ service: "billing_jobs", job: "pilot_charges", pilot_charge: id, error: String(err) }));
+    await raiseAlert(deps.notify, "medio", ALERT_TITLES.pilotNotSent, pilot.accountId, C15_PATH);
+    out.failed.push(pilot.accountId);
+  }
+}
+
+/**
+ * Marlon 31/out: pilots charge from day 61. From day 61 (from the start with terms set, else from the pilot's
+ * creation) the daily cron creates one Asaas charge per monthly cycle: units x price, where the price is the
+ * pilot's fixed_from_day_61 per unit when the terms are set and given, else the Lucro plan price. Same
+ * safeguards as the percentage charge: one row per pilot, month and kind; a failed call stays pending with an
+ * alert and is never resent. An account already paying its own Asaas subscription is not charged twice.
+ */
+async function pilotFixedCharge(deps: BillingDeps, pilot: PilotRow, today: string, out: PilotResult) {
+  const { store } = deps;
+  const due = pilotFixedCycleDue(pilotDay61(pilot), today);
+  if (!due) return;
+  const sub = await store.subscription(pilot.accountId);
+  if (!sub || sub.asaasSubscriptionId) return;
+  const month = monthOf(due);
+  if (await store.pilotCharge(pilot.id, month, "fixed")) return;
+  const plan = (await store.plans()).find((p) => p.code === "lucro");
+  if (!plan) return;
+  const unitPrice = pilotTermsSet(pilot) && pilot.fixedFromDay61Cents !== null ? pilot.fixedFromDay61Cents : plan.priceCents;
+  if (unitPrice === null) return;
+  const units = await store.countUnits(pilot.accountId, plan.billingUnit);
+  const charge = monthlyTotalCents({ priceCents: unitPrice }, units) ?? 0;
+  const id = await store.insertPilotCharge({
+    pilotId: pilot.id,
+    kind: "fixed",
+    month,
+    creditedCents: 0,
+    chargeCents: charge,
+    asaasPaymentId: null,
+    status: charge > 0 ? "pending" : "no_charge",
+  });
+  if (!id) return;
+  await store.audit([systemAudit(pilot.accountId, "pilot_charge.fixed", "pilot_charge", id, null, { month, due_on: due, units, unit_price_cents: unitPrice, charge_cents: charge })]);
+  if (charge === 0) {
+    out.noCharge.push(pilot.accountId);
+    return;
+  }
+  try {
+    const customerId = await ensureCustomer(deps, pilot.accountId, { actorPersonId: null, actorKind: "system", ip: null, userAgent: null });
+    const { id: paymentId } = await deps.asaas.createPayment({
+      customerId,
+      valueCents: charge,
+      dueDate: today,
+      description: `MargoAI plano Lucro, a partir de ${ddMon(due)}: ${units} ${unitWord(plan.billingUnit, units)}`,
+      externalReference: `pilot_charge:${id}`,
+    });
+    await store.updatePilotCharge(id, { asaasPaymentId: paymentId, status: "charged" });
+    await store.audit([systemAudit(pilot.accountId, "pilot_charge.charge", "pilot_charge", id, { status: "pending" }, { status: "charged", asaas_payment_id: paymentId })]);
+    out.fixedCharged.push(pilot.accountId);
+  } catch (err) {
+    console.error(JSON.stringify({ service: "billing_jobs", job: "pilot_fixed_charges", pilot_charge: id, error: String(err) }));
+    await raiseAlert(deps.notify, "medio", ALERT_TITLES.pilotNotSent, pilot.accountId, C15_PATH);
+    out.failed.push(pilot.accountId);
+  }
 }
 
 /** The daily run of /api/cron/billing. */

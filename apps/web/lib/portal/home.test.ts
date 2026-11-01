@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { homeNumbers, type HomeDiff, type HomeLine } from "./home";
+import { homeNumbers, withoutCost, type HomeDiff, type HomeLine } from "./home";
 
 const K1 = { id: "k1", name: "Cozinha Centro" };
 const K2 = { id: "k2", name: "Cozinha Zona Sul" };
@@ -93,6 +93,13 @@ describe("W01 sobrou depois dos insumos (CTB-01 for the month)", () => {
     ]);
     expect(n.leftCents).toBe(125_00);
     expect(n.leftPct).toBe(48); // of 260,00 sold
+  });
+
+  it("W01_m3_custo_off_falls_back_to_falta_custo", () => {
+    const n = homeNumbers(withoutCost(costed), [], null);
+    expect(n.leftCents).toBeNull();
+    expect(n.rows.every((r) => r.leftCents === null)).toBe(true);
+    expect(n.receivedCents).toBe(200_00);
   });
 
   it("A03_W01_sobrou_follows_the_kitchen_filter", () => {

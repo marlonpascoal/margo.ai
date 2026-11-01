@@ -80,7 +80,7 @@ export function normalizeEmail(input: string): string | null {
 /** Error keys raised by the people functions (migration 20261117000020), as the screen says them. Not drawn. */
 export const PEOPLE_ERRORS: Record<string, string> = {
   E04_last_dono: "Toda conta precisa de pelo menos um Dono. Faça outra pessoa Dono antes.",
-  E04_locked: "Mudanças em pessoas ficam bloqueadas por 24 horas depois de trocar um contato de login.",
+  E04_locked: "Você trocou um contato de login. Por 24 horas, você não pode mudar pessoas.",
   not_dono: "Só o Dono convida, muda perfil e remove pessoas.",
   no_kitchen: "Escolha pelo menos uma cozinha.",
   kitchen_not_in_account: "Escolha cozinhas desta conta.",
@@ -91,6 +91,22 @@ export const PEOPLE_ERRORS: Record<string, string> = {
 export function peopleError(message: string | undefined | null): string {
   const key = Object.keys(PEOPLE_ERRORS).find((k) => message?.includes(k));
   return key ? PEOPLE_ERRORS[key] : "Não deu certo. Tente de novo.";
+}
+
+export const INVITE_MESSAGES = {
+  // Not drawn; same style as the other invite errors.
+  gerenteNeedsKitchen: "Escolha pelo menos uma cozinha para o Gerente de cozinha.",
+} as const;
+
+/**
+ * 04 §5 (Marlon, 31/out): the kitchens an invite carries. A Gerente must get at least one; for Financeiro no
+ * kitchen chosen means all kitchens; a Dono always sees all.
+ */
+export function inviteKitchens(role: MemberRole, chosen: string[]): { ok: true; kitchens: string[] } | { ok: false; error: string } {
+  if (role === "dono") return { ok: true, kitchens: [] };
+  const kitchens = chosen.map((k) => k.trim()).filter(Boolean);
+  if (role === "gerente" && kitchens.length === 0) return { ok: false, error: INVITE_MESSAGES.gerenteNeedsKitchen };
+  return { ok: true, kitchens };
 }
 
 /** The text that goes with an invite link (P14 "Convidar pelo WhatsApp"). Not drawn. */

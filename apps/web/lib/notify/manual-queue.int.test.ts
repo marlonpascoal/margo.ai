@@ -10,7 +10,7 @@ const tag = randomBytes(4).toString("hex");
 const meta = { ip: "203.0.113.7", userAgent: "vitest" };
 const sp = (iso: string) => new Date(`${iso}-03:00`);
 let accountId = "";
-const ids = { dono: "", staff: "", row: "" };
+const ids = { dono: "", staff: "", row: "", urgent: "", medio: "", alerts: [] as string[] };
 
 beforeAll(async () => {
   const acc = await db.from("account").insert({ name: "Conta fila WhatsApp", code: `T-WA-${tag}`, is_synthetic: true }).select("id").single();
@@ -32,10 +32,22 @@ beforeAll(async () => {
     .select("id")
     .single();
   ids.row = n.data!.id;
+  // Team alerts by WhatsApp to the founder on duty: urgente goes at any hour, medio waits for 8h.
+  for (const severity of ["urgente", "medio"] as const) {
+    const a = await db.from("alert").insert({ severity, title: `Alerta ${severity} ${tag}`, account_id: accountId, notified_via: [] }).select("id").single();
+    ids.alerts.push(a.data!.id);
+    const r = await db
+      .from("notification")
+      .insert({ account_id: accountId, alert_id: a.data!.id, channel: "whatsapp_manual", body: `Alerta ${severity} ${tag}`, recipient: "+5543933334444" })
+      .select("id")
+      .single();
+    ids[severity === "urgente" ? "urgent" : "medio"] = r.data!.id;
+  }
 });
 
 afterAll(async () => {
   await db.from("audit_log").delete().eq("account_id", accountId);
+  await db.from("alert").delete().in("id", ids.alerts);
   await db.from("account").delete().eq("id", accountId);
   await db.from("staff").delete().eq("person_id", ids.staff);
   await db.from("person").delete().in("id", [ids.dono, ids.staff]);
@@ -47,6 +59,13 @@ describe("06 §7 manual WhatsApp queue", () => {
     expect(day).toMatchObject({ state: "ready", client: `Conta fila WhatsApp (T-WA-${tag})`, notice: "Prazo de contestação chegando" });
     expect(day.link).toBe(`https://wa.me/5543911112222?text=${encodeURIComponent(`Faltam 3 dias ${tag}`)}`);
     expect(await markWhatsAppSent(db, ids.row, ids.staff, meta, sp("2026-11-05T23:00:00"))).toEqual({ ok: false, message: MANUAL_MESSAGES.held });
+  });
+
+  it("E05_int_only_the_urgent_alert_whatsapp_is_offered_at_night", async () => {
+    const night = await loadManualQueue(db, sp("2026-11-05T23:00:00"), 500);
+    expect(night.find((r) => r.id === ids.urgent)).toMatchObject({ state: "ready" });
+    expect(night.find((r) => r.id === ids.medio)).toMatchObject({ state: "held", link: null });
+    expect(await markWhatsAppSent(db, ids.medio, ids.staff, meta, sp("2026-11-05T23:00:00"))).toEqual({ ok: false, message: MANUAL_MESSAGES.held });
   });
 
   it("A04_int_owner_cannot_mark_founder_marks_once_and_it_is_audited", async () => {

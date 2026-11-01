@@ -4,7 +4,8 @@ import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import type { EnqueueDeps } from "@/lib/jobs/enqueue";
 import { SupabaseJobQueue } from "@/lib/jobs/supabase-queue";
-import { loadClose } from "@/lib/m2/close";
+import { closeReadyMessage, loadClose } from "@/lib/m2/close";
+import { messageFor } from "@/lib/notify/templates";
 import { homeNumbers, loadHomeDiffs, loadHomeLines } from "@/lib/portal/home";
 import { adminClient } from "@/lib/supabase/admin";
 import {
@@ -15,6 +16,7 @@ import {
   loadFicha,
 } from "./data";
 import { editRecipeLine, setPackaging } from "./edit";
+import { NotasRefused, saveKey } from "./notas";
 
 const db = adminClient();
 const sid = (tag: string) => {
@@ -154,6 +156,22 @@ describe("A04 C12 writes", () => {
         .eq("type", "compute_contribution")
         .gte("created_at", since);
     });
+    // Audit rows are told apart by id, not by time: `since` is the host clock and `at` the
+    // database's now(), and the Docker VM clock can lag the host by more than this test takes.
+    const packagingAudit = async () => {
+      const { data, error } = await db
+        .from("audit_log")
+        .select("id, after")
+        .eq("action", "packaging_cost.set")
+        .contains("after", { menu_item_id: dish });
+      if (error) throw new Error(error.message);
+      return data;
+    };
+    const seen = new Set((await packagingAudit()).map((r) => r.id));
+    const fresh = async () =>
+      (await packagingAudit())
+        .filter((r) => !seen.has(r.id))
+        .map((r) => ({ after: r.after }));
     await setPackaging(
       db,
       { staffId: MARLON, accountId: G02, meta: META, deps },
@@ -161,15 +179,7 @@ describe("A04 C12 writes", () => {
       "food99",
       0,
     );
-    expect(
-      (
-        await db
-          .from("audit_log")
-          .select("id")
-          .eq("action", "packaging_cost.set")
-          .gte("at", since)
-      ).data,
-    ).toHaveLength(0);
+    expect(await fresh()).toHaveLength(0);
     await setPackaging(
       db,
       { staffId: MARLON, accountId: G02, meta: META, deps },
@@ -177,39 +187,34 @@ describe("A04 C12 writes", () => {
       "food99",
       30,
     );
-    const { data: audit } = await db
-      .from("audit_log")
-      .select("after")
-      .eq("action", "packaging_cost.set")
-      .gte("at", since);
-    expect(audit).toEqual([
+    expect(await fresh()).toEqual([
       { after: { menu_item_id: dish, channel: "food99", cost_cents: 30 } },
     ]);
   });
 });
 
 describe("C13 and W01 on the September close", () => {
-  it("C13_rows_and_DLV01_decision_as_drawn", async () => {
+  it("D03_C13_rows_and_DLV01_decision_by_CTB01", async () => {
     const rows = await loadContribution(db, CLOSE);
     expect(
       rows.slice(0, 2).map((r) => [r.name, r.channel, r.leftCents]),
     ).toEqual([
-      ["X-Bacon artesanal", "ifood", 1505],
-      ["X-Bacon artesanal", "food99", 1627],
+      ["X-Bacon artesanal", "ifood", 1885],
+      ["X-Bacon artesanal", "food99", 1996],
     ]);
     const coupon = rows.find((r) => r.campaignName !== null)!;
     expect(coupon).toMatchObject({
       name: "Combo casal",
-      priceCents: 6392,
-      takeCents: 1630,
+      priceCents: 7990,
+      takeCents: 1962,
       ingredientCents: 3180,
-      leftCents: 1582,
+      leftCents: 2848,
     });
     expect(await loadDecision(db, CLOSE, "2026-09-01")).toMatchObject({
       kind: "campaign",
       name: "Combo casal",
-      leftCents: 1582,
-      baseLeftCents: 2773,
+      leftCents: 2848,
+      baseLeftCents: 3596,
     });
   });
 
@@ -263,5 +268,49 @@ describe("C13 and W01 on the September close", () => {
       cl!.reduce((a, l) => a + l.payout_cents, 0) -
         cc!.reduce((a, c) => a + c.ingredient_cents + c.packaging_cents, 0),
     );
+  });
+});
+
+describe("E01 close_ready and m3.custo (04 §6)", () => {
+  it("E01_A05_close_message_says_sobrou_only_with_m3_custo_on", async () => {
+    const account = { id: G02, code: "G-02", name: "Grupo Exemplo", isSynthetic: true };
+    const close = { id: CLOSE, month: "2026-09-01", status: "computed" as const, pdfPath: null };
+    const to = { personId: "p", accountId: G02, accountName: "Grupo Exemplo", role: "dono" as const, email: "dono@exemplo.com.br", whatsappE164: "+5543900001234" };
+    const left = (await closeLeftCents(db, CLOSE))!;
+    expect(left).not.toBeNull();
+
+    const on = messageFor(await closeReadyMessage(db, account, close, true), to);
+    expect(on.subject).toMatch(/^Setembro fechado: sobrou /);
+
+    const off = messageFor(await closeReadyMessage(db, account, close, false), to);
+    expect(off.subject).toMatch(/^Setembro fechado: recebeu /);
+    expect(off.subject).not.toContain("sobrou");
+    expect(off.body).toContain("Sobrou depois dos insumos: falta custo");
+    expect(off.whatsapp).not.toContain("sobrou");
+  });
+});
+
+describe("C10 typed key, access key unique per account (31/out)", () => {
+  it("D01_C10_two_accounts_save_the_same_key_and_neither_learns_of_the_other", async () => {
+    // A valid NF-e key no seed invoice uses.
+    const key = "41261000000000000190550010000099991123456781";
+    const mk = async (code: string, cnpj: string) => {
+      const a = await db.from("account").insert({ name: `Conta ${code}`, code, is_synthetic: true }).select("id").single();
+      if (a.error) throw new Error(a.error.message);
+      cleanup.push(() => db.from("account").delete().eq("id", a.data.id));
+      const c = await db.from("company").insert({ account_id: a.data.id, cnpj, legal_name: `Empresa ${code}` });
+      if (c.error) throw new Error(c.error.message);
+      return { id: a.data.id, code, name: `Conta ${code}`, isSynthetic: true };
+    };
+    const tag = Date.now().toString(36).toUpperCase();
+    const first = await mk(`T-KA-${tag}`, "00000000000270");
+    const second = await mk(`T-KB-${tag}`, "00000000000270");
+    const one = await saveKey(db, first, MARLON, key, META);
+    const two = await saveKey(db, second, MARLON, key, META);
+    expect(two).not.toBe(one);
+    const { data: rows } = await db.from("invoice").select("account_id").eq("access_key", key);
+    expect(new Set(rows!.map((r) => r.account_id))).toEqual(new Set([first.id, second.id]));
+    // Dedup stays within the account, with the same message either way.
+    await expect(saveKey(db, second, MARLON, key, META)).rejects.toThrow(new NotasRefused("Esta nota já está salva."));
   });
 });

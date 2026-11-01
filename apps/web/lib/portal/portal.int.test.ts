@@ -8,10 +8,10 @@ import { notifyDeps } from "@/lib/notify/deps";
 import { adminClient } from "@/lib/supabase/admin";
 import { closeFilePath, exportPath, requestDeletion, requestExport } from "./account-data";
 import { loadConnect, signAuthorization, TERMS_VERSION } from "./connect";
-import { changeLoginEmail, checkNewEmail, CONTACT_MESSAGES } from "./contact-change";
+import { changeLoginEmail, checkNewEmail, CONTACT_MESSAGES, discardExpiredEmailChange, pendingEmailChange, startEmailChange } from "./contact-change";
 import { loadOwnerContestations, markOwnerContestation, ownerTotals } from "./contestacoes";
 import { loadLojas } from "./lojas";
-import { loadPeople } from "./pessoas";
+import { loadPeople, peopleLockUntil } from "./pessoas";
 import type { Scope } from "./scope";
 
 const db = adminClient();
@@ -179,18 +179,77 @@ describe("E04 login e-mail change from W09", () => {
       await db.from("notification").delete().eq("person_id", person).gte("created_at", since);
     });
 
-    expect(await changeLoginEmail(db, { personId: person, personName: "Dono do Grupo B", accountId: G03, oldEmail, newEmail, provedBy: proved, meta: META })).toEqual({ ok: true });
+    expect(await changeLoginEmail(db, { personId: person, personName: "Dono do Grupo B", accountId: G03, oldEmail, newEmail, provedBy: proved, meta: META })).toEqual({ ok: true, message: CONTACT_MESSAGES.done });
 
     expect((await db.from("person").select("email, auth_user_id").eq("id", person).single()).data).toEqual({ email: newEmail, auth_user_id: own });
     expect((await db.auth.admin.getUserById(own)).data.user!.email).toBe(newEmail);
     expect((await db.auth.admin.getUserById(proved)).data.user).toBeNull();
-    const { data: locks } = await db.from("security_lock").select("reason, until").eq("account_id", G03).gte("created_at", since);
+    const { data: locks } = await db.from("security_lock").select("reason, until, person_id").eq("account_id", G03).gte("created_at", since);
     expect(locks).toHaveLength(1);
     expect(locks![0].reason).toBe("contact_change:email");
+    // 04 §8: the Dono who changed the e-mail is the one locked.
+    expect(locks![0].person_id).toBe(person);
+    expect(await peopleLockUntil(db, G03, person)).not.toBeNull();
     expect(new Date(locks![0].until).getTime() - Date.now()).toBeGreaterThan(23.9 * 3600_000);
     const { data: audit } = await db.from("audit_log").select("action").eq("account_id", G03).gte("at", since);
     expect(audit!.map((a) => a.action).sort()).toEqual(["person.email_change", "security_lock.contact_change"]);
     const { data: n } = await db.from("notification").select("recipient, channel, notice_code").eq("person_id", person).gte("created_at", since);
     expect(n).toEqual([{ recipient: oldEmail, channel: "email", notice_code: "security_event" }]);
+  });
+
+  it("E04_an_abandoned_change_leaves_no_auth_user_when_replaced_or_expired", async () => {
+    const since = new Date().toISOString();
+    const own = (await db.auth.admin.createUser({ email: `e2e-own2-${tag}@teste.local`, email_confirm: true })).data.user!.id;
+    await db.from("person").update({ auth_user_id: own }).eq("id", person);
+    const first = `primeiro-${tag}@teste.local`;
+    const second = `segundo-${tag}@teste.local`;
+    const t0 = new Date();
+    cleanup.push(async () => {
+      const p = await pendingEmailChange(db, own);
+      if (p) await db.auth.admin.deleteUser(p.authUserId);
+      await db.from("person").update({ auth_user_id: null }).eq("id", person);
+      await db.auth.admin.deleteUser(own);
+    });
+
+    // Starting a change keeps the new address's Auth user as pending on the person's own Auth user.
+    await startEmailChange(db, { personId: person, accountId: G03, newEmail: first, now: t0 });
+    const p1 = await pendingEmailChange(db, own);
+    expect(p1).toMatchObject({ email: first });
+    expect((await db.auth.admin.getUserById(p1!.authUserId)).data.user!.email).toBe(first);
+
+    // The same address again keeps it; another address replaces it and the first Auth user goes away.
+    await startEmailChange(db, { personId: person, accountId: G03, newEmail: first, now: t0 });
+    expect((await pendingEmailChange(db, own))!.authUserId).toBe(p1!.authUserId);
+    await startEmailChange(db, { personId: person, accountId: G03, newEmail: second, now: t0 });
+    expect((await db.auth.admin.getUserById(p1!.authUserId)).data.user).toBeNull();
+    const p2 = await pendingEmailChange(db, own);
+    expect(p2).toMatchObject({ email: second });
+
+    // Within the code's 10 minutes it stays; after them it goes.
+    expect(await discardExpiredEmailChange(db, { personId: person, accountId: G03, now: new Date(t0.getTime() + 9 * 60_000) })).toBe(false);
+    expect(await discardExpiredEmailChange(db, { personId: person, accountId: G03, now: new Date(t0.getTime() + 11 * 60_000) })).toBe(true);
+    expect((await db.auth.admin.getUserById(p2!.authUserId)).data.user).toBeNull();
+    expect(await pendingEmailChange(db, own)).toBeNull();
+    const { data: audit } = await db.from("audit_log").select("action, after").eq("entity_id", person).gte("at", since).order("at");
+    expect(audit!.map((a) => a.action)).toEqual(["person.email_change_discarded", "person.email_change_discarded"]);
+  });
+
+  it("E04_a_finished_change_clears_the_pending_one", async () => {
+    const own = (await db.auth.admin.createUser({ email: `e2e-own3-${tag}@teste.local`, email_confirm: true })).data.user!.id;
+    const oldEmail = "grupob@exemplo.com.br";
+    const newEmail = `terceiro-${tag}@teste.local`;
+    const since = new Date().toISOString();
+    await db.from("person").update({ auth_user_id: own }).eq("id", person);
+    cleanup.push(async () => {
+      await db.from("person").update({ email: oldEmail, auth_user_id: null }).eq("id", person);
+      await db.auth.admin.deleteUser(own);
+      await db.from("security_lock").delete().eq("account_id", G03).gte("created_at", since);
+      await db.from("notification").delete().eq("person_id", person).gte("created_at", since);
+    });
+    await startEmailChange(db, { personId: person, accountId: G03, newEmail, now: new Date() });
+    const pending = (await pendingEmailChange(db, own))!;
+    expect(await changeLoginEmail(db, { personId: person, personName: "Dono do Grupo B", accountId: G03, oldEmail, newEmail, provedBy: pending.authUserId, meta: META })).toEqual({ ok: true, message: CONTACT_MESSAGES.done });
+    expect(await pendingEmailChange(db, own)).toBeNull();
+    expect((await db.auth.admin.getUserById(pending.authUserId)).data.user).toBeNull();
   });
 });

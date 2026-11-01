@@ -113,20 +113,21 @@ select ok((select r1.error_pct > r2.error_pct from public.recipe r1, public.reci
              and r2.menu_item_id = (select id from public.menu_item where name = 'Batata frita média' and account_id = (select id from g02))),
   'C12 "Done when": a dish with regional priors has a wider error bar than one fully from invoices');
 
--- C13: contribution per dish and channel.
+-- C13: contribution per dish and channel. CTB-01 as 04 §4 writes it (commission, payment fee, store share of the
+-- coupon co-funded 50/50 as M2 records it); the drawing used the channel's whole share, so these differ from it.
 select results_eq($$
   select name, channel::text, campaign_name, price_cents, channel_take_cents, ingredient_cents + packaging_cents, left_cents,
          round(left_pct * 100)::int
   from sept where name in ('X-Bacon artesanal', 'Combo casal', 'Batata frita média', 'Refrigerante lata') and channel in ('ifood', 'food99')
   order by name, channel desc, campaign_name nulls first
 $$, $$ values
-  ('Batata frita média', 'ifood', null, 1490::bigint, 380::bigint, 310::bigint, 800::bigint, 54),
-  ('Combo casal', 'ifood', null, 7990::bigint, 2037::bigint, 3180::bigint, 2773::bigint, 35),
-  ('Combo casal', 'ifood', 'Cupom 20% cofinanciado', 6392::bigint, 1630::bigint, 3180::bigint, 1582::bigint, 25),
-  ('Refrigerante lata', 'ifood', null, 500::bigint, 128::bigint, 285::bigint, 87::bigint, 17),
-  ('X-Bacon artesanal', 'ifood', null, 3690::bigint, 941::bigint, 1244::bigint, 1505::bigint, 41),
-  ('X-Bacon artesanal', 'food99', null, 3690::bigint, 819::bigint, 1244::bigint, 1627::bigint, 44)
-$$, 'C13: the drawn rows (preço, canal leva, insumos, sobra, % do preço)');
+  ('Batata frita média', 'ifood', null, 1490::bigint, 226::bigint, 310::bigint, 954::bigint, 64),
+  ('Combo casal', 'ifood', null, 7990::bigint, 1214::bigint, 3180::bigint, 3596::bigint, 45),
+  ('Combo casal', 'ifood', 'Cupom 20% cofinanciado', 7990::bigint, 1962::bigint, 3180::bigint, 2848::bigint, 36),
+  ('Refrigerante lata', 'ifood', null, 500::bigint, 76::bigint, 285::bigint, 139::bigint, 28),
+  ('X-Bacon artesanal', 'ifood', null, 3690::bigint, 561::bigint, 1244::bigint, 1885::bigint, 51),
+  ('X-Bacon artesanal', 'food99', null, 3690::bigint, 450::bigint, 1244::bigint, 1996::bigint, 54)
+$$, 'D03 C13: rows by CTB-01 (preço, canal leva, insumos, sobra, % do preço)');
 select is((select round(max(ingredient_error_pct) * 100)::int from sept), 9, 'C13, P06: "barra de erro de ± 9%"');
 select is_empty($$ select name from sept where can_invert $$, 'C13 CTB-02: "não inverte nenhuma linha"');
 select ok((select bool_and(prices_as_of = '2026-10-30') from sept), 'C13: prices as of 30/out, the same as C12');
@@ -136,8 +137,8 @@ select results_eq($$
   select d.kind::text, mi.name, d.channel::text, round(d.campaign_discount_pct * 100)::int, d.left_cents, d.base_left_cents
   from public.close_decision d join public.menu_item mi on mi.id = d.menu_item_id
   join public.close_period cp on cp.id = d.close_period_id where cp.account_id = (select id from g02)
-$$, $$ values ('campaign', 'Combo casal', 'ifood', 20, 1582::bigint, 2773::bigint) $$,
-  'DLV-01: "O cupom de 20% no Combo casal derruba a contribuição de R$ 27,73 para R$ 15,82"');
+$$, $$ values ('campaign', 'Combo casal', 'ifood', 20, 2848::bigint, 3596::bigint) $$,
+  'DLV-01: "O cupom de 20% no Combo casal derruba a contribuição de R$ 35,96 para R$ 28,48"');
 
 -- P06 "16 de 20 itens com preço de nota. Os outros 4 por estimativa da região."
 select results_eq($$

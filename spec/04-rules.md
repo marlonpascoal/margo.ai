@@ -101,6 +101,7 @@ Defaults per plan (sandbox and production keep separate values). "Off in all pla
 | Key | What it turns on | Raio-X | Lucro | Rede |
 |---|---|---|---|---|
 | `m1.raio_x` | Price X-ray from public data | on | on | on |
+| `m1.concorrente` | X-ray of a store that is not the account's own (competitor), up to `plan.competitor_xrays_per_month` per São Paulo month: Raio-X 0, Lucro 3, Rede 10, edited in C15 (Marlon, 31/out) | off | on | on |
 | `m2.ifood_api` | iFood reading through the official API | off | on | on |
 | `m2.extensao_chrome` | Chrome extension | off | on | on |
 | `m2.arquivo_99food` | 99Food statement import | off | on | on |
@@ -109,6 +110,7 @@ Defaults per plan (sandbox and production keep separate values). "Off in all pla
 | `m3.notas_xml` | Accountant's XML zip | off | on | on |
 | `m3.nfce_qr_auto` | Automatic QR reading (SP and PR) | off | off | off |
 | `m3.depara_ia` | AI ingredient suggestion | off | on | on |
+| `m3.custo` | Recipes, cost and contribution: C12, C13, the contribution job, W01 "sobrou" and the "sobrou" of the E01 close e-mail, its WhatsApp and W08 example, which say "falta custo" while off (Marlon, 31/out, 01/nov) | off | on | on |
 | `conta.multi_cozinha` | More than one kitchen per account | off | on | on |
 | `conta.pessoas` | Invite people and profiles | off | on | on |
 | `bpo.marca_propria` | Closing report with the BPO's brand | off | off | off |
@@ -131,7 +133,7 @@ During the free trial the account gets the Lucro defaults. Evaluation: override 
 
 - Code: 6 digits, valid 10 minutes, 5 tries, then 15-minute lock. Resend after 60 seconds.
 - Sessions: computer 30 days, phone 30 days, console 12 hours. "Sair de todos os aparelhos" revokes all sessions.
-- Contact change (e-mail or WhatsApp): code on the new channel, notice on the old one, `security_lock` of 24 hours on plan and people changes.
+- Contact change (e-mail or WhatsApp): code on the new channel, notice on the old one, `security_lock` of 24 hours on plan and people changes by the person who changed the contact, in every account they belong to. The lock holds back only that person: a Financeiro or Gerente who changes their e-mail does not block the Dono; a Dono who changes theirs is the one locked (Marlon, 01/nov).
 - Sole Dono who lost both channels: founders verify against the CNPJ and articles of association, then re-invite (P17).
 - Invite: 7 days, single use, shows inviter, role and kitchens (P18).
 

@@ -394,8 +394,11 @@ def test_handler_error_fails_the_job_and_logs_ids_only(
     assert job is not None and job.status == JobStatus.FAILED
     assert job.log[-1]["error"] == "ValueError"  # type: ignore[index,call-overload]
     printed = capsys.readouterr()
-    for text in (json.dumps(job.log), printed.out, printed.err):
-        assert "Pantanos" not in text and "186" not in text
+    # Look for the message's own tokens: a bare "186" also turns up by chance in timestamps,
+    # durations and job ids, while "186,00" (Brazilian decimal comma) and "R$" cannot.
+    for text in (json.dumps(job.log, ensure_ascii=False), printed.out, printed.err):
+        for token in ("Pantanos", "Burguer", "R$", "186,00"):
+            assert token not in text, token
     assert str(job_id) in printed.err
 
 

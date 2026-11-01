@@ -1,10 +1,11 @@
 // Manual WhatsApp queue (06 §7, D36, 04 §9, E05): until the WhatsApp Business Platform, every WhatsApp notice
 // is a ready click-to-chat link that a founder sends by hand from the console (a section of C21 Alertas; 05
 // is silent on where). Quiet hours hold owner messages: between 22h and 8h São Paulo the link is not offered
-// and marking as sent is refused. Team alerts to the founder on duty are not held (04 §10).
+// and marking as sent is refused. Only urgent team alerts to the founder on duty are not held (04 §10;
+// Marlon, 31/out).
 import { TIME_ZONE, dayMonth } from "@/lib/format";
 import type { Db } from "@/lib/supabase/admin";
-import { isQuietHours, whatsappLink } from "./plan";
+import { isQuietHours, waitsForMorning, whatsappLink } from "./plan";
 import type { RequestMeta } from "./store";
 
 export interface ManualRecord {
@@ -13,6 +14,8 @@ export interface ManualRecord {
   person_id: string | null;
   notice_code: string | null;
   alert_id: string | null;
+  /** From the alert the row belongs to; null for owner notices. */
+  alert_severity: "urgente" | "medio" | "baixo" | null;
   status: "queued" | "sent" | "failed" | "held_quiet_hours";
   body: string;
   recipient: string | null;
@@ -24,10 +27,10 @@ export interface ManualRecord {
 export type ManualState = "ready" | "held" | "no_number" | "done";
 
 /** E05: what a founder may do with one manual WhatsApp row now. */
-export function manualState(r: Pick<ManualRecord, "status" | "alert_id" | "recipient" | "manual_sent_at">, now: Date): ManualState {
+export function manualState(r: Pick<ManualRecord, "status" | "alert_severity" | "recipient" | "manual_sent_at">, now: Date): ManualState {
   if (r.manual_sent_at || r.status === "failed") return "done";
   if (!r.recipient) return "no_number";
-  if (r.alert_id === null && isQuietHours(now)) return "held";
+  if (waitsForMorning({ channel: "whatsapp_manual", alertSeverity: r.alert_severity }) && isQuietHours(now)) return "held";
   return "ready";
 }
 
@@ -67,7 +70,10 @@ export function buildManualRows(
   });
 }
 
-const COLUMNS = "id, account_id, person_id, notice_code, alert_id, status, body, recipient, provider_id, created_at, manual_sent_at";
+const COLUMNS = "id, account_id, person_id, notice_code, alert_id, status, body, recipient, provider_id, created_at, manual_sent_at, alert(severity)";
+
+type ManualSelect = Omit<ManualRecord, "alert_severity"> & { alert: { severity: ManualRecord["alert_severity"] } | null };
+const toRecord = ({ alert, ...r }: ManualSelect): ManualRecord => ({ ...r, alert_severity: alert?.severity ?? null });
 
 /** Pending manual WhatsApp rows (not yet marked sent), with the names the table shows. */
 export async function loadManualQueue(db: Db, now: Date, limit = 50): Promise<ManualRow[]> {
@@ -80,7 +86,7 @@ export async function loadManualQueue(db: Db, now: Date, limit = 50): Promise<Ma
     .order("created_at")
     .limit(limit);
   if (error) throw new Error(error.message);
-  const rows = (data ?? []) as ManualRecord[];
+  const rows = ((data ?? []) as ManualSelect[]).map(toRecord);
   const ids = (k: keyof ManualRecord) => [...new Set(rows.map((r) => r[k]).filter((v): v is string => typeof v === "string"))];
   const [people, accounts, notices, alerts] = await Promise.all([
     ids("person_id").length ? db.from("person").select("id, name").in("id", ids("person_id")) : { data: [] },
@@ -116,7 +122,7 @@ export async function markWhatsAppSent(db: Db, id: string, staffPersonId: string
   if (!staff) return { ok: false, message: MANUAL_MESSAGES.staffOnly };
   const { data: row } = await db.from("notification").select(COLUMNS).eq("id", id).eq("channel", "whatsapp_manual").maybeSingle();
   if (!row) return { ok: false, message: MANUAL_MESSAGES.notFound };
-  const r = row as ManualRecord;
+  const r = toRecord(row as ManualSelect);
   const state = manualState(r, now);
   if (state === "held") return { ok: false, message: MANUAL_MESSAGES.held };
   if (state === "no_number") return { ok: false, message: MANUAL_MESSAGES.noNumber };

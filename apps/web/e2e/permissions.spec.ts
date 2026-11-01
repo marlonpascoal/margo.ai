@@ -99,6 +99,18 @@ async function dono_E04_W04_last_dono_cannot_demote_self_and_C04_W03_ja_conteste
   const { data: m } = await db.from("membership").select("role").eq("id", sid("G-02:m-dono")).single();
   expect(m!.role).toBe("dono");
 
+  // A03/P14 (Marlon, 31/out): a Gerente invite needs at least one kitchen; nothing is created without one.
+  const since = new Date().toISOString();
+  await page.getByText("Convidar pessoa", { exact: true }).click();
+  const form = page.locator("form[data-invite-form]").first();
+  await form.getByLabel("WhatsApp com DDD ou e-mail").fill("(43) 99999-0001");
+  await form.getByLabel("Perfil").selectOption("gerente");
+  await expect(form.getByText("Cozinhas (marque pelo menos uma)")).toBeVisible();
+  await form.getByRole("button", { name: "Criar convite" }).click();
+  await expect(form.getByRole("alert")).toHaveText("Escolha pelo menos uma cozinha para o Gerente de cozinha.");
+  const { data: none } = await db.from("invite").select("id").eq("account_id", G02).gte("created_at", since);
+  expect(none).toEqual([]);
+
   // A temporary difference of Cozinha Centro, removed after the test.
   const { data: cp } = await db.from("close_period").select("id").eq("account_id", G02).eq("month", "2026-09-01").single();
   const { data: d } = await db

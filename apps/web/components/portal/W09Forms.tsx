@@ -1,6 +1,7 @@
 "use client";
 // W09 forms (04 §8, E04, E06): "Trocar" the login e-mail with a code on the new address, "Baixar todos os
-// meus dados" and "Excluir a conta e os dados" with a code. The server actions check the Dono every call.
+// meus dados" and "Excluir a conta e os dados" with a code. The server actions check the profile every call:
+// any profile changes its own e-mail; export and deletion are Dono only.
 import { useActionState, useState } from "react";
 import { confirmDeletion, confirmEmailChange, requestDataExport, sendDeletionCode, sendEmailCode, type W09State } from "@/app/app/seguranca/actions";
 
@@ -30,7 +31,7 @@ function CodeField({ id }: { id: string }) {
 }
 
 /** The e-mail line of "Como você entra" with its "Trocar". */
-export function EmailChange({ email, enabled }: { email: string; enabled: boolean }) {
+export function EmailChange({ email }: { email: string }) {
   const [open, setOpen] = useState(false);
   const [sent, send, sending] = useActionState(sendEmailCode, empty);
   const [done, confirm, confirming] = useActionState(confirmEmailChange, empty);
@@ -39,7 +40,7 @@ export function EmailChange({ email, enabled }: { email: string; enabled: boolea
     <div className="flex flex-col gap-2 border-t border-border-subtle py-2.5 text-md">
       <div className="flex justify-between gap-3">
         <span>E-mail: {email}</span>
-        <button type="button" disabled={!enabled} onClick={() => setOpen((o) => !o)} aria-expanded={open} className={small}>
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={small}>
           Trocar
         </button>
       </div>

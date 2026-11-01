@@ -5,7 +5,7 @@ import { connectView } from "./connect";
 import { infoOf, kitchenApp, ownerTotals, pillOf, PILL_LABEL, whatHappened, type OwnerContestation } from "./contestacoes";
 import { lojasLead, lojasView, type LojasInput } from "./lojas";
 import { MATRIX, peopleView } from "./pessoas";
-import { normalizeWhatsapp, OWNER_EVENTS, peopleError, seesKitchen, shortKitchen, whatsappShort, whenLabel, type Scope } from "./scope";
+import { INVITE_MESSAGES, inviteKitchens, normalizeWhatsapp, OWNER_EVENTS, peopleError, seesKitchen, shortKitchen, whatsappShort, whenLabel, type Scope } from "./scope";
 
 const DONO: Scope = { role: "dono", allKitchens: true, kitchenIds: [] };
 const GERENTE_CENTRO: Scope = { role: "gerente", allKitchens: false, kitchenIds: ["centro"] };
@@ -160,6 +160,16 @@ describe("P14/W04 Pessoas", () => {
     expect(peopleError("E04_last_dono: the account must keep one Dono")).toBe("Toda conta precisa de pelo menos um Dono. Faça outra pessoa Dono antes.");
     expect(peopleError("E04_locked: people changes are locked")).toMatch(/24 horas/);
     expect(peopleError("something else")).toBe("Não deu certo. Tente de novo.");
+  });
+
+  it("A03_P14_gerente_invite_needs_at_least_one_kitchen", () => {
+    // Marlon, 31/out: a Gerente is invited to chosen kitchens only; other profiles with none chosen see all.
+    expect(inviteKitchens("gerente", [])).toEqual({ ok: false, error: INVITE_MESSAGES.gerenteNeedsKitchen });
+    expect(inviteKitchens("gerente", ["", " "])).toEqual({ ok: false, error: INVITE_MESSAGES.gerenteNeedsKitchen });
+    expect(inviteKitchens("gerente", ["centro"])).toEqual({ ok: true, kitchens: ["centro"] });
+    expect(inviteKitchens("financeiro", [])).toEqual({ ok: true, kitchens: [] });
+    expect(inviteKitchens("financeiro", ["centro"])).toEqual({ ok: true, kitchens: ["centro"] });
+    expect(inviteKitchens("dono", ["centro"])).toEqual({ ok: true, kitchens: [] });
   });
 
   it("P14_contacts_are_normalized", () => {

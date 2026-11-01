@@ -63,7 +63,8 @@ export class FakeNotifyStore implements NotifyStore {
   }
 
   async outbox(limit: number) {
-    return this.notifications.filter((n) => n.status === "queued" || n.status === "held_quiet_hours").slice(0, limit).map((n) => ({ ...n }));
+    return this.notifications.filter((n) => n.status === "queued" || n.status === "held_quiet_hours").slice(0, limit)
+      .map((n) => ({ ...n, alertSeverity: this.alerts.find((a) => a.id === n.alertId)?.severity ?? null }));
   }
 
   async contact(personId: string) {

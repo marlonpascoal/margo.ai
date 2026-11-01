@@ -61,7 +61,7 @@ Postgres in Supabase. Migrations in `supabase/migrations/` are the contract betw
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `invoice` | `account_id`, `company_id`, `access_key` (44 digits, unique), `model` (55, 65), `issuer_cnpj`, `issuer_name`, `issued_at`, `total_cents`, `source` enum(`xml_zip`,`key_typed`,`qr_url`,`whatsapp_photo`), `xml_path` | Dedupe by `access_key` (D11) |
+| `invoice` | `account_id`, `company_id`, `access_key` (44 digits, unique per account: `unique (account_id, access_key)`, 31/out), `model` (55, 65), `issuer_cnpj`, `issuer_name`, `issued_at`, `total_cents`, `source` enum(`xml_zip`,`key_typed`,`qr_url`,`whatsapp_photo`), `xml_path` | Dedupe by `access_key` within the account (D11); another account's invoices are never revealed |
 | `invoice_line` | `invoice_id`, `description`, `ncm`, `gtin`, `unit`, `qty`, `unit_price_cents`, `total_cents` | |
 | `ingredient` | `name`, `category`, `base_unit` (g, ml, un), `gtin text[]` | Global catalog, shared across clients (the asset, D14). No `account_id` |
 | `ingredient_match` | `invoice_line_id`, `ingredient_id`, `method` enum(`gtin`,`rule`,`ai`,`manual`), `status` enum(`suggested`,`confirmed`,`rejected`), `confirmed_by`, `conversion_factor` | AI suggestions never count until `confirmed` (D14) |
@@ -76,7 +76,7 @@ Postgres in Supabase. Migrations in `supabase/migrations/` are the contract betw
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `plan` | `code` (`raio_x`,`lucro`,`rede`), `name`, `price_cents null`, `billing_unit` enum(`kitchen`,`channel_store`), `trial_days`, `features jsonb` | Prices and trial are data, edited in C15 (D40) |
+| `plan` | `code` (`raio_x`,`lucro`,`rede`), `name`, `price_cents null`, `billing_unit` enum(`kitchen`,`channel_store`), `trial_days`, `competitor_xrays_per_month int` (Raio-X 0, Lucro 3, Rede 10; 31/out), `features jsonb` | Prices, trial and the competitor X-ray limit are data, edited in C15 (D40) |
 | `subscription` | `account_id`, `plan_id`, `status` enum(`trial`,`active`,`past_due`,`canceled`,`free`), `asaas_customer_id`, `asaas_subscription_id`, `next_due_on`, `units_billed`, `last_event`, `last_event_at` | Status only from Asaas webhooks (D27) |
 | `billing_event` | `account_id`, `asaas_event`, `payload jsonb`, `received_at`, `processed_at` | Raw webhooks, idempotent by Asaas event id |
 | `pilot` | `account_id`, `pct_months_1_2`, `cap_cents`, `fixed_from_day_61_cents`, `started_on` | D37. Per account, values open |

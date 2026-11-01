@@ -12,7 +12,7 @@ const field = "box-border min-h-11 rounded-md border border-border-strong bg-sur
 const label = "text-md font-semibold";
 const check = "flex items-center gap-2.5 text-md";
 
-export default function NewXrayForm({ initialUrl }: { initialUrl: string }) {
+export default function NewXrayForm({ initialUrl, account }: { initialUrl: string; account: { code: string; name: string } | null }) {
   const [url, setUrl] = useState(initialUrl);
   const [store, setStore] = useState<StoreLookup | null>(null);
   const [state, action, pending] = useActionState<CreateState, FormData>(createXrayAction, { message: null });
@@ -29,6 +29,12 @@ export default function NewXrayForm({ initialUrl }: { initialUrl: string }) {
 
   return (
     <form action={action} className="box-border flex max-w-[720px] flex-col gap-5 rounded-xl border border-border bg-surface p-4 md:p-6" noValidate>
+      {account && (
+        <div className="text-sm text-ink-muted">
+          <input type="hidden" name="conta" value={account.code} />
+          Para a conta {account.name} ({account.code})
+        </div>
+      )}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="url" className={label}>
           Link da loja no iFood

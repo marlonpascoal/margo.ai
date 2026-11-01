@@ -110,13 +110,14 @@ export interface PlanFormRow {
   unit: "kitchen" | "channel_store";
   trialDays: number;
   example: boolean;
+  competitorXrays: number;
 }
 
 export function PlanForm({ plan }: { plan: PlanFormRow }) {
   const [state, action, pending] = useActionState(savePlanAction, initial);
   const id = (n: string) => `plan-${plan.id}-${n}`;
   return (
-    <form action={action} aria-label={`Plano ${plan.name}`} className="grid grid-cols-1 items-end gap-3 border-t border-border-subtle pt-3 text-sm md:grid-cols-[120px_1fr_1fr_1fr_auto_auto]">
+    <form action={action} aria-label={`Plano ${plan.name}`} className="grid grid-cols-1 items-end gap-3 border-t border-border-subtle pt-3 text-sm md:grid-cols-[120px_1fr_1fr_1fr_1fr_auto_auto]">
       <input type="hidden" name="plan" value={plan.id} />
       <b className="flex min-h-10 items-center text-base">{plan.name}</b>
       <div className="flex flex-col gap-1">
@@ -139,6 +140,12 @@ export function PlanForm({ plan }: { plan: PlanFormRow }) {
           Dias de teste grátis
         </label>
         <input id={id("trial")} name="trial" inputMode="numeric" defaultValue={String(plan.trialDays)} className={field} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={id("competitor")} className={label}>
+          Raio-X de concorrente por mês
+        </label>
+        <input id={id("competitor")} name="competitor" inputMode="numeric" defaultValue={String(plan.competitorXrays)} className={field} />
       </div>
       <label className="flex min-h-10 items-center gap-2">
         <input type="checkbox" name="example" defaultChecked={plan.example} />

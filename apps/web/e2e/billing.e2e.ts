@@ -201,6 +201,22 @@ test.describe("C15 as Fundador", () => {
     await lucro.getByRole("button", { name: "Salvar" }).click();
     await expect(lucro.getByRole("status")).toHaveText("Salvo.");
     expect((await db.from("plan").select("trial_days").eq("code", "lucro").single()).data!.trial_days).toBe(14);
+
+    // B01 competitor limit (31/out): a plan field like the billing unit, 3 -> 5 -> 3, audited.
+    await page.reload();
+    await expect(lucro.getByLabel("Raio-X de concorrente por mês")).toHaveValue("3");
+    await lucro.getByLabel("Raio-X de concorrente por mês").fill("5");
+    await lucro.getByRole("button", { name: "Salvar" }).click();
+    await expect(lucro.getByRole("status")).toHaveText("Salvo.");
+    const { data: lim } = await db.from("audit_log").select("before, after").eq("action", "plan.update").order("at", { ascending: false }).limit(1).single();
+    expect(lim).toMatchObject({ before: { competitor_xrays_per_month: 3 }, after: { competitor_xrays_per_month: 5 } });
+    await lucro.getByLabel("Raio-X de concorrente por mês").fill("muitos");
+    await lucro.getByRole("button", { name: "Salvar" }).click();
+    await expect(lucro.getByRole("alert")).toHaveText("Raio-X de concorrente por mês: um número de 0 a 99.");
+    await lucro.getByLabel("Raio-X de concorrente por mês").fill("3");
+    await lucro.getByRole("button", { name: "Salvar" }).click();
+    await expect(lucro.getByRole("status")).toHaveText("Salvo.");
+    expect((await db.from("plan").select("competitor_xrays_per_month").eq("code", "lucro").single()).data!.competitor_xrays_per_month).toBe(3);
   });
 });
 

@@ -1461,14 +1461,14 @@ isOneToOne: false
                   ]
                 },"plan": {
                   Row: {
-                    "billing_unit": Database["public"]['Enums']["billing_unit"],"code": string,"created_at": string,"features": NonNullable<Json>,"id": string,"name": string,"price_cents": number | null,"price_is_example": boolean,"trial_days": number,"updated_at": string
+                    "billing_unit": Database["public"]['Enums']["billing_unit"],"code": string,"competitor_xrays_per_month": number,"created_at": string,"features": NonNullable<Json>,"id": string,"name": string,"price_cents": number | null,"price_is_example": boolean,"trial_days": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code": string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name": string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
+                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code": string,"competitor_xrays_per_month"?: number,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name": string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
+                    "billing_unit"?: Database["public"]['Enums']["billing_unit"],"code"?: string,"competitor_xrays_per_month"?: number,"created_at"?: string,"features"?: NonNullable<Json>,"id"?: string,"name"?: string,"price_cents"?: number | null,"price_is_example"?: boolean,"trial_days"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -2142,7 +2142,7 @@ isOneToOne: false
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
                            },
 "xray_create":
-{ Args: { "p_actor": string,"p_categories": (string)[],"p_external_id": string,"p_ip"?: unknown,"p_radius_km": number,"p_rules": Json,"p_url": string,"p_user_agent"?: string }; Returns: string
+{ Args: { "p_account"?: string,"p_actor": string,"p_categories": (string)[],"p_env"?: Database["public"]['Enums']["flag_env"],"p_external_id": string,"p_ip"?: unknown,"p_radius_km": number,"p_rules": Json,"p_url": string,"p_user_agent"?: string }; Returns: string
                            },
 "xray_item_review":
 { Args: { "p_accepted": (string)[],"p_actor": string,"p_ip"?: unknown,"p_item": string,"p_user_agent"?: string }; Returns: undefined

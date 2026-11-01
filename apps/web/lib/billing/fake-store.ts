@@ -15,9 +15,9 @@ import type {
 } from "./store";
 
 export const FAKE_PLANS: PlanRow[] = [
-  { id: "plan-raio_x", code: "raio_x", name: "Raio-X", priceCents: 0, billingUnit: "kitchen", trialDays: 14, priceIsExample: true },
-  { id: "plan-lucro", code: "lucro", name: "Lucro", priceCents: 30000, billingUnit: "kitchen", trialDays: 14, priceIsExample: true },
-  { id: "plan-rede", code: "rede", name: "Rede", priceCents: null, billingUnit: "kitchen", trialDays: 14, priceIsExample: true },
+  { id: "plan-raio_x", code: "raio_x", name: "Raio-X", priceCents: 0, billingUnit: "kitchen", trialDays: 14, priceIsExample: true, competitorXraysPerMonth: 0 },
+  { id: "plan-lucro", code: "lucro", name: "Lucro", priceCents: 30000, billingUnit: "kitchen", trialDays: 14, priceIsExample: true, competitorXraysPerMonth: 3 },
+  { id: "plan-rede", code: "rede", name: "Rede", priceCents: null, billingUnit: "kitchen", trialDays: 14, priceIsExample: true, competitorXraysPerMonth: 10 },
 ];
 
 export interface FakeSource {

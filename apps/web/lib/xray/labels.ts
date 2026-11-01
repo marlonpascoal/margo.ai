@@ -54,7 +54,15 @@ export const XRAY_MESSAGES = {
   unskip: "Voltar para a conta",
   invalidHours: "Horas: use números como 0,5.",
   jobFailed: "A tarefa falhou. Peça para rodar de novo.",
+  unknownAccount: "Conta não encontrada.",
 } as const;
+
+/** C02 refusal of a competitor X-ray (B01 competitor, migration 20261212000001): limit 0 means not in the
+ * plan or flag m1.concorrente off. Not drawn. */
+export function competitorRefusal(limit: number): string {
+  if (limit <= 0) return "Raio-X de concorrente fora do plano desta conta.";
+  return `Limite do plano atingido: ${limit} raio-X de concorrente por mês. O próximo fica para o mês que vem.`;
+}
 
 /** C03: why the collection stopped, from the failed job's log (worker exception names, D47). */
 export function collectStopReason(error: string | null | undefined, reason?: string | null): string {

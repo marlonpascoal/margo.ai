@@ -52,9 +52,19 @@ export const toPlan = (p: {
   billing_unit: BillingUnit;
   trial_days: number;
   price_is_example: boolean;
-}): PlanRow => ({ id: p.id, code: p.code, name: p.name, priceCents: p.price_cents, billingUnit: p.billing_unit, trialDays: p.trial_days, priceIsExample: p.price_is_example });
+  competitor_xrays_per_month: number;
+}): PlanRow => ({
+  id: p.id,
+  code: p.code,
+  name: p.name,
+  priceCents: p.price_cents,
+  billingUnit: p.billing_unit,
+  trialDays: p.trial_days,
+  priceIsExample: p.price_is_example,
+  competitorXraysPerMonth: p.competitor_xrays_per_month,
+});
 
-export const PLAN_COLUMNS = "id, code, name, price_cents, billing_unit, trial_days, price_is_example";
+export const PLAN_COLUMNS = "id, code, name, price_cents, billing_unit, trial_days, price_is_example, competitor_xrays_per_month";
 
 const PLAN_ORDER = ["raio_x", "lucro", "rede"];
 

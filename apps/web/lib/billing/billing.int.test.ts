@@ -6,6 +6,8 @@ import { FakeNotifyStore } from "@/lib/notify/fake-store";
 import { adminClient } from "@/lib/supabase/admin";
 import { ASAAS_SANDBOX_URL } from "./asaas";
 import { FakeAsaasClient } from "./fake-asaas";
+import { runUnitsSync } from "./jobs";
+import { monthlyTotalCents } from "./rules";
 import { returnToFree } from "./service";
 import { SupabaseBillingStore } from "./supabase-store";
 import { loadC15View } from "./view";
@@ -37,17 +39,19 @@ afterAll(async () => {
 });
 
 describe("billing store on the local stack", () => {
-  it("C15_on_the_seed_matches_the_drawing", async () => {
+  // D40, Marlon 31/out: only channel stores of kitchens in analysis are billed, so G-02 pays for 5 stores
+  // (R$ 1.500), not the 6 drawn in C15 (R$ 1.800). The rest of the row is as drawn.
+  it("E01_C15_on_the_seed_matches_the_drawing_with_billed_stores", async () => {
     const now = new Date("2026-10-30T10:00:00-03:00");
     const v = await loadC15View(db, { baseUrl: ASAAS_SANDBOX_URL, apiKey: null }, now);
     const seed = { ...v, rows: v.rows.filter((r) => /\(G-0[1-4]\)$/.test(r.account)) };
     expect(seed.rows.map((r) => [r.account, r.plan, r.units, r.status, r.next, r.asaas])).toEqual([
-      ["Grupo Exemplo (G-02)", "Lucro", "6", "ativa", "05/nov · R$ 1.800", "sub_…a91f"],
+      ["Grupo Exemplo (G-02)", "Lucro", "5", "ativa", "05/nov · R$ 1.500", "sub_…a91f"],
       ["Pantanos Burguer (G-01)", "Lucro (teste)", "1", "teste: faltam 9 dias", "sem cartão ainda", "cus_…77c2"],
       ["Grupo B (G-03)", "Lucro (teste)", "3", "teste: faltam 2 dias", "sem cartão ainda", "cus_…0b4e"],
       ["Grupo C (G-04)", "Raio-X", "2", "grátis", "não cobra", ""],
     ]);
-    expect(v.kpis.revenue).toBe("R$ 1.800");
+    expect(v.kpis.revenue).toBe("R$ 1.500");
     expect(v.kpis.paying).toBe(1);
     expect(v.unit).toBe("loja");
     expect(v.pilots.map((p) => [p.account, p.pct, p.cap])).toEqual([["Grupo B (G-03)", "20%", ""]]);
@@ -59,6 +63,44 @@ describe("billing store on the local stack", () => {
     expect(await store.countUnits(g02, "kitchen")).toBe(2);
     expect(await store.countUnits(g02, "channel_store")).toBe(5);
     expect(await store.countUnits(TMP, "kitchen")).toBe(1);
+  });
+
+  it("E01_seeded_G02_units_and_amount_follow_the_billing_rule", async () => {
+    const g02 = await sid("G-02");
+    const sub = (await store.subscription(g02))!;
+    const plan = (await store.plans()).find((p) => p.id === sub.planId)!;
+    expect(plan.billingUnit).toBe("channel_store");
+    expect(sub.unitsBilled).toBe(await store.countUnits(g02, plan.billingUnit));
+    expect(sub.unitsBilled).toBe(5);
+    expect(monthlyTotalCents(plan, sub.unitsBilled)).toBe(150000);
+  });
+
+  it("E01_units_cron_leaves_the_seeded_G02_amount_unchanged", async () => {
+    const g02 = await sid("G-02");
+    const before = (await store.subscription(g02))!;
+    // The cron over G-02 only: other seed accounts are not this test's business and must stay as seeded.
+    const onlyG02 = Object.create(store) as SupabaseBillingStore;
+    onlyG02.subscriptionsByStatus = async (statuses) => (await store.subscriptionsByStatus(statuses)).filter((s) => s.accountId === g02);
+    const asaas = new FakeAsaasClient();
+    const now = new Date("2026-10-31T06:00:00-03:00");
+    const out = await runUnitsSync({ store: onlyG02, asaas, notify: { store: new FakeNotifyStore(), now: () => now, config: { teamEmail: "x", founderOnDutyEmail: null } }, now: () => now });
+    expect(out).toEqual({ changed: [], asaasUpdated: [] });
+    expect(asaas.valueUpdates).toEqual([]);
+    expect(await store.subscription(g02)).toEqual(before);
+  });
+
+  it("E01_pilot_month_holds_one_percentage_and_one_fixed_charge_never_two_of_a_kind", async () => {
+    const pilotId = (await db.from("pilot").insert({ account_id: TMP }).select("id").single()).data!.id;
+    const pilot = (await store.pilots()).find((p) => p.id === pilotId)!;
+    expect(pilot.createdOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const row = { pilotId, month: "2026-12-01", creditedCents: 0, chargeCents: 30000, asaasPaymentId: null, status: "pending" as const };
+    const pct = await store.insertPilotCharge({ ...row, kind: "pct" });
+    const fixed = await store.insertPilotCharge({ ...row, kind: "fixed" });
+    expect(pct).not.toBeNull();
+    expect(fixed).not.toBeNull();
+    expect(await store.insertPilotCharge({ ...row, kind: "fixed" })).toBeNull();
+    expect(await store.pilotCharge(pilotId, "2026-12-01", "fixed")).toMatchObject({ id: fixed, kind: "fixed", chargeCents: 30000 });
+    expect((await store.pilotChargeById(pct!))!.kind).toBe("pct");
   });
 
   it("customer_data_and_asaas_ids", async () => {

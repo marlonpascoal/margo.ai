@@ -5,7 +5,9 @@
 -- Choices where the drawings disagree (decided with Marlon, 30/out):
 --   G-02 is "Grupo Exemplo" (owner screens, 03 §6); the console drawings call it "Grupo A".
 --   G-02 pays Lucro (C15, C21); the trial banner of W01/W05 belongs to Pantanos (P08).
---   Billing per channel store (C15: 6 stores x R$ 300); D40 is still open, so only the seed changes plan.billing_unit.
+--   Billing per channel store; D40 is still open, so only the seed changes plan.billing_unit.
+--   Only channel stores of kitchens in analysis are billed (Marlon, 31/out): G-02 pays 5 stores x R$ 300 =
+--   R$ 1.500, not the 6 stores and R$ 1.800 drawn in C15 (Quiosque Shopping is not in analysis).
 --   Store layout of C19: Shopping has Milkshake Bar only; the new Burger do Bairro (e801...) has no kitchen.
 -- Filled in because no drawing shows them (synthetic, safe to change):
 --   CNPJ roots and Pantanos CNPJ (invalid check digits on purpose, so they can never be a real company),
@@ -135,10 +137,14 @@ insert into public.owner_authorization (account_id, company_id, scope, includes_
   (pg_temp.sid('G-02'), pg_temp.sid('G-02:cnpj1'), array['ifood', 'food99', 'notas'], true, true, pg_temp.sid('p:g02-dono'), '2026-10-10 11:00-03'),
   (pg_temp.sid('G-02'), pg_temp.sid('G-02:cnpj2'), array['ifood', 'food99', 'notas'], true, true, pg_temp.sid('p:g02-dono'), '2026-10-10 11:00-03');
 
--- C15: active Lucro, 6 stores.
+-- C15: active Lucro. units_billed follows the billing rule (04 §7, D40, SupabaseBillingStore.countUnits):
+-- channel stores of kitchens in analysis, 5 here, so the units cron finds nothing to change.
 insert into public.subscription (account_id, plan_id, status, asaas_customer_id, asaas_subscription_id, next_due_on, units_billed, last_event, last_event_at) values
   (pg_temp.sid('G-02'), (select id from public.plan where code = 'lucro'), 'active', 'cus_000000g02c', 'sub_00000000a91f',
-   '2026-11-05', 6, 'pagamento confirmado', '2026-10-05 09:00-03');
+   '2026-11-05',
+   (select count(*) from public.channel_store cs join public.kitchen k on k.id = cs.kitchen_id
+     where cs.account_id = pg_temp.sid('G-02') and k.in_analysis),
+   'pagamento confirmado', '2026-10-05 09:00-03');
 
 -- Pantanos Burguer, G-01 (D03 test store, P08, C14, C15) -----------------------------------------
 -- The iFood uuid is drawn only as 91a9c35d-...; replace with the recorded public page in wave 1, lane A.

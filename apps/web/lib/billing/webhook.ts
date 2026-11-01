@@ -175,6 +175,6 @@ async function applyPilotPayment(deps: BillingDeps, ev: BillingEventIn, accountI
   if (!status) return;
   await store.updatePilotCharge(chargeId, { status, asaasPaymentId: charge.asaasPaymentId ?? ev.paymentId });
   await store.audit([systemAudit(accountId, `pilot_charge.webhook.${ev.kind}`, "pilot_charge", chargeId, { status: charge.status }, { status })]);
-  await notify(deps.notify, { code: "billing_result", accountId, message: billingResultMessage(status === "paid", ev.valueCents, "piloto") });
+  await notify(deps.notify, { code: "billing_result", accountId, message: billingResultMessage(status === "paid", ev.valueCents, charge.kind === "fixed" ? "plano Lucro, piloto a partir do dia 61" : "piloto") });
   if (status === "refused") await raiseAlert(deps.notify, "urgente", ALERT_TITLES.refused, accountId, C15_PATH);
 }

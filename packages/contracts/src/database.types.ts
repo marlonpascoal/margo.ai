@@ -1441,14 +1441,14 @@ isOneToOne: true
                   ]
                 },"pilot_charge": {
                   Row: {
-                    "asaas_payment_id": string | null,"charge_cents": number,"created_at": string,"credited_cents": number,"id": string,"month": string,"pilot_id": string,"status": string | null,"updated_at": string
+                    "asaas_payment_id": string | null,"charge_cents": number,"created_at": string,"credited_cents": number,"id": string,"kind": string,"month": string,"pilot_id": string,"status": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "asaas_payment_id"?: string | null,"charge_cents"?: number,"created_at"?: string,"credited_cents"?: number,"id"?: string,"month": string,"pilot_id": string,"status"?: string | null,"updated_at"?: string
+                    "asaas_payment_id"?: string | null,"charge_cents"?: number,"created_at"?: string,"credited_cents"?: number,"id"?: string,"kind"?: string,"month": string,"pilot_id": string,"status"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "asaas_payment_id"?: string | null,"charge_cents"?: number,"created_at"?: string,"credited_cents"?: number,"id"?: string,"month"?: string,"pilot_id"?: string,"status"?: string | null,"updated_at"?: string
+                    "asaas_payment_id"?: string | null,"charge_cents"?: number,"created_at"?: string,"credited_cents"?: number,"id"?: string,"kind"?: string,"month"?: string,"pilot_id"?: string,"status"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {

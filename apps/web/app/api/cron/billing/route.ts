@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     reminded: out.trial.reminded.length,
     units_changed: out.units.changed.length,
     pilot_charged: out.pilots.charged.length,
+    pilot_fixed_charged: out.pilots.fixedCharged.length,
     pilot_failed: out.pilots.failed.length,
   };
   console.info(JSON.stringify({ service: "cron_billing", ...summary }));

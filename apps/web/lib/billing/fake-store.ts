@@ -7,6 +7,7 @@ import type {
   BillingStore,
   CreditedItem,
   InvoiceUpsert,
+  PilotChargeKind,
   PilotChargeRow,
   PilotRow,
   StoredEvent,
@@ -119,10 +120,12 @@ export class FakeBillingStore implements BillingStore {
   async creditedItems(accountId: string, from: string, to: string) {
     return (this.credited.get(accountId) ?? []).filter((c) => c.creditedOn >= from && c.creditedOn < to);
   }
-  async pilotCharge(pilotId: string, month: string) { return this.charges.find((c) => c.pilotId === pilotId && c.month === month) ?? null; }
+  async pilotCharge(pilotId: string, month: string, kind: PilotChargeKind) {
+    return this.charges.find((c) => c.pilotId === pilotId && c.month === month && c.kind === kind) ?? null;
+  }
   async pilotChargeById(id: string) { return this.charges.find((c) => c.id === id) ?? null; }
   async insertPilotCharge(row: Omit<PilotChargeRow, "id">) {
-    if (this.charges.some((c) => c.pilotId === row.pilotId && c.month === row.month)) return null;
+    if (this.charges.some((c) => c.pilotId === row.pilotId && c.month === row.month && c.kind === row.kind)) return null;
     const id = `00000000-0000-4000-8000-${String(++this.seq).padStart(12, "0")}`;
     this.charges.push({ ...row, id });
     return id;

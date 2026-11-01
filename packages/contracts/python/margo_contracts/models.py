@@ -996,6 +996,7 @@ class PilotCharge(Row):
     created_at: datetime
     credited_cents: int
     id: UUID
+    kind: str
     month: date
     pilot_id: UUID
     status: str | None

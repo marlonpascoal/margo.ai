@@ -5208,18 +5208,18 @@ insert into public.order_item_fact (account_id, order_fact_id, line_no, item_nam
 
 -- Derived: contribution per dish and channel (CTB-01, CTB-02), insumos per store (W01), DLV-01.
 insert into public.contribution (account_id, close_period_id, menu_item_id, channel, campaign_name, campaign_discount_pct, units, price_cents, channel_take_cents, ingredient_cents, packaging_cents, ingredient_error_pct, left_cents, left_pct, can_invert, prices_as_of) values
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:xbacon'), 'ifood', null, null, 913, 3690, 941, 1244, 0, 0.0927, 1505, 0.4079, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:xbacon'), 'food99', null, null, 178, 3690, 819, 1244, 0, 0.0927, 1627, 0.4409, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:smash'), 'ifood', null, null, 496, 3290, 839, 1203, 0, 0.0630, 1248, 0.3793, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:smash'), 'food99', null, null, 132, 3290, 730, 1203, 0, 0.0630, 1357, 0.4125, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:batata'), 'ifood', null, null, 352, 1490, 380, 310, 0, 0.0200, 800, 0.5369, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:combo'), 'ifood', null, null, 30, 7990, 2037, 3180, 0, 0.0768, 2773, 0.3471, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:combo'), 'ifood', 'Cupom 20% cofinanciado', 0.20, 0, 6392, 1630, 3180, 0, 0.0768, 1582, 0.2475, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:milk'), 'ifood', null, null, 80, 1990, 507, 514, 0, 0.0579, 969, 0.4869, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:milk'), 'food99', null, null, 229, 1990, 442, 514, 0, 0.0579, 1034, 0.5196, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:refri'), 'ifood', null, null, 605, 500, 128, 285, 0, 0.0200, 87, 0.1740, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:balde'), 'ifood', null, null, 40, 5990, 1527, 2004, 0, 0.0666, 2459, 0.4105, false, '2026-10-30'),
-  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:tiras'), 'ifood', null, null, 275, 2990, 762, 906, 0, 0.0707, 1322, 0.4421, false, '2026-10-30');
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:xbacon'), 'ifood', null, null, 913, 3690, 561, 1244, 0, 0.0927, 1885, 0.5108, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:xbacon'), 'food99', null, null, 178, 3690, 450, 1244, 0, 0.0927, 1996, 0.5409, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:smash'), 'ifood', null, null, 496, 3290, 500, 1203, 0, 0.0630, 1587, 0.4824, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:smash'), 'food99', null, null, 132, 3290, 401, 1203, 0, 0.0630, 1686, 0.5125, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:batata'), 'ifood', null, null, 352, 1490, 226, 310, 0, 0.0200, 954, 0.6403, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:combo'), 'ifood', null, null, 30, 7990, 1214, 3180, 0, 0.0768, 3596, 0.4501, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:combo'), 'ifood', 'Cupom 20% cofinanciado', 0.20, 0, 7990, 1962, 3180, 0, 0.0768, 2848, 0.3564, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:milk'), 'ifood', null, null, 80, 1990, 302, 514, 0, 0.0579, 1174, 0.5899, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:milk'), 'food99', null, null, 229, 1990, 243, 514, 0, 0.0579, 1233, 0.6196, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:refri'), 'ifood', null, null, 605, 500, 76, 285, 0, 0.0200, 139, 0.2780, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:balde'), 'ifood', null, null, 40, 5990, 910, 2004, 0, 0.0666, 3076, 0.5135, false, '2026-10-30'),
+  (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:dish:tiras'), 'ifood', null, null, 275, 2990, 454, 906, 0, 0.0707, 1630, 0.5452, false, '2026-10-30');
 insert into public.close_cost_line (account_id, close_period_id, channel_store_id, units, uncovered_units, ingredient_cents, packaging_cents) values
   (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:s1'), 1345, 0, 1201331, 0),
   (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:s2'), 315, 0, 329310, 0),
@@ -5227,4 +5227,4 @@ insert into public.close_cost_line (account_id, close_period_id, channel_store_i
   (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:s4'), 1131, 0, 949194, 0),
   (pg_temp.sid('G-02'), pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02:s5'), 227, 0, 207822, 0);
 insert into public.close_decision (close_period_id, account_id, kind, menu_item_id, channel, campaign_name, campaign_discount_pct, left_cents, base_left_cents) values
-  (pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02'), 'campaign', pg_temp.sid('G-02:dish:combo'), 'ifood', 'Cupom 20% cofinanciado', 0.20, 1582, 2773);
+  (pg_temp.sid('G-02:close:2026-09'), pg_temp.sid('G-02'), 'campaign', pg_temp.sid('G-02:dish:combo'), 'ifood', 'Cupom 20% cofinanciado', 0.20, 2848, 3596);

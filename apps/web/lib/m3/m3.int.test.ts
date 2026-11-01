@@ -190,27 +190,27 @@ describe("A04 C12 writes", () => {
 });
 
 describe("C13 and W01 on the September close", () => {
-  it("C13_rows_and_DLV01_decision_as_drawn", async () => {
+  it("D03_C13_rows_and_DLV01_decision_by_CTB01", async () => {
     const rows = await loadContribution(db, CLOSE);
     expect(
       rows.slice(0, 2).map((r) => [r.name, r.channel, r.leftCents]),
     ).toEqual([
-      ["X-Bacon artesanal", "ifood", 1505],
-      ["X-Bacon artesanal", "food99", 1627],
+      ["X-Bacon artesanal", "ifood", 1885],
+      ["X-Bacon artesanal", "food99", 1996],
     ]);
     const coupon = rows.find((r) => r.campaignName !== null)!;
     expect(coupon).toMatchObject({
       name: "Combo casal",
-      priceCents: 6392,
-      takeCents: 1630,
+      priceCents: 7990,
+      takeCents: 1962,
       ingredientCents: 3180,
-      leftCents: 1582,
+      leftCents: 2848,
     });
     expect(await loadDecision(db, CLOSE, "2026-09-01")).toMatchObject({
       kind: "campaign",
       name: "Combo casal",
-      leftCents: 1582,
-      baseLeftCents: 2773,
+      leftCents: 2848,
+      baseLeftCents: 3596,
     });
   });
 

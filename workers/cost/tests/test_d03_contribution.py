@@ -74,7 +74,10 @@ def test_D03_job_recomputes_the_seed_contribution_exactly(conn) -> None:  # type
     assert snapshot(conn, cp) == seed
 
 
-def test_D03_top_items_and_error_bars_as_drawn(conn) -> None:  # type: ignore[no-untyped-def]
+def test_D03_top_items_follow_ctb01_as_written(conn) -> None:  # type: ignore[no-untyped-def]
+    """CTB-01 take = commission + payment fee + store share of the promotion (04 §4); the coupon is co-funded
+    50/50 as M2 records it (campaign.channel_share_pct). Values differ from the C13 drawing, which used the
+    channel's whole share (delivery and anticipation included) and a store-paid coupon."""
     from margo_cost.compute import compute_close
     from margo_cost.db import load_inputs, load_params
 
@@ -86,13 +89,31 @@ def test_D03_top_items_and_error_bars_as_drawn(conn) -> None:  # type: ignore[no
                                                             r.left_cents, round(r.ingredient_error_pct * 100))
         for r in result.rows
     }
-    assert got[("X-Bacon artesanal", "ifood", None)] == (3690, 941, 1244, 1505, 9)
-    assert got[("X-Bacon artesanal", "food99", None)] == (3690, 819, 1244, 1627, 9)
-    assert got[("Combo casal", "ifood", None)] == (7990, 2037, 3180, 2773, 8)
-    assert got[("Combo casal", "ifood", "Cupom 20% cofinanciado")] == (6392, 1630, 3180, 1582, 8)
-    assert got[("Batata frita média", "ifood", None)] == (1490, 380, 310, 800, 2)
-    assert got[("Refrigerante lata", "ifood", None)] == (500, 128, 285, 87, 2)
+    assert got[("X-Bacon artesanal", "ifood", None)] == (3690, 561, 1244, 1885, 9)
+    assert got[("X-Bacon artesanal", "food99", None)] == (3690, 450, 1244, 1996, 9)
+    assert got[("Combo casal", "ifood", None)] == (7990, 1214, 3180, 3596, 8)
+    assert got[("Combo casal", "ifood", "Cupom 20% cofinanciado")] == (7990, 1962, 3180, 2848, 8)
+    assert got[("Batata frita média", "ifood", None)] == (1490, 226, 310, 954, 2)
+    assert got[("Refrigerante lata", "ifood", None)] == (500, 76, 285, 139, 2)
     assert not any(r.can_invert for r in result.rows)
+
+
+def test_D03_coupon_share_is_read_from_m2(conn) -> None:  # type: ignore[no-untyped-def]
+    """M2 and M3 read the same campaign.channel_share_pct: a store-funded coupon costs the store the whole discount."""
+    from margo_cost.compute import compute_close
+    from margo_cost.db import load_inputs, load_params
+
+    cp = close_id(conn)
+    conn.execute(
+        """update public.campaign set channel_share_pct = 0 where name = %s
+           and account_id = (select account_id from public.close_period where id = %s)""",
+        ("Cupom 20% cofinanciado", cp),
+    )
+    _, inputs = load_inputs(conn, cp, SEED_AS_OF)
+    result = compute_close(inputs, load_params(conn))
+    name = {i.id: i.name for i in inputs.items}
+    row = next(r for r in result.rows if name[r.menu_item_id] == "Combo casal" and r.campaign_name)
+    assert (row.channel_take_cents, row.left_cents) == (2761, 2049)
 
 
 def test_D14_suggested_match_changes_no_cost(conn) -> None:  # type: ignore[no-untyped-def]

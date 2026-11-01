@@ -11,7 +11,7 @@ import { loadConnect, signAuthorization, TERMS_VERSION } from "./connect";
 import { changeLoginEmail, checkNewEmail, CONTACT_MESSAGES, discardExpiredEmailChange, pendingEmailChange, startEmailChange } from "./contact-change";
 import { loadOwnerContestations, markOwnerContestation, ownerTotals } from "./contestacoes";
 import { loadLojas } from "./lojas";
-import { loadPeople } from "./pessoas";
+import { loadPeople, peopleLockUntil } from "./pessoas";
 import type { Scope } from "./scope";
 
 const db = adminClient();
@@ -179,14 +179,17 @@ describe("E04 login e-mail change from W09", () => {
       await db.from("notification").delete().eq("person_id", person).gte("created_at", since);
     });
 
-    expect(await changeLoginEmail(db, { personId: person, personName: "Dono do Grupo B", accountId: G03, oldEmail, newEmail, provedBy: proved, meta: META })).toEqual({ ok: true });
+    expect(await changeLoginEmail(db, { personId: person, personName: "Dono do Grupo B", accountId: G03, oldEmail, newEmail, provedBy: proved, meta: META })).toEqual({ ok: true, message: CONTACT_MESSAGES.done });
 
     expect((await db.from("person").select("email, auth_user_id").eq("id", person).single()).data).toEqual({ email: newEmail, auth_user_id: own });
     expect((await db.auth.admin.getUserById(own)).data.user!.email).toBe(newEmail);
     expect((await db.auth.admin.getUserById(proved)).data.user).toBeNull();
-    const { data: locks } = await db.from("security_lock").select("reason, until").eq("account_id", G03).gte("created_at", since);
+    const { data: locks } = await db.from("security_lock").select("reason, until, person_id").eq("account_id", G03).gte("created_at", since);
     expect(locks).toHaveLength(1);
     expect(locks![0].reason).toBe("contact_change:email");
+    // 04 §8: the Dono who changed the e-mail is the one locked.
+    expect(locks![0].person_id).toBe(person);
+    expect(await peopleLockUntil(db, G03, person)).not.toBeNull();
     expect(new Date(locks![0].until).getTime() - Date.now()).toBeGreaterThan(23.9 * 3600_000);
     const { data: audit } = await db.from("audit_log").select("action").eq("account_id", G03).gte("at", since);
     expect(audit!.map((a) => a.action).sort()).toEqual(["person.email_change", "security_lock.contact_change"]);
@@ -245,7 +248,7 @@ describe("E04 login e-mail change from W09", () => {
     });
     await startEmailChange(db, { personId: person, accountId: G03, newEmail, now: new Date() });
     const pending = (await pendingEmailChange(db, own))!;
-    expect(await changeLoginEmail(db, { personId: person, personName: "Dono do Grupo B", accountId: G03, oldEmail, newEmail, provedBy: pending.authUserId, meta: META })).toEqual({ ok: true });
+    expect(await changeLoginEmail(db, { personId: person, personName: "Dono do Grupo B", accountId: G03, oldEmail, newEmail, provedBy: pending.authUserId, meta: META })).toEqual({ ok: true, message: CONTACT_MESSAGES.done });
     expect(await pendingEmailChange(db, own)).toBeNull();
     expect((await db.auth.admin.getUserById(pending.authUserId)).data.user).toBeNull();
   });

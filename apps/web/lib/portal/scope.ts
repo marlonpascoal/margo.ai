@@ -80,7 +80,7 @@ export function normalizeEmail(input: string): string | null {
 /** Error keys raised by the people functions (migration 20261117000020), as the screen says them. Not drawn. */
 export const PEOPLE_ERRORS: Record<string, string> = {
   E04_last_dono: "Toda conta precisa de pelo menos um Dono. Faça outra pessoa Dono antes.",
-  E04_locked: "Mudanças em pessoas ficam bloqueadas por 24 horas depois de trocar um contato de login.",
+  E04_locked: "Você trocou um contato de login. Por 24 horas, você não pode mudar pessoas.",
   not_dono: "Só o Dono convida, muda perfil e remove pessoas.",
   no_kitchen: "Escolha pelo menos uma cozinha.",
   kitchen_not_in_account: "Escolha cozinhas desta conta.",

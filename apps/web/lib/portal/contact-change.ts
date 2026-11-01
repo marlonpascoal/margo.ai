@@ -1,7 +1,8 @@
 // W09 "Trocar" for the login e-mail (04 §8, D35, E04): after the code on the new address is right, the
-// person's auth user takes the new e-mail, the old address gets a notice, and every account of the person
-// gets the 24-hour security_lock on plan and people changes (public.security_lock_contact_change, which
-// also writes audit_log per account). WhatsApp has no automatic sending yet (D40), so only e-mail changes.
+// person's auth user takes the new e-mail, the old address gets a notice, and the person gets the 24-hour
+// security_lock on their own plan and people changes in every account they belong to
+// (public.security_lock_contact_change, which also writes audit_log per account). The lock holds back only
+// that person, never the rest of the account (04 §8, Marlon, 01/nov). WhatsApp has no automatic sending yet (D40), so only e-mail changes.
 // Every profile changes its own login e-mail (Marlon, 31/out).
 //
 // Sending the code creates an Auth user for the new address. It is kept as the pending change on the
@@ -16,7 +17,9 @@ export const CONTACT_MESSAGES = {
   invalid: "Escreva um e-mail válido.",
   same: "Esse já é o seu e-mail de login.",
   taken: "Esse e-mail já é usado por outra pessoa na MargoAI.",
-  done: "E-mail trocado. Avisamos o endereço antigo. Mudanças em plano e pessoas ficam bloqueadas por 24 horas.",
+  // A Dono is the one who changes plan and people, so only a Dono hears about the lock (04 §8).
+  done: "E-mail trocado. Avisamos o endereço antigo. Por 24 horas, você não pode mudar o plano nem as pessoas.",
+  doneNotDono: "E-mail trocado. Avisamos o endereço antigo.",
 } as const;
 
 /** The new address may be used: valid, not the current one, not another person's. */
@@ -121,7 +124,7 @@ export interface EmailChange {
   meta: { ip: string | null; userAgent: string | null };
 }
 
-export async function changeLoginEmail(db: Db, c: EmailChange): Promise<{ ok: true } | { ok: false; message: string }> {
+export async function changeLoginEmail(db: Db, c: EmailChange): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
   const { data: person, error } = await db.from("person").select("auth_user_id").eq("id", c.personId).single();
   if (error) throw new Error(error.message);
   const own = person.auth_user_id;
@@ -168,5 +171,7 @@ export async function changeLoginEmail(db: Db, c: EmailChange): Promise<{ ok: tr
     });
     if (n.error) throw new Error(n.error.message);
   }
-  return { ok: true };
+  const { count, error: roleError } = await db.from("membership").select("id", { count: "exact", head: true }).eq("person_id", c.personId).eq("role", "dono");
+  if (roleError) throw new Error(roleError.message);
+  return { ok: true, message: (count ?? 0) > 0 ? CONTACT_MESSAGES.done : CONTACT_MESSAGES.doneNotDono };
 }

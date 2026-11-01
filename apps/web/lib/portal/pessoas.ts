@@ -159,9 +159,12 @@ export const MATRIX: { a: string; d: string; f: string; g: string }[] = (() => {
 
 export { PROFILE_LABEL };
 
-/** E04: end of the account's active security_lock (ISO), or null when changes are open. */
-export async function peopleLockUntil(db: Db, accountId: string): Promise<string | null> {
-  const { data, error } = await db.rpc("people_lock_until", { p_account: accountId });
+/**
+ * E04, 04 §8: end of this person's active security_lock in the account (ISO), or null when their plan and
+ * people changes are open. The lock holds back only the person who changed a login contact (Marlon, 01/nov).
+ */
+export async function peopleLockUntil(db: Db, accountId: string, personId: string): Promise<string | null> {
+  const { data, error } = await db.rpc("people_lock_until", { p_account: accountId, p_person: personId });
   if (error) throw new Error(error.message);
   return (data as string | null) ?? null;
 }

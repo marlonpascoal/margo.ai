@@ -108,7 +108,23 @@ describe("billing store on the local stack", () => {
     expect(await store.customerData(g01)).toEqual({ name: "Pantanos Burguer Ltda", cnpj: "98765432000150", email: "pantanos@exemplo.com.br" });
     expect(await store.accountByAsaasIds({ customerId: "cus_000000077c2", subscriptionId: null })).toBe(g01);
     expect(await store.accountByAsaasIds({ customerId: null, subscriptionId: "sub_00000000a91f" })).toBe(await sid("G-02"));
-    expect(await store.hasActiveLock(g01, new Date())).toBe(false);
+    const dono = (await db.from("person").select("id").eq("email", "pantanos@exemplo.com.br").single()).data!.id;
+    expect(await store.hasActiveLock(g01, dono, new Date())).toBe(false);
+  });
+
+  it("E04_A03_lock_holds_back_only_the_person_who_changed_the_contact", async () => {
+    // 04 §8 (Marlon, 01/nov): a G-02 Financeiro's lock blocks their plan changes, not the Dono's.
+    const g02 = await sid("G-02");
+    const person = async (email: string) => (await db.from("person").select("id").eq("email", email).single()).data!.id;
+    const [dono, fin] = await Promise.all([person("dono@exemplo.com.br"), person("financeiro@exemplo.com.br")]);
+    const now = new Date();
+    const { data: lock } = await db.from("security_lock").insert({ account_id: g02, person_id: fin, reason: "contact_change:email", until: new Date(now.getTime() + 3600_000).toISOString() }).select("id").single();
+    try {
+      expect(await store.hasActiveLock(g02, fin, now)).toBe(true);
+      expect(await store.hasActiveLock(g02, dono, now)).toBe(false);
+    } finally {
+      await db.from("security_lock").delete().eq("id", lock!.id);
+    }
   });
 
   it("E01_billing_event_is_stored_once_and_claimed_once", async () => {

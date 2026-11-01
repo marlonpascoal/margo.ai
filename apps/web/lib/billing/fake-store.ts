@@ -34,7 +34,7 @@ export class FakeBillingStore implements BillingStore {
   units = new Map<string, { kitchen: number; channel_store: number }>();
   sources: FakeSource[] = [];
   customers = new Map<string, { name: string; cnpj: string; email: string | null }>();
-  locks: { accountId: string; until: Date }[] = [];
+  locks: { accountId: string; personId: string | null; until: Date }[] = [];
   events: { id: string; eventId: string; asaasEvent: string; kind: BillingEventKind; accountId: string | null; payload: unknown; processedAt: Date | null }[] = [];
   invoices: InvoiceUpsert[] = [];
   pilotRows: PilotRow[] = [];
@@ -94,7 +94,7 @@ export class FakeBillingStore implements BillingStore {
     return list.length;
   }
   async customerData(accountId: string) { return this.customers.get(accountId) ?? null; }
-  async hasActiveLock(accountId: string, at: Date) { return this.locks.some((l) => l.accountId === accountId && l.until > at); }
+  async hasActiveLock(accountId: string, personId: string, at: Date) { return this.locks.some((l) => l.accountId === accountId && (l.personId === null || l.personId === personId) && l.until > at); }
 
   async storeEvent(ev: { eventId: string; asaasEvent: string; kind: BillingEventKind; accountId: string | null; payload: unknown }): Promise<StoredEvent> {
     const found = this.events.find((e) => e.eventId === ev.eventId);

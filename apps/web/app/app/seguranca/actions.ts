@@ -8,7 +8,7 @@ import { enqueueDeps } from "@/lib/jobs/deps";
 import { notifyDeps } from "@/lib/notify/deps";
 import { requestDeletion, requestExport } from "@/lib/portal/account-data";
 import { checkConfirmCode, EphemeralAuthGateway, sendConfirmCode, type ConfirmDeps } from "@/lib/portal/confirm-code";
-import { changeLoginEmail, checkNewEmail, CONTACT_MESSAGES, startEmailChange } from "@/lib/portal/contact-change";
+import { changeLoginEmail, checkNewEmail, startEmailChange } from "@/lib/portal/contact-change";
 import { W09_MESSAGES } from "@/lib/portal/security";
 import { auditMember, requireMember, requirePortal } from "@/lib/portal/session";
 import { adminClient } from "@/lib/supabase/admin";
@@ -77,7 +77,7 @@ export async function confirmEmailChange(_prev: W09State, form: FormData): Promi
   });
   if (!done.ok) return { message: done.message, error: true };
   revalidatePath("/app/seguranca");
-  return { message: CONTACT_MESSAGES.done };
+  return { message: done.message };
 }
 
 /** "Baixar todos os meus dados": queues the export zip (E06); the page links it when ready. */

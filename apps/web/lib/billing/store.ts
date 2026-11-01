@@ -96,8 +96,8 @@ export interface BillingStore {
 
   /** The first CNPJ of the account and the Dono's e-mail, for the Asaas customer (06 §4). */
   customerData(accountId: string): Promise<{ name: string; cnpj: string; email: string | null } | null>;
-  /** 04 §8: a security lock in force blocks plan changes. */
-  hasActiveLock(accountId: string, at: Date): Promise<boolean>;
+  /** 04 §8: the person's own security lock in force blocks their plan changes (not the whole account's). */
+  hasActiveLock(accountId: string, personId: string, at: Date): Promise<boolean>;
 
   /** Stores a raw webhook; a replay (same Asaas event id) returns inserted false and changes nothing. */
   storeEvent(ev: { eventId: string; asaasEvent: string; kind: BillingEventKind; accountId: string | null; payload: unknown }): Promise<StoredEvent>;

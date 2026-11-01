@@ -1683,14 +1683,14 @@ isOneToOne: false
                   ]
                 },"security_lock": {
                   Row: {
-                    "account_id": string,"created_at": string,"id": string,"reason": string,"until": string,"updated_at": string
+                    "account_id": string,"created_at": string,"id": string,"person_id": string | null,"reason": string,"until": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"created_at"?: string,"id"?: string,"reason": string,"until": string,"updated_at"?: string
+                    "account_id": string,"created_at"?: string,"id"?: string,"person_id"?: string | null,"reason": string,"until": string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"id"?: string,"reason"?: string,"until"?: string,"updated_at"?: string
+                    "account_id"?: string,"created_at"?: string,"id"?: string,"person_id"?: string | null,"reason"?: string,"until"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1698,6 +1698,12 @@ isOneToOne: false
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "security_lock_person_id_fkey"
+      columns: ["person_id"]
+isOneToOne: false
+      referencedRelation: "person"
       referencedColumns: ["id"]
     }
                   ]
@@ -2138,7 +2144,7 @@ isOneToOne: false
         isSetofReturn: false
       } },
 "people_lock_until":
-{ Args: { "p_account": string,"p_at"?: string }; Returns: string
+{ Args: { "p_account": string,"p_at"?: string,"p_person": string }; Returns: string
                            },
 "portal_accept_invite":
 { Args: { "p_email": string,"p_ip": unknown,"p_name": string,"p_now"?: string,"p_token_hash": string,"p_user_agent": string }; Returns: {
@@ -2160,6 +2166,7 @@ isOneToOne: false
               "account_id": string,
 "created_at": string,
 "id": string,
+"person_id": string | null,
 "reason": string,
 "until": string,
 "updated_at": string

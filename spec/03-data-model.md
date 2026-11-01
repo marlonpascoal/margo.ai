@@ -25,7 +25,7 @@ Postgres in Supabase. Migrations in `supabase/migrations/` are the contract betw
 | `invite` | `account_id`, `role`, `kitchen_ids uuid[]`, `channel` enum(`email`,`whatsapp`), `destination`, `token_hash`, `expires_at` (7 days), `accepted_at`, `invited_by` | P18 |
 | `staff` | `person_id`, `role` enum(`fundador`,`operacao`), `invited_by` | Console access (D33, D35) |
 | `session_device` | `person_id`, `user_agent`, `ip_city`, `last_seen_at`, `revoked_at` | W09 device list |
-| `security_lock` | `account_id`, `reason`, `until` | 24-hour lock after a contact change (D35) |
+| `security_lock` | `account_id`, `person_id`, `reason`, `until` | 24-hour lock on the plan and people changes of the person who changed a login contact (D35, 04 §8) |
 | `owner_authorization` | `account_id`, `company_id`, `scope text[]`, `includes_ai bool`, `includes_international bool`, `signed_by`, `signed_at`, `document_path` | No real file is processed for a CNPJ without one (C14, D21) |
 
 ## 2. M1. Price X-ray

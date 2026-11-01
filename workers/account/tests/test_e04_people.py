@@ -122,7 +122,7 @@ def test_E04_contact_change_locks_people_changes_for_24_hours(conn: Any) -> None
         (DONO, NOW),
     ).fetchall()
     assert [(r["a"], r["until"]) for r in locks] == [(ACCOUNT, NOW + timedelta(hours=24))]
-    lock = conn.execute("select public.people_lock_until(%s, %s) as u", (ACCOUNT, NOW)).fetchone()["u"]
+    lock = conn.execute("select public.people_lock_until(%s, %s, %s) as u", (ACCOUNT, DONO, NOW)).fetchone()["u"]
     assert lock == NOW + timedelta(hours=24)
 
     during = NOW + timedelta(hours=23, minutes=59)
@@ -136,7 +136,8 @@ def test_E04_contact_change_locks_people_changes_for_24_hours(conn: Any) -> None
 
     after = NOW + timedelta(hours=24, minutes=1)
     assert (
-        conn.execute("select public.people_lock_until(%s, %s) as u", (ACCOUNT, after)).fetchone()["u"] is None
+        conn.execute("select public.people_lock_until(%s, %s, %s) as u", (ACCOUNT, DONO, after)).fetchone()["u"]
+        is None
     )
     conn.execute(UPDATE, (DONO, M_GER, "financeiro", True, [], after))
     assert role_of(conn, M_GER) == "financeiro"
@@ -144,6 +145,26 @@ def test_E04_contact_change_locks_people_changes_for_24_hours(conn: Any) -> None
         "select after from public.audit_log where action = 'security_lock.contact_change' and at = %s", (NOW,)
     ).fetchall()
     assert row["after"]["channel"] == "whatsapp"
+
+
+@db
+@pytest.mark.parametrize("who", [FIN, GER], ids=["financeiro", "gerente"])
+def test_E04_A03_contact_change_by_financeiro_or_gerente_locks_only_that_person(conn: Any, who: str) -> None:
+    """04 §8 (Marlon, 01/nov): the lock holds back the person who changed the contact, not the Dono."""
+    [lock] = conn.execute(
+        "select account_id::text as a, person_id::text as p, until from public.security_lock_contact_change(%s, 'email', %s)",
+        (who, NOW),
+    ).fetchall()
+    assert (lock["a"], lock["p"], lock["until"]) == (ACCOUNT, who, NOW + timedelta(hours=24))
+
+    during = NOW + timedelta(hours=1)
+    until = "select public.people_lock_until(%s, %s, %s) as u"
+    assert conn.execute(until, (ACCOUNT, who, during)).fetchone()["u"] == NOW + timedelta(hours=24)
+    assert conn.execute(until, (ACCOUNT, DONO, during)).fetchone()["u"] is None
+
+    # The Dono still changes people during the other person's lock.
+    conn.execute(UPDATE, (DONO, M_GER, "financeiro", True, [], during))
+    assert role_of(conn, M_GER) == "financeiro"
 
 
 @db

@@ -1,6 +1,6 @@
 // P14 / W04 Pessoas e acessos (design/P14-Pessoas.dc.html phone, design/W04-Pessoas.dc.html computer;
 // 05 §B, 04 §5, §8, D33, D35). Flag conta.pessoas. The Dono sees and changes everyone; others see only
-// themselves, read-only. Changes are refused while a security_lock is active (E04).
+// themselves, read-only. Changes are refused while the Dono's own security_lock is active (E04, 04 §8).
 import { AutoSubmitSelect } from "@/components/AutoSubmit";
 import { CARD, DeskFictitious, DeskTitle, Notice, PHONE_PRIMARY, PhoneTop, PortalMain, SMALL_BUTTON, TD, TH } from "@/components/portal";
 import { canPortal } from "@/lib/permissions";
@@ -87,14 +87,14 @@ export default async function PessoasPage({ searchParams }: { searchParams: Prom
   const q = await searchParams;
   const db = adminClient();
   const dono = canPortal(m.role, "people");
-  const [v, lock] = await Promise.all([loadPeople(db, m.account.id, { personId: m.personId, dono }), dono ? peopleLockUntil(db, m.account.id) : null]);
+  const [v, lock] = await Promise.all([loadPeople(db, m.account.id, { personId: m.personId, dono }), dono ? peopleLockUntil(db, m.account.id, m.personId) : null]);
   const edit = dono && !lock;
 
   return (
     <PortalMain>
       <PhoneTop synthetic={m.account.isSynthetic} />
       <Notice text={q.aviso} />
-      {lock && <Notice text={`Mudanças em pessoas e no plano ficam bloqueadas até ${dayTimeSP(lock)}, porque um contato de login mudou.`} />}
+      {lock && <Notice text={`Você trocou um contato de login. Até ${dayTimeSP(lock)}, você não pode mudar pessoas nem o plano.`} />}
       <h1 className="m-0 text-[22px] md:hidden">Pessoas e acessos</h1>
       <DeskTitle title="Pessoas e acessos" lead="Três perfis. Cada pessoa vê todas as cozinhas ou só as que você escolher.">
         {edit && <InviteForm label="Convidar pessoa" kitchens={v.kitchens} summaryClass={DESK_INVITE} />}

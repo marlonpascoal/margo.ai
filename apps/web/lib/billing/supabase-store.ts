@@ -171,10 +171,11 @@ export class SupabaseBillingStore implements BillingStore {
     return { name: company.legal_name, cnpj: company.cnpj, email: dono?.person?.email ?? null };
   }
 
-  async hasActiveLock(accountId: string, at: Date) {
-    const { count, error } = await this.db.from("security_lock").select("id", { count: "exact", head: true }).eq("account_id", accountId).gt("until", at.toISOString());
+  /** 04 §8, E04: public.people_lock_until, the lock of this person only (Marlon, 01/nov). */
+  async hasActiveLock(accountId: string, personId: string, at: Date) {
+    const { data, error } = await this.db.rpc("people_lock_until", { p_account: accountId, p_person: personId, p_at: at.toISOString() });
     if (error) throw new Error(error.message);
-    return (count ?? 0) > 0;
+    return data !== null;
   }
 
   async storeEvent(ev: { eventId: string; asaasEvent: string; kind: BillingEventKind; accountId: string | null; payload: unknown }): Promise<StoredEvent> {

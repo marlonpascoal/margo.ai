@@ -285,8 +285,16 @@ describe("P09/W05 checkout (06 §4)", () => {
     expect(asaas.checkouts[0].nextDueDate).toBe("2026-11-20");
   });
 
+  it("E04_A03_another_person_lock_does_not_block_the_dono_checkout", async () => {
+    // 04 §8 (Marlon, 01/nov): a Financeiro who changed their e-mail is locked, not the Dono.
+    store.locks.push({ accountId: "g01", personId: "financeiro-g01", until: new Date(now.getTime() + 3600_000) });
+    const r = await startCheckout(deps, actor, "g01", "http://x");
+    store.locks = [];
+    expect(r.ok).toBe(true);
+  });
+
   it("P09_checkout_refused_under_security_lock_without_units_or_when_already_lucro", async () => {
-    store.locks.push({ accountId: "g01", until: new Date(now.getTime() + 3600_000) });
+    store.locks.push({ accountId: "g01", personId: actor.personId, until: new Date(now.getTime() + 3600_000) });
     expect(await startCheckout(deps, actor, "g01", "http://x")).toEqual({ ok: false, message: CHECKOUT_MESSAGES.locked });
     store.locks = [];
     store.units.set("g01", { kitchen: 0, channel_store: 0 });

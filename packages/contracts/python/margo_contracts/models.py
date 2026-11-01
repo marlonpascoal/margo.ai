@@ -1135,6 +1135,7 @@ class SecurityLock(Row):
     account_id: UUID
     created_at: datetime
     id: UUID
+    person_id: UUID | None
     reason: str
     until: datetime
     updated_at: datetime

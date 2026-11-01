@@ -170,7 +170,8 @@ test("A03_gerente_do_centro_sees_only_cozinha_centro_numbers", async ({ page }) 
 });
 
 // E04 (Marlon, 31/out): every profile changes its own login e-mail; here the Gerente do Centro.
-test("E04_W09_gerente_changes_own_login_email_with_a_code_on_the_new_address", async ({ page }) => {
+// A03, 04 §8 (Marlon, 01/nov): the 24-hour lock holds back the Gerente only, never the Dono.
+test("E04_A03_W09_gerente_changes_own_login_email_and_the_lock_does_not_reach_the_dono", async ({ page }) => {
   const db = adminDb();
   const since = new Date().toISOString();
   const email = `e2e-gerente-troca-${tag}@teste.local`;
@@ -189,8 +190,11 @@ test("E04_W09_gerente_changes_own_login_email_with_a_code_on_the_new_address", a
     expect(code, "code at the new address").not.toBeNull();
     await page.locator("#w09-codigo-email").fill(code!);
     await page.getByRole("button", { name: "Confirmar troca" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "E-mail trocado" })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "E-mail trocado" })).toHaveText("E-mail trocado. Avisamos o endereço antigo.");
     expect((await db.from("person").select("email").eq("id", gerente).single()).data).toEqual({ email: newEmail });
+    const { data: lock } = await db.from("security_lock").select("person_id").eq("account_id", sid("G-02")).gte("created_at", since);
+    expect(lock).toEqual([{ person_id: gerente }]);
+    expect((await db.rpc("people_lock_until", { p_account: sid("G-02"), p_person: sid("p:g02-dono") })).data).toBeNull();
     const { data: audit } = await db.from("audit_log").select("action").eq("entity_id", gerente).eq("action", "person.email_change").gte("at", since);
     expect(audit).toHaveLength(1);
     await page.reload();
@@ -339,10 +343,10 @@ test("E04_E06_W09_dono_exports_asks_deletion_with_code_and_changes_login_email",
     expect(code, "code at the new address").not.toBeNull();
     await page.locator("#w09-codigo-email").fill(code!);
     await page.getByRole("button", { name: "Confirmar troca" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "E-mail trocado" })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "E-mail trocado" })).toContainText("Por 24 horas, você não pode mudar o plano nem as pessoas.");
     expect((await db.from("person").select("email, auth_user_id").eq("id", dono).single()).data).toEqual({ email: newEmail, auth_user_id: me!.auth_user_id });
-    const { data: lock } = await db.from("security_lock").select("reason").eq("account_id", G01).gte("created_at", since);
-    expect(lock).toEqual([{ reason: "contact_change:email" }]);
+    const { data: lock } = await db.from("security_lock").select("reason, person_id").eq("account_id", G01).gte("created_at", since);
+    expect(lock).toEqual([{ reason: "contact_change:email", person_id: dono }]);
     const { data: told } = await db.from("notification").select("recipient").eq("person_id", dono).eq("subject", "Seu e-mail de login mudou").gte("created_at", since);
     expect(told).toEqual([{ recipient: PANTANOS_EMAIL }]);
     // Still signed in, now under the new e-mail.

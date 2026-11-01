@@ -133,7 +133,7 @@ During the free trial the account gets the Lucro defaults. Evaluation: override 
 
 - Code: 6 digits, valid 10 minutes, 5 tries, then 15-minute lock. Resend after 60 seconds.
 - Sessions: computer 30 days, phone 30 days, console 12 hours. "Sair de todos os aparelhos" revokes all sessions.
-- Contact change (e-mail or WhatsApp): code on the new channel, notice on the old one, `security_lock` of 24 hours on plan and people changes.
+- Contact change (e-mail or WhatsApp): code on the new channel, notice on the old one, `security_lock` of 24 hours on plan and people changes by the person who changed the contact, in every account they belong to. The lock holds back only that person: a Financeiro or Gerente who changes their e-mail does not block the Dono; a Dono who changes theirs is the one locked (Marlon, 01/nov).
 - Sole Dono who lost both channels: founders verify against the CNPJ and articles of association, then re-invite (P17).
 - Invite: 7 days, single use, shows inviter, role and kitchens (P18).
 

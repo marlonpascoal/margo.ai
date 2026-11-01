@@ -30,6 +30,34 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - **Everything else in this file** is accepted as built and parked for go-live: seed-only numbers, internal names, M2 confidence labels, and copy written without a drawing (to be read as one sheet).
 - **For `docs/decisions.md`:** Marlon pastes the rows in `docs/decisions-amendments-draft.md`.
 
+### Open points from building the review answers
+
+- **Extension: check on the real portal** (`fixtures/m2/extension/README.md`):
+  - the page paths, assumed to start with `/financeiro`
+  - the Export button's text, and whether it opens a menu or asks for a period first
+  - how the file arrives (another host falls back to the manual pick)
+  - whether the file is .csv or .xlsx
+
+  With several stores, the daily send goes without a store. It exports whatever the open page exports, not "the requested report and period" (06 §9).
+- **Hybrid rules, choices made:**
+  - account rules win in their account
+  - a rule conflict becomes a suggestion "conflito entre regras, revisar", with no price and no AI call
+  - "Revisada" only clears the flag, and the rule waits for 3 accounts again
+- **Competitor X-rays:** C02 takes `?conta=<code>` to set the account, since a competitor's store has no owner account. No drawing shows how C02 picks the account, so nothing links to it yet.
+- **Pilots from day 61:**
+  - a monthly single card charge at the pilot's "from month 3" price, or the Lucro price
+  - no notice before the first charge, only `billing_result` after it; a heads-up needs a new notice in the spec
+  - C15 still shows "a definir" for open terms
+- **CTB-01:**
+  - campaign rows show the menu price, and the store's half of the coupon sits in "Canal leva"
+  - delivery and anticipation are in no contribution line and reach the owner only through the payout
+  - C13 and P06 numbers no longer match the drawings: P06's sentence becomes "contra os". W01 "sobrou" and the E01 subject are unchanged.
+- **`m3.custo`:** the "sobrou" line in the E01 e-mail and close notice is not gated. Gate it? C20 now lists more flags than drawn.
+- **W09:**
+  - The Dono changing someone else's e-mail never existed and has no drawing; not built.
+  - When a Financeiro or Gerente changes their e-mail, 04 §8 locks plan and people changes for 24 hours on the account, which also blocks the Dono. Intended?
+- **Seed only:** G-03 bills 3 units but has no stores, so the billing cron would set it to 0.
+
 ## Commands only Marlon runs (live calls)
 
 - **M1 public pages:** `uv run collector record --url <url> --out fixtures/m1/<name>` for Pantanos, the neighborhood listing and a few neighbors (`fixtures/m1/README.md`). Check for personal data (reviewer names) before committing. Until then B01 is proven from canonical seed rows only.

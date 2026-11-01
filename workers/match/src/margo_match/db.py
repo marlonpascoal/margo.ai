@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
-from .ai import AiLine, Suggester
+from .ai import AiLine, Suggester, supplier_for_prompt, unit_price_text
 from .matching import CatalogItem, LineIn, Rule, auto_match, conversion_factor, learned_rule, normalize
 
 LOCAL_DB_URL = os.environ.get("MARGO_LOCAL_DB_URL", "postgresql://postgres:postgres@127.0.0.1:54322/postgres")
@@ -76,7 +76,8 @@ def pending_lines(conn: Any, account_id: str) -> list[PendingLine]:
     """Lines of the account with no suggested or confirmed match. ai_allowed: synthetic account, or the
     buyer company's owner_authorization includes AI processing (D48)."""
     rows = conn.execute(
-        """select il.id, il.description, il.ncm, il.gtin, il.unit,
+        """select il.id, il.description, il.ncm, il.gtin, il.unit, il.qty, il.total_cents,
+                  i.issuer_cnpj, i.issuer_name,
                   exists (select 1 from public.ingredient_match m where m.invoice_line_id = il.id) as has_any,
                   il.ai_asked_at is not null as ai_asked,
                   (a.is_synthetic or exists (select 1 from public.owner_authorization oa
@@ -92,7 +93,17 @@ def pending_lines(conn: Any, account_id: str) -> list[PendingLine]:
     ).fetchall()
     return [
         PendingLine(
-            LineIn(str(r["id"]), r["description"], r["ncm"], r["gtin"], r["unit"]),
+            LineIn(
+                str(r["id"]),
+                r["description"],
+                r["ncm"],
+                r["gtin"],
+                r["unit"],
+                r["issuer_cnpj"],
+                r["issuer_name"],
+                r["qty"],
+                r["total_cents"],
+            ),
             r["has_any"],
             r["ai_allowed"],
             r["ai_asked"],
@@ -151,9 +162,22 @@ def run_auto(conn: Any, account_id: str) -> Counts:
     return c
 
 
+def _ai_line(ref: str, line: LineIn) -> AiLine:
+    """What the model sees of a line (06 §6): no ids, no CNPJ, no CPF issuer name."""
+    return AiLine(
+        ref,
+        line.description,
+        line.ncm,
+        line.unit,
+        supplier_for_prompt(line.issuer_cnpj, line.issuer_name),
+        unit_price_text(line.total_cents, line.qty, line.unit),
+    )
+
+
 def run_ai(conn: Any, account_id: str, suggester: Suggester) -> Counts:
     """D14 step 3: one question per distinct line text (description, NCM, unit) of lines never sent before
-    (invoice_line.ai_asked_at); the answer is stored as `suggested` on every line with that text. No price is written (D02)."""
+    (invoice_line.ai_asked_at), with the supplier name and unit price of the first line with that text (06 §6);
+    the answer is stored as `suggested` on every line with that text. No price is written (D02)."""
     cat = catalog(conn)
     by_id = {x.id: x for x in cat}
     groups: dict[tuple[str, str | None, str], list[LineIn]] = defaultdict(list)
@@ -165,7 +189,7 @@ def run_ai(conn: Any, account_id: str, suggester: Suggester) -> Counts:
     if not groups or not cat:
         return c
     keys = list(groups)
-    ai_lines = [AiLine(str(i), groups[k][0].description, k[1], groups[k][0].unit) for i, k in enumerate(keys)]
+    ai_lines = [_ai_line(str(i), groups[k][0]) for i, k in enumerate(keys)]
     c.ai_lines_sent = len(ai_lines)
     answers = suggester.suggest(ai_lines, cat)
     asked = [line.id for k in keys for line in groups[k]]

@@ -104,6 +104,11 @@ class LineIn:
     ncm: str | None
     gtin: str | None
     unit: str
+    # For the AI step only (D14): the invoice issuer and the line amounts. Never used by GTIN or rules.
+    issuer_cnpj: str | None = None
+    issuer_name: str | None = None
+    qty: Decimal | None = None
+    total_cents: int | None = None
 
 
 @dataclass(frozen=True)

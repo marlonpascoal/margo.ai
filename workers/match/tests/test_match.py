@@ -14,7 +14,16 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
-from margo_match.ai import DEFAULT_MODEL, AiLine, ClaudeSuggester, Suggestion, build_request, validate
+from margo_match.ai import (
+    DEFAULT_MODEL,
+    AiLine,
+    ClaudeSuggester,
+    Suggestion,
+    build_request,
+    supplier_for_prompt,
+    unit_price_text,
+    validate,
+)
 from margo_match.matching import (
     CatalogItem,
     LineIn,
@@ -109,19 +118,80 @@ class FakeSuggester:
         ]
 
 
-def test_D14_request_carries_only_line_text_ncm_unit_and_catalog() -> None:
+def test_D02_D14_request_carries_supplier_item_unit_price_and_catalog_only() -> None:
+    """06 §6 and D14 (Marlon, 31/out): supplier name, item, unit and price; no CNPJ, no restaurant, no person."""
     req = build_request(
-        [AiLine("0", "QJO PROC CHED FAT 2,27KG 160FT", "04063000", "PC")], CATALOG, DEFAULT_MODEL
+        [
+            AiLine(
+                "0", "QJO PROC CHED FAT 2,27KG 160FT", "04063000", "PC", "Laticínios Exemplo", "118.27 R$/PC"
+            )
+        ],
+        CATALOG,
+        DEFAULT_MODEL,
     )
     assert req["model"] == "claude-sonnet-5-5"
     body = json.loads(req["messages"][0]["content"])
     assert set(body) == {"catalogo", "itens"}
-    assert set(body["itens"][0]) == {"ref", "descricao", "ncm", "unidade"}
+    assert body["itens"][0] == {
+        "ref": "0",
+        "descricao": "QJO PROC CHED FAT 2,27KG 160FT",
+        "ncm": "04063000",
+        "unidade": "PC",
+        "fornecedor": "Laticínios Exemplo",
+        "preco_unitario": "118.27 R$/PC",
+    }
     assert set(body["catalogo"][0]) == {"nome", "categoria", "unidade_base"}
     text = json.dumps(req, ensure_ascii=False)
-    for forbidden in ("98765432000150", "Pantanos", "cnpj", "CNPJ", "fornecedor", "preco", "R$"):
+    for forbidden in ("98765432000150", "12345678000100", "Pantanos", "cnpj", "CNPJ", "cpf", "CPF"):
         assert forbidden not in text
+    assert "fornecedor" in req["system"] and "preço" in req["system"]
     assert req["output_config"]["format"]["type"] == "json_schema"
+
+
+def test_D02_D14_line_without_supplier_or_price_sends_null() -> None:
+    body = json.loads(
+        build_request([AiLine("0", "LUVA DESCARTAVEL", None, "CX")], CATALOG, DEFAULT_MODEL)["messages"][0][
+            "content"
+        ]
+    )
+    assert body["itens"][0]["fornecedor"] is None and body["itens"][0]["preco_unitario"] is None
+
+
+def test_D02_D14_supplier_name_only_for_a_company_issuer() -> None:
+    assert supplier_for_prompt("90000002000183", "Laticínios Exemplo") == "Laticínios Exemplo"
+    assert supplier_for_prompt("90000002000183", "  Laticínios   Exemplo ") == "Laticínios Exemplo"
+    assert supplier_for_prompt("12345678900", "Maria Produtora") is None, "CPF issuer: a person, no name"
+    assert supplier_for_prompt("90000002000183", "JOAO DA SILVA 12345678900") is None, (
+        "MEI name carries a CPF"
+    )
+    assert supplier_for_prompt("90000002000183", "JOAO DA SILVA 123.456.789-00") is None
+    assert supplier_for_prompt("90000002000183", None) is None
+    assert supplier_for_prompt("90000002000183", "   ") is None
+
+
+def test_D02_D14_unit_price_in_reais_from_centavos() -> None:
+    assert unit_price_text(23654, Decimal(2), "PC") == "118.27 R$/PC"
+    assert unit_price_text(38900, Decimal(10), "KG") == "38.90 R$/KG"
+    assert unit_price_text(1000, Decimal(3), "KG") == "3.3333 R$/KG", (
+        "total / qty keeps sub-centavo precision"
+    )
+    assert unit_price_text(2990, Decimal("1.5"), "kg") == "19.9333 R$/kg"
+    assert unit_price_text(0, Decimal(1), "UN") == "0.00 R$/UN"
+    assert unit_price_text(None, Decimal(1), "UN") is None
+    assert unit_price_text(100, None, "UN") is None
+
+
+def test_D02_D14_recorder_builds_the_worker_prompt() -> None:
+    """`uv run record-anthropic` sends the same shape the worker sends (synthetic supplier and price)."""
+    from margo_match import record
+
+    body = json.loads(build_request(record.LINES, record.CATALOG, DEFAULT_MODEL)["messages"][0]["content"])
+    assert all(
+        set(it) == {"ref", "descricao", "ncm", "unidade", "fornecedor", "preco_unitario"}
+        for it in body["itens"]
+    )
+    assert all(it["fornecedor"] and it["preco_unitario"] for it in body["itens"])
+    assert all("Exemplo" in it["fornecedor"] for it in body["itens"]), "synthetic G-SYN suppliers only"
 
 
 def test_D14_model_is_a_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -184,7 +254,9 @@ def conn() -> Iterator[Any]:
         c.close()
 
 
-def _setup(conn: Any) -> dict[str, str]:
+def _setup(
+    conn: Any, issuer_cnpj: str = "12345678000100", issuer_name: str = "Laticínios Teste"
+) -> dict[str, str]:
     """A small invoice of G-01 with three lines and a three-item catalog, all inside the test transaction."""
     acc = conn.execute(
         "select id, (select id from public.company where account_id = a.id) as co from public.account a where code = 'G-01'"
@@ -208,9 +280,9 @@ def _setup(conn: Any) -> dict[str, str]:
     key = "4126101234567800019055001000001234112345678"
     key += "6"
     inv = conn.execute(
-        """insert into public.invoice (account_id, company_id, access_key, model, issuer_cnpj, issued_at, total_cents, source)
-           values (%s, %s, %s, 55, '12345678000100', '2026-10-12 10:00-03', 50000, 'key_typed') returning id""",
-        (acc["id"], acc["co"], key),
+        """insert into public.invoice (account_id, company_id, access_key, model, issuer_cnpj, issuer_name, issued_at, total_cents, source)
+           values (%s, %s, %s, 55, %s, %s, '2026-10-12 10:00-03', 50000, 'key_typed') returning id""",
+        (acc["id"], acc["co"], key, issuer_cnpj, issuer_name),
     ).fetchone()["id"]
     for n, desc, ncm, unit, qty, total in (
         (1, "TCARNE BOV MOIDA KG", "02013000", "KG", 10, 38900),
@@ -250,6 +322,10 @@ def test_D02_ai_suggestion_changes_no_price_until_a_person_confirms(conn: Any) -
     assert out["ai_suggested"] == 1
     assert sorted(a.description for a in fake.asked) == ["LUVA DESCARTAVEL", "QJO PROC CHED FAT 2,27KG 160FT"]
     assert all("CNPJ" not in a.description for a in fake.asked)
+    sent = {a.description: a for a in fake.asked}
+    assert sent["QJO PROC CHED FAT 2,27KG 160FT"].supplier == "Laticínios Teste"
+    assert sent["QJO PROC CHED FAT 2,27KG 160FT"].unit_price == "118.27 R$/PC"
+    assert sent["LUVA DESCARTAVEL"].unit_price == "29.90 R$/CX"
 
     before = _prices(conn, acc)
     assert [p[2] for p in before] == [ids["line1"]], "only the rule match has a price"
@@ -302,3 +378,16 @@ def test_D02_rejected_suggestion_writes_nothing_and_is_not_asked_again(conn: Any
     run_match(conn, ids["account"], fake)
     assert "QJO PROC CHED FAT 2,27KG 160FT" not in [a.description for a in fake.asked]
     assert _prices(conn, ids["account"]) == before
+
+
+@pytestmark_db
+def test_D02_cpf_issuer_sends_no_supplier_name_and_still_no_price_is_written(conn: Any) -> None:
+    from margo_match.jobs import run_match
+
+    ids = _setup(conn, issuer_cnpj="12345678900", issuer_name="Maria Produtora Rural")
+    fake = FakeSuggester({"QJO PROC CHED FAT 2,27KG 160FT": "T Cheddar"})
+    run_match(conn, ids["account"], fake)
+    assert fake.asked and all(a.supplier is None for a in fake.asked)
+    assert all("Maria" not in json.dumps(a.__dict__, ensure_ascii=False) for a in fake.asked)
+    assert {a.unit_price for a in fake.asked} == {"118.27 R$/PC", "29.90 R$/CX"}
+    assert [p[2] for p in _prices(conn, ids["account"])] == [ids["line1"]], "AI suggestion writes no price"

@@ -14,8 +14,8 @@ Claude may not edit `docs/decisions.md` (CLAUDE.md rule 7). These are the decisi
 | D55 | plans | X-rays of competitor stores are allowed, limited per month by a plan field: Raio-X grátis 0, Lucro 3, Rede 10. They are gated by a flag |
 | D56 | 04 M1 | M1-10 (price index ranking) is adopted. A store is ranked only when it shares at least `m1.rank_min_items` (3) items with the target. Rank 1 is the cheapest |
 | D57 | D36 | Quiet hours (22h to 8h) hold for everyone, except urgent team alerts to the founder on duty by WhatsApp |
-| D58 | 04 §8 | Each person changes their own login e-mail; the Dono can change anyone's. A Gerente invite requires at least one kitchen |
-| D59 | D40 (7) | A pilot converts to the plan price at day 61 unless a founder has set pilot terms in C15. A failed charge raises an alert and is never resent automatically |
-| D60 | 04 §6 | New flag `m3.custo` gates C12, C13, the contribution job and W01 "sobrou" |
+| D58 | 04 §8 | Each person changes their own login e-mail; nobody changes another person's (the Dono removes and invites again; P17 covers lost access). The 24-hour security lock after a change applies only to that person. A Gerente invite requires at least one kitchen |
+| D59 | D40 (7) | A pilot converts to the plan price at day 61 unless a founder has set pilot terms in C15. A failed charge raises an alert and is never resent automatically. No notice before the first charge; the owner gets the billing result |
+| D60 | 04 §6 | New flag `m3.custo` gates C12, C13, the contribution job and every "sobrou" (W01, the E01 e-mail and the close notice) |
 | D61 | 02 §7 | Deletion 90 days after a client leaves is done by a founder from the console until go-live; no scheduled job yet. A cancelled subscription returns the account to Raio-X, pauses imports and keeps data |
 | D62 | build | The rest of `docs/build-review.md` is accepted as built and parked for go-live, including the seed-only numbers, internal names, M2 confidence labels and copy written without a drawing. The C10 against C12 seed difference and the choice of one PDF library wait for real invoices and the visual direction |

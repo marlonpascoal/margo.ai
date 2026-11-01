@@ -58,6 +58,12 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
   - When a Financeiro or Gerente changes their e-mail, 04 §8 locks plan and people changes for 24 hours on the account, which also blocks the Dono. Intended?
 - **Seed only:** G-03 bills 3 units but has no stores, so the billing cron would set it to 0.
 
+**Answers (Marlon, 01/nov):**
+- **E-mail change lock:** the 24-hour lock applies only to the person who changed their login e-mail, not to the account.
+- **Pilot notice:** none before the day-61 charge; the owner gets the billing result only.
+- **"Sobrou" line:** gated by `m3.custo` in the E01 e-mail and the close notice too.
+- **Dono changing others' e-mail:** no. The Dono removes the person and invites them again; P17 covers lost access.
+
 ## Commands only Marlon runs (live calls)
 
 - **M1 public pages:** `uv run collector record --url <url> --out fixtures/m1/<name>` for Pantanos, the neighborhood listing and a few neighbors (`fixtures/m1/README.md`). Check for personal data (reviewer names) before committing. Until then B01 is proven from canonical seed rows only.

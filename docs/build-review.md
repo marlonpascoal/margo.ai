@@ -8,6 +8,27 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - **Extension clicks Export:** yes, as 05, 06 and P04 say: a content script on the Partner Portal page the owner opened (rule 5). C07's "Envia sozinha uma vez por dia" becomes true.
 - **Billing units:** only stores of kitchens in analysis are billed, as built. The G-SYN seed and its screens show 5 stores and R$ 1.500, not the drawn 6 and R$ 1.800.
 - **AI prompt:** sends supplier name and price too, as 06 §6 and D14 say.
+- **C10 against C12:** seed data only, so it waits; to settle when real invoices arrive.
+- **Channel take (CTB-01):** the rule as written in 04 §4 (commission, payment fee, promotion). The drawn values in C13, P06 and W01 no longer match.
+- **Coupons:** contribution uses the funding split M2 records, not the store paying the full discount.
+- **X-ray of competitor stores:** yes, limited per plan (a plan field plus a flag): Raio-X grátis 0, Lucro 3, Rede 10 a month, editable in C15.
+- **Quiet hours:** urgent founder alerts go by WhatsApp at any hour; everything else waits until 8h.
+- **W09 login e-mail:** each person changes their own; the Dono can change anyone's.
+- **Invoice access key:** unique per account, not globally, so no account learns about another's invoices (amends 03 and D11).
+- **Gerente invites:** at least one kitchen must be chosen; for other roles, none still means all.
+- **Deletion 90 days after leaving:** not scheduled now; a founder deletes from the console. Listed for go-live.
+- **Cancelled subscription:** back to Raio-X, imports paused, data kept, as built.
+- **Ingredient rules, hybrid:**
+  - A confirmation in C11 becomes a rule of that account and confirms automatically there.
+  - Globally, the rule only suggests until 3 accounts confirm it with no disagreement (param `m3.global_rule_min_accounts`).
+  - Any disagreement demotes it and flags it for a founder.
+  - Two rules pointing to different ingredients send the line to review.
+- **M1-10 ranking:** approved, with stores ranked only when they share at least 3 items with the target (param `m1.rank_min_items`).
+- **Pilots:** at day 61 a pilot converts to the plan price unless a founder set pilot terms in C15. Failed charges are still never resent automatically.
+- **Flag `m3.custo`:** gates C12, C13, the contribution job and W01 "sobrou"; "Gerar fechamento mensal" moves to it.
+- **PDF library:** decided later, with the visual direction and the fonts.
+- **Everything else in this file** is accepted as built and parked for go-live: seed-only numbers, internal names, M2 confidence labels, and copy written without a drawing (to be read as one sheet).
+- **For `docs/decisions.md`:** Marlon pastes the rows in `docs/decisions-amendments-draft.md`.
 
 ## Commands only Marlon runs (live calls)
 

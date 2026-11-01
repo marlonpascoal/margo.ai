@@ -825,16 +825,48 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
-                },"ingredient_match": {
+                },"ingredient_account_rule": {
                   Row: {
-                    "account_id": string,"confidence": number | null,"confirmed_by": string | null,"conversion_factor": number | null,"created_at": string,"id": string,"ingredient_id": string,"invoice_line_id": string,"method": Database["public"]['Enums']["match_method"],"rule_note": string | null,"status": Database["public"]['Enums']["match_status"],"updated_at": string
+                    "account_id": string,"confirmations": number,"created_at": string,"created_by": string | null,"id": string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix": string | null,"unit": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id": string,"invoice_line_id": string,"method": Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
+                    "account_id": string,"confirmations"?: number,"created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix"?: string | null,"unit"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id"?: string,"invoice_line_id"?: string,"method"?: Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
+                    "account_id"?: string,"confirmations"?: number,"created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id"?: string,"keywords"?: (string)[],"ncm_prefix"?: string | null,"unit"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ingredient_account_rule_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ingredient_account_rule_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ingredient_account_rule_ingredient_id_fkey"
+      columns: ["ingredient_id"]
+isOneToOne: false
+      referencedRelation: "ingredient"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ingredient_match": {
+                  Row: {
+                    "account_id": string,"confidence": number | null,"confirmed_by": string | null,"conversion_factor": number | null,"created_at": string,"id": string,"ingredient_id": string,"invoice_line_id": string,"learned_at": string | null,"method": Database["public"]['Enums']["match_method"],"rule_note": string | null,"status": Database["public"]['Enums']["match_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id": string,"invoice_line_id": string,"learned_at"?: string | null,"method": Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"confidence"?: number | null,"confirmed_by"?: string | null,"conversion_factor"?: number | null,"created_at"?: string,"id"?: string,"ingredient_id"?: string,"invoice_line_id"?: string,"learned_at"?: string | null,"method"?: Database["public"]['Enums']["match_method"],"rule_note"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -897,14 +929,14 @@ isOneToOne: false
                   ]
                 },"ingredient_rule": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"id": string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix": string | null,"source": string,"unit": string | null,"updated_at": string
+                    "auto_confirm": boolean,"created_at": string,"created_by": string | null,"disputed_at": string | null,"disputed_ingredient_id": string | null,"id": string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix": string | null,"source": string,"unit": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix"?: string | null,"source": string,"unit"?: string | null,"updated_at"?: string
+                    "auto_confirm"?: boolean,"created_at"?: string,"created_by"?: string | null,"disputed_at"?: string | null,"disputed_ingredient_id"?: string | null,"id"?: string,"ingredient_id": string,"keywords": (string)[],"ncm_prefix"?: string | null,"source": string,"unit"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"ingredient_id"?: string,"keywords"?: (string)[],"ncm_prefix"?: string | null,"source"?: string,"unit"?: string | null,"updated_at"?: string
+                    "auto_confirm"?: boolean,"created_at"?: string,"created_by"?: string | null,"disputed_at"?: string | null,"disputed_ingredient_id"?: string | null,"id"?: string,"ingredient_id"?: string,"keywords"?: (string)[],"ncm_prefix"?: string | null,"source"?: string,"unit"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -912,6 +944,12 @@ isOneToOne: false
       columns: ["created_by"]
 isOneToOne: false
       referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ingredient_rule_disputed_ingredient_id_fkey"
+      columns: ["disputed_ingredient_id"]
+isOneToOne: false
+      referencedRelation: "ingredient"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "ingredient_rule_ingredient_id_fkey"

@@ -92,6 +92,48 @@ def test_D14_confirmation_teaches_the_next_client() -> None:
     assert m and (m.ingredient_id, m.method) == ("cheddar", "rule")
 
 
+def test_D14_account_rule_wins_over_global_rules_in_its_account() -> None:
+    qjo = line("QJO PROC CHED FAT 2,27KG 160FT", "PC", "04063000")
+    glob = Rule("g", "brioche", ("CHED", "QJO"), "0406", None, "global", True)
+    acct = Rule("a", "cheddar", ("CHED", "FAT", "PROC", "QJO"), "04063000", "PC", "account", True)
+    m = auto_match(qjo, CATALOG, [glob, acct])
+    assert m and (m.ingredient_id, m.method, m.suggest_only) == ("cheddar", "rule", False)
+    assert m.rule_note == "texto + NCM 0406"
+
+
+def test_D14_global_rule_below_threshold_only_suggests() -> None:
+    qjo = line("QJO PROC CHED FAT 2,27KG 160FT", "PC", "04063000")
+    glob = Rule("g", "cheddar", ("CHED", "QJO"), "04063000", "PC", "global", False)
+    m = auto_match(qjo, CATALOG, [glob])
+    assert m and (m.ingredient_id, m.suggest_only, m.conversion_factor) == ("cheddar", True, Decimal("2270"))
+    assert m.rule_note == "texto + NCM 0406, sugestão da regra geral"
+    promoted = Rule("g", "cheddar", ("CHED", "QJO"), "04063000", "PC", "global", True)
+    m = auto_match(qjo, CATALOG, [promoted])
+    assert m and not m.suggest_only and m.rule_note == "texto + NCM 0406"
+
+
+def test_D14_two_rules_naming_different_ingredients_go_to_review() -> None:
+    qjo = line("QJO PROC CHED FAT 2,27KG 160FT", "PC", "04063000")
+    a = Rule("a", "cheddar", ("CHED", "QJO"), "0406", None, "catalog", True)
+    b = Rule("b", "brioche", ("CHED", "FAT", "QJO"), "04063000", "PC", "global", True)
+    m = auto_match(qjo, CATALOG, [a, b])
+    assert m and m.suggest_only, "nothing auto-confirmed"
+    assert m.rule_note == "conflito entre regras, revisar"
+    acc1 = Rule("x", "cheddar", ("CHED", "QJO"), None, None, "account", True)
+    acc2 = Rule("y", "brioche", ("FAT", "QJO"), None, None, "account", True)
+    m = auto_match(qjo, CATALOG, [acc1, acc2, a])
+    assert m and m.suggest_only and m.rule_note == "conflito entre regras, revisar", "within an account too"
+    same = Rule("c", "cheddar", ("FAT", "QJO"), None, None, "global", True)
+    m = auto_match(qjo, CATALOG, [a, same])
+    assert m and not m.suggest_only and m.ingredient_id == "cheddar", "agreeing rules still confirm"
+
+
+def test_D14_catalog_rules_keep_auto_confirming() -> None:
+    m = auto_match(line("CARNE BOV MOIDA PATINHO/ACEM 80/20 KG", "KG", "02013000"), CATALOG, RULES)
+    assert m and m.method == "rule" and not m.suggest_only
+    assert RULES[0].scope == "catalog" and RULES[0].auto
+
+
 def test_D14_cst01_price_per_base_unit() -> None:
     # C11 drawn: QJO PROC CHED FAT 2,27KG at R$ 118,27 the piece is R$ 52,10/kg.
     p = price_per_base_unit(23654, Decimal(2), Decimal(2270))
@@ -391,3 +433,195 @@ def test_D02_cpf_issuer_sends_no_supplier_name_and_still_no_price_is_written(con
     assert all("Maria" not in json.dumps(a.__dict__, ensure_ascii=False) for a in fake.asked)
     assert {a.unit_price for a in fake.asked} == {"118.27 R$/PC", "29.90 R$/CX"}
     assert [p[2] for p in _prices(conn, ids["account"])] == [ids["line1"]], "AI suggestion writes no price"
+
+
+# Hybrid rules (D14 step 2, Marlon 31/out) ------------------------------------------------------------
+
+
+def _access_key(n: int) -> str:
+    """A valid synthetic NF-e key (06 §5: mod 11 over the first 43 digits)."""
+    body = f"412610{'12345678000100'}55001{n:09d}1{12345678:08d}"
+    total, w = 0, 2
+    for d in reversed(body):
+        total += int(d) * w
+        w = 2 if w == 9 else w + 1
+    r = total % 11
+    return body + str(0 if r < 2 else 11 - r)
+
+
+_seq = iter(range(900000, 999999))
+
+
+def _account(conn: Any, tag: str) -> dict[str, str]:
+    acc = conn.execute(
+        "insert into public.account (name, code, is_synthetic) values (%s, %s, true) returning id",
+        (f"Conta {tag} SINTÉTICO", f"T-HR-{tag}"),
+    ).fetchone()["id"]
+    co = conn.execute(
+        "insert into public.company (account_id, cnpj, legal_name) values (%s, %s, %s) returning id",
+        (acc, f"{next(_seq):014d}", f"Empresa {tag}"),
+    ).fetchone()["id"]
+    return {"account": str(acc), "company": str(co)}
+
+
+def _line(conn: Any, a: dict[str, str], desc: str, ncm: str, unit: str, qty: int, total: int) -> str:
+    n = next(_seq)
+    inv = conn.execute(
+        """insert into public.invoice (account_id, company_id, access_key, model, issuer_cnpj, issuer_name, issued_at, total_cents, source)
+           values (%s, %s, %s, 55, '12345678000100', 'Laticínios Teste', '2026-10-12 10:00-03', %s, 'key_typed') returning id""",
+        (a["account"], a["company"], _access_key(n), total),
+    ).fetchone()["id"]
+    return str(
+        conn.execute(
+            """insert into public.invoice_line (account_id, invoice_id, line_no, description, ncm, unit, qty, unit_price_cents, total_cents)
+               values (%s, %s, 1, %s, %s, %s, %s, %s, %s) returning id""",
+            (a["account"], inv, desc, ncm, unit, qty, total // qty, total),
+        ).fetchone()["id"]
+    )
+
+
+def _ingredient(conn: Any, name: str, unit: str = "g") -> str:
+    return str(
+        conn.execute(
+            "insert into public.ingredient (name, category, base_unit) values (%s, 'laticínios', %s) returning id",
+            (name, unit),
+        ).fetchone()["id"]
+    )
+
+
+def _person_confirms(conn: Any, a: dict[str, str], line_id: str, ingredient_id: str) -> None:
+    """C11 "Trocar" or "Confirmar": a person picks the ingredient for the line (method manual)."""
+    mid = conn.execute(
+        """insert into public.ingredient_match (account_id, invoice_line_id, ingredient_id, method, status, conversion_factor)
+           values (%s, %s, %s, 'manual', 'suggested', 2270)
+           on conflict (invoice_line_id, ingredient_id) do update set method = excluded.method returning id""",
+        (a["account"], line_id, ingredient_id),
+    ).fetchone()["id"]
+    person = conn.execute("select person_id from public.staff limit 1").fetchone()["person_id"]
+    conn.execute("select public.confirm_ingredient_match(%s, %s, null)", (mid, person))
+
+
+def _match_of(conn: Any, line_id: str) -> tuple[Any, ...] | None:
+    r = conn.execute(
+        "select ingredient_id::text, method::text, status::text, rule_note from public.ingredient_match where invoice_line_id = %s and status <> 'rejected'",
+        (line_id,),
+    ).fetchone()
+    return tuple(r.values()) if r else None
+
+
+# Tokens no seeded rule knows, so only this test's rules can match (2,27 kg the piece, R$ 118,27).
+QJO = ("TQHR XCHED XFAT 2,27KG", "04063000", "PC", 2, 23654)
+
+
+@pytestmark_db
+def test_D02_D14_confirmation_makes_an_account_rule_and_only_a_suggestion_elsewhere(conn: Any) -> None:
+    from margo_match import db
+
+    db.learn_rules(conn)  # the seed's own confirmations first
+    ched = _ingredient(conn, "T HR Cheddar")
+    a, b = _account(conn, "A"), _account(conn, "B")
+    _person_confirms(conn, a, _line(conn, a, *QJO), ched)
+    assert db.learn_rules(conn) == 1, "one global rule learned"
+    assert db.learn_rules(conn) == 0, "a confirmation counts once"
+
+    acc_rules = conn.execute(
+        "select account_id::text, confirmations, created_by is not null as by from public.ingredient_account_rule where ingredient_id = %s",
+        (ched,),
+    ).fetchall()
+    assert [(r["account_id"], r["confirmations"], r["by"]) for r in acc_rules] == [(a["account"], 1, True)]
+    g = conn.execute(
+        "select auto_confirm, created_by from public.ingredient_rule where ingredient_id = %s", (ched,)
+    ).fetchone()
+    assert (g["auto_confirm"], g["created_by"]) == (False, None), "global: suggests, no person"
+
+    # Same account: the account rule confirms the next invoice alone, with its price.
+    a2 = _line(conn, a, *QJO)
+    db.run_auto(conn, a["account"])
+    assert _match_of(conn, a2) == (ched, "rule", "confirmed", "texto + NCM 0406")
+    assert conn.execute("select 1 from public.ingredient_price where invoice_line_id = %s", (a2,)).fetchone()
+
+    # Another account: only a suggestion of the global rule, no price (D02).
+    b1 = _line(conn, b, *QJO)
+    db.run_auto(conn, b["account"])
+    assert _match_of(conn, b1) == (ched, "rule", "suggested", "texto + NCM 0406, sugestão da regra geral")
+    assert not conn.execute(
+        "select 1 from public.ingredient_price where invoice_line_id = %s", (b1,)
+    ).fetchone()
+
+    # Reinforcing: another confirmation in A adds to the same account rule.
+    _person_confirms(conn, a, _line(conn, a, *QJO), ched)
+    db.learn_rules(conn)
+    assert (
+        conn.execute(
+            "select confirmations from public.ingredient_account_rule where account_id = %s and ingredient_id = %s",
+            (a["account"], ched),
+        ).fetchone()["confirmations"]
+        == 2
+    )
+
+
+@pytestmark_db
+def test_D02_D14_global_rule_auto_confirms_after_the_param_number_of_accounts(conn: Any) -> None:
+    from margo_match import db
+
+    db.learn_rules(conn)
+    ched = _ingredient(conn, "T HR Cheddar")
+    accounts = [_account(conn, t) for t in ("A", "B", "C", "D")]
+    for a in accounts[:2]:
+        _person_confirms(conn, a, _line(conn, a, *QJO), ched)
+    db.learn_rules(conn)
+    auto = "select auto_confirm from public.ingredient_rule where ingredient_id = %s"
+    assert conn.execute(auto, (ched,)).fetchone()["auto_confirm"] is False, "2 of 3 accounts"
+
+    _person_confirms(conn, accounts[2], _line(conn, accounts[2], *QJO), ched)
+    db.learn_rules(conn)
+    assert conn.execute(auto, (ched,)).fetchone()["auto_confirm"] is True, (
+        "3 distinct accounts, no disagreement"
+    )
+    d1 = _line(conn, accounts[3], *QJO)
+    db.run_auto(conn, accounts[3]["account"])
+    assert _match_of(conn, d1) == (ched, "rule", "confirmed", "texto + NCM 0406")
+
+    # The threshold is a param (04 §6 style).
+    conn.execute("update public.rule_param set value = 5 where key = 'm3.global_rule_min_accounts'")
+    db.learn_rules(conn)
+    assert conn.execute(auto, (ched,)).fetchone()["auto_confirm"] is False
+
+
+@pytestmark_db
+def test_D02_D14_disagreement_demotes_the_global_rule_and_flags_it(conn: Any) -> None:
+    from margo_match import db
+
+    db.learn_rules(conn)
+    ched, prato = _ingredient(conn, "T HR Cheddar"), _ingredient(conn, "T HR Prato")
+    accounts = [_account(conn, t) for t in ("A", "B", "C", "D", "E")]
+    for a in accounts[:3]:
+        _person_confirms(conn, a, _line(conn, a, *QJO), ched)
+    db.learn_rules(conn)
+    rule = "select auto_confirm, disputed_at is not null as flagged, disputed_ingredient_id::text as other from public.ingredient_rule where ingredient_id = %s and source = 'confirmation'"
+    assert tuple(conn.execute(rule, (ched,)).fetchone().values()) == (True, False, None)
+
+    # Account D: the global rule confirmed the line, a person swaps it to another ingredient.
+    d = accounts[3]
+    d1 = _line(conn, d, *QJO)
+    db.run_auto(conn, d["account"])
+    assert _match_of(conn, d1)[:3] == (ched, "rule", "confirmed")
+    _person_confirms(conn, d, d1, prato)
+    db.learn_rules(conn)
+    assert tuple(conn.execute(rule, (ched,)).fetchone().values()) == (False, True, prato), (
+        "suggest only, flagged"
+    )
+
+    # Account E now has two global rules naming different ingredients: review, no price.
+    e1 = _line(conn, accounts[4], *QJO)
+    db.run_auto(conn, accounts[4]["account"])
+    m = _match_of(conn, e1)
+    assert m and m[2] == "suggested" and m[3] == "conflito entre regras, revisar"
+    assert not conn.execute(
+        "select 1 from public.ingredient_price where invoice_line_id = %s", (e1,)
+    ).fetchone()
+
+    # Account D's own rule wins there: its next invoice confirms to what its person picked.
+    d2 = _line(conn, d, *QJO)
+    db.run_auto(conn, d["account"])
+    assert _match_of(conn, d2)[:3] == (prato, "rule", "confirmed")

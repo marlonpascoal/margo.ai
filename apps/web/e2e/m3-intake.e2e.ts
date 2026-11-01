@@ -171,6 +171,33 @@ test("D02_C11_refusing_a_suggestion_changes_no_price", async () => {
   }
 });
 
+// D14 step 2 (Marlon, 31/out): a global rule someone picked against is listed for a founder until reviewed.
+test("D14_C11_disputed_global_rule_is_flagged_until_a_founder_reviews_it", async () => {
+  const db = adminDb();
+  const { data: ings } = await db.from("ingredient").select("id, name").in("name", ["Queijo cheddar fatiado", "Pão brioche"]).order("name");
+  const [brioche, cheddar] = ings!;
+  const { data: rule } = await db
+    .from("ingredient_rule")
+    .insert({ ingredient_id: cheddar.id, keywords: ["E2EHR", "XCHED"], ncm_prefix: "04063000", unit: "PC", source: "confirmation", disputed_at: new Date().toISOString(), disputed_ingredient_id: brioche.id })
+    .select("id")
+    .single();
+  try {
+    await page.goto("/console/contas/G-02/de-para");
+    await expect(page.getByRole("heading", { name: "Regras gerais em revisão" })).toBeVisible();
+    const row = page.locator('tr[data-rule="E2EHR XCHED · NCM 04063000 · PC"]');
+    await expect(row).toContainText("Queijo cheddar fatiado");
+    await expect(row).toContainText("Pão brioche");
+    await row.getByRole("button", { name: "Revisada" }).click();
+    await expect(page.locator('tr[data-rule="E2EHR XCHED · NCM 04063000 · PC"]')).toHaveCount(0);
+    const after = await db.from("ingredient_rule").select("disputed_at, auto_confirm").eq("id", rule!.id).single();
+    expect(after.data).toEqual({ disputed_at: null, auto_confirm: false });
+    const { data: audit } = await db.from("audit_log").select("action").eq("entity_id", rule!.id);
+    expect(audit?.map((a) => a.action)).toContain("ingredient_rule.review");
+  } finally {
+    await db.from("ingredient_rule").delete().eq("id", rule!.id);
+  }
+});
+
 test("P05_C10_whatsapp_lists_only_missing_top20", async () => {
   await page.goto("/console/contas/G-02/notas");
   await expect(page.locator("[data-zip-stats]")).toHaveText("312 notas · 12 meses · 41 fornecedores" + "NF-e: 268 · NFC-e: 44 · duplicadas: 9");

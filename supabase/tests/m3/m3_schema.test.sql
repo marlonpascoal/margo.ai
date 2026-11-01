@@ -29,10 +29,10 @@ select col_is_unique('public', 'contribution', array['close_period_id', 'menu_it
 -- Params (04 §4).
 select results_eq($$
   select key, value from public.rule_param where key like 'm3.%' order by key
-$$, $$ values ('m3.price_window_days', 90::numeric), ('m3.regional_prior_error_pct', 0.30), ('m3.top_ingredients', 20),
+$$, $$ values ('m3.global_rule_min_accounts', 3::numeric), ('m3.price_window_days', 90), ('m3.regional_prior_error_pct', 0.30), ('m3.top_ingredients', 20),
               ('m3.yield_error_pct.declarado', 0.05),
               ('m3.yield_error_pct.estimado', 0.10), ('m3.yield_error_pct.medido', 0.02) $$,
-  'CST-01 window and CST-04 yield errors are params');
+  'CST-01 window, CST-04 yield errors and the D14 global rule threshold are params');
 
 -- RLS: enabled, SELECT only; bucket private.
 select is_empty($$

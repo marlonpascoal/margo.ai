@@ -1,8 +1,8 @@
 """worker-match's database side over a direct connection (local stack, 02 §3).
 
-Writes ingredient_match rows. A GTIN or rule match with a known conversion is confirmed through
-public.confirm_ingredient_match (which writes the CST-01 price); every other match stays `suggested` and
-writes no price (D02, D14).
+Writes ingredient_match rows. A GTIN or auto-confirming rule match with a known conversion is
+confirmed through public.confirm_ingredient_match (which writes the CST-01 price); every other match stays
+`suggested` and writes no price (D02, D14). Rules are learned per account and globally (learn_rules).
 """
 
 from __future__ import annotations
@@ -34,33 +34,112 @@ def catalog(conn: Any) -> list[CatalogItem]:
     ]
 
 
-def rules(conn: Any) -> list[Rule]:
+def rules(conn: Any, account_id: str | None = None) -> list[Rule]:
+    """Catalog and learned global rules, plus the account's own rules when account_id is given (D14)."""
     rows = conn.execute(
-        "select id, ingredient_id, keywords, ncm_prefix, unit from public.ingredient_rule"
+        "select id, ingredient_id, keywords, ncm_prefix, unit, source, auto_confirm from public.ingredient_rule"
     ).fetchall()
-    return [
-        Rule(str(r["id"]), str(r["ingredient_id"]), tuple(r["keywords"]), r["ncm_prefix"], r["unit"])
+    out = [
+        Rule(
+            str(r["id"]),
+            str(r["ingredient_id"]),
+            tuple(r["keywords"]),
+            r["ncm_prefix"],
+            r["unit"],
+            "catalog" if r["source"] == "catalog" else "global",
+            r["source"] == "catalog" or bool(r["auto_confirm"]),
+        )
         for r in rows
     ]
+    if account_id is not None:
+        rows = conn.execute(
+            """select id, ingredient_id, keywords, ncm_prefix, unit from public.ingredient_account_rule
+               where account_id = %s""",
+            (account_id,),
+        ).fetchall()
+        out += [
+            Rule(
+                str(r["id"]),
+                str(r["ingredient_id"]),
+                tuple(r["keywords"]),
+                r["ncm_prefix"],
+                r["unit"],
+                "account",
+            )
+            for r in rows
+        ]
+    return out
+
+
+def param(conn: Any, key: str) -> Decimal:
+    """A rule_param value (04: values marked param)."""
+    row = conn.execute("select value from public.rule_param where key = %s", (key,)).fetchone()
+    if row is None:
+        raise LookupError(f"rule_param {key} is missing")
+    return Decimal(row["value"])
 
 
 def learn_rules(conn: Any) -> int:
-    """D14: every match a person confirmed (AI or manual) becomes a rule for the next client."""
+    """D14 (Marlon, 31/out): each confirmation by a person, counted once (ingredient_match.learned_at),
+    creates or reinforces a rule of its account and counts toward the same global rule. A global rule picked
+    against (a person chose another ingredient for a line it matches) is disputed: suggest only, flagged
+    for a founder in C11. A learned global rule auto-confirms once m3.global_rule_min_accounts distinct
+    accounts hold it and it is not disputed. Catalog rules are never touched. Returns global rules added."""
+    min_accounts = param(conn, "m3.global_rule_min_accounts")
     rows = conn.execute(
-        """select distinct il.description, il.ncm, il.unit, m.ingredient_id, m.confirmed_by
+        """select m.id, m.account_id, m.ingredient_id, m.confirmed_by, il.description, il.ncm, il.unit
            from public.ingredient_match m join public.invoice_line il on il.id = m.invoice_line_id
-           where m.status = 'confirmed' and m.method in ('ai', 'manual')"""
+           where m.status = 'confirmed' and m.confirmed_by is not null and m.learned_at is null
+           order by m.updated_at, m.id"""
     ).fetchall()
     added = 0
     for r in rows:
         rule = learned_rule(r["description"], r["ncm"], r["unit"], str(r["ingredient_id"]))
-        cur = conn.execute(
-            """insert into public.ingredient_rule (ingredient_id, keywords, ncm_prefix, unit, source, created_by)
-               values (%s, %s, %s, %s, 'confirmation', %s)
-               on conflict (ingredient_id, keywords, ncm_prefix, unit) do nothing""",
-            (rule.ingredient_id, list(rule.keywords), rule.ncm_prefix, rule.unit, r["confirmed_by"]),
-        )
-        added += cur.rowcount
+        line = LineIn(str(r["id"]), r["description"], r["ncm"], None, r["unit"])
+        with conn.transaction():
+            for g in rules(conn):
+                if g.scope == "global" and g.ingredient_id != rule.ingredient_id and g.matches(line):
+                    conn.execute(
+                        """update public.ingredient_rule
+                              set auto_confirm = false, disputed_at = now(), disputed_ingredient_id = %s
+                            where id = %s and disputed_at is null""",
+                        (rule.ingredient_id, g.id),
+                    )
+            conn.execute(
+                """insert into public.ingredient_account_rule (account_id, ingredient_id, keywords, ncm_prefix, unit, created_by)
+                   values (%s, %s, %s, %s, %s, %s)
+                   on conflict (account_id, ingredient_id, keywords, ncm_prefix, unit)
+                   do update set confirmations = public.ingredient_account_rule.confirmations + 1""",
+                (
+                    r["account_id"],
+                    rule.ingredient_id,
+                    list(rule.keywords),
+                    rule.ncm_prefix,
+                    rule.unit,
+                    r["confirmed_by"],
+                ),
+            )
+            cur = conn.execute(
+                """insert into public.ingredient_rule (ingredient_id, keywords, ncm_prefix, unit, source)
+                   values (%s, %s, %s, %s, 'confirmation')
+                   on conflict (ingredient_id, keywords, ncm_prefix, unit) do nothing""",
+                (rule.ingredient_id, list(rule.keywords), rule.ncm_prefix, rule.unit),
+            )
+            added += cur.rowcount
+            conn.execute("update public.ingredient_match set learned_at = now() where id = %s", (r["id"],))
+    conn.execute(
+        """update public.ingredient_rule g
+              set auto_confirm = v.auto
+             from (select g2.id,
+                          g2.disputed_at is null and
+                          (select count(distinct a.account_id) from public.ingredient_account_rule a
+                            where a.ingredient_id = g2.ingredient_id and a.keywords = g2.keywords
+                              and a.ncm_prefix is not distinct from g2.ncm_prefix
+                              and a.unit is not distinct from g2.unit) >= %s as auto
+                     from public.ingredient_rule g2 where g2.source = 'confirmation') v
+            where v.id = g.id and g.auto_confirm is distinct from v.auto""",
+        (min_accounts,),
+    )
     return added
 
 
@@ -142,8 +221,9 @@ class Counts:
 
 
 def run_auto(conn: Any, account_id: str) -> Counts:
-    """D14 steps 1 and 2 for every pending line of the account."""
-    cat, rs = catalog(conn), rules(conn)
+    """D14 steps 1 and 2 for every pending line of the account. A suggest-only rule match (a global rule not
+    yet agreed by enough accounts, or rules in conflict) stays `suggested` and writes no price (D02)."""
+    cat, rs = catalog(conn), rules(conn, account_id)
     c = Counts()
     for p in pending_lines(conn, account_id):
         m = auto_match(p.line, cat, rs)
@@ -154,7 +234,7 @@ def run_auto(conn: Any, account_id: str) -> Counts:
             mid = _insert_match(
                 conn, account_id, m.line_id, m.ingredient_id, m.method, m.conversion_factor, m.rule_note
             )
-            if mid and m.conversion_factor:
+            if mid and m.conversion_factor and not m.suggest_only:
                 conn.execute("select public.confirm_ingredient_match(%s, null, null)", (mid,))
                 c.auto_confirmed += 1
             elif mid:

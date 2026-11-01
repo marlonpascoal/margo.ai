@@ -14,6 +14,8 @@ How sold lines meet the rules (choices listed for Marlon):
   - A line belongs to a campaign when the store ran it that day, the order carried a store discount and the
     campaign lists the dish (campaign_item). A campaign active in the month gives each dish it lists a row
     on its channel, even before a unit sold with it (DLV-01 compares the contribution per order).
+  - A campaign row keeps the menu price; its CTB-01 take adds the store's share of the discount, as M2's
+    campaign.channel_share_pct records it (REP-04).
   - Rows: every dish with a ready recipe sold in the month, per channel, plus one row per campaign.
     Order: the top-20 list (C12), then units of the dish, then channel, the row without campaign first.
 """
@@ -27,17 +29,18 @@ from datetime import date
 from decimal import Decimal
 
 from .rules import (
+    ChannelShares,
     CostParams,
     Decision,
     LineCost,
     PricePoint,
     RowEconomics,
     YieldConfidence,
-    campaign_price_cents,
-    channel_take_cents,
-    channel_take_rate,
+    campaign_discount_cents,
     cst03_line_cost,
     cst04_error_pct,
+    ctb01_channel_shares,
+    ctb01_channel_take_cents,
     ctb01_left_cents,
     ctb02_can_invert,
     dish_cost_cents,
@@ -91,6 +94,8 @@ class CampaignIn:
     starts_on: date
     ends_on: date
     item_ids: frozenset[str]
+    #: REP-04: the channel's share of the discount, as M2 records it (campaign.channel_share_pct).
+    channel_share_pct: Decimal = Decimal(0)
 
 
 @dataclass(frozen=True)
@@ -105,6 +110,15 @@ class SoldLine:
 
 
 @dataclass(frozen=True)
+class ChannelClose:
+    """C08 sums of one channel in the close: gross, and the commission and payment fee columns (signed)."""
+
+    gross_cents: int
+    commission_cents: int
+    payment_cents: int
+
+
+@dataclass(frozen=True)
 class CloseInputs:
     #: First day of the close month.
     month: date
@@ -116,8 +130,8 @@ class CloseInputs:
     packaging: Mapping[tuple[str, str], int]
     campaigns: Sequence[CampaignIn]
     sold: Sequence[SoldLine]
-    #: channel -> (gross, payout) of the close lines.
-    channel_close: Mapping[str, tuple[int, int]]
+    #: channel -> C08 sums of its close lines (CTB-01 commission and payment fee shares).
+    channel_close: Mapping[str, ChannelClose]
 
 
 @dataclass(frozen=True)
@@ -222,9 +236,20 @@ def compute_close(inputs: CloseInputs, params: CostParams) -> CloseResult:
     dish_cost = {r.menu_item_id: r for r in recipes if r.cost_cents is not None}
     stores = {s.id: s for s in inputs.stores}
     items = {i.id: i for i in inputs.items}
-    rates = {ch: channel_take_rate(g, p) for ch, (g, p) in inputs.channel_close.items()}
+    shares = {
+        ch: ctb01_channel_shares(c.gross_cents, c.commission_cents, c.payment_cents)
+        for ch, c in inputs.channel_close.items()
+    }
+    no_shares = ChannelShares(Decimal(0), Decimal(0))
 
+    # Rows are per channel; a campaign row carries the campaign's REP-04 split (same name and discount on
+    # every store of the channel; the first one found is used).
     Key = tuple[str, str, str | None, Decimal | None]
+    split: dict[tuple[str, str, Decimal], Decimal] = {}
+    for c in inputs.campaigns:
+        st = stores.get(c.store_id)
+        if st is not None:
+            split.setdefault((st.channel, c.name, c.discount_pct), c.channel_share_pct)
     units: Counter[Key] = Counter()
     base_prices: dict[tuple[str, str], Counter[int]] = defaultdict(Counter)
     any_prices: dict[tuple[str, str], Counter[int]] = defaultdict(Counter)
@@ -257,10 +282,16 @@ def compute_close(inputs: CloseInputs, params: CostParams) -> CloseResult:
         counter = base_prices.get((item_id, channel)) or any_prices[(item_id, channel)]
         return max(counter.items(), key=lambda kv: (kv[1], kv[0]))[0]
 
-    def economics(item_id: str, channel: str, price: int) -> tuple[int, int, int, int]:
+    def economics(item_id: str, channel: str, price: int, camp_name: str | None = None,
+                  camp_pct: Decimal | None = None) -> tuple[int, int, int, int]:
+        """CTB-01 for one order of the dish at its menu price, with the campaign's discount when given."""
         recipe = dish_cost[item_id]
         assert recipe.cost_cents is not None
-        take = channel_take_cents(price, rates.get(channel, Decimal(0)))
+        discount, channel_share = 0, Decimal(0)
+        if camp_name is not None and camp_pct is not None:
+            discount = campaign_discount_cents(price, camp_pct)
+            channel_share = split.get((channel, camp_name, camp_pct), Decimal(0))
+        take = ctb01_channel_take_cents(price, shares.get(channel, no_shares), discount, channel_share)
         packaging = inputs.packaging.get((item_id, channel), 0)
         return take, recipe.cost_cents, packaging, ctb01_left_cents(price, take, recipe.cost_cents, packaging)
 
@@ -282,9 +313,8 @@ def compute_close(inputs: CloseInputs, params: CostParams) -> CloseResult:
     rows: list[ContributionRow] = []
     econ: list[RowEconomics] = []
     for (item_id, channel, camp_name, camp_pct), n in units.items():
-        list_price = menu_price(item_id, channel)
-        price = campaign_price_cents(list_price, camp_pct) if camp_pct is not None else list_price
-        take, ingredient, packaging, left = economics(item_id, channel, price)
+        price = menu_price(item_id, channel)
+        take, ingredient, packaging, left = economics(item_id, channel, price, camp_name, camp_pct)
         err = dish_cost[item_id].error_pct
         assert err is not None
         rows.append(
@@ -293,7 +323,7 @@ def compute_close(inputs: CloseInputs, params: CostParams) -> CloseResult:
                 left_pct(left, price), ctb02_can_invert(err, ingredient, left),
             )
         )
-        base_left = economics(item_id, channel, list_price)[3] if camp_pct is not None else None
+        base_left = economics(item_id, channel, price)[3] if camp_pct is not None else None
         it = items[item_id]
         econ.append(
             RowEconomics(item_id, it.name, channel, it.top20_rank, camp_name, camp_pct, left, base_left, n)

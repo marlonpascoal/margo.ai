@@ -3,7 +3,7 @@
 
 The canonical rows (ingredient catalog, purchase invoices with their lines and matches, regional priors,
 dishes, recipes, campaign dishes, the dishes of each September order) are written here by hand to reproduce
-the M3 numbers drawn in C10, C11, C12, C13, P06 and W01. The derived rows (ingredient prices of confirmed
+the M3 numbers drawn in C10, C11, C12 and W01 (C13 and P06: see the CTB-01 choice below). The derived rows (ingredient prices of confirmed
 lines, recipe and line costs, contribution, insumos per store, the month's decision) come from
 worker-cost's own functions (margo_cost.compute), and the script stops if a drawn number does not come out.
 
@@ -22,6 +22,10 @@ Choices where the drawings disagree (questions for Marlon):
     drawn rows.
   - The iFood coupon (M2 campaign "Cupom 20% cofinanciado", per store) is linked to Combo casal only
     (campaign_item); the 99Food store promotion is store wide and not split per dish.
+  - C13, P06 and W01 contribution follows CTB-01 as 04 §4 writes it (Marlon, 31/out): the channel take is
+    commission, payment fee and the store's share of the coupon, read from M2's campaign.channel_share_pct
+    (50/50). The drawings used the channel's whole share (delivery and anticipation included) and a
+    store-paid coupon, so the C13 and P06 values below differ from the drawn ones on purpose.
   - Dishes of each order (order_item_fact) are listed at menu price; their sum stays within the order's
     items value (the rest is modifiers), except an order below the cheapest dish, which gets that dish.
   - "duplicadas: 9" of C10 is a count of the zip import (intake lane); the 312 invoices are the distinct ones.
@@ -43,6 +47,7 @@ from pathlib import Path
 
 from margo_cost.compute import (
     CampaignIn,
+    ChannelClose,
     CloseInputs,
     MenuItem,
     RecipeIn,
@@ -510,7 +515,7 @@ class Order:
     d_store: int
 
 
-def m2_inputs() -> tuple[list[Order], dict[str, tuple[int, int]], dict[str, tuple[date, date, Decimal, str]]]:
+def m2_inputs() -> tuple[list[Order], dict[str, ChannelClose], dict[str, tuple[date, date, Decimal, str, Decimal]]]:
     text = M2_SEED.read_text()
     orders = []
     for line in text.splitlines():
@@ -519,19 +524,24 @@ def m2_inputs() -> tuple[list[Order], dict[str, tuple[int, int]], dict[str, tupl
             orders.append(Order(m.group(1), m.group(2), date.fromisoformat(m.group(3)[:10]), int(m.group(5)),
                                 int(m.group(7))))
     block = text.split("insert into public.close_line", 1)[1].split(";", 1)[0]
-    per_channel: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    per_channel: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0, 0])
     for line in block.splitlines():
         m = CLOSE_RX.match(line)
         if m:
             ch = STORES[m.group(1)][0]
             per_channel[ch][0] += int(m.group(2))
-            per_channel[ch][1] += int(m.group(8))
-    assert per_channel["ifood"] == [9_240_000, 6_882_900] and per_channel["food99"] == [1_860_000, 1_447_100]
+            per_channel[ch][1] += int(m.group(3))
+            per_channel[ch][2] += int(m.group(4))
+            per_channel[ch][3] += int(m.group(8))
+    assert per_channel["ifood"] == [9_240_000, -1_108_800, -295_700, 6_882_900]
+    assert per_channel["food99"] == [1_860_000, -167_400, -59_500, 1_447_100]
+    # REP-04 split as M2 records it (campaign.channel_share_pct), read by CTB-01 too.
+    for s in COUPON_STORES:
+        assert f"('{s}', 'Cupom 20% cofinanciado', 0.20, 0.50, '2026-09-01', '2026-09-20')" in text, s
     campaigns = {
-        s: (date(2026, 9, 1), date(2026, 9, 20), D("0.20"), "Cupom 20% cofinanciado") for s in COUPON_STORES
+        s: (date(2026, 9, 1), date(2026, 9, 20), D("0.20"), "Cupom 20% cofinanciado", D("0.50")) for s in COUPON_STORES
     }
-    assert "('s1', 'Cupom 20% cofinanciado', 0.20, 0.50, '2026-09-01', '2026-09-20')" in text
-    return orders, {k: (v[0], v[1]) for k, v in per_channel.items()}, campaigns
+    return orders, {k: ChannelClose(v[0], v[1], v[2]) for k, v in per_channel.items()}, campaigns
 
 
 # Dishes of each order (order_item_fact): main dishes while they fit in the order's items value, then at
@@ -548,7 +558,7 @@ SIDES = {
 }
 
 
-def order_items(orders: list[Order], campaigns: dict[str, tuple[date, date, Decimal, str]]) -> list[tuple[Order, list[str]]]:
+def order_items(orders: list[Order], campaigns: dict[str, tuple[date, date, Decimal, str, Decimal]]) -> list[tuple[Order, list[str]]]:
     price = {d.key: d.price or 0 for d in DISHES}
     out = []
     for o in orders:
@@ -619,8 +629,8 @@ def build() -> dict[str, object]:
         recipes=recipes,
         prices=prices,
         packaging={},
-        campaigns=[CampaignIn(sid(f"G-02:camp:{s}"), s, name, pct, a, b, frozenset({sid("G-02:dish:combo")}))
-                   for s, (a, b, pct, name) in campaigns.items()],
+        campaigns=[CampaignIn(sid(f"G-02:camp:{s}"), s, name, pct, a, b, frozenset({sid("G-02:dish:combo")}), share)
+                   for s, (a, b, pct, name, share) in campaigns.items()],
         sold=sold,
         channel_close=channel_close,
     )
@@ -643,13 +653,18 @@ def check(result, items, recipes, prices) -> None:  # type: ignore[no-untyped-de
     assert [ln.price.observed_on for ln in xb.lines if ln.price.source == "invoice"] == [
         date(2026, 10, 12), date(2026, 9, 30), date(2026, 10, 5), date(2026, 9, 18)]
     rows = {(name[r.menu_item_id], r.channel, r.campaign_name): r for r in result.rows}
-    drawn = {  # C13: price, channel take, insumos, left, % of price
-        ("X-Bacon artesanal", "ifood", None): (3690, 941, 1244, 1505, 41),
-        ("X-Bacon artesanal", "food99", None): (3690, 819, 1244, 1627, 44),
-        ("Combo casal", "ifood", None): (7990, 2037, 3180, 2773, 35),
-        ("Combo casal", "ifood", "Cupom 20% cofinanciado"): (6392, 1630, 3180, 1582, 25),
-        ("Batata frita média", "ifood", None): (1490, 380, 310, 800, 54),
-        ("Refrigerante lata", "ifood", None): (500, 128, 285, 87, 17),
+    # C13: price, channel take, insumos, left, % of price. CTB-01 as 04 §4 writes it (Marlon, 31/out):
+    # commission + payment fee + store share of the coupon (co-funded 50/50, as M2 records it). The drawing
+    # used the channel's whole share and a store-paid coupon, so these differ from it (drawn values in the
+    # comment): X-Bacon iFood 941/1505/41, 99Food 819/1627/44; Combo 2037/2773/35; Combo com cupom
+    # 6392/1630/1582/25; Batata 380/800/54; Refrigerante 128/87/17.
+    drawn = {
+        ("X-Bacon artesanal", "ifood", None): (3690, 561, 1244, 1885, 51),
+        ("X-Bacon artesanal", "food99", None): (3690, 450, 1244, 1996, 54),
+        ("Combo casal", "ifood", None): (7990, 1214, 3180, 3596, 45),
+        ("Combo casal", "ifood", "Cupom 20% cofinanciado"): (7990, 1962, 3180, 2848, 36),
+        ("Batata frita média", "ifood", None): (1490, 226, 310, 954, 64),
+        ("Refrigerante lata", "ifood", None): (500, 76, 285, 139, 28),
     }
     for key, (p, t, i, left, pc) in drawn.items():
         r = rows[key]
@@ -660,7 +675,7 @@ def check(result, items, recipes, prices) -> None:  # type: ignore[no-untyped-de
     assert round(max(r.ingredient_error_pct for r in result.rows) * 100) == 9  # C13, P06 "± 9%"
     d = result.decision
     assert d and d.kind == "campaign" and name[d.menu_item_id] == "Combo casal"  # DLV-01
-    assert (d.left_cents, d.base_left_cents) == (1582, 2773)
+    assert (d.left_cents, d.base_left_cents) == (2848, 3596)  # drawn: 1582 and 2773
     units = Counter()
     for r in result.rows:
         units[r.menu_item_id] += r.units

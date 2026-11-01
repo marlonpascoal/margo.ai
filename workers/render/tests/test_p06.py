@@ -53,30 +53,31 @@ def test_P06_totals_equal_C08_and_cost_is_missing() -> None:
     assert "—" not in t, "no em dash in product text"
 
 
-# Module 3 as drawn in design/P06-FechamentoPDF.dc.html (CST-01, CST-02, CTB-01, DLV-01).
+# Module 3 of the G-SYN close (CST-01, CST-02, CTB-01, DLV-01). Layout as drawn in design/P06-FechamentoPDF.dc.html;
+# the contribution values follow CTB-01 as 04 §4 writes it, so they differ from the drawing.
 COST = CostSection(
     invoice_count=16,
     top_count=20,
     prior_count=4,
     items=[
-        CostItem("X-Bacon artesanal, 99Food", 3690, 1627),
-        CostItem("X-Bacon artesanal, iFood", 3690, 1505),
-        CostItem("Combo casal com cupom de 20%, iFood", 6392, 1582, attention=True),
-        CostItem("Refrigerante lata, iFood", 500, 87, attention=True),
+        CostItem("X-Bacon artesanal, 99Food", 3690, 1996),
+        CostItem("X-Bacon artesanal, iFood", 3690, 1885),
+        CostItem("Combo casal com cupom de 20%, iFood", 7990, 2848, attention=True),
+        CostItem("Refrigerante lata, iFood", 500, 139, attention=True),
     ],
     decision_title="Uma decisão para outubro",
-    decision_text="Com o cupom de 20%, o Combo casal deixa R$ 15,82 por pedido, quase a metade dos R$ 27,73 sem cupom. Vale renovar a campanha?",
+    decision_text="Com o cupom de 20%, o Combo casal deixa R$ 28,48 por pedido, contra os R$ 35,96 sem cupom. Vale renovar a campanha?",
     error_pct=Decimal("0.0927"),
 )
 DRAWN_M3 = (
     "Custo dos insumos 16 de 20 itens com preço de nota. Os outros 4 por estimativa da região.",
     "O que sobra por pedido, nos itens que mais vendem",
-    "X-Bacon artesanal, 99Food 36,90 16,27",
-    "X-Bacon artesanal, iFood 36,90 15,05",
-    "Combo casal com cupom de 20%, iFood 63,92 15,82",
-    "Refrigerante lata, iFood 5,00 0,87",
+    "X-Bacon artesanal, 99Food 36,90 19,96",
+    "X-Bacon artesanal, iFood 36,90 18,85",
+    "Combo casal com cupom de 20%, iFood 79,90 28,48",
+    "Refrigerante lata, iFood 5,00 1,39",
     "Uma decisão para outubro",
-    "Com o cupom de 20%, o Combo casal deixa R$ 15,82 por pedido, quase a metade dos R$ 27,73 sem cupom. Vale renovar a campanha?",
+    "Com o cupom de 20%, o Combo casal deixa R$ 28,48 por pedido, contra os R$ 35,96 sem cupom. Vale renovar a campanha?",
     "Custo ± 9%.",
 )
 
@@ -91,7 +92,7 @@ def test_D03_P06_with_contribution_shows_the_m3_section_and_one_decision() -> No
     assert "—" not in t, "no em dash in product text"
     wb = load_workbook(io.BytesIO(render_xlsx(P06Data(**{**GSYN.__dict__, "cost": COST}))))
     assert wb.sheetnames == ["Fechamento", "Sobra por pedido", "Diferenças"]
-    assert [c.value for c in wb["Sobra por pedido"][2]] == ["X-Bacon artesanal, 99Food", 36.9, 16.27]
+    assert [c.value for c in wb["Sobra por pedido"][2]] == ["X-Bacon artesanal, 99Food", 36.9, 19.96]
 
 
 def test_P06_without_contribution_keeps_falta_custo() -> None:

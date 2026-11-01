@@ -26,17 +26,18 @@ test.afterAll(async () => {
   await context.close();
 });
 
-test("D03_C13_rows_decision_and_error_note_as_drawn", async () => {
+test("D03_C13_rows_decision_and_error_note_by_CTB01", async () => {
   await page.goto("/console/contas/G-02/contribuicao/2026-09");
   await expect(page.getByText("C13 · Módulo 3 · Grupo Exemplo · set/2026")).toBeVisible();
-  await expect(page.locator("[data-decision]")).toHaveText("O cupom de 20% no Combo casal derruba a contribuição de R$ 27,73 para R$ 15,82 por pedido no iFood.");
+  await expect(page.locator("[data-decision]")).toHaveText("O cupom de 20% no Combo casal derruba a contribuição de R$ 35,96 para R$ 28,48 por pedido no iFood.");
+  // CTB-01 as 04 §4 writes it (commission, payment fee, store share of the co-funded coupon); differs from the drawing.
   const drawn: [string, string[]][] = [
-    ["X-Bacon artesanal · iFood", ["36,90", `${MINUS}9,41`, `${MINUS}12,44`, "15,05", "41%"]],
-    ["X-Bacon artesanal · 99Food", ["36,90", `${MINUS}8,19`, `${MINUS}12,44`, "16,27", "44%"]],
-    ["Combo casal · iFood", ["79,90", `${MINUS}20,37`, `${MINUS}31,80`, "27,73", "35%"]],
-    ["Combo casal, cupom 20% · iFood", ["63,92", `${MINUS}16,30`, `${MINUS}31,80`, "15,82", "25%"]],
-    ["Batata frita média · iFood", ["14,90", `${MINUS}3,80`, `${MINUS}3,10`, "8,00", "54%"]],
-    ["Refrigerante lata · iFood", ["5,00", `${MINUS}1,28`, `${MINUS}2,85`, "0,87", "17%"]],
+    ["X-Bacon artesanal · iFood", ["36,90", `${MINUS}5,61`, `${MINUS}12,44`, "18,85", "51%"]],
+    ["X-Bacon artesanal · 99Food", ["36,90", `${MINUS}4,50`, `${MINUS}12,44`, "19,96", "54%"]],
+    ["Combo casal · iFood", ["79,90", `${MINUS}12,14`, `${MINUS}31,80`, "35,96", "45%"]],
+    ["Combo casal, cupom 20% · iFood", ["79,90", `${MINUS}19,62`, `${MINUS}31,80`, "28,48", "36%"]],
+    ["Batata frita média · iFood", ["14,90", `${MINUS}2,26`, `${MINUS}3,10`, "9,54", "64%"]],
+    ["Refrigerante lata · iFood", ["5,00", `${MINUS}0,76`, `${MINUS}2,85`, "1,39", "28%"]],
   ];
   for (const [key, cells] of drawn) {
     const row = page.locator(`tr[data-row="${key}"]`);
@@ -129,7 +130,7 @@ test("W01_kpis_equal_C08_and_C13_and_the_decision_for_october", async ({ browser
   await expect(main.getByText(brl(sold), { exact: true })).toBeVisible();
   await expect(main.getByText(brl(left), { exact: true })).toBeVisible();
   await expect(main.getByText(`sobrou depois dos insumos (${Math.round((left * 100) / sold)}%)`)).toBeVisible();
-  await expect(main.locator("[data-decision]")).toHaveText("Uma decisão para outubro. O cupom de 20% no Combo casal deixa R$ 15,82 por pedido, contra R$ 27,73 sem cupom.");
+  await expect(main.locator("[data-decision]")).toHaveText("Uma decisão para outubro. O cupom de 20% no Combo casal deixa R$ 28,48 por pedido, contra R$ 35,96 sem cupom.");
   await expect(main.getByText("falta custo")).toHaveCount(0);
   await ctx.close();
 });

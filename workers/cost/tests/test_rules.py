@@ -7,17 +7,18 @@ from decimal import Decimal as D
 
 import pytest
 from margo_cost.rules import (
+    ChannelShares,
     CostParams,
     LineCost,
     PricePoint,
     RowEconomics,
-    campaign_price_cents,
-    channel_take_cents,
-    channel_take_rate,
+    campaign_discount_cents,
     cst01_invoice_price,
     cst02_regional_prior,
     cst03_line_cost,
     cst04_error_pct,
+    ctb01_channel_shares,
+    ctb01_channel_take_cents,
     ctb01_left_cents,
     ctb02_can_invert,
     dish_cost_cents,
@@ -100,22 +101,40 @@ def test_cst04_regional_prior_widens_the_error_bar() -> None:
     assert cst04_error_pct([], PARAMS) == 0
 
 
-def test_channel_take_rate_and_cents_match_c13() -> None:
-    # P06: iFood vendido 92.400, recebido 68.829 (74,5%); 99Food 18.600 and 14.471 (77,8%).
-    ifood = channel_take_rate(9_240_000, 6_882_900)
-    f99 = channel_take_rate(1_860_000, 1_447_100)
-    assert (ifood, f99) == (D("0.255"), D("0.222"))
-    assert [channel_take_cents(p, ifood) for p in (3690, 7990, 6392, 1490, 500)] == [941, 2037, 1630, 380, 128]
-    assert channel_take_cents(3690, f99) == 819
-    assert channel_take_rate(0, 0) == 0
+def test_D03_ctb01_channel_shares_are_commission_and_payment_fee_only() -> None:
+    # C08 September close, iFood: gross 92.400, commission 11.088, payment fee 2.957 (delivery 4.620 and
+    # anticipation 1.210 are not part of CTB-01's take); 99Food: 18.600, 1.674 and 595.
+    ifood = ctb01_channel_shares(9_240_000, -1_108_800, -295_700)
+    f99 = ctb01_channel_shares(1_860_000, -167_400, -59_500)
+    assert ifood == ChannelShares(D("0.120"), D("0.032"))
+    assert f99 == ChannelShares(D("0.090"), D("0.032"))
+    assert ctb01_channel_shares(0, 0, 0) == ChannelShares(D(0), D(0))
 
 
-def test_ctb01_left_and_pct_as_drawn() -> None:
-    assert ctb01_left_cents(3690, 941, 1244, 0) == 1505
-    assert ctb01_left_cents(7990, 2037, 3180) == 2773
-    assert campaign_price_cents(7990, D("0.20")) == 6392
-    assert ctb01_left_cents(6392, 1630, 3180) == 1582
-    assert left_pct(1505, 3690) == D("0.4079")
+def test_D03_ctb01_channel_take_without_campaign() -> None:
+    ifood = ChannelShares(D("0.120"), D("0.032"))
+    f99 = ChannelShares(D("0.090"), D("0.032"))
+    assert [ctb01_channel_take_cents(p, ifood) for p in (3690, 7990, 1490, 500)] == [561, 1214, 226, 76]
+    assert ctb01_channel_take_cents(3690, f99) == 450
+
+
+def test_D03_ctb01_coupon_take_uses_the_m2_funding_split() -> None:
+    """REP-04 split: commission on the menu price, payment fee on what the customer pays, and only the store's
+    share (1 - channel_share_pct) of the discount."""
+    ifood = ChannelShares(D("0.120"), D("0.032"))
+    discount = campaign_discount_cents(7990, D("0.20"))
+    assert discount == 1598
+    # 958,80 commission + 204,54 payment fee on 63,92 + 799,00 store half of the coupon
+    assert ctb01_channel_take_cents(7990, ifood, discount, D("0.50")) == 1962
+    # A store-funded promotion (channel_share_pct 0) puts the whole discount in the take.
+    assert ctb01_channel_take_cents(7990, ifood, discount, D("0")) == 2761
+
+
+def test_D03_ctb01_left_and_pct() -> None:
+    assert ctb01_left_cents(3690, 561, 1244, 0) == 1885
+    assert ctb01_left_cents(7990, 1214, 3180) == 3596
+    assert ctb01_left_cents(7990, 1962, 3180) == 2848
+    assert left_pct(1885, 3690) == D("0.5108")
     assert left_pct(0, 0) is None
 
 

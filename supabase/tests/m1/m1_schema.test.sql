@@ -15,7 +15,7 @@ select is_empty($$ select 1 from pg_policies where tablename = 'collector_page_c
 select ok((select not public from storage.buckets where id = 'pdf'), 'P01 PDFs live in a private bucket');
 
 -- Functions are not callable by browser roles.
-select ok(not has_function_privilege('authenticated', 'public.xray_create(text, text, int, text[], jsonb, uuid, inet, text)', 'execute'),
+select ok(not has_function_privilege('authenticated', 'public.xray_create(text, text, int, text[], jsonb, uuid, inet, text, uuid, public.flag_env)', 'execute'),
   'xray_create: not for authenticated');
 select ok(not has_function_privilege('anon', 'public.xray_store_set_included(uuid, boolean, uuid, inet, text)', 'execute'),
   'xray_store_set_included: not for anon');

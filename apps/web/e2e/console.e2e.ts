@@ -68,12 +68,12 @@ test.describe("as Fundador", () => {
       expect(body).not.toContain(process.env.SUPABASE_SERVICE_ROLE_KEY!);
     }
 
-    // C20 from the sidebar: 15 keys of 04 §6, seed exceptions, plan defaults.
+    // C20 from the sidebar: 16 keys of 04 §6, seed exceptions, plan defaults.
     const nav = page.getByRole("navigation", { name: "Console" });
     await nav.getByRole("link", { name: /Funcionalidades$/ }).click();
     await page.waitForURL("**/console/funcionalidades");
     await expect(page.getByRole("heading", { name: "Funcionalidades" })).toBeVisible();
-    await expect(page.locator("tr[data-flag]")).toHaveCount(15);
+    await expect(page.locator("tr[data-flag]")).toHaveCount(16);
     const ifood = page.locator('tr[data-flag="m2.ifood_api"]');
     await expect(ifood).toContainText("Leitura do iFood pela API oficial");
     await expect(ifood.getByRole("button", { name: "m2.ifood_api Raio-X: desligada" })).toBeVisible();

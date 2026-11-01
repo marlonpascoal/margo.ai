@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(42);
+select plan(45);
 
 -- Tables and key columns (03 §4).
 select has_table('public', t, '03 §4: table ' || t) from unnest(array[
@@ -22,7 +22,10 @@ select col_default_is('public', 'ingredient_match', 'status', 'suggested'::publi
   'D14: a match starts as a suggestion');
 select enum_has_labels('public', 'yield_confidence', array['medido', 'declarado', 'estimado'], 'CST-04 yield confidence');
 select enum_has_labels('public', 'invoice_source', array['xml_zip', 'key_typed', 'qr_url', 'whatsapp_photo'], '03 §4 invoice sources');
-select col_is_unique('public', 'invoice', 'access_key', 'D11: invoices dedupe by access key');
+select col_is_unique('public', 'invoice', array['account_id', 'access_key'], 'D01 D11: invoices dedupe by access key within the account');
+select is_empty($$ select conname from pg_constraint where conrelid = 'public.invoice'::regclass and contype = 'u'
+                    and conkey = array[(select attnum from pg_attribute where attrelid = 'public.invoice'::regclass and attname = 'access_key')] $$,
+  'D01: the access key alone is not unique across accounts (31/out)');
 select col_is_unique('public', 'contribution', array['close_period_id', 'menu_item_id', 'channel', 'campaign_name'],
   'C13: one contribution row per close, dish, channel and campaign (none: the dish without campaign)');
 
@@ -76,7 +79,17 @@ select throws_ok($$
   insert into public.invoice (account_id, company_id, access_key, model, issuer_cnpj, issued_at, total_cents, source)
   values ('a3000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000002',
           '41260900000000000190550010000001231123456789', 55, '00000000000190', now(), 5000, 'key_typed')
-$$, '23505', null, 'D11: the same access key twice is refused');
+$$, '23505', null, 'D01 D11: the same access key twice in one account is refused');
+insert into public.account (id, name, code) values ('a3000000-0000-0000-0000-000000000011', 'Outra conta M3', 'T-M3B');
+insert into public.company (id, account_id, cnpj, legal_name)
+  values ('a3000000-0000-0000-0000-000000000012', 'a3000000-0000-0000-0000-000000000011', '00000000000270', 'Empresa M3');
+select lives_ok($$
+  insert into public.invoice (account_id, company_id, access_key, model, issuer_cnpj, issued_at, total_cents, source)
+  values ('a3000000-0000-0000-0000-000000000011', 'a3000000-0000-0000-0000-000000000012',
+          '41260900000000000190550010000001231123456789', 55, '00000000000190', now(), 5000, 'key_typed')
+$$, 'D01: a second account saves the same access key (unique per account, 31/out)');
+select is((select count(distinct account_id)::int from public.invoice where access_key = '41260900000000000190550010000001231123456789'), 2,
+  'D01: one invoice per account for the same key');
 select throws_ok($$
   insert into public.invoice (account_id, company_id, access_key, model, issuer_cnpj, issued_at, total_cents, source)
   values ('a3000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000002',

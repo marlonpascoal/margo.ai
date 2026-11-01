@@ -103,6 +103,7 @@ export default async function SubscriptionsPage() {
               unit: p.billingUnit,
               trialDays: p.trialDays,
               example: p.priceIsExample,
+              competitorXrays: p.competitorXraysPerMonth,
             }}
           />
         ))}

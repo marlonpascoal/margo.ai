@@ -15,6 +15,7 @@ import {
   loadFicha,
 } from "./data";
 import { editRecipeLine, setPackaging } from "./edit";
+import { NotasRefused, saveKey } from "./notas";
 
 const db = adminClient();
 const sid = (tag: string) => {
@@ -263,5 +264,30 @@ describe("C13 and W01 on the September close", () => {
       cl!.reduce((a, l) => a + l.payout_cents, 0) -
         cc!.reduce((a, c) => a + c.ingredient_cents + c.packaging_cents, 0),
     );
+  });
+});
+
+describe("C10 typed key, access key unique per account (31/out)", () => {
+  it("D01_C10_two_accounts_save_the_same_key_and_neither_learns_of_the_other", async () => {
+    // A valid NF-e key no seed invoice uses.
+    const key = "41261000000000000190550010000099991123456781";
+    const mk = async (code: string, cnpj: string) => {
+      const a = await db.from("account").insert({ name: `Conta ${code}`, code, is_synthetic: true }).select("id").single();
+      if (a.error) throw new Error(a.error.message);
+      cleanup.push(() => db.from("account").delete().eq("id", a.data.id));
+      const c = await db.from("company").insert({ account_id: a.data.id, cnpj, legal_name: `Empresa ${code}` });
+      if (c.error) throw new Error(c.error.message);
+      return { id: a.data.id, code, name: `Conta ${code}`, isSynthetic: true };
+    };
+    const tag = Date.now().toString(36).toUpperCase();
+    const first = await mk(`T-KA-${tag}`, "00000000000270");
+    const second = await mk(`T-KB-${tag}`, "00000000000270");
+    const one = await saveKey(db, first, MARLON, key, META);
+    const two = await saveKey(db, second, MARLON, key, META);
+    expect(two).not.toBe(one);
+    const { data: rows } = await db.from("invoice").select("account_id").eq("access_key", key);
+    expect(new Set(rows!.map((r) => r.account_id))).toEqual(new Set([first.id, second.id]));
+    // Dedup stays within the account, with the same message either way.
+    await expect(saveKey(db, second, MARLON, key, META)).rejects.toThrow(new NotasRefused("Esta nota já está salva."));
   });
 });

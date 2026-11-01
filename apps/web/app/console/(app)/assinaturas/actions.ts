@@ -24,6 +24,7 @@ export async function savePlanAction(_prev: FormState, form: FormData): Promise<
     price: text(form, "price"),
     billingUnit: text(form, "unit"),
     trialDays: text(form, "trial"),
+    competitorXrays: text(form, "competitor"),
     priceIsExample: form.get("example") === "on",
   });
   if (!r.ok) return { message: r.message, saved: false };

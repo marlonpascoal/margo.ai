@@ -55,7 +55,7 @@ select results_eq($$ select code from public.plan order by code $$,
   array['lucro', 'raio_x', 'rede'], 'three plans');
 select results_eq($$ select trial_days from public.plan where code = 'lucro' $$,
   array[14], 'trial placeholder of 14 days (D40)');
-select is((select count(*)::int from public.feature_flag), 30, '15 flags in sandbox and production');
+select is((select count(*)::int from public.feature_flag), 32, '16 flags in sandbox and production (m1.concorrente: 20261212000001)');
 select results_eq($$
   select default_raio_x, default_lucro, default_rede from public.feature_flag
   where key = 'm2.ifood_api' and env = 'production'

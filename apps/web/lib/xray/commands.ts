@@ -12,6 +12,8 @@ export interface Actor {
 
 export interface XrayDeps {
   rpc(fn: string, args: Record<string, unknown>): Promise<unknown>;
+  /** Flag environment for the m1.concorrente check in xray_create (04 §6, MARGO_FLAG_ENV). */
+  env?: "sandbox" | "production";
   enqueue(job: { type: string; payload: Record<string, unknown>; accountId: string | null; dedupeKey: string }): Promise<void>;
 }
 
@@ -24,29 +26,57 @@ export interface NewXray {
   excludeClosed: boolean;
   excludeChains: boolean;
   sameNeighborhoodOnly: boolean;
+  /** The account the X-ray is for (C02 ?conta=). Absent: the owner of the store, else a lead. */
+  accountId?: string | null;
 }
 
-export type CreateResult = { ok: true; xrayId: string } | { ok: false; field: "url" | "form" };
+export type CreateResult =
+  | { ok: true; xrayId: string }
+  | { ok: false; field: "url" | "form" | "account" }
+  /** B01 competitor X-ray refused by xray_create (migration 20261212000001): limit 0 when not in the plan. */
+  | { ok: false; field: "competitor"; limit: number };
 
-/** C02 "Buscar vizinhança": the X-ray (collecting) and its collect job (D47). */
+/** The refusals xray_create raises for a competitor X-ray or an unknown account; anything else is rethrown. */
+function createRefusal(e: unknown): CreateResult | null {
+  const m = e instanceof Error ? e.message : "";
+  if (m === "competitor_xray_not_in_plan") return { ok: false, field: "competitor", limit: 0 };
+  const lim = /^competitor_xray_limit:(\d+)$/.exec(m);
+  if (lim) return { ok: false, field: "competitor", limit: Number(lim[1]) };
+  if (m === "unknown account") return { ok: false, field: "account" };
+  return null;
+}
+
+/** C02 "Buscar vizinhança": the X-ray (collecting) and its collect job (D47). For an account, a target that is
+ * not one of its stores is a competitor X-ray: flag m1.concorrente and the plan's monthly limit, checked by
+ * xray_create on the server. */
 export async function createXray(deps: XrayDeps, actor: Actor, input: NewXray, accountOf: (externalId: string) => Promise<string | null>): Promise<CreateResult> {
   const externalId = storeIdFromUrl(input.url);
   if (!externalId) return { ok: false, field: "url" };
   const category = CATEGORY_OPTIONS.find((c) => c.value === input.category);
   if (!category || !RADIUS_OPTIONS.some((r) => r.value === input.radiusKm)) return { ok: false, field: "form" };
-  const xrayId = (await deps.rpc("xray_create", {
-    p_external_id: externalId,
-    p_url: canonicalStoreUrl(input.url),
-    p_radius_km: input.radiusKm,
-    p_categories: [...category.categories],
-    p_rules: {
-      exclude_closed: input.excludeClosed,
-      exclude_national_chains: input.excludeChains,
-      same_neighborhood_only: input.sameNeighborhoodOnly,
-    },
-    ...who(actor),
-  })) as string;
-  await deps.enqueue({ type: "collect", payload: { xray_id: xrayId }, accountId: await accountOf(externalId), dedupeKey: `collect:${xrayId}` });
+  const forAccount = input.accountId ? { p_account: input.accountId, p_env: deps.env ?? "sandbox" } : {};
+  let xrayId: string;
+  try {
+    xrayId = (await deps.rpc("xray_create", {
+      p_external_id: externalId,
+      p_url: canonicalStoreUrl(input.url),
+      p_radius_km: input.radiusKm,
+      p_categories: [...category.categories],
+      p_rules: {
+        exclude_closed: input.excludeClosed,
+        exclude_national_chains: input.excludeChains,
+        same_neighborhood_only: input.sameNeighborhoodOnly,
+      },
+      ...who(actor),
+      ...forAccount,
+    })) as string;
+  } catch (e) {
+    const refused = createRefusal(e);
+    if (refused) return refused;
+    throw e;
+  }
+  const accountId = input.accountId || (await accountOf(externalId));
+  await deps.enqueue({ type: "collect", payload: { xray_id: xrayId }, accountId, dedupeKey: `collect:${xrayId}` });
   return { ok: true, xrayId };
 }
 

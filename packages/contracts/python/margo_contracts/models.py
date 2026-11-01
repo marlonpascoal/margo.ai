@@ -1022,6 +1022,7 @@ class PilotCharge(Row):
 class Plan(Row):
     billing_unit: BillingUnit
     code: str
+    competitor_xrays_per_month: int
     created_at: datetime
     features: JsonValue
     id: UUID

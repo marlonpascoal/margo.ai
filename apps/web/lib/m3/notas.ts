@@ -15,6 +15,8 @@ type Meta = { ip: string | null; userAgent: string | null };
 
 export class NotasRefused extends Error {}
 
+const SAVED = "Esta nota já está salva.";
+
 // Zip stats -------------------------------------------------------------------------------------------
 
 export interface ImportRecord {
@@ -152,8 +154,10 @@ export async function saveKey(db: Db, account: M2Account, staffId: string, input
   if (companies?.length !== 1) throw new NotasRefused("Esta conta tem mais de uma empresa: importe o .zip do contador.");
   const companyId = companies[0].id;
   await requireAuthorization(db, account, companyId);
-  const { data: known } = await db.from("invoice").select("id").eq("access_key", parsed.key).maybeSingle();
-  if (known) throw new NotasRefused("Esta nota já está salva.");
+  // D11 per account (31/out): only this account's invoices are looked at, so the answer never tells that
+  // another account has the same key.
+  const { data: known } = await db.from("invoice").select("id").eq("account_id", account.id).eq("access_key", parsed.key).maybeSingle();
+  if (known) throw new NotasRefused(SAVED);
   const { data, error } = await db
     .from("invoice")
     .insert({
@@ -168,6 +172,7 @@ export async function saveKey(db: Db, account: M2Account, staffId: string, input
     })
     .select("id")
     .single();
+  if (error?.code === "23505") throw new NotasRefused(SAVED);
   if (error) throw new Error(error.message);
   await audit(db, { actor: staffId, accountId: account.id, action: "invoice.key_saved", entity: "invoice", entityId: data.id, after: { source: parsed.source, model: keyModel(parsed.key) }, meta });
   return data.id;

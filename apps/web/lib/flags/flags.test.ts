@@ -72,7 +72,7 @@ describe("feature flags (04 §6)", () => {
   });
 
   it("A05_fifteen_keys_of_04_section_6", () => {
-    expect(FLAG_KEYS).toHaveLength(15);
-    expect(new Set(FLAG_KEYS).size).toBe(15);
+    expect(FLAG_KEYS).toHaveLength(16);
+    expect(new Set(FLAG_KEYS).size).toBe(16);
   });
 });

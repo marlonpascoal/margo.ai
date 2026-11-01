@@ -16,6 +16,8 @@ export interface PlanRow {
   billingUnit: BillingUnit;
   trialDays: number;
   priceIsExample: boolean;
+  /** B01 competitor X-rays per São Paulo month (m1.concorrente, migration 20261212000001). */
+  competitorXraysPerMonth: number;
 }
 
 /** yyyy-mm-dd of an instant in São Paulo. */

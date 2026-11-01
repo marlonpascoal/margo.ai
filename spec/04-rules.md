@@ -101,6 +101,7 @@ Defaults per plan (sandbox and production keep separate values). "Off in all pla
 | Key | What it turns on | Raio-X | Lucro | Rede |
 |---|---|---|---|---|
 | `m1.raio_x` | Price X-ray from public data | on | on | on |
+| `m1.concorrente` | X-ray of a store that is not the account's own (competitor), up to `plan.competitor_xrays_per_month` per São Paulo month: Raio-X 0, Lucro 3, Rede 10, edited in C15 (Marlon, 31/out) | off | on | on |
 | `m2.ifood_api` | iFood reading through the official API | off | on | on |
 | `m2.extensao_chrome` | Chrome extension | off | on | on |
 | `m2.arquivo_99food` | 99Food statement import | off | on | on |

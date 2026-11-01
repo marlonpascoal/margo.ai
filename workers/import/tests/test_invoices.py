@@ -255,3 +255,47 @@ def test_E02_paused_account_imports_nothing(conn: Any) -> None:
     run = new_import(conn)
     out = process_invoice_zip(conn, MemoryFileStore({"invoices/t/notas.zip": zip_bytes()}), run)
     assert (out.status, out.reason) == ("failed", "source_paused")
+
+
+@pytestmark_db
+def test_D01_two_accounts_import_the_same_keys(conn: Any) -> None:
+    """Access key unique per account (31/out): a second account that bought the same invoices imports them
+    all as new, and nothing in its run tells that another account already has them."""
+    from margo_common.files import MemoryFileStore
+    from margo_import.invoice_run import process_invoice_zip
+
+    forget_fixture_invoices(conn)
+    files = MemoryFileStore({"invoices/t/notas.zip": zip_bytes()})
+    first = new_import(conn)
+    assert process_invoice_zip(conn, files, first).status == "ok"
+
+    # A synthetic account whose only company has the CNPJ of G-01's buyer company.
+    conn.execute(
+        """with a as (insert into public.account (name, code, is_synthetic)
+                      values ('Outra conta', 'T-D01B', true) returning id)
+           insert into public.company (account_id, cnpj, legal_name)
+           select a.id, c.cnpj, 'Outra empresa' from a,
+                  (select cnpj from public.company where account_id = (select id from public.account where code = 'G-01')) c"""
+    )
+    second = new_import(conn, account="T-D01B")
+    out = process_invoice_zip(conn, files, second)
+    assert (out.status, out.reason) == ("ok", None)
+    r = conn.execute("select * from public.invoice_import where id = %s", (second,)).fetchone()
+    assert (r["invoices_new"], r["duplicates"], r["rejected"]) == (312, 9, 0), (
+        "only the in-zip duplicates count; the first account's invoices are invisible"
+    )
+    assert r["log"]["rejected"] == {}
+    assert "G-01" not in str(r["log"])
+    owners = conn.execute(
+        """select count(distinct i.account_id) as n from public.invoice i
+           where i.access_key = any(%s)""",
+        ([i.access_key for i in read_zip(zip_bytes()).invoices],),
+    ).fetchone()["n"]
+    assert owners == 2, "each account keeps its own copy"
+    stored = [p for p in files.files if p.startswith("invoices/T-D01B/")]
+    assert len(stored) == 312, "the XML files live under the second account's code"
+
+    again = new_import(conn, account="T-D01B")
+    assert process_invoice_zip(conn, files, again).status == "ok"
+    r2 = conn.execute("select * from public.invoice_import where id = %s", (again,)).fetchone()
+    assert (r2["invoices_new"], r2["duplicates"]) == (0, 321), "dedup still holds within the account"

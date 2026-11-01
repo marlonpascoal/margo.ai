@@ -4,7 +4,7 @@
 import { randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { E2E_FAKE_SECRETS } from "./fake-secrets";
-import { FOUNDER_EMAIL, adminDb, createStaff, loginToConsole, portalSession, sid } from "./helpers";
+import { DONO_EMAIL, FOUNDER_EMAIL, adminDb, createStaff, loginToConsole, portalSession, sid } from "./helpers";
 
 const tag = randomBytes(4).toString("hex");
 const G01 = sid("G-01");
@@ -150,6 +150,18 @@ test("P09_W05_financeiro_gets_404", async ({ page }) => {
   expect((await page.goto("/app/plano"))?.status()).toBe(404);
 });
 
+// D40, Marlon 31/out: G-02 bills the 5 channel stores of its kitchens in analysis (Quiosque Shopping is
+// out), so R$ 1.500 a month, not the drawn 6 stores and R$ 1.800.
+test("E01_W05_g02_dono_sees_5_billed_stores_and_R$_1500", async ({ page }) => {
+  await portalSession(page, DONO_EMAIL);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/app/plano");
+  await expect(page.getByText("Seu plano: Lucro. Próxima cobrança em 05/nov. Só cartão de crédito, pelo Asaas.")).toBeVisible();
+  const lucro = page.getByRole("region", { name: "Plano Lucro" });
+  await expect(lucro).toContainText("5 lojas na análise = R$ 1.500/mês");
+  await expect(lucro).not.toContainText("1.800");
+});
+
 test.describe("C15 as Fundador", () => {
   test("C15_shows_subscriptions_and_pilots_and_audits_plan_and_pilot_edits", async ({ page }) => {
     const db = adminDb();
@@ -159,11 +171,12 @@ test.describe("C15 as Fundador", () => {
     await page.waitForURL("**/console/assinaturas");
     await expect(page.getByRole("heading", { name: "Assinaturas" })).toBeVisible();
     await expect(page.getByText("dados fictícios · Asaas sandbox")).toBeVisible();
-    await expect(page.getByText("receita mensal").locator("..")).toContainText("R$ 1.800");
+    // G-02 bills 5 stores (D40, Marlon 31/out): R$ 1.500, not the drawn R$ 1.800.
+    await expect(page.getByText("receita mensal").locator("..")).toContainText("R$ 1.500");
     await expect(page.getByText("em teste grátis (14 dias)")).toBeVisible();
     const g02 = page.getByRole("row", { name: /Grupo Exemplo \(G-02\)/ });
     await expect(g02).toContainText("ativa");
-    await expect(g02).toContainText("05/nov · R$ 1.800");
+    await expect(g02).toContainText("05/nov · R$ 1.500");
     await expect(g02).toContainText("sub_…a91f");
     await expect(page.getByRole("row", { name: /Grupo C \(G-04\)/ })).toContainText("não cobra");
 

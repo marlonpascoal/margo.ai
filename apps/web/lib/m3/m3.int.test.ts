@@ -155,6 +155,22 @@ describe("A04 C12 writes", () => {
         .eq("type", "compute_contribution")
         .gte("created_at", since);
     });
+    // Audit rows are told apart by id, not by time: `since` is the host clock and `at` the
+    // database's now(), and the Docker VM clock can lag the host by more than this test takes.
+    const packagingAudit = async () => {
+      const { data, error } = await db
+        .from("audit_log")
+        .select("id, after")
+        .eq("action", "packaging_cost.set")
+        .contains("after", { menu_item_id: dish });
+      if (error) throw new Error(error.message);
+      return data;
+    };
+    const seen = new Set((await packagingAudit()).map((r) => r.id));
+    const fresh = async () =>
+      (await packagingAudit())
+        .filter((r) => !seen.has(r.id))
+        .map((r) => ({ after: r.after }));
     await setPackaging(
       db,
       { staffId: MARLON, accountId: G02, meta: META, deps },
@@ -162,15 +178,7 @@ describe("A04 C12 writes", () => {
       "food99",
       0,
     );
-    expect(
-      (
-        await db
-          .from("audit_log")
-          .select("id")
-          .eq("action", "packaging_cost.set")
-          .gte("at", since)
-      ).data,
-    ).toHaveLength(0);
+    expect(await fresh()).toHaveLength(0);
     await setPackaging(
       db,
       { staffId: MARLON, accountId: G02, meta: META, deps },
@@ -178,12 +186,7 @@ describe("A04 C12 writes", () => {
       "food99",
       30,
     );
-    const { data: audit } = await db
-      .from("audit_log")
-      .select("after")
-      .eq("action", "packaging_cost.set")
-      .gte("at", since);
-    expect(audit).toEqual([
+    expect(await fresh()).toEqual([
       { after: { menu_item_id: dish, channel: "food99", cost_cents: 30 } },
     ]);
   });

@@ -169,6 +169,41 @@ test("A03_gerente_do_centro_sees_only_cozinha_centro_numbers", async ({ page }) 
   }
 });
 
+// E04 (Marlon, 31/out): every profile changes its own login e-mail; here the Gerente do Centro.
+test("E04_W09_gerente_changes_own_login_email_with_a_code_on_the_new_address", async ({ page }) => {
+  const db = adminDb();
+  const since = new Date().toISOString();
+  const email = `e2e-gerente-troca-${tag}@teste.local`;
+  const newEmail = `e2e-gerente-novo-${tag}@teste.local`;
+  const gerente = sid("p:g02-ger");
+  const undo = await withLoginEmail(gerente, email);
+  try {
+    await loginToPortal(page, email);
+    await page.goto("/app/seguranca");
+    await clearMail(newEmail);
+    await page.getByRole("button", { name: "Trocar" }).first().click();
+    await page.getByLabel("Novo e-mail").fill(newEmail);
+    await page.getByRole("button", { name: "Mandar código" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Mandamos um código" })).toBeVisible();
+    const code = await mailCode(newEmail);
+    expect(code, "code at the new address").not.toBeNull();
+    await page.locator("#w09-codigo-email").fill(code!);
+    await page.getByRole("button", { name: "Confirmar troca" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "E-mail trocado" })).toBeVisible();
+    expect((await db.from("person").select("email").eq("id", gerente).single()).data).toEqual({ email: newEmail });
+    const { data: audit } = await db.from("audit_log").select("action").eq("entity_id", gerente).eq("action", "person.email_change").gte("at", since);
+    expect(audit).toHaveLength(1);
+    await page.reload();
+    await expect(page.getByText(`E-mail: ${newEmail}`)).toBeVisible();
+  } finally {
+    await undo();
+    // The lock and the notice belong to this run only; the seeded G-02 must stay unlocked for later tests.
+    await db.from("security_lock").delete().eq("account_id", sid("G-02")).gte("created_at", since);
+    await db.from("notification").delete().eq("person_id", gerente).gte("created_at", since);
+    await db.from("auth_code_guard").delete().eq("email", newEmail);
+  }
+});
+
 test("P07_sign_up_to_trial_on_the_phone_then_code_then_P08", async ({ page }) => {
   const db = adminDb();
   const email = `e2e-criar-${tag}@teste.local`;

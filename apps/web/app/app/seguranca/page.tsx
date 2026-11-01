@@ -1,11 +1,13 @@
 // W09 Segurança e acesso (phone: reached from P08). Devices and "Sair de todos os aparelhos" for everyone;
-// the access log for the Dono (04 §5, audit_log RLS). For the Dono: "Trocar" the login e-mail (E04, code
-// on the new address, 24-hour lock), the data export and the account deletion with a code (E06). WhatsApp
+// the access log for the Dono (04 §5, audit_log RLS). For everyone, their own login e-mail: "Trocar" (E04,
+// code on the new address, 24-hour lock; Marlon, 31/out). For the Dono: the data export and the account
+// deletion with a code (E06). WhatsApp
 // "Trocar" stays disabled: no automatic WhatsApp to carry the code yet (D40).
 import Link from "next/link";
 import SignOutAll from "@/components/portal/SignOutAll";
 import { DeleteAccount, EmailChange, ExportButton } from "@/components/portal/W09Forms";
 import { canPortal } from "@/lib/permissions";
+import { discardExpiredEmailChange } from "@/lib/portal/contact-change";
 import { maskWhatsapp } from "@/lib/portal/format";
 import { loadAccessLog, loadDevices, loadLatestExport } from "@/lib/portal/security";
 import { requireMember } from "@/lib/portal/session";
@@ -23,6 +25,8 @@ export default async function SegurancaPage() {
   const m = await requireMember();
   const db = adminClient();
   const dono = canPortal(m.role, "people");
+  // An e-mail change whose code ran out leaves no Auth user behind.
+  await discardExpiredEmailChange(db, { personId: m.personId, accountId: m.account.id, now: new Date() });
   const [devices, log, latestExport] = await Promise.all([
     loadDevices(db, m.personId, m.sessionDeviceId),
     dono ? loadAccessLog(db, m.account.id, m.personId) : Promise.resolve([]),
@@ -37,7 +41,7 @@ export default async function SegurancaPage() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
         <section className={`${card} gap-3`}>
           <b>Como você entra</b>
-          {m.email && <EmailChange email={m.email} enabled={dono} />}
+          {m.email && <EmailChange email={m.email} />}
           {m.whatsappE164 && (
             <div className={line}>
               <span>WhatsApp: {maskWhatsapp(m.whatsappE164)}</span>

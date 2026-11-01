@@ -76,6 +76,14 @@ export function isQuietHours(now: Date): boolean {
   return h >= QUIET_START_HOUR || h < QUIET_END_HOUR;
 }
 
+/**
+ * 04 §9, §10, D36 (Marlon, 31/out): which rows wait for 8h in quiet hours. Only an urgent team alert to the
+ * founder on duty by WhatsApp goes at any hour; every other WhatsApp, to anyone, waits. E-mail never waits.
+ */
+export function waitsForMorning(row: { channel: NotificationChannel; alertSeverity?: "urgente" | "medio" | "baixo" | null }): boolean {
+  return row.channel !== "email" && row.alertSeverity !== "urgente";
+}
+
 /** E05: the person's choice, or the notice default; locked notices always go by e-mail. */
 export function effectivePref(notice: NoticeType, pref: ChannelPref | null): ChannelPref {
   return {

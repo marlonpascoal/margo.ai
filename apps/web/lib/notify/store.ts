@@ -9,6 +9,8 @@ export interface OutboxRow {
   personId: string | null;
   noticeCode: string | null;
   alertId: string | null;
+  /** Severity of the team alert the row belongs to (null for owner notices); urgente skips quiet hours. */
+  alertSeverity?: AlertSeverity | null;
   channel: NotificationChannel;
   subject: string | null;
   body: string;

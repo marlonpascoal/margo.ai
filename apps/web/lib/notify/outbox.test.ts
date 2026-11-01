@@ -84,6 +84,26 @@ describe("E05 notify", () => {
   });
 });
 
+describe("E05 quiet hours and team alerts", () => {
+  const alertRow = async (severity: "urgente" | "medio") => {
+    const alertId = await store.insertAlert({ severity, title: `Alerta ${severity}`, accountId: null, link: null, notifiedVia: [], openedAt: now });
+    await store.insertNotifications([
+      { accountId: null, personId: null, noticeCode: null, alertId, channel: "whatsapp_manual", subject: null, body: `Alerta ${severity}`, status: "queued", recipient: "+5543900009999" },
+    ]);
+  };
+
+  it("E05_urgent_alert_whatsapp_goes_at_night_other_alert_whatsapp_waits_for_8h", async () => {
+    await alertRow("urgente");
+    await alertRow("medio");
+    now = sp("2026-11-05T23:00:00");
+    expect(await processOutbox(deps)).toEqual({ sent: 1, released: 0, held: 1, failed: 0 });
+    expect(notifier.delivered.map((d) => d.body)).toEqual(["Alerta urgente"]);
+    now = sp("2026-11-06T08:00:00");
+    expect(await processOutbox(deps)).toEqual({ sent: 1, released: 1, held: 0, failed: 0 });
+    expect(notifier.delivered.map((d) => d.body)).toEqual(["Alerta urgente", "Alerta medio"]);
+  });
+});
+
 describe("outbox delivery", () => {
   it("delivers a row queued without recipient (security_event from login) to the person's e-mail", async () => {
     store.notifications.push({

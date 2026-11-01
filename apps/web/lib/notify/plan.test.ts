@@ -1,6 +1,6 @@
 // E05: which notification rows a notice becomes for one person (04 §9). Pure, fake clock.
 import { describe, expect, it } from "vitest";
-import { effectivePref, isQuietHours, planNotice, whatsappLink, type NoticeType, type Recipient } from "./plan";
+import { effectivePref, isQuietHours, planNotice, waitsForMorning, whatsappLink, type NoticeType, type Recipient } from "./plan";
 
 // As seeded by 20261031000003_reference_data.sql.
 const T: Record<string, NoticeType> = {
@@ -83,6 +83,18 @@ describe("E05 quiet hours", () => {
     expect(isQuietHours(sp("08:00"))).toBe(false);
     // 23:30 UTC is 20:30 in São Paulo: not quiet, whatever the server's own zone says.
     expect(isQuietHours(new Date("2026-11-05T23:30:00Z"))).toBe(false);
+  });
+
+  it("E05_only_urgent_team_alerts_by_whatsapp_break_quiet_hours", () => {
+    // Marlon, 31/out: urgent alerts to the founder on duty go at any hour; every other WhatsApp waits; e-mail never waits.
+    expect(waitsForMorning({ channel: "whatsapp_manual", alertSeverity: "urgente" })).toBe(false);
+    expect(waitsForMorning({ channel: "whatsapp", alertSeverity: "urgente" })).toBe(false);
+    expect(waitsForMorning({ channel: "whatsapp_manual", alertSeverity: "medio" })).toBe(true);
+    expect(waitsForMorning({ channel: "whatsapp_manual", alertSeverity: "baixo" })).toBe(true);
+    expect(waitsForMorning({ channel: "whatsapp_manual", alertSeverity: null })).toBe(true);
+    expect(waitsForMorning({ channel: "whatsapp", alertSeverity: null })).toBe(true);
+    expect(waitsForMorning({ channel: "email", alertSeverity: null })).toBe(false);
+    expect(waitsForMorning({ channel: "email", alertSeverity: "baixo" })).toBe(false);
   });
 
   it("E05_quiet_hours_hold_whatsapp_and_let_email_go", () => {

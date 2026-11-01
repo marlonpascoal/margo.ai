@@ -91,7 +91,7 @@ export class SupabaseNotifyStore implements NotifyStore {
     const rows = must(
       await this.db
         .from("notification")
-        .select("id, account_id, person_id, notice_code, alert_id, channel, subject, body, status, recipient, html, attachment_path")
+        .select("id, account_id, person_id, notice_code, alert_id, channel, subject, body, status, recipient, html, attachment_path, alert(severity)")
         .in("status", ["queued", "held_quiet_hours"])
         .order("created_at")
         .limit(limit),
@@ -102,6 +102,7 @@ export class SupabaseNotifyStore implements NotifyStore {
       personId: r.person_id,
       noticeCode: r.notice_code,
       alertId: r.alert_id,
+      alertSeverity: r.alert?.severity ?? null,
       channel: r.channel,
       subject: r.subject,
       body: r.body,

@@ -1,5 +1,5 @@
 // Queueing notices and delivering the outbox (04 §9, §10, D36, E05).
-import { isQuietHours, planNotice, type NotificationStatus } from "./plan";
+import { isQuietHours, planNotice, waitsForMorning, type NotificationStatus } from "./plan";
 import type { Notifier } from "./providers";
 import type { NotifyStore, OutboxRow } from "./store";
 import { messageFor, type MessageSource, type NoticeCode } from "./templates";
@@ -42,9 +42,6 @@ export interface OutboxResult {
   held: number;
   failed: number;
 }
-
-/** Owner WhatsApp waits for 8h; team alerts to the founder on duty do not (04 §10). */
-const waitsForMorning = (row: OutboxRow) => row.channel !== "email" && row.alertId === null;
 
 async function destination(store: NotifyStore, row: OutboxRow): Promise<string | null> {
   if (row.recipient) return row.recipient;

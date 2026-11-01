@@ -93,6 +93,22 @@ export function peopleError(message: string | undefined | null): string {
   return key ? PEOPLE_ERRORS[key] : "Não deu certo. Tente de novo.";
 }
 
+export const INVITE_MESSAGES = {
+  // Not drawn; same style as the other invite errors.
+  gerenteNeedsKitchen: "Escolha pelo menos uma cozinha para o Gerente de cozinha.",
+} as const;
+
+/**
+ * 04 §5 (Marlon, 31/out): the kitchens an invite carries. A Gerente must get at least one; for Financeiro no
+ * kitchen chosen means all kitchens; a Dono always sees all.
+ */
+export function inviteKitchens(role: MemberRole, chosen: string[]): { ok: true; kitchens: string[] } | { ok: false; error: string } {
+  if (role === "dono") return { ok: true, kitchens: [] };
+  const kitchens = chosen.map((k) => k.trim()).filter(Boolean);
+  if (role === "gerente" && kitchens.length === 0) return { ok: false, error: INVITE_MESSAGES.gerenteNeedsKitchen };
+  return { ok: true, kitchens };
+}
+
 /** The text that goes with an invite link (P14 "Convidar pelo WhatsApp"). Not drawn. */
 export function inviteText(accountName: string, inviter: string, role: MemberRole, link: string): string {
   return `${inviter} convidou você para ver a conta ${accountName} na MargoAI como ${PROFILE_LABEL[role]}. O convite vale por 7 dias: ${link}`;

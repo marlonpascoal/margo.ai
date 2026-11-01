@@ -10,7 +10,7 @@ import { notify } from "@/lib/notify/outbox";
 import type { MemberRole } from "@/lib/permissions";
 import { appOrigin, requirePortal, type Member } from "@/lib/portal/session";
 import { newInviteToken } from "@/lib/portal/pessoas";
-import { inviteText, mailtoLink, normalizeEmail, normalizeWhatsapp, peopleError, PROFILE_LABEL, whatsappShareLink } from "@/lib/portal/scope";
+import { inviteKitchens, inviteText, mailtoLink, normalizeEmail, normalizeWhatsapp, peopleError, PROFILE_LABEL, whatsappShareLink } from "@/lib/portal/scope";
 import { adminClient } from "@/lib/supabase/admin";
 
 const PATH = "/app/pessoas";
@@ -100,7 +100,9 @@ export async function invitePersonAction(_prev: InviteState, form: FormData): Pr
   const name = String(form.get("nome") ?? "").trim().slice(0, 80);
   if (!isRole(role)) return { error: "Escolha o perfil." };
   if (!destination) return { error: channel === "email" ? "Confira o e-mail." : "Confira o número do WhatsApp com DDD." };
-  const kitchens = role === "dono" ? [] : form.getAll("cozinha").map(String);
+  const scope = inviteKitchens(role, form.getAll("cozinha").map(String));
+  if (!scope.ok) return { error: scope.error };
+  const kitchens = scope.kitchens;
   const { token, hash } = newInviteToken();
   const { error } = await adminClient().rpc("invite_create", {
     p_actor: m.personId,

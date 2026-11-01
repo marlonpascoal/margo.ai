@@ -24,5 +24,5 @@ export function onPartnerPortal(url: string | undefined): boolean {
   }
 }
 
-/** The drawn note, changed in one sentence: the extension does not click Export, the owner picks the file. */
-export const NOTE = "A extensão só usa a página que você abriu, no seu navegador. Você escolhe o arquivo que exportou e ela manda para a MargoAI. Não vê nem guarda sua senha.";
+/** The drawn note (design/P04-Extensao.dc.html), verbatim. */
+export const NOTE = "A extensão só usa a página que você abriu, no seu navegador. Ela clica em Exportar por você e manda o arquivo. Não vê nem guarda sua senha.";

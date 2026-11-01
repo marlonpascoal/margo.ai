@@ -8,8 +8,12 @@ import { ARTIFACTS, ROOT } from "./helpers";
 const OUT = path.join(ARTIFACTS, "extension-e2e");
 export const PORTAL_TAB = "https://portal.ifood.com.br/financeiro/conciliacao";
 
-/** chrome.storage.local and chrome.tabs.query, as the popup uses them. */
-export const chromeStub = (tabUrl: string, token: string | null) => `
+/**
+ * chrome.storage.local, chrome.tabs.query and chrome.tabs.sendMessage, as the popup uses them. Without
+ * `exportReply`, no content script answers (sendMessage rejects, as Chrome does); with it, the portal tab's
+ * content script answers the popup's "Exportar e enviar" with that reply.
+ */
+export const chromeStub = (tabUrl: string, token: string | null, exportReply?: unknown) => `
   (() => {
     const data = ${JSON.stringify(token ? { token } : {})};
     window.chrome = {
@@ -18,7 +22,12 @@ export const chromeStub = (tabUrl: string, token: string | null) => `
         set: async (o) => { Object.assign(data, o); },
         remove: async (keys) => { for (const k of keys) delete data[k]; },
       } },
-      tabs: { query: async () => [{ id: 1, url: ${JSON.stringify(tabUrl)} }] },
+      tabs: {
+        query: async () => [{ id: 1, url: ${JSON.stringify(tabUrl)} }],
+        sendMessage: async (_tab, msg) => {
+          ${exportReply === undefined ? 'throw new Error("Could not establish connection. Receiving end does not exist.");' : `window.__exportAsked = msg; return ${JSON.stringify(exportReply)};`}
+        },
+      },
     };
   })();`;
 

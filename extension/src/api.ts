@@ -1,5 +1,5 @@
 // P04 client of /api/extension (06 §9). The token lives in chrome.storage.local and goes only to our API, as a
-// Bearer header. No password, no cookie, no page content: only the file the owner picked.
+// Bearer header. No password, no cookie, no page content: only the exported report file.
 
 export interface Report {
   key: string;
@@ -32,6 +32,9 @@ export const MESSAGES = {
   off: "A extensão está desligada para esta conta. Fale com a MargoAI.",
   unpaired: "Conecte a extensão com o código do portal.",
   sent: "Arquivo enviado. A MargoAI importa em alguns minutos.",
+  exporting: "Exportando no Portal do Parceiro...",
+  pickFile: "Não achei o botão Exportar nesta página. Escolha o arquivo que você exportou.",
+  noDownload: "O portal não entregou o arquivo. Exporte você mesmo e clique de novo para escolher o arquivo.",
 } as const;
 
 export function createClient(base: string, fetchImpl: Fetch, tokens: TokenStore) {
@@ -69,7 +72,7 @@ export function createClient(base: string, fetchImpl: Fetch, tokens: TokenStore)
       return { ok: true, value: { account: r.value.account } };
     },
     status: () => call<Status>("status", { method: "GET" }, true),
-    /** Sends the file the owner chose; nothing else from the page. */
+    /** Sends the exported report file; nothing else from the page. */
     async upload(file: File, storeId: string | null, reports: string[]): Promise<Result<{ importRunId: string }>> {
       const form = new FormData();
       form.set("arquivo", file);

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "P04 Chrome extension (Manifest V3): sends the report file the owner chose on the iFood Partner Portal to MargoAI.",
+  "description": "P04 Chrome extension (Manifest V3): clicks Export on the iFood Partner Portal page the owner opened and sends the file to MargoAI.",
   "scripts": {
     "build": "node build.mjs",
     "typecheck": "tsc --noEmit",

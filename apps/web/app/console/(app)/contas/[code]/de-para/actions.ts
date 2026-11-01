@@ -7,7 +7,7 @@ import { requireFlag } from "@/lib/flags";
 import { requestMeta } from "@/lib/console/request";
 import { requireConsole } from "@/lib/console/staff";
 import { accountByCode } from "@/lib/m2/account";
-import { confirmGroup, DeparaRefused, rejectGroup, swapGroup } from "@/lib/m3/depara";
+import { confirmGroup, DeparaRefused, rejectGroup, reviewRule, swapGroup } from "@/lib/m3/depara";
 import type { BaseUnit } from "@/lib/m3/format";
 import { adminClient } from "@/lib/supabase/admin";
 
@@ -36,6 +36,10 @@ export async function confirmAction(form: FormData): Promise<void> {
 
 export async function rejectAction(form: FormData): Promise<void> {
   await run(form, (c) => rejectGroup(c.db, c.account, c.staffId, c.key, c.meta));
+}
+
+export async function reviewRuleAction(form: FormData): Promise<void> {
+  await run(form, (c) => reviewRule(c.db, c.account, c.staffId, text(form, "regra"), c.meta));
 }
 
 export async function swapAction(form: FormData): Promise<void> {

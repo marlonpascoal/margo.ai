@@ -1,13 +1,14 @@
 // C11 De-para de insumos (design/C11-Depara.dc.html, 05 §A, D14). Fundador and Operação. Flag m3.depara_ia.
 // D14, D02: a suggestion never enters a cost until a founder confirms it here.
+// "Regras gerais em revisão" (D14 step 2, Marlon 31/out) has no drawing yet: copy written for it, to confirm.
 import Link from "next/link";
 import { BUTTON_PRIMARY, ConsoleMain, FictitiousLabel, PageTitle } from "@/components/console";
 import { requireFlag } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { accountByCode } from "@/lib/m2/account";
-import { deparaRows, loadCatalog, loadLines, spendShares, type DeparaRow } from "@/lib/m3/depara";
+import { deparaRows, flaggedRuleRows, loadCatalog, loadFlaggedRules, loadLines, spendShares, type DeparaRow } from "@/lib/m3/depara";
 import { adminClient } from "@/lib/supabase/admin";
-import { confirmAction, rejectAction, swapAction } from "./actions";
+import { confirmAction, rejectAction, reviewRuleAction, swapAction } from "./actions";
 
 export const metadata = { title: "De-para de insumos · MargoAI" };
 
@@ -87,6 +88,7 @@ export default async function DeparaPage({ params, searchParams }: { params: Pro
   const rows = deparaRows(lines);
   const shares = spendShares(lines);
   const catalog = await loadCatalog(db);
+  const flagged = flaggedRuleRows(await loadFlaggedRules(db));
   const cards: [number, string][] = [
     [shares.auto, "do gasto casado sem mão (código de barras ou regra)"],
     [shares.ai, "sugerido pela IA, esperando confirmação"],
@@ -151,6 +153,47 @@ export default async function DeparaPage({ params, searchParams }: { params: Pro
           </tbody>
         </table>
       </div>
+
+      {flagged.length > 0 && (
+        <section aria-labelledby="regras-em-revisao" className="flex flex-col gap-3">
+          <h2 id="regras-em-revisao" className="m-0 text-lg font-bold">
+            Regras gerais em revisão
+          </h2>
+          <p className="m-0 text-md text-ink-muted">
+            Em alguma conta, uma pessoa escolheu outro insumo para uma nota que a regra geral casava. Até um fundador revisar, a regra só sugere e não confirma sozinha.
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+            <table className="w-full min-w-[720px] border-collapse text-md">
+              <thead>
+                <tr className="text-left text-xs tracking-[0.04em] text-ink-muted uppercase">
+                  <th className={th}>Regra</th>
+                  <th className={th}>Insumo da regra</th>
+                  <th className={th}>Escolhido na conta</th>
+                  <th className={th}>Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {flagged.map((r) => (
+                  <tr key={r.id} data-rule={r.rule}>
+                    <td className={`${td} font-mono text-xs`}>{r.rule}</td>
+                    <td className={`${td} font-semibold`}>{r.ingredient}</td>
+                    <td className={td}>{r.chosen}</td>
+                    <td className={td}>
+                      <form action={reviewRuleAction}>
+                        <input type="hidden" name="conta" value={account.code} />
+                        <input type="hidden" name="regra" value={r.id} />
+                        <button type="submit" className={`${small} border border-border-strong bg-surface text-ink`}>
+                          Revisada
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </ConsoleMain>
   );
 }

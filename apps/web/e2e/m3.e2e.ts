@@ -134,3 +134,24 @@ test("W01_kpis_equal_C08_and_C13_and_the_decision_for_october", async ({ browser
   await expect(main.getByText("falta custo")).toHaveCount(0);
   await ctx.close();
 });
+
+test("A05_m3_custo_off_hides_C12_C13_and_W01_falls_back_to_falta_custo", async ({ browser }) => {
+  const db = adminDb();
+  await db.from("feature_override").insert({ flag_key: "m3.custo", env: "sandbox", account_id: G02, value: false, reason: "e2e m3" });
+  try {
+    expect((await page.request.get("/console/contas/G-02/contribuicao/2026-09")).status()).toBe(404);
+    expect((await page.request.get("/console/contas/G-02/fichas")).status()).toBe(404);
+    const ctx = await browser.newContext({ baseURL: test.info().project.use.baseURL, locale: "pt-BR", timezoneId: "America/Sao_Paulo" });
+    const owner = await ctx.newPage();
+    await owner.setViewportSize({ width: 1280, height: 900 });
+    await loginToPortal(owner, DONO_EMAIL);
+    await owner.goto("/app");
+    const main = owner.locator("main:visible");
+    await expect(main.getByText("falta custo").first()).toBeVisible();
+    await expect(main.locator("[data-decision]")).toHaveCount(0);
+    await ctx.close();
+  } finally {
+    await db.from("feature_override").delete().eq("flag_key", "m3.custo").eq("account_id", G02);
+  }
+  expect((await page.request.get("/console/contas/G-02/contribuicao/2026-09")).status()).toBe(200);
+});

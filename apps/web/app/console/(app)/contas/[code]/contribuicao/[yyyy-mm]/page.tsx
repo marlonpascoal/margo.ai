@@ -1,7 +1,7 @@
-// C13 Contribuição por item e canal (design/C13-Contribuicao.dc.html, 05 §A). Fundador and Operação; no flag
-// applies to the screen (04 §6). Rows are worker-cost's: CTB-01 per order, CTB-02 "can invert" flag, DLV-01
-// decision. "Gerar fechamento mensal" works as in C09 (m2.contestacao); "Aprovação de cupom (depois)" stays
-// disabled unless l.aprovacao_cupom.
+// C13 Contribuição por item e canal (design/C13-Contribuicao.dc.html, 05 §A). Fundador and Operação; flag
+// m3.custo (04 §6). Rows are worker-cost's: CTB-01 per order, CTB-02 "can invert" flag, DLV-01 decision.
+// "Gerar fechamento mensal" works as in C09, under m3.custo; "Aprovação de cupom (depois)" stays disabled
+// unless l.aprovacao_cupom.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -11,7 +11,7 @@ import {
   FictitiousLabel,
   PageTitle,
 } from "@/components/console";
-import { isEnabled } from "@/lib/flags";
+import { isEnabled, requireFlag } from "@/lib/flags";
 import { accountByCode } from "@/lib/m2/account";
 import { closePeriods } from "@/lib/m2/close";
 import { monthShort, parseMonth } from "@/lib/m2/format";
@@ -48,13 +48,13 @@ export default async function ContributionPage({
   if (!month) notFound();
   const db = adminClient();
   const account = await accountByCode(db, p.code);
+  await requireFlag("m3.custo", account.id);
   const close = (await closePeriods(db, account.id)).find(
     (c) => c.month === month,
   );
-  const [rows, decision, contest, coupon] = await Promise.all([
+  const [rows, decision, coupon] = await Promise.all([
     close ? loadContribution(db, close.id) : Promise.resolve([]),
     close ? loadDecision(db, close.id, month) : Promise.resolve(null),
-    isEnabled("m2.contestacao", account.id),
     isEnabled("l.aprovacao_cupom", account.id),
   ]);
   const sentence = decision ? decisionC13(decision) : null;
@@ -85,7 +85,7 @@ export default async function ContributionPage({
               Aprovação de cupom (depois)
             </span>
           )}
-          {contest && close && (
+          {close && (
             <button type="submit" className={BUTTON_PRIMARY}>
               Gerar fechamento mensal
             </button>

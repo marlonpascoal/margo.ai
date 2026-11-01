@@ -13,7 +13,7 @@ import { loadDecision } from "@/lib/m3/data";
 import { decisionW01 } from "@/lib/m3/format";
 import { canPortal } from "@/lib/permissions";
 import { dayMon, kitchenShort, trialDaysLeft, trialUsedPct } from "@/lib/portal/format";
-import { homeNumbers, homePeriods, loadHomeDiffs, loadHomeLines, loadReports, scopeKitchens } from "@/lib/portal/home";
+import { homeNumbers, homePeriods, loadHomeDiffs, loadHomeLines, loadReports, scopeKitchens, withoutCost } from "@/lib/portal/home";
 import { requireMember, type Member } from "@/lib/portal/session";
 import { adminClient, type Db } from "@/lib/supabase/admin";
 
@@ -71,10 +71,11 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
   const now = new Date();
   const sp = await searchParams;
 
-  const [contest, people, extension] = await Promise.all([
+  const [contest, people, extension, cost] = await Promise.all([
     isEnabled("m2.contestacao", m.account.id),
     isEnabled("conta.pessoas", m.account.id),
     isEnabled("m2.extensao_chrome", m.account.id),
+    isEnabled("m3.custo", m.account.id),
   ]);
   const [kitchens, periods, reports, trial, counts] = await Promise.all([
     scopeKitchens(db, m),
@@ -88,8 +89,9 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
   const shown = kitchens.filter((k) => k.inAnalysis);
   const kitchen = shown.find((k) => k.id === sp.cozinha) ?? null;
   const [lines, diffs] = period ? await Promise.all([loadHomeLines(db, period.id, m), loadHomeDiffs(db, period.id, m)]) : [[], []];
-  const n = homeNumbers(lines, diffs, kitchen?.id ?? null);
-  const decision = period && m.allKitchens ? await loadDecision(db, period.id, period.month) : null;
+  // m3.custo off: "sobrou" falls back to "falta custo" and there is no DLV-01 decision (04 §6).
+  const n = homeNumbers(cost ? lines : withoutCost(lines), diffs, kitchen?.id ?? null);
+  const decision = period && m.allKitchens && cost ? await loadDecision(db, period.id, period.month) : null;
   const dlv = decision ? decisionW01(decision) : null;
   const href = (mes: string | null, coz: string | null) => {
     const q = new URLSearchParams();

@@ -71,8 +71,9 @@ describe("feature flags (04 §6)", () => {
     expect(() => flagEnv("prod")).toThrow(/MARGO_FLAG_ENV/);
   });
 
-  it("A05_fifteen_keys_of_04_section_6", () => {
-    expect(FLAG_KEYS).toHaveLength(15);
-    expect(new Set(FLAG_KEYS).size).toBe(15);
+  it("A05_sixteen_keys_of_04_section_6_with_m3_custo", () => {
+    expect(FLAG_KEYS).toHaveLength(16);
+    expect(new Set(FLAG_KEYS).size).toBe(16);
+    expect(FLAG_KEYS.indexOf("m3.custo")).toBe(FLAG_KEYS.indexOf("m3.depara_ia") + 1);
   });
 });

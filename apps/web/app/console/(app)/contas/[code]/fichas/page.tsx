@@ -1,4 +1,4 @@
-// C12 Ficha técnica (design/C12-Ficha.dc.html, 05 §A). Fundador and Operação; no flag applies (04 §6).
+// C12 Ficha técnica (design/C12-Ficha.dc.html, 05 §A). Fundador and Operação; flag m3.custo (04 §6).
 // Costs are worker-cost's (CST-01 latest confirmed note in 90 days, CST-02 regional prior, CST-03 yield,
 // CST-04 error bar), stored on recipe and recipe_line; an edit clears them until the job recomputes.
 import Link from "next/link";
@@ -9,6 +9,7 @@ import {
   FictitiousLabel,
   PageTitle,
 } from "@/components/console";
+import { requireFlag } from "@/lib/flags";
 import { accountByCode } from "@/lib/m2/account";
 import { closePeriods } from "@/lib/m2/close";
 import { CHANNEL_LABEL } from "@/lib/m2/format";
@@ -44,6 +45,7 @@ export default async function FichasPage({
   const [p, sp] = await Promise.all([params, searchParams]);
   const db = adminClient();
   const account = await accountByCode(db, p.code);
+  await requireFlag("m3.custo", account.id);
   const dishes = await loadDishes(db, account.id);
   const ready = dishes.filter((d) => d.ready);
   const selected =

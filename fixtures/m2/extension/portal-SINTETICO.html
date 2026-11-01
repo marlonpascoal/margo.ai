@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+  SINTÉTICO. NOT a copy of the iFood Partner Portal. We have no recording of the real page; this is the
+  smallest page that behaves the way a portal export commonly does, so the P04 content script can be tested
+  in a real browser (apps/web/e2e/ext-export.e2e.ts serves it at https://portal.ifood.com.br/financeiro/...
+  through Playwright routing; nothing reaches iFood). See README.md in this folder.
+
+  Modes, by path:
+    /financeiro/conciliacao   Export builds a CSV Blob and downloads it through a link it never attaches
+                              to the page (the common "save as" pattern).
+    /financeiro/link          Export attaches a link with a download name to a server URL and clicks it.
+    /financeiro/sem-botao     No Export button: the extension must not act (popup falls back to the file pick).
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Portal SINTÉTICO</title>
+</head>
+<body>
+<h1>Financeiro (SINTÉTICO)</h1>
+<p>dados fictícios de G-SYN</p>
+<div id="toolbar"></div>
+<script>
+  const CSV = "SINTÉTICO\nPedido;Item;Quantidade;Valor\n1001;X-Bacon;2;59,80\n1002;Batata;1;18,90\n";
+  const mode = location.pathname.split("/").pop();
+  // Rendered late, like a single-page app.
+  setTimeout(() => {
+    if (mode === "sem-botao") return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = "Exportar";
+    b.addEventListener("click", () => {
+      setTimeout(() => {
+        const a = document.createElement("a");
+        a.download = "vendas-por-item-SINTETICO.csv";
+        if (mode === "link") {
+          a.href = "/financeiro/arquivo/vendas.csv";
+          document.body.append(a);
+          a.click();
+          a.remove();
+        } else {
+          const url = URL.createObjectURL(new Blob([CSV], { type: "text/csv" }));
+          a.href = url;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+      }, 200);
+    });
+    document.getElementById("toolbar").append(b);
+  }, 400);
+</script>
+</body>
+</html>

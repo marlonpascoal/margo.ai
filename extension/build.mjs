@@ -2,7 +2,9 @@
 // Builds the P04 extension into extension/dist (load it unpacked in chrome://extensions).
 //   MARGO_API_URL=https://... pnpm --filter @margoai/extension build    (default http://localhost:3000)
 // Offline: rolldown comes from the lockfile. The manifest's host permissions are the Partner Portal and the
-// API origin only (05 P04 "Done when"); no content script, no background worker.
+// API origin only (05 P04 "Done when"). The content scripts run only on the Partner Portal host: hook.js in
+// the page's world (sees the file the portal hands over), content.js clicks Export. The background worker
+// sends the daily file to our API. No extra permission beyond "storage".
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,8 +28,13 @@ export function manifest(api) {
     manifest_version: 3,
     name: "MargoAI",
     version: JSON.parse(readFileSync(path.join(HERE, "package.json"), "utf8")).version,
-    description: "Manda para a MargoAI o relatório que você exportou do Portal do Parceiro do iFood.",
+    description: "Exporta do Portal do Parceiro do iFood, na página que você abriu, e manda para a MargoAI.",
     action: { default_title: "MargoAI", default_popup: "P04-popup.html" },
+    background: { service_worker: "background.js" },
+    content_scripts: [
+      { matches: [`${PARTNER_PORTAL_ORIGIN}/*`], js: ["hook.js"], run_at: "document_start", world: "MAIN" },
+      { matches: [`${PARTNER_PORTAL_ORIGIN}/*`], js: ["content.js"], run_at: "document_idle" },
+    ],
     permissions: ["storage"],
     host_permissions: [`${PARTNER_PORTAL_ORIGIN}/*`, `${new URL(api).origin}/*`],
     content_security_policy: { extension_pages: `script-src 'self'; object-src 'self'; connect-src ${new URL(api).origin}` },
@@ -37,9 +44,12 @@ export function manifest(api) {
 async function main() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
-  const bundle = await rolldown({ input: path.join(HERE, "src/popup.ts"), transform: { define: { __MARGO_API__: JSON.stringify(API) } } });
-  await bundle.write({ file: path.join(OUT, "popup.js"), format: "esm" });
-  await bundle.close();
+  // The popup is a module page; content scripts and the worker are classic scripts (iife).
+  for (const [entry, format] of [["popup", "esm"], ["background", "iife"], ["content", "iife"], ["hook", "iife"]]) {
+    const bundle = await rolldown({ input: path.join(HERE, `src/${entry}.ts`), transform: { define: { __MARGO_API__: JSON.stringify(API) } } });
+    await bundle.write({ file: path.join(OUT, `${entry}.js`), format });
+    await bundle.close();
+  }
   copyFileSync(path.join(HERE, "src/P04-popup.html"), path.join(OUT, "P04-popup.html"));
   copyFileSync(path.join(HERE, "src/popup.css"), path.join(OUT, "popup.css"));
   writeFileSync(path.join(OUT, "tokens.css"), tokensCss(readFileSync(path.join(HERE, "../apps/web/app/tokens.css"), "utf8")));

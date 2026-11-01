@@ -1,4 +1,5 @@
-// 05 P04 "Done when": the built manifest has host permission only for the Partner Portal and our API.
+// 05 P04 "Done when": the built manifest has host permission only for the Partner Portal and our API; the
+// content scripts that click Export run only on the Partner Portal host; no permission beyond "storage".
 // The popup's colors come from the design tokens only.
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -10,8 +11,13 @@ describe("P04 manifest", () => {
     expect(m.manifest_version).toBe(3);
     expect(m.host_permissions).toEqual(["https://portal.ifood.com.br/*", "https://app.exemplo.test/*"]);
     expect(m.permissions).toEqual(["storage"]);
-    expect(m).not.toHaveProperty("content_scripts");
-    expect(m).not.toHaveProperty("background");
+    for (const cs of m.content_scripts) expect(cs.matches).toEqual(["https://portal.ifood.com.br/*"]);
+    expect(m.content_scripts.map((c) => [c.js, c.world ?? "ISOLATED"])).toEqual([
+      [["hook.js"], "MAIN"],
+      [["content.js"], "ISOLATED"],
+    ]);
+    expect(m.background).toEqual({ service_worker: "background.js" });
+    expect(m).not.toHaveProperty("optional_permissions");
     expect(m.action.default_popup).toBe("P04-popup.html");
   });
 

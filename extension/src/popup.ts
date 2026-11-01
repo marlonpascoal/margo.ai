@@ -1,8 +1,10 @@
-// P04 popup (design/P04-Extensao.dc.html, 05 P04, 06 §9, D01a). Acts only when the owner opens it on the
-// Partner Portal tab and clicks: no content script, no background page, no navigation, no reading of the
-// portal page. The owner picks the report file they exported; the popup sends that file and nothing else.
+// P04 popup (design/P04-Extensao.dc.html, 05 P04, 06 §9, D01a). On the Partner Portal tab, "Exportar e
+// enviar" asks the content script of that tab to click the portal's Export button and hand over the file,
+// then sends it. When the button is not found (or no content script answers), the owner picks the file they
+// exported, as before. No navigation, no other tab, nothing else read from the page.
 import { chromeTokens, createClient, MESSAGES, type Client, type Status } from "./api";
 import { API_BASE } from "./config";
+import { decodeFile, EXPORT_NOW, type ExportReply } from "./portal";
 import { lastUploadLabel, NOTE, onPartnerPortal } from "./view";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -56,7 +58,7 @@ function renderPairing(client: Client, notice?: string) {
   );
 }
 
-function renderStatus(client: Client, st: Status, portal: boolean) {
+function renderStatus(client: Client, st: Status, portal: boolean, tabId: number | undefined) {
   setState("conectada");
   $("foot").textContent = lastUploadLabel(st.lastUpload, st.account.synthetic);
   const main = $("main");
@@ -86,10 +88,9 @@ function renderStatus(client: Client, st: Status, portal: boolean) {
   file.setAttribute("aria-label", "Arquivo exportado do Portal do Parceiro");
   const send = el<HTMLButtonElement>("button", { className: "primary", type: "button", disabled: !portal }, "Exportar e enviar");
   const out = el("div");
-  send.addEventListener("click", () => file.click());
-  file.addEventListener("change", async () => {
-    const f = file.files?.[0];
-    if (!f) return;
+  let manual = false;
+
+  async function upload(f: File) {
     send.disabled = true;
     const r = await client.upload(f, storeId, boxes.filter((b) => b.checked).map((b) => b.value));
     send.disabled = false;
@@ -100,6 +101,31 @@ function renderStatus(client: Client, st: Status, portal: boolean) {
     }
     if (r.kind === "unpaired") return renderPairing(client, r.message);
     out.replaceChildren(message(r.message, true));
+  }
+
+  send.addEventListener("click", async () => {
+    if (manual || tabId === undefined) return file.click();
+    send.disabled = true;
+    out.replaceChildren(message(MESSAGES.exporting));
+    let reply: ExportReply | undefined;
+    try {
+      reply = await chrome.tabs.sendMessage<ExportReply>(tabId, { type: EXPORT_NOW });
+    } catch {
+      reply = undefined; // no content script on this tab
+    }
+    send.disabled = false;
+    if (reply?.ok) return upload(decodeFile(reply.file));
+    if (!reply || reply.reason === "no-button") {
+      // Fallback: the owner picks the file they exported (the click still counts as theirs).
+      out.replaceChildren(message(MESSAGES.pickFile));
+      return file.click();
+    }
+    manual = true;
+    out.replaceChildren(message(MESSAGES.noDownload, true));
+  });
+  file.addEventListener("change", () => {
+    const f = file.files?.[0];
+    if (f) void upload(f);
   });
   nodes.push(send, file, out, el("p", { className: "note" }, NOTE));
   main.replaceChildren(...nodes);
@@ -108,7 +134,7 @@ function renderStatus(client: Client, st: Status, portal: boolean) {
 async function start(client: Client) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const st = await client.status();
-  if (st.ok) return renderStatus(client, st.value, onPartnerPortal(tab?.url));
+  if (st.ok) return renderStatus(client, st.value, onPartnerPortal(tab?.url), tab?.id);
   if (st.kind === "unpaired") return renderPairing(client);
   setState(null);
   $("main").replaceChildren(message(st.message, true));

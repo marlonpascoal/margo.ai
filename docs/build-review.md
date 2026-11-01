@@ -64,6 +64,11 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - **"Sobrou" line:** gated by `m3.custo` in the E01 e-mail and the close notice too.
 - **Dono changing others' e-mail:** no. The Dono removes the person and invites them again; P17 covers lost access.
 
+**Left from building these:**
+- **P17 drawing:** it still says "a conta fica 24 horas sem poder mudar plano ou pessoas". Since the lock now applies per person, the drawing needs a redraw.
+- **New copy for the per-person lock:** the people banner, the refusals, and the W09 confirmations. It goes on the copy sheet.
+- **With `m3.custo` off,** the close e-mail keeps the label "Sobrou depois dos insumos" with the value "falta custo", as W01 does.
+
 ## Commands only Marlon runs (live calls)
 
 - **M1 public pages:** `uv run collector record --url <url> --out fixtures/m1/<name>` for Pantanos, the neighborhood listing and a few neighbors (`fixtures/m1/README.md`). Check for personal data (reviewer names) before committing. Until then B01 is proven from canonical seed rows only.

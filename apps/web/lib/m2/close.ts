@@ -198,13 +198,17 @@ export async function loadDifferences(db: Db, closeId: string): Promise<Differen
 /** Differences still to contest: no contestation yet, or waiting for the owner (04 §3). */
 const toContest = (d: DifferenceRecord) => !d.contestation || (!d.contestation.closed_at && ["a_contestar", "precisa_resposta"].includes(d.contestation.status));
 
-/** E01 for one close: C08 totals (REP), what was left (CTB-01, once M3 has cost), differences to contest (DIF), P06 attached. */
-export async function closeReadyMessage(db: Db, account: M2Account, close: ClosePeriod): Promise<MessageSource> {
+/**
+ * E01 for one close: C08 totals (REP), what was left (CTB-01, once M3 has cost), differences to contest (DIF),
+ * P06 attached. `cost` is flag m3.custo for the account (04 §6, A05): off, CTB-01 is left out, so the
+ * subject, body and WhatsApp never say "sobrou" and the row says "falta custo", as W01 does.
+ */
+export async function closeReadyMessage(db: Db, account: M2Account, close: ClosePeriod, cost: boolean): Promise<MessageSource> {
   const [{ lines }, diffs, kitchens, leftCents] = await Promise.all([
     loadClose(db, close.id),
     loadDifferences(db, close.id),
     db.from("kitchen").select("id", { count: "exact", head: true }).eq("account_id", account.id).eq("in_analysis", true),
-    closeLeftCents(db, close.id),
+    cost ? closeLeftCents(db, close.id) : Promise.resolve(null),
   ]);
   const channels = CHANNEL_ORDER.filter((c) => lines.some((l) => l.channel === c)).map((c) => CHANNEL_LABEL[c]);
   const ym = close.month.slice(0, 7);
@@ -234,6 +238,8 @@ export async function generateClose(
   staffId: string,
   now: Date,
   meta: { ip: string | null; userAgent: string | null },
+  /** Flag m3.custo for the account (04 §6): whether E01 may say what was left (CTB-01). */
+  cost: boolean,
 ): Promise<{ notified: boolean }> {
   const { error } = await db.from("close_period").update({ status: "computed", computed_at: now.toISOString() }).eq("id", close.id);
   if (error) throw new Error(error.message);
@@ -245,7 +251,7 @@ export async function generateClose(
   if (now >= fifth) {
     await notify(
       { store: new SupabaseNotifyStore(db), now: () => now },
-      { code: "close_ready", accountId: account.id, message: await closeReadyMessage(db, account, close) },
+      { code: "close_ready", accountId: account.id, message: await closeReadyMessage(db, account, close, cost) },
     );
     notified = true;
   }

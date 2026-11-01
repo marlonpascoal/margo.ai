@@ -4,7 +4,8 @@ import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import type { EnqueueDeps } from "@/lib/jobs/enqueue";
 import { SupabaseJobQueue } from "@/lib/jobs/supabase-queue";
-import { loadClose } from "@/lib/m2/close";
+import { closeReadyMessage, loadClose } from "@/lib/m2/close";
+import { messageFor } from "@/lib/notify/templates";
 import { homeNumbers, loadHomeDiffs, loadHomeLines } from "@/lib/portal/home";
 import { adminClient } from "@/lib/supabase/admin";
 import {
@@ -267,6 +268,25 @@ describe("C13 and W01 on the September close", () => {
       cl!.reduce((a, l) => a + l.payout_cents, 0) -
         cc!.reduce((a, c) => a + c.ingredient_cents + c.packaging_cents, 0),
     );
+  });
+});
+
+describe("E01 close_ready and m3.custo (04 §6)", () => {
+  it("E01_A05_close_message_says_sobrou_only_with_m3_custo_on", async () => {
+    const account = { id: G02, code: "G-02", name: "Grupo Exemplo", isSynthetic: true };
+    const close = { id: CLOSE, month: "2026-09-01", status: "computed" as const, pdfPath: null };
+    const to = { personId: "p", accountId: G02, accountName: "Grupo Exemplo", role: "dono" as const, email: "dono@exemplo.com.br", whatsappE164: "+5543900001234" };
+    const left = (await closeLeftCents(db, CLOSE))!;
+    expect(left).not.toBeNull();
+
+    const on = messageFor(await closeReadyMessage(db, account, close, true), to);
+    expect(on.subject).toMatch(/^Setembro fechado: sobrou /);
+
+    const off = messageFor(await closeReadyMessage(db, account, close, false), to);
+    expect(off.subject).toMatch(/^Setembro fechado: recebeu /);
+    expect(off.subject).not.toContain("sobrou");
+    expect(off.body).toContain("Sobrou depois dos insumos: falta custo");
+    expect(off.whatsapp).not.toContain("sobrou");
   });
 });
 

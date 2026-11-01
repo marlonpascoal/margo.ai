@@ -135,7 +135,7 @@ test("W01_kpis_equal_C08_and_C13_and_the_decision_for_october", async ({ browser
   await ctx.close();
 });
 
-test("A05_m3_custo_off_hides_C12_C13_and_W01_falls_back_to_falta_custo", async ({ browser }) => {
+test("A05_E01_m3_custo_off_hides_C12_C13_and_W01_and_the_close_email_fall_back_to_falta_custo", async ({ browser }) => {
   const db = adminDb();
   await db.from("feature_override").insert({ flag_key: "m3.custo", env: "sandbox", account_id: G02, value: false, reason: "e2e m3" });
   try {
@@ -149,6 +149,10 @@ test("A05_m3_custo_off_hides_C12_C13_and_W01_falls_back_to_falta_custo", async (
     const main = owner.locator("main:visible");
     await expect(main.getByText("falta custo").first()).toBeVisible();
     await expect(main.locator("[data-decision]")).toHaveCount(0);
+    // E01 (W08 example of the close e-mail): no "sobrou" in the subject, the row says "falta custo".
+    await owner.goto("/app/notificacoes/exemplo");
+    await expect(owner.locator("[data-email-subject]")).toHaveText(/^Setembro fechado: recebeu /);
+    await expect(owner.frameLocator('iframe[title="Exemplo de e-mail"]').getByText("falta custo")).toBeVisible();
     await ctx.close();
   } finally {
     await db.from("feature_override").delete().eq("flag_key", "m3.custo").eq("account_id", G02);

@@ -29,6 +29,7 @@ export async function generateCloseFromC13Action(
     staff.personId,
     new Date(),
     await requestMeta(),
+    true, // m3.custo is required above
   );
   const path = `/console/contas/${account.code}/contribuicao/${ym}`;
   revalidatePath(path);

@@ -5,7 +5,7 @@ import { CHANNEL_LABEL, CHANNEL_ORDER } from "@/lib/m2/format";
 import { effectivePref, type NoticeType, type Role } from "@/lib/notify/plan";
 import type { NoticeCode } from "@/lib/notify/templates";
 import type { Db } from "@/lib/supabase/admin";
-import { homeNumbers, type HomeDiff, type HomeLine } from "./home";
+import { homeNumbers, withoutCost, type HomeDiff, type HomeLine } from "./home";
 
 /** W08 "Quando" and the profile line; P16 uses shorter names on phone. Order as drawn. */
 export const NOTICE_COPY: [NoticeCode, { phone: string; who: string; when: string }][] = [
@@ -66,9 +66,11 @@ export async function loadNoticeRows(db: Db, personId: string, accountId: string
 /**
  * W08 "Ver exemplo de e-mail": the E01 template (apps/web/emails) with this person's own numbers, scoped to
  * their kitchens (A03): REP-01 sold, REP-02 received, CTB-01 sobrou, DIF to contest, as W01 shows them.
+ * `cost` is flag m3.custo for the account (04 §6, A05): off, CTB-01 is left out and the e-mail says
+ * "falta custo", as W01 does.
  */
-export function closeReadyExample(accountName: string, month: string, lines: HomeLine[], diffs: HomeDiff[]): EmailContent {
-  const n = homeNumbers(lines, diffs, null);
+export function closeReadyExample(accountName: string, month: string, lines: HomeLine[], diffs: HomeDiff[], cost: boolean): EmailContent {
+  const n = homeNumbers(cost ? lines : withoutCost(lines), diffs, null);
   return closeReadyEmail({
     accountName,
     month,

@@ -110,7 +110,7 @@ Defaults per plan (sandbox and production keep separate values). "Off in all pla
 | `m3.notas_xml` | Accountant's XML zip | off | on | on |
 | `m3.nfce_qr_auto` | Automatic QR reading (SP and PR) | off | off | off |
 | `m3.depara_ia` | AI ingredient suggestion | off | on | on |
-| `m3.custo` | Recipes, cost and contribution: C12, C13, the contribution job and W01 "sobrou" (Marlon, 31/out) | off | on | on |
+| `m3.custo` | Recipes, cost and contribution: C12, C13, the contribution job, W01 "sobrou" and the "sobrou" of the E01 close e-mail, its WhatsApp and W08 example, which say "falta custo" while off (Marlon, 31/out, 01/nov) | off | on | on |
 | `conta.multi_cozinha` | More than one kitchen per account | off | on | on |
 | `conta.pessoas` | Invite people and profiles | off | on | on |
 | `bpo.marca_propria` | Closing report with the BPO's brand | off | off | off |

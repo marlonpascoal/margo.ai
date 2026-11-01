@@ -2,6 +2,13 @@
 
 Collected during the build (Waves 0 to 3) for one review at the end. Nothing here changes `docs/decisions.md`; each item is a question or a stand-in to confirm.
 
+## Review answers (Marlon, 31/out)
+
+- **Live M1 collection after the 403:** Marlon will choose a different strategy. Everything it has to deliver is in `docs/m1-extraction-brief.md`, with a section to fill from the Cowork project on how the August extraction was done.
+- **Extension clicks Export:** yes, as 05, 06 and P04 say: a content script on the Partner Portal page the owner opened (rule 5). C07's "Envia sozinha uma vez por dia" becomes true.
+- **Billing units:** only stores of kitchens in analysis are billed, as built. The G-SYN seed and its screens show 5 stores and R$ 1.500, not the drawn 6 and R$ 1.800.
+- **AI prompt:** sends supplier name and price too, as 06 §6 and D14 say.
+
 ## Commands only Marlon runs (live calls)
 
 - **M1 public pages:** `uv run collector record --url <url> --out fixtures/m1/<name>` for Pantanos, the neighborhood listing and a few neighbors (`fixtures/m1/README.md`). Check for personal data (reviewer names) before committing. Until then B01 is proven from canonical seed rows only.

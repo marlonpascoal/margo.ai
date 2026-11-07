@@ -1,7 +1,6 @@
 // B01 (partial), C02 to C06 against the G-SYN seed: the Pantanos Burguer X-ray of 28/out end to end through
-// the screens and the worker steps (run here as `uv run worker <type> --local --once`). The collection from
-// public pages is the part waiting for Marlon's recordings: C02 creates the X-ray and its collect job, and
-// the job stops before any request with the reason shown in C03 (D47, B02).
+// the screens and the worker steps (run here as `uv run worker <type> --local --once`). C02 creates the X-ray and
+// its collect job, which queues the discovery for an extractor (D47b); m1-extract.e2e.ts goes on from there.
 import { expect, test, type Page } from "@playwright/test";
 import { FOUNDER_EMAIL, adminDb, loginToConsole, runWorker, sid } from "./helpers";
 
@@ -71,13 +70,15 @@ test("B01_B02_C02_to_C06_pantanos_xray_end_to_end_on_the_seed", async ({ page, c
     expect(jobs).toEqual([{ status: "queued", account_id: x!.account_id }]);
     expect(await auditSince(id, "xray.create", since)).toEqual([expect.objectContaining({ actor_person_id: me, actor_kind: "staff" })]);
 
-    // The collector runs and stops before any request: no public page is recorded yet (D47, D40).
+    // The collect job only queues the discovery; no worker reads a page.
     runWorker("collect");
     await page.reload();
-    await expect(status(page)).toContainText("Coleta parada antes de começar");
-    const { data: done } = await db.from("job").select("status, log").eq("type", "collect").eq("payload->>xray_id", id).single();
-    expect(done!.status).toBe("failed");
-    expect((done!.log as { error?: string }[]).at(-1)?.error).toBe("AwaitingRecordings");
+    await expect(status(page)).toHaveText("Na fila: a busca começa quando o coletor estiver livre.");
+    const { data: done } = await db.from("job").select("status").eq("type", "collect").eq("payload->>xray_id", id).single();
+    expect(done!.status).toBe("done");
+    const { data: discover } = await db.from("job").select("status, account_id, payload").eq("type", "extract_discover").eq("payload->>xray_id", id).single();
+    expect(discover).toMatchObject({ status: "queued", account_id: x!.account_id, payload: { url: PANTANOS, radius_km: 3, categories: ["Lanches", "Hambúrguer", "Porções"] } });
+    await db.from("job").delete().eq("id", (await db.from("job").select("id").eq("type", "extract_discover").eq("payload->>xray_id", id).single()).data!.id);
   });
 
   await test.step("A05: flag m1.raio_x off for the account hides the X-ray screens (404)", async () => {

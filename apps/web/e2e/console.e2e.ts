@@ -68,12 +68,12 @@ test.describe("as Fundador", () => {
       expect(body).not.toContain(process.env.SUPABASE_SERVICE_ROLE_KEY!);
     }
 
-    // C20 from the sidebar: 17 keys of 04 §6 (m1.concorrente and m3.custo added 31/out), seed exceptions, plan defaults.
+    // C20 from the sidebar: 18 keys of 04 §6 (m1.concorrente and m3.custo added 31/out, m1.extracao 07/nov), seed exceptions, plan defaults.
     const nav = page.getByRole("navigation", { name: "Console" });
     await nav.getByRole("link", { name: /Funcionalidades$/ }).click();
     await page.waitForURL("**/console/funcionalidades");
     await expect(page.getByRole("heading", { name: "Funcionalidades" })).toBeVisible();
-    await expect(page.locator("tr[data-flag]")).toHaveCount(17);
+    await expect(page.locator("tr[data-flag]")).toHaveCount(18);
     await expect(page.locator('tr[data-flag="m3.custo"]')).toContainText("Ficha técnica, custo e sobra por item");
     const ifood = page.locator('tr[data-flag="m2.ifood_api"]');
     await expect(ifood).toContainText("Leitura do iFood pela API oficial");

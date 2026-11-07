@@ -2,27 +2,25 @@
 
 A fake clock and a fake transport stand in for time and the network. The fake transport answers with
 generic HTTP statuses and a generic captcha marker; no iFood page is imitated (D40: pages are recorded,
-never invented). The collection itself is driven by a test double of the PublicPages interface.
+never invented). This fetcher now only backs `collector record`: X-rays get their data from an extractor
+(D47b, docs/extract-api.md).
 """
 
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
 
 import pytest
 from margo_collector.cli import record, scrub
 from margo_collector.fetcher import (
     CaptchaBlock,
-    CollectorBusy,
     CollectorStopped,
     FetchFailed,
     ForbiddenBlock,
     LiveCallRefused,
     LoginWall,
-    MemoryLock,
     MemoryPageCache,
     NotPublicPage,
     PoliteFetcher,
@@ -32,16 +30,7 @@ from margo_collector.fetcher import (
     live_transport_allowed,
     user_agent,
 )
-from margo_collector.ifood_public import (
-    AwaitingRecordings,
-    ParsedItem,
-    ParsedStore,
-    UnrecordedPages,
-    canonical_store_url,
-    store_id_from_url,
-)
-from margo_collector.repo import MemoryXrayRepo
-from margo_collector.steps import XrayRun, collect_step
+from margo_collector.ifood_public import canonical_store_url, store_id_from_url
 
 STORE = "https://www.ifood.com.br/delivery/londrina-pr/loja/0b6f6f2e-1111-4222-8333-944455556666"
 
@@ -207,106 +196,6 @@ def test_D29_store_id_from_the_end_of_the_url():
     assert canonical_store_url("ifood.com.br/delivery/a/b/c?x=1") == "https://www.ifood.com.br/delivery/a/b/c"
 
 
-# The collection run ----------------------------------------------------------------------------------
-
-
-class ScriptedPages:
-    """Test double of PublicPages: it returns rows it was given and never reads the page body."""
-
-    def __init__(self, stores: dict[str, ParsedStore], listing: list[str]):
-        self.stores = stores
-        self.listing = listing
-
-    def ready(self) -> bool:
-        return True
-
-    def neighborhood_urls(self, target, radius_km, categories):
-        return ["https://www.ifood.com.br/lista-de-teste"]
-
-    def parse_listing(self, body):
-        return self.listing
-
-    def parse_store(self, url, body, seen_at):
-        return self.stores[url]
-
-
-def parsed(n: int, km_north: float, **kw) -> ParsedStore:
-    url = f"https://www.ifood.com.br/delivery/londrina-pr/loja-{n}/0b6f6f2e-1111-4222-8333-9444555566{n:02d}"
-    lat = Decimal(str(round(-23.33 + km_north / 111.19508, 6)))
-    return ParsedStore(
-        f"id-{n}",
-        url,
-        f"Loja {n}",
-        "Londrina",
-        "Lanches",
-        lat,
-        Decimal("-51.15"),
-        datetime(2026, 10, 28, tzinfo=UTC),
-        items=(ParsedItem("1", "Sundae", 1000),),
-        **kw,
-    )
-
-
-def run_setup(listing_n: int = 3):
-    target = parsed(0, 0)
-    stores = {target.url: target} | {
-        parsed(n, n * 0.5).url: parsed(n, n * 0.5) for n in range(1, listing_n + 1)
-    }
-    pages = ScriptedPages(stores, [u for u in stores if u != target.url])
-    repo = MemoryXrayRepo()
-    tid = repo.save_public_store(target)
-    repo.xrays["x1"] = XrayRun("x1", None, tid, target.url, 3, ["Lanches"], {}, None)
-    return repo, pages, target
-
-
-def test_B02_collection_keeps_the_pace_and_builds_the_neighborhood():
-    repo, pages, _ = run_setup()
-    clock = FakeClock()
-    t = FakeTransport(clock)
-    out = collect_step(repo, "x1", fetcher=fetcher(clock, t), pages=pages, lock=MemoryLock(), clock=clock)
-    assert out == {"stores": 3, "in_set": 3, "requests": 5}  # target, listing, three stores
-    starts = [c[0] for c in t.calls]
-    assert all(b - a >= 3.0 for a, b in zip(starts, starts[1:], strict=False))
-    assert repo.xrays["x1"].collected_at is not None
-
-
-def test_B02_collection_stops_on_a_block_and_writes_no_neighborhood():
-    repo, pages, _ = run_setup()
-    clock = FakeClock()
-    blocked_url = pages.listing[1]
-    t = FakeTransport(clock, {blocked_url: Response(200, b"<div id='captcha'></div>", blocked_url)})
-    with pytest.raises(CaptchaBlock):
-        collect_step(repo, "x1", fetcher=fetcher(clock, t), pages=pages, lock=MemoryLock(), clock=clock)
-    assert [c[1] for c in t.calls][-1] == blocked_url, "no request after the block"
-    assert "x1" not in repo.hood
-    assert repo.xrays["x1"].collected_at is None
-
-
-def test_B02_one_collector_at_a_time():
-    repo, pages, _ = run_setup()
-    clock = FakeClock()
-    t = FakeTransport(clock)
-    lock = MemoryLock()
-    assert lock.try_acquire()
-    with pytest.raises(CollectorBusy):
-        collect_step(repo, "x1", fetcher=fetcher(clock, t), pages=pages, lock=lock, clock=clock)
-    assert t.calls == []
-    lock.release()
-    collect_step(repo, "x1", fetcher=fetcher(clock, t), pages=pages, lock=lock, clock=clock)
-    assert lock.held is False, "the lock is released after the run"
-
-
-def test_B02_without_recorded_pages_no_request_is_made():
-    repo, _, _ = run_setup()
-    clock = FakeClock()
-    t = FakeTransport(clock)
-    with pytest.raises(AwaitingRecordings):
-        collect_step(
-            repo, "x1", fetcher=fetcher(clock, t), pages=UnrecordedPages(), lock=MemoryLock(), clock=clock
-        )
-    assert t.calls == []
-
-
 # The record command ------------------------------------------------------------------------------------
 
 
@@ -347,22 +236,3 @@ def test_B02_record_refuses_non_public_urls_before_any_request(tmp_path):
 def test_scrub_keeps_prices_and_ids():
     clean, n = scrub(b'{"id": "1730000000", "price": 1490, "name": "Batata"}')
     assert n == 0 and b"1730000000" in clean
-
-
-def test_B01_history_a_second_run_keeps_the_first_runs_prices():
-    """M1 history: every collection is a dated snapshot; a later run with new prices never rewrites it."""
-    repo, pages, target = run_setup()
-    clock = FakeClock()
-    collect_step(repo, "x1", fetcher=fetcher(clock, FakeTransport(clock)), pages=pages, lock=MemoryLock(), clock=clock)
-    first = dict(repo.price_snapshots["x1"])
-    assert first and set(first.values()) == {1000}
-
-    dearer = {u: replace(s, items=(ParsedItem("1", "Sundae", 1200),)) for u, s in pages.stores.items()}
-    pages2 = ScriptedPages(dearer, pages.listing)
-    repo.xrays["x2"] = replace(repo.xrays["x1"], id="x2", collected_at=None)
-    clock2 = FakeClock()
-    collect_step(repo, "x2", fetcher=fetcher(clock2, FakeTransport(clock2)), pages=pages2, lock=MemoryLock(), clock=clock2)
-    assert repo.price_snapshots["x1"] == first
-    assert set(repo.price_snapshots["x2"].values()) == {1200}
-    repo.snapshot("x1")
-    assert repo.price_snapshots["x1"] == first

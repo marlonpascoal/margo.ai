@@ -6,4 +6,5 @@ export const E2E_FAKE_SECRETS = {
   IFOOD_CLIENT_ID: "dummy-e2e-ifood-client-9d41",
   IFOOD_CLIENT_SECRET: "dummy-e2e-ifood-secret-7f3a",
   ASAAS_WEBHOOK_TOKEN: "dummy-e2e-asaas-webhook-5c2e",
+  MARGO_EXTRACT_TOKEN: "dummy-e2e-extract-token-81b6",
 };

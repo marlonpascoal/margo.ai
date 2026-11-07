@@ -14,7 +14,7 @@ from typing import Any
 from .fetcher import CACHE_DAYS, CachedPage
 from .ifood_public import ParsedStore
 from .rules import Item, Store, to_numeric
-from .steps import XrayRun
+from .steps import Discovered, XrayRun
 from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual
 
 # Memory -------------------------------------------------------------------------------------------
@@ -33,6 +33,9 @@ class MemoryXrayRepo:
     status: dict[str, str] = field(default_factory=dict)
     price_snapshots: dict[str, dict[str, int]] = field(default_factory=dict)
     """M1 history: xray id -> item id -> price in that run. Only added to, never rewritten."""
+    discoveries: dict[str, dict[str, Discovered]] = field(default_factory=dict)
+    queued: list[tuple[str, str]] = field(default_factory=list)
+    extraction_on: bool = True
 
     def load_xray(self, xray_id: str) -> XrayRun:
         return self.xrays[xray_id]
@@ -53,8 +56,25 @@ class MemoryXrayRepo:
     def store(self, store_id: str) -> Store:
         return self.stores[store_id]
 
-    def public_stores(self) -> list[Store]:
+    def public_stores(self, include: list[str] | None = None) -> list[Store]:
         return list(self.stores.values())
+
+    def discovery(self, xray_id: str) -> dict[str, Discovered]:
+        return self.discoveries.get(xray_id, {})
+
+    def queue_discover(self, xray_id: str, env: str) -> str | None:
+        if not self.extraction_on:
+            return None
+        self.queued.append(("extract_discover", xray_id))
+        return f"job-{xray_id}"
+
+    def queue_captures(self, xray_id: str, env: str) -> int:
+        if not self.extraction_on:
+            return 0
+        x = self.xrays[xray_id]
+        ids = [x.target_store_id, *self.included_store_ids(xray_id)]
+        self.queued += [("extract_capture", i) for i in ids]
+        return len(ids)
 
     def neighborhood_state(self, xray_id: str):
         rows = self.hood.get(xray_id, [])
@@ -175,13 +195,26 @@ class PostgresXrayRepo:
     def store(self, store_id: str) -> Store:
         return self._store(self._all("select * from public.public_store where id = %s", (store_id,))[0])
 
-    def public_stores(self) -> list[Store]:
+    def public_stores(self, include: list[str] | None = None) -> list[Store]:
         return [
             self._store(r)
             for r in self._all(
-                "select * from public.public_store where lat is not null and lng is not null order by id"
+                "select * from public.public_store where (lat is not null and lng is not null)"
+                " or id = any(%s::uuid[]) order by id",
+                (include or [],),
             )
         ]
+
+    def discovery(self, xray_id: str) -> dict[str, Discovered]:
+        rows = self._all("select * from public.xray_discovery(%s)", (xray_id,))
+        return {str(r["public_store_id"]): Discovered(r["distance_m"], tuple(r["terms"])) for r in rows}
+
+    def queue_discover(self, xray_id: str, env: str) -> str | None:
+        r = self._all("select public.extract_queue_discover(%s, %s) as id", (xray_id, env))[0]
+        return _s(r["id"])
+
+    def queue_captures(self, xray_id: str, env: str) -> int:
+        return self._all("select public.extract_queue_xray_captures(%s, %s) as n", (xray_id, env))[0]["n"]
 
     # collection
     def save_public_store(self, store: ParsedStore) -> str:
@@ -268,12 +301,21 @@ class PostgresXrayRepo:
     # pairing
     def items_of_stores(self, store_ids: list[str]) -> list[Item]:
         rows = self._all(
-            "select * from public.public_menu_item where public_store_id = any(%s::uuid[]) order by id",
+            "select id, public_store_id, name, comparison_price_cents as price_cents, unit, unit_qty, taxonomy_level1,"
+            " taxonomy_level2 from public.public_menu_item where public_store_id = any(%s::uuid[])"
+            " and removed_at is null and comparison_price_cents > 0 order by id",
             (store_ids,),
         )
         return [
             Item(
-                str(r["id"]), str(r["public_store_id"]), r["name"], r["price_cents"], r["unit"], r["unit_qty"]
+                str(r["id"]),
+                str(r["public_store_id"]),
+                r["name"],
+                r["price_cents"],
+                r["unit"],
+                r["unit_qty"],
+                r["taxonomy_level1"],
+                r["taxonomy_level2"],
             )
             for r in rows
         ]
@@ -325,15 +367,22 @@ class PostgresXrayRepo:
 
     # calculation
     def calc_inputs(self, xray_id: str) -> list[CalcInput]:
+        # A run keeps its prices: the snapshot when there is one, else the catalog (M1-05 comparison price).
         items = self._all(
             "select i.id as xray_item_id, i.weekly_units, i.skipped, m.id as item_id, m.public_store_id, m.name,"
-            " m.price_cents, m.unit, m.unit_qty from public.xray_item i"
-            " join public.public_menu_item m on m.id = i.public_menu_item_id where i.xray_id = %s order by i.id",
+            " coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, m.unit, m.unit_qty"
+            " from public.xray_item i join public.public_menu_item m on m.id = i.public_menu_item_id"
+            " left join public.public_menu_item_snapshot sn on sn.xray_id = i.xray_id and sn.public_menu_item_id = m.id"
+            " where i.xray_id = %s and m.removed_at is null order by i.id",
             (xray_id,),
         )
         pairs = self._all(
-            "select p.xray_item_id, m.* from public.xray_pair p join public.public_menu_item m on m.id = p.public_menu_item_id"
-            " join public.xray_item i on i.id = p.xray_item_id where i.xray_id = %s and p.accepted order by m.id",
+            "select p.xray_item_id, m.id, m.public_store_id, m.name, m.unit, m.unit_qty,"
+            " coalesce(sn.price_cents, m.comparison_price_cents) as price_cents"
+            " from public.xray_pair p join public.public_menu_item m on m.id = p.public_menu_item_id"
+            " join public.xray_item i on i.id = p.xray_item_id"
+            " left join public.public_menu_item_snapshot sn on sn.xray_id = i.xray_id and sn.public_menu_item_id = m.id"
+            " where i.xray_id = %s and p.accepted and m.removed_at is null order by m.id",
             (xray_id,),
         )
         accepted: dict[str, list[Item]] = {}

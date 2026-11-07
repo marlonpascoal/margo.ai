@@ -1,0 +1,37 @@
+{
+  "_label": "SINTÉTICO: cardápio inventado para testes (docs/extract-api.md)",
+  "job_id": "00000000-0000-4000-8000-000000000000",
+  "source": "scraper",
+  "collected_at": "2026-10-31T10:05:00-03:00",
+  "capture": {
+    "store": {
+      "external_id": "5e000000-0000-4000-8000-000000000001",
+      "url": "https://www.ifood.com.br/delivery/cidade-sintetica-pr/alvo-sintetico/5e000000-0000-4000-8000-000000000001",
+      "name": "Alvo Sintético",
+      "address": "Rua Sintética, 100",
+      "lat": -10.0,
+      "lng": -40.0
+    },
+    "items": [
+      {
+        "external_item_id": "item-alvo-1",
+        "name": "Hambúrguer sintético",
+        "description": "SINTÉTICO, 180 g",
+        "category": "Os Mais Vendidos",
+        "taxonomy_level1": "LANCHES",
+        "taxonomy_level2": "HAMBURGUERES",
+        "price_cents": 2500,
+        "unit": "un"
+      },
+      {
+        "external_item_id": "item-alvo-2",
+        "name": "Batata sintética",
+        "taxonomy_level1": "ACOMPANHAMENTOS",
+        "taxonomy_level2": "BATATAS",
+        "price_cents": 1200,
+        "unit": "g",
+        "unit_qty": 300
+      }
+    ]
+  }
+}

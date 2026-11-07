@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(25);
+select plan(27);
 
 -- 03 §1 and §5 tables exist.
 select tables_are('public', array[
@@ -15,6 +15,7 @@ select tables_are('public', array[
   'auth_code_guard',
   'menu_item', 'public_store', 'public_menu_item', 'collector_page_cache', 'xray', 'xray_store', 'xray_item',
   'xray_pair', 'time_log', 'public_store_snapshot', 'public_menu_item_snapshot', 'xray_store_rank',
+  'extract_run', 'extract_content', 'extract_copy', 'public_store_private',
   'rule_param', 'import_source', 'import_run', 'column_mapping', 'order_fact', 'order_item_fact', 'ledger_entry',
   'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation',
   'invoice', 'invoice_line', 'ingredient', 'ingredient_match', 'ingredient_price', 'recipe', 'recipe_line',
@@ -50,12 +51,23 @@ select is_empty($$
                            'xray', 'time_log')
 $$, 'tenant tables have account_id not null; only 03 §5 system tables and 03 §2 xray, time_log (leads) allow null');
 
+select is_empty($$
+  select tablename::text from pg_policies
+  where schemaname = 'public' and tablename in ('extract_run', 'extract_content', 'extract_copy', 'public_store_private')
+$$, 'D47c: the extraction tables and the street address have no policy; only the service role reaches them');
+select is_empty($$
+  select table_name || '.' || column_name from information_schema.columns
+  where table_schema = 'public' and column_name ilike '%address%'
+    and table_name not in ('kitchen', 'public_store_private')
+    and table_name not like 'order%'
+$$, 'D47c: a public store''s street address sits in public_store_private and no other catalog table');
+
 -- Reference data (04 §6, §9; D40 placeholders).
 select results_eq($$ select code from public.plan order by code $$,
   array['lucro', 'raio_x', 'rede'], 'three plans');
 select results_eq($$ select trial_days from public.plan where code = 'lucro' $$,
   array[14], 'trial placeholder of 14 days (D40)');
-select is((select count(*)::int from public.feature_flag), 34, '17 flags in sandbox and production (m3.custo: 20261211000001, m1.concorrente: 20261212000001)');
+select is((select count(*)::int from public.feature_flag), 36, '18 flags in sandbox and production (m3.custo: 20261211000001, m1.concorrente: 20261212000001, m1.extracao: 20261220000001)');
 select results_eq($$
   select default_raio_x, default_lucro, default_rede from public.feature_flag
   where key = 'm2.ifood_api' and env = 'production'

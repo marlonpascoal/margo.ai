@@ -50,16 +50,18 @@ No product string in the code contains an em dash (—). Checked every Portugues
 |---|---|---|---|
 | Lojas da vizinhança | `apps/web/app/console/(app)/raio-x/[id]/vizinhanca/NeighborhoodView.tsx:88` | Accessible name of the store list | |
 | Na fila: a busca começa quando o coletor estiver livre. | `apps/web/lib/xray/labels.ts:43` | Collection job queued | |
-| Buscando as lojas da vizinhança, uma página a cada 3 segundos. | `apps/web/lib/xray/labels.ts:44` | Collection running | |
-| Coleta parada: o raio-X está desligado para esta conta. | `apps/web/lib/xray/labels.ts:69` | Collection stopped: X-ray flag off for the account | |
-| Coleta parada antes de começar: ainda não há páginas públicas do iFood gravadas para o leitor (fixtures/m1). | `apps/web/lib/xray/labels.ts:72` | Collection stopped: no recorded public pages (local/test) | |
-| Coleta parada: o iFood pediu captcha. Nada foi contornado. | `apps/web/lib/xray/labels.ts:74` | Collection stopped: iFood asked for a captcha | |
-| Coleta parada: o iFood recusou o acesso. Nada foi contornado. | `apps/web/lib/xray/labels.ts:76` | Collection stopped: iFood refused access (403) | |
-| Coleta parada: o iFood pediu para ir mais devagar. Nada foi contornado. | `apps/web/lib/xray/labels.ts:78` | Collection stopped: iFood rate limit (429) | |
-| Coleta parada: a página pediu login. Só lemos páginas públicas. | `apps/web/lib/xray/labels.ts:80` | Collection stopped: page asked for login | |
-| Coleta parada: outro raio-X estava coletando. Um coletor por vez. | `apps/web/lib/xray/labels.ts:82` | Collection stopped: another collector was running | |
+| Buscando as lojas da vizinhança. | `apps/web/lib/xray/labels.ts:44` | Collection running | |
+| Coleta parada: o raio-X está desligado para esta conta. | `apps/web/lib/xray/labels.ts:70` | Collection stopped: X-ray flag off for the account | |
+| Coleta parada: a extração está desligada para esta conta. | `apps/web/lib/xray/labels.ts:71` | Collection stopped: extraction flag off for the account | |
+| Coleta parada: o canal recusou o acesso. | `apps/web/lib/xray/labels.ts:74` | Collection stopped: extractor reports a block | |
+| Coleta parada: a loja não foi encontrada nesse link. | `apps/web/lib/xray/labels.ts:76` | Collection stopped: store not found | |
+| Coleta parada: a página veio em um formato que não sabemos ler. | `apps/web/lib/xray/labels.ts:78` | Collection stopped: extractor could not parse the page | |
+| Coleta parada: a leitura demorou demais. | `apps/web/lib/xray/labels.ts:80` | Collection stopped: extractor timed out | |
+| Coleta parada: a leitura travou duas vezes. | `apps/web/lib/xray/labels.ts:82` | Collection stopped: the job got stuck twice | |
 | Coleta parada: erro ao ler as páginas públicas. | `apps/web/lib/xray/labels.ts:84` | Collection stopped: any other read error | |
-| regra: não entrega no bairro | `workers/collector/src/margo_collector/rules.py:176` | Exclusion reason in the store list (M1-02, store does not deliver to the area) | |
+| Capturando os cardápios: falta 1 loja (faltam N lojas). Confirme o conjunto quando terminar. | `apps/web/lib/xray/labels.ts:89` | Captures still queued or running for the X-ray's stores | |
+| regra: não entrega no bairro | `workers/collector/src/margo_collector/rules.py:210` | Exclusion reason in the store list (M1-02, store does not deliver to the area) | |
+| regra: outra categoria | `workers/collector/src/margo_collector/rules.py:212` | Exclusion reason in the store list (M1-02, no search term or taxonomy in common) | |
 
 ## C04 Pareamento
 
@@ -678,6 +680,7 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | Código de login pelo WhatsApp | `supabase/migrations/20261031000003_reference_data.sql:27` | C20 description of auth.whatsapp_code | |
 | Ficha técnica, custo e sobra por item | `supabase/migrations/20261211000001_m3_custo_flag.sql:6` | C20 description of m3.custo | |
 | Raio-X de loja concorrente | `supabase/migrations/20261212000001_competitor_xray_limit.sql:24` | C20 description of m1.concorrente | |
+| Extração de lojas e cardápios por serviço externo | `supabase/migrations/20261220000001_extract_schema.sql` | C20 description of m1.extracao | |
 
 ## Browser tab titles
 
@@ -734,7 +737,7 @@ Listed as written without a drawing in `docs/build-review.md`, but the same word
 | C00 Login do console | 5 |
 | C01 Clientes | 1 |
 | C02 Novo raio-X | 7 |
-| C03 Vizinhança | 12 |
+| C03 Vizinhança | 14 |
 | C04 Pareamento | 6 |
 | C05 Raio-X de preço | 7 |
 | C06 Entrega ao dono | 3 |
@@ -770,6 +773,6 @@ Listed as written without a drawing in `docs/build-review.md`, but the same word
 | WhatsApp | 18 |
 | Extension popup (P04) | 24 |
 | PDFs and files | 16 |
-| Flags (C20 descriptions) | 4 |
+| Flags (C20 descriptions) | 5 |
 | Browser tab titles | 31 |
-| **Total** | **494** |
+| **Total** | **497** |

@@ -84,6 +84,17 @@ class DifferenceConfidence(StrEnum):
     DUVIDOSA = "duvidosa"
 
 
+class ExtractKind(StrEnum):
+    DISCOVER = "discover"
+    CAPTURE = "capture"
+
+
+class ExtractRunStatus(StrEnum):
+    RUNNING = "running"
+    DONE = "done"
+    FAILED = "failed"
+
+
 class FlagEnv(StrEnum):
     SANDBOX = "sandbox"
     PRODUCTION = "production"
@@ -592,6 +603,41 @@ class ExtensionToken(Row):
     updated_at: datetime
 
 
+class ExtractContent(Row):
+    content_hash: str
+    created_at: datetime
+    id: UUID
+    payload: JsonValue
+    updated_at: datetime
+
+
+class ExtractCopy(Row):
+    channel: Channel
+    collected_at: datetime
+    content_hash: str
+    created_at: datetime
+    id: UUID
+    run_id: UUID
+    store_external_id: str
+    updated_at: datetime
+
+
+class ExtractRun(Row):
+    copies: int
+    created_at: datetime
+    error: str | None
+    finished_at: datetime | None
+    id: UUID
+    job_id: UUID | None
+    kind: ExtractKind
+    request: JsonValue
+    source: str | None
+    started_at: datetime
+    status: ExtractRunStatus
+    updated_at: datetime
+    worker: str | None
+
+
 class FeatureFlag(Row):
     created_at: datetime
     default_lucro: bool
@@ -1035,14 +1081,21 @@ class Plan(Row):
 
 
 class PublicMenuItem(Row):
+    category: str | None
     collected_at: datetime
+    comparison_price_cents: int | None
     created_at: datetime
     description: str | None
     external_item_id: str
     id: UUID
+    minimum_price_cents: int | None
     name: str
+    original_price_cents: int | None
     price_cents: int
     public_store_id: UUID
+    removed_at: datetime | None
+    taxonomy_level1: str | None
+    taxonomy_level2: str | None
     unit: MenuUnit
     unit_qty: Decimal | None
     updated_at: datetime
@@ -1073,9 +1126,22 @@ class PublicStore(Row):
     last_seen_open_at: datetime | None
     lat: Decimal | None
     lng: Decimal | None
+    main_category_code: str | None
     name: str | None
+    rating: Decimal | None
+    rating_count: int | None
+    slug: str | None
+    super_categories: list[str] | None
     updated_at: datetime
     url: str | None
+
+
+class PublicStorePrivate(Row):
+    address: str
+    collected_at: datetime
+    created_at: datetime
+    public_store_id: UUID
+    updated_at: datetime
 
 
 class PublicStoreSnapshot(Row):

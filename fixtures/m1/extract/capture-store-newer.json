@@ -1,0 +1,28 @@
+{
+  "_label": "SINTÉTICO: captura mais nova da mesma loja; o item item-a-3 saiu (docs/extract-api.md)",
+  "job_id": "00000000-0000-4000-8000-000000000000",
+  "source": "scraper",
+  "collected_at": "2026-11-07T08:00:00-03:00",
+  "capture": {
+    "store": {
+      "external_id": "5e000000-0000-4000-8000-000000000002",
+      "url": "https://www.ifood.com.br/delivery/cidade-sintetica-pr/vizinha-a/5e000000-0000-4000-8000-000000000002"
+    },
+    "items": [
+      {
+        "external_item_id": "item-a-1",
+        "name": "Hambúrguer sintético duplo",
+        "taxonomy_level2": "HAMBURGUERES",
+        "price_cents": 3000,
+        "unit": "un"
+      },
+      {
+        "external_item_id": "item-a-2",
+        "name": "Monte seu lanche sintético",
+        "taxonomy_level2": "HAMBURGUERES",
+        "price_cents": 0,
+        "minimum_price_cents": 1900
+      }
+    ]
+  }
+}

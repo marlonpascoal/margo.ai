@@ -22,6 +22,7 @@ export const SECRETS: SecretDef[] = [
   { name: "ASAAS_WEBHOOK_TOKEN", where: ["Vercel"] },
   { name: "MARITIME_WEBHOOK_SIGNING_KEY", where: ["Vercel", "Maritime"] },
   { name: "EMAIL_PROVIDER_KEY", where: ["Vercel"] },
+  { name: "MARGO_EXTRACT_TOKEN", where: ["Vercel"] },
 ];
 
 /**

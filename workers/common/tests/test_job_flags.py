@@ -47,6 +47,9 @@ class Calls:
 def test_A05_job_flags_map_the_job_types_the_spec_names() -> None:
     assert JOB_FLAGS == {
         "collect": "m1.raio_x",
+        "xray_neighborhood": "m1.raio_x",
+        "extract_discover": "m1.extracao",
+        "extract_capture": "m1.extracao",
         "xray_pair": "m1.raio_x",
         "xray_calc": "m1.raio_x",
         "render_xray": "m1.raio_x",

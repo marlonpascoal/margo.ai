@@ -43,14 +43,19 @@ export async function enqueueJob(deps: EnqueueDeps, input: EnqueueInput): Promis
     accountId: input.accountId ?? null,
     dedupeKey: input.dedupeKey ?? null,
   });
-  const url = deps.agentUrl(input.type);
-  if (!url) return { jobId: id, deduped, woken: false };
+  return { jobId: id, deduped, woken: await wakeJob(deps, id, input.type) };
+}
+
+/** Wakes the worker of a job already in the queue; a lost wake-up leaves it queued. */
+export async function wakeJob(deps: Pick<EnqueueDeps, "agentUrl" | "signingKey" | "wake" | "now">, id: string, type: string): Promise<boolean> {
+  const url = deps.agentUrl(type);
+  if (!url) return false;
   try {
     await deps.wake(url, signWakeup(id, deps.signingKey(), deps.now()));
-    return { jobId: id, deduped, woken: true };
+    return true;
   } catch (e) {
     // Ids only (02 §7); the job stays queued.
-    console.error(JSON.stringify({ event: "job_wake_failed", job_id: id, type: input.type, error: (e as Error).name }));
-    return { jobId: id, deduped, woken: false };
+    console.error(JSON.stringify({ event: "job_wake_failed", job_id: id, type, error: (e as Error).name }));
+    return false;
   }
 }

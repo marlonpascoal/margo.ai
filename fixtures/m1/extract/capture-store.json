@@ -1,0 +1,41 @@
+{
+  "_label": "SINTÉTICO: cardápio inventado para testes (docs/extract-api.md)",
+  "job_id": "00000000-0000-4000-8000-000000000000",
+  "source": "scraper",
+  "collected_at": "2026-10-31T10:10:00-03:00",
+  "capture": {
+    "store": {
+      "external_id": "5e000000-0000-4000-8000-000000000002",
+      "url": "https://www.ifood.com.br/delivery/cidade-sintetica-pr/vizinha-a/5e000000-0000-4000-8000-000000000002",
+      "address": "Avenida Sintética, 200",
+      "area": "Bairro Sintético",
+      "lat": -9.99,
+      "lng": -40.0,
+      "is_open": true
+    },
+    "items": [
+      {
+        "external_item_id": "item-a-1",
+        "name": "Hambúrguer sintético duplo",
+        "taxonomy_level2": "HAMBURGUERES",
+        "price_cents": 2800,
+        "original_price_cents": 3200,
+        "unit": "un"
+      },
+      {
+        "external_item_id": "item-a-2",
+        "name": "Monte seu lanche sintético",
+        "taxonomy_level2": "HAMBURGUERES",
+        "price_cents": 0,
+        "minimum_price_cents": 1900
+      },
+      {
+        "external_item_id": "item-a-3",
+        "name": "Suco sintético",
+        "price_cents": 900,
+        "unit": "ml",
+        "unit_qty": 500
+      }
+    ]
+  }
+}

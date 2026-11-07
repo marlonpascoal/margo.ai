@@ -41,7 +41,7 @@ export const XRAY_MESSAGES = {
   invalidForm: "Escolha o raio e as categorias.",
   unknownStore: "Loja ainda não coletada: nome, bairro e categoria aparecem depois da busca.",
   collectQueued: "Na fila: a busca começa quando o coletor estiver livre.",
-  collectRunning: "Buscando as lojas da vizinhança, uma página a cada 3 segundos.",
+  collectRunning: "Buscando as lojas da vizinhança.",
   pairingPending: "Pareando os itens. Atualize a página em instantes.",
   calcPending: "Calculando o raio-X. Atualize a página em instantes.",
   pdfPending: "PDF em preparação. Atualize a página em instantes.",
@@ -64,26 +64,29 @@ export function competitorRefusal(limit: number): string {
   return `Limite do plano atingido: ${limit} raio-X de concorrente por mês. O próximo fica para o mês que vem.`;
 }
 
-/** C03: why the collection stopped, from the failed job's log (worker exception names, D47). */
+/** C03: why the collection stopped, from the failed job's log: the extractor's reason (docs/extract-api.md)
+ * or a worker exception name. Not drawn. */
 export function collectStopReason(error: string | null | undefined, reason?: string | null): string {
   if (reason === "flag_off") return "Coleta parada: o raio-X está desligado para esta conta.";
-  switch (error) {
-    case "AwaitingRecordings":
-      return "Coleta parada antes de começar: ainda não há páginas públicas do iFood gravadas para o leitor (fixtures/m1).";
-    case "CaptchaBlock":
-      return "Coleta parada: o iFood pediu captcha. Nada foi contornado.";
-    case "ForbiddenBlock":
-      return "Coleta parada: o iFood recusou o acesso. Nada foi contornado.";
-    case "RateLimitBlock":
-      return "Coleta parada: o iFood pediu para ir mais devagar. Nada foi contornado.";
-    case "LoginWall":
-      return "Coleta parada: a página pediu login. Só lemos páginas públicas.";
-    case "CollectorBusy":
-      return "Coleta parada: outro raio-X estava coletando. Um coletor por vez.";
+  if (error === "ExtractionOff") return "Coleta parada: a extração está desligada para esta conta.";
+  switch (reason) {
+    case "blocked":
+      return "Coleta parada: o canal recusou o acesso.";
+    case "not_found":
+      return "Coleta parada: a loja não foi encontrada nesse link.";
+    case "parse_error":
+      return "Coleta parada: a página veio em um formato que não sabemos ler.";
+    case "timeout":
+      return "Coleta parada: a leitura demorou demais.";
+    case "stuck":
+      return "Coleta parada: a leitura travou duas vezes.";
     default:
       return "Coleta parada: erro ao ler as páginas públicas.";
   }
 }
+
+/** C03: captures still queued or running for the X-ray's stores. Not drawn. */
+export const capturesPending = (n: number) => `Capturando os cardápios: ${n === 1 ? "falta 1 loja" : `faltam ${n} lojas`}. Confirme o conjunto quando terminar.`;
 
 /** xray.target_kind as a small label in C02 and C05. */
 export const TARGET_KIND_LABEL = { own: "loja própria", competitor: "concorrente" } as const;

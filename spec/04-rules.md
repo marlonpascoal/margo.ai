@@ -6,15 +6,17 @@ Every number the product shows traces back to a rule ID (D16). Rule IDs are stab
 
 | ID | Rule |
 |---|---|
-| `M1-01` | Neighborhood: public stores whose address is within `radius_km` (default 3, options 2, 3, 5; param) of the target kitchen |
-| `M1-02` | Competitive set: store category in the chosen categories; exclude stores closed more than 30 days, national chains with list prices, and stores that do not deliver to the target's neighborhood, each a toggle in C02 |
+| `M1-01` | Neighborhood: public stores within `radius_km` (default 3, options 2, 3, 5; param) of the target. Distance by haversine when both stores have coordinates, else the `distance_km` of the latest discovery copy of the target; a store with neither stays out |
+| `M1-02` | Competitive set: a store is a candidate when its discovered search terms or item taxonomies intersect the target's (the categories chosen in C02 and the `taxonomy_level2` of the target's items), ignoring case and accents; a side with no terms says nothing and the store stays; otherwise "regra: outra categoria". Exclude stores closed more than 30 days (only with an explicit open signal in a copy: a store never seen open has no closed days), national chains with list prices, and stores that do not deliver to the target's neighborhood, each a toggle in C02 |
 | `M1-03` | Unit normalization: items sold by weight or pack are converted to price per base unit (g, ml, un) before comparing; the item shows `normalizado` |
-| `M1-04` | Pairing: an item pairs automatically when at least `min_pairs` (param, default 5) comparable items exist with name similarity at or above the threshold (param); below it, `revisar` for a founder |
-| `M1-05` | Parity = median normalized price of accepted comparable items |
+| `M1-04` | Pairing: when both items have a taxonomy, candidates of another taxonomy are out before any name comparison (level 2 when both have it, else level 1); without taxonomy, nothing changes. An item pairs automatically when at least `min_pairs` (param, default 5) comparable items exist with name similarity at or above the threshold (param); below it, `revisar` for a founder. Removed items take no part |
+| `M1-05` | Parity = median normalized price of accepted comparable items. The price is the current one (`price_cents`), or `minimum_price_cents` when `price_cents` is 0; an item with neither takes no part. `original_price_cents` is stored only. **Open:** which price enters parity under a promotion, Marlon to decide (docs/build-review.md) |
 | `M1-06` | Gap = (own price minus parity) / parity |
 | `M1-07` | Reading: gap at or below minus 10% (param) is `pode_subir`; gap at or above plus 10% is `nao_mexer` (raising is safe without cost data, lowering is not); otherwise `na_media` |
 | `M1-08` | Loss per item = (parity minus own price) times expected weekly units when known, else 1; Pareto ranks items by loss; the report states how many items carry 80% of the loss |
 | `M1-09` | The PDF shows the top 3 `pode_subir` items by loss and lists `nao_mexer` items with the "do not lower without cost" message (P01) |
+
+Collection (D47c): `m1.extract_every_days` (param, 7) is the longest a store of an active X-ray goes without a capture. Active: the newest X-ray of each target that left `draft`, except a lead's delivered X-ray and synthetic accounts; its target and the stores in its set are captured.
 
 ## 2. M2. Expected payout and differences
 
@@ -102,6 +104,7 @@ Defaults per plan (sandbox and production keep separate values). "Off in all pla
 |---|---|---|---|---|
 | `m1.raio_x` | Price X-ray from public data | on | on | on |
 | `m1.concorrente` | X-ray of a store that is not the account's own (competitor), up to `plan.competitor_xrays_per_month` per São Paulo month: Raio-X 0, Lucro 3, Rede 10, edited in C15 (Marlon, 31/out) | off | on | on |
+| `m1.extracao` | Extraction through an external extractor (06 §10): the `extract_discover` and `extract_capture` jobs and the daily cron. On in sandbox and off in production, in all three plans | on in sandbox, off in production | on in sandbox, off in production | on in sandbox, off in production |
 | `m2.ifood_api` | iFood reading through the official API | off | on | on |
 | `m2.extensao_chrome` | Chrome extension | off | on | on |
 | `m2.arquivo_99food` | 99Food statement import | off | on | on |

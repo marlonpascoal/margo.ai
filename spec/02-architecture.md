@@ -45,7 +45,7 @@ margoai/
   workers/
     common/             job runner, Runner interface, Supabase client, signing
     import/             ifood_api, ifood_file, food99_file, column-mapping
-    collector/          M1 public pages
+    collector/          M1 rules and X-ray steps; pages are read by an external extractor (06 §10)
     match/              de-para suggestions (Claude API)
     render/             PDF (weasyprint) and xlsx (openpyxl)
   supabase/
@@ -74,6 +74,7 @@ Table `job` (see data model) is the single queue for imports, collection, matchi
 3. Schedules (daily iFood pull at 06:00 São Paulo, weekly summary, trial reminders) are Maritime cron triggers on the relevant worker, or Vercel Cron when the work is a quick database update.
 4. The worker claims the job with `UPDATE job SET status='running', claimed_at=now() WHERE id=? AND status='queued'` (one winner), does the work, writes results and `status=done|failed` with a log.
 5. A job stuck in `running` for more than 30 minutes returns to `queued` once, then fails and raises an alert (C21).
+   `extract_discover` and `extract_capture` are claimed over HTTPS by an external extractor (06 §10) instead of a worker; the same claim, flag and stuck rules apply, one at a time.
 6. Every import row has a natural key; re-importing the same period never double-counts (D31).
 
 The `Runner` interface in `workers/common` hides Maritime: `Runner.enqueue(job)` and `Runner.on_job(handler)`. Swapping the host means a new `Runner`, not new job code (D42).
@@ -95,6 +96,7 @@ The `Runner` interface in `workers/common` hides Maritime: `Runner.enqueue(job)`
 | `ANTHROPIC_API_KEY` | Maritime env (worker-match) | Platforms only |
 | `MARITIME_WEBHOOK_SIGNING_KEY` | Vercel env, Maritime env | Platforms only |
 | `EMAIL_PROVIDER_KEY` | Vercel env | Platforms only |
+| `MARGO_EXTRACT_TOKEN` | Vercel env; the extractor's own configuration (D47b) | Platforms and the extractor |
 
 Rules: nothing in git; no `.env` with a real value; secrets never logged (logger redacts keys matching `/key|secret|token|authorization/i`); C14 shows only "set / missing" per secret.
 

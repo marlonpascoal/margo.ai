@@ -6,7 +6,7 @@ Examples below are synthetic. The complete bodies are in `fixtures/m1/extract/`,
 
 ## Flow
 
-1. Poll `POST /api/extract/claim`. Jobs run in parallel up to a limit the server decides (`m1.extract_max_running`, today 3) across all extractors; at the limit, or with nothing queued, a claim answers 204. The limit does not change how fast an extractor may read pages: it keeps its own pacing (D47).
+1. Poll `POST /api/extract/claim`. Jobs run in parallel up to a limit the server decides (`m1.extract_max_running`, a safety ceiling, today 20; the extractor's own worker count is the real control) across all extractors; at the limit, or with nothing queued, a claim answers 204. The limit does not change how fast an extractor may read pages: it keeps its own pacing (D47).
 2. Do the job.
 3. Send `POST /api/extract/result`, or `POST /api/extract/fail` if it could not be done.
 

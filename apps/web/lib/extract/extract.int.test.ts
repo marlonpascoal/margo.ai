@@ -91,6 +91,9 @@ describe("B01 claim", () => {
   });
 
   it("B01_claim_gives_the_contract_payload_and_runs_up_to_the_limit", async () => {
+    // The limit logic, whatever the ceiling is today.
+    await db.from("rule_param").update({ value: 3 }).eq("key", "m1.extract_max_running");
+    try {
     const x = await newXray();
     const res = await post(claim, { worker: "w-1" });
     expect(res.status).toBe(200);
@@ -107,6 +110,9 @@ describe("B01 claim", () => {
     expect((await post(claim, { worker: "w-3" })).status).toBe(200);
     expect((await post(claim, { worker: "w-4" })).status).toBe(204);
     await db.from("xray").delete().eq("id", x);
+    } finally {
+      await db.from("rule_param").update({ value: 20 }).eq("key", "m1.extract_max_running");
+    }
   });
 
   it("B01_A08_a_job_stuck_over_30_minutes_requeues_once_then_fails_with_an_alert", async () => {

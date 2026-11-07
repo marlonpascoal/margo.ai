@@ -398,8 +398,19 @@ def _queue(h: Hood) -> None:
     assert h.queue_captures() > 0
 
 
-def test_B01_extract_claims_run_up_to_the_limit(conn):
-    assert conn.execute("select value from public.rule_param where key = 'm1.extract_max_running'").fetchone()["value"] == 3
+@pytest.fixture
+def limit_of_3(conn):
+    """The limit logic, whatever the ceiling is today."""
+    conn.execute("update public.rule_param set value = 3 where key = 'm1.extract_max_running'")
+    yield
+    conn.execute("update public.rule_param set value = 20 where key = 'm1.extract_max_running'")
+
+
+def test_B01_extract_ceiling_is_20(conn):
+    assert conn.execute("select value from public.rule_param where key = 'm1.extract_max_running'").fetchone()["value"] == 20
+
+
+def test_B01_extract_claims_run_up_to_the_limit(conn, limit_of_3):
     h = Hood(conn, 4)
     _queue(h)
     jobs = [h.claim() for _ in range(3)]
@@ -410,7 +421,7 @@ def test_B01_extract_claims_run_up_to_the_limit(conn):
     assert h.claim() is not None, "a place opened"
 
 
-def test_B01_two_concurrent_claims_at_the_limit_get_one_job(conn):
+def test_B01_two_concurrent_claims_at_the_limit_get_one_job(conn, limit_of_3):
     import psycopg
     from psycopg.rows import dict_row
 

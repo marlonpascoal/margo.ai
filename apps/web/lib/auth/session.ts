@@ -51,6 +51,27 @@ export async function currentSession(surface: Surface, now = new Date()): Promis
 }
 
 /** W09 "Sair de todos os aparelhos": revokes every session of the person, audited. */
+/** "Sair": ends this one session, audited like the login it closes (A04). */
+export async function signOutDevice(
+  db: Db,
+  session: { personId: string; sessionDeviceId: string },
+  surface: Surface,
+  accountIds: string[],
+  now = new Date(),
+) {
+  await db.from("session_device").update({ revoked_at: now.toISOString() }).eq("id", session.sessionDeviceId);
+  const accounts = surface === "console" || accountIds.length === 0 ? [null] : accountIds;
+  await db.from("audit_log").insert(
+    accounts.map((accountId) => ({
+      actor_person_id: session.personId,
+      actor_kind: surface === "console" ? ("staff" as const) : ("person" as const),
+      account_id: accountId,
+      action: "logout",
+      entity: "session_device",
+    })),
+  );
+}
+
 export async function signOutEverywhere(db: Db, personId: string, accountIds: string[], now = new Date()) {
   await db.from("session_device").update({ revoked_at: now.toISOString() }).eq("person_id", personId).is("revoked_at", null);
   await db.from("audit_log").insert(

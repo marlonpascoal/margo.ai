@@ -361,3 +361,19 @@ test("E04_E06_W09_dono_exports_asks_deletion_with_code_and_changes_login_email",
     await db.from("auth_code_guard").delete().eq("email", newEmail);
   }
 });
+
+test("E03_P15_sair_ends_the_portal_session_on_computer_and_phone", async ({ page }) => {
+  await loginToPortal(page, DONO_EMAIL);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/app");
+  await page.getByRole("button", { name: "Sair", exact: true }).click();
+  await page.waitForURL("**/entrar");
+
+  await page.goto("/app");
+  await page.waitForURL("**/entrar");
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await loginToPortal(page, DONO_EMAIL);
+  await page.getByRole("button", { name: "Sair", exact: true }).click();
+  await page.waitForURL("**/entrar");
+});

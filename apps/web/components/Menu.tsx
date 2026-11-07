@@ -2,6 +2,7 @@
 // Console sidebar (design/Menu.dc.html). The server passes only the items the role may use (lib/console/menu.ts).
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import SignOut from "@/components/SignOut";
 import type { MenuGroup } from "@/lib/console/menu";
 
 export interface MenuClient {
@@ -60,6 +61,7 @@ export default function Menu({ groups, client }: { groups: MenuGroup[]; client?:
           })}
         </div>
       ))}
+      <SignOut surface="console" className={`${itemClass} cursor-pointer border-0 bg-transparent text-left text-ink-muted hover:text-ink disabled:opacity-70 md:mt-auto`} />
     </nav>
   );
 }

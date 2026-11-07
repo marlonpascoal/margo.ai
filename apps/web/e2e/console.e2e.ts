@@ -155,3 +155,17 @@ test.describe("as Operação", () => {
     }
   });
 });
+
+test("E03_C00_sair_ends_the_console_session_and_is_audited", async ({ page }) => {
+  const db = adminDb();
+  const since = new Date().toISOString();
+  await loginToConsole(page, FOUNDER_EMAIL);
+  await page.getByRole("navigation", { name: "Console" }).getByRole("button", { name: "Sair" }).click();
+  await page.waitForURL("**/console/login");
+
+  await page.goto("/console");
+  await page.waitForURL("**/console/login");
+
+  const { data } = await db.from("audit_log").select("actor_kind, account_id").eq("action", "logout").gte("at", since);
+  expect(data).toEqual([{ actor_kind: "staff", account_id: null }]);
+});

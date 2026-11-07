@@ -3,6 +3,7 @@
 // brand, account and role stay in the bar (05 shared components).
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import SignOut from "@/components/SignOut";
 import { accountChip, ownerMenu, ROLE_LABEL } from "@/lib/portal/menu";
 import type { MemberRole } from "@/lib/permissions";
 
@@ -29,6 +30,7 @@ export default function MenuDono({ accountName, kitchensInAnalysis, role }: { ac
         })}
       </nav>
       <span className="text-sm text-ink-muted">{ROLE_LABEL[role]}</span>
+      <SignOut surface="portal" className="min-h-10 cursor-pointer border-0 bg-transparent px-1 text-sm text-ink-muted hover:text-ink disabled:opacity-70" />
     </header>
   );
 }

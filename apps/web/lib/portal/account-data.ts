@@ -4,6 +4,7 @@
 import { enqueueJob, type EnqueueDeps } from "@/lib/jobs/enqueue";
 import { notify, type NotifyDeps } from "@/lib/notify/outbox";
 import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
 import { seesKitchen, type Scope } from "./scope";
 
 export interface Requester {
@@ -77,7 +78,7 @@ export async function exportPath(db: Db, accountId: string, jobId: string): Prom
  * P06 downloads (closing PDF and xlsx): the close must be of the account and of a kitchen the person sees
  * (A03). An account-wide close (kitchen_id null) needs all kitchens, as app.sees_kitchen.
  */
-export async function closeFilePath(db: Db, accountId: string, scope: Scope, closeId: string, format: "pdf" | "xlsx"): Promise<string | null> {
+export async function closeFilePath(db: ReadDb, accountId: string, scope: Scope, closeId: string, format: "pdf" | "xlsx"): Promise<string | null> {
   const { data } = await db.from("close_period").select("kitchen_id, pdf_path, xlsx_path").eq("id", closeId).eq("account_id", accountId).maybeSingle();
   if (!data || !seesKitchen(scope, data.kitchen_id)) return null;
   const path = format === "pdf" ? data.pdf_path : data.xlsx_path;

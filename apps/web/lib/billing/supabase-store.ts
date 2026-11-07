@@ -4,6 +4,7 @@ import type { Database, Json } from "@margoai/contracts";
 import { SupabaseNotifyStore } from "@/lib/notify/supabase-store";
 import type { AuditEntry } from "@/lib/notify/store";
 import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
 import type { BillingEventKind } from "./asaas-parse";
 import { spDate, type BillingUnit, type PlanRow, type SubscriptionStatus } from "./rules";
 import type { AccountRow, BillingStore, InvoiceUpsert, PilotChargeKind, PilotChargeRow, PilotChargeStatus, PilotRow, StoredEvent, SubscriptionPatch, SubscriptionRow } from "./store";
@@ -89,26 +90,40 @@ const toCharge = (r: {
 });
 const CHARGE_COLUMNS = "id, pilot_id, kind, month, credited_cents, charge_cents, asaas_payment_id, status";
 
-export class SupabaseBillingStore implements BillingStore {
-  private readonly audits: SupabaseNotifyStore;
-
-  constructor(private readonly db: Db) {
-    this.audits = new SupabaseNotifyStore(db);
-  }
+/** What P09/W05 reads, which RLS allows the Dono (04 §5). */
+export class BillingReads {
+  constructor(protected readonly reader: ReadDb) {}
 
   async plans() {
-    const rows = must(await this.db.from("plan").select(PLAN_COLUMNS));
+    const rows = must(await this.reader.from("plan").select(PLAN_COLUMNS));
     return rows.map(toPlan).sort((a, b) => PLAN_ORDER.indexOf(a.code) - PLAN_ORDER.indexOf(b.code));
   }
 
   async account(accountId: string): Promise<AccountRow | null> {
-    const a = check(await this.db.from("account").select("id, code, name, trial_ends_at, is_synthetic").eq("id", accountId).maybeSingle());
+    const a = check(await this.reader.from("account").select("id, code, name, trial_ends_at, is_synthetic").eq("id", accountId).maybeSingle());
     return a ? { id: a.id, code: a.code, name: a.name, trialEndsAt: a.trial_ends_at ? new Date(a.trial_ends_at) : null, isSynthetic: a.is_synthetic } : null;
   }
 
   async subscription(accountId: string) {
-    const r = check(await this.db.from("subscription").select(SUB_COLUMNS).eq("account_id", accountId).maybeSingle());
+    const r = check(await this.reader.from("subscription").select(SUB_COLUMNS).eq("account_id", accountId).maybeSingle());
     return r ? toSub(r) : null;
+  }
+
+  async countUnits(accountId: string, unit: BillingUnit) {
+    const kitchens = must(await this.reader.from("kitchen").select("id").eq("account_id", accountId).eq("in_analysis", true)).map((k) => k.id);
+    if (unit === "kitchen" || kitchens.length === 0) return kitchens.length;
+    const { count, error } = await this.reader.from("channel_store").select("id", { count: "exact", head: true }).eq("account_id", accountId).in("kitchen_id", kitchens);
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  }
+}
+
+export class SupabaseBillingStore extends BillingReads implements BillingStore {
+  private readonly audits: SupabaseNotifyStore;
+
+  constructor(private readonly db: Db) {
+    super(db);
+    this.audits = new SupabaseNotifyStore(db);
   }
 
   async subscriptionsByStatus(statuses: SubscriptionStatus[]) {
@@ -142,14 +157,6 @@ export class SupabaseBillingStore implements BillingStore {
   }
 
   /** 04 §7, D28, D40: kitchens with in_analysis, or channel stores of kitchens with in_analysis. */
-  async countUnits(accountId: string, unit: BillingUnit) {
-    const kitchens = must(await this.db.from("kitchen").select("id").eq("account_id", accountId).eq("in_analysis", true)).map((k) => k.id);
-    if (unit === "kitchen" || kitchens.length === 0) return kitchens.length;
-    const { count, error } = await this.db.from("channel_store").select("id", { count: "exact", head: true }).eq("account_id", accountId).in("kitchen_id", kitchens);
-    if (error) throw new Error(error.message);
-    return count ?? 0;
-  }
-
   async pauseImportSources(accountId: string, reason: "trial_ended" | "subscription_canceled", at: Date) {
     const rows = must(
       await this.db.from("import_source").update({ paused_at: at.toISOString(), paused_reason: reason }).eq("account_id", accountId).is("paused_at", null).select("id"),

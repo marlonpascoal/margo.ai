@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(58);
+select plan(67);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated;
@@ -66,6 +66,7 @@ begin
   insert into public.menu_item (account_id, brand_id, name) values (acc, tests.id(a || ':brand'), 'Prato ' || a);
   insert into public.public_store (id, channel, external_id, name) values (tests.id(a || ':pub'), 'ifood', a || '-pub', 'Loja ' || a);
   insert into public.xray (id, account_id, target_store_id) values (tests.id(a || ':xray'), acc, tests.id(a || ':pub'));
+  insert into public.xray (id, account_id, target_store_id, pdf_path) values (tests.id(a || ':xray-pdf'), acc, tests.id(a || ':pub'), 'pdf/' || a || '.pdf');
   insert into public.time_log (account_id, xray_id, step, minutes, person_id) values (acc, tests.id(a || ':xray'), 'entrega', 10, dono);
   -- M2 (03 §3): one fact, close and contestation per store of kitchen 1 and kitchen 2.
   insert into public.import_source (account_id, channel, kind) values (acc, 'ifood', 'upload');
@@ -197,8 +198,13 @@ select is(tests.n($$ select 1 from public.ingredient $$), 1, 'A02: Dono sees onl
 select is(tests.n($$ select 1 from public.invoice_line $$), 1, 'Dono sees own invoice lines');
 select throws_ok($$ insert into public.company (account_id, cnpj, legal_name) values (tests.id('X'), '00000000000999', 'Nova') $$,
   '42501', null, 'portal users cannot write directly; writes go through audited server actions');
-select is_empty($$ update public.account set name = 'mudou' where id = tests.id('X') returning id $$,
-  'portal users cannot update rows directly');
+select throws_ok($$ update public.account set name = 'mudou' where id = tests.id('X') $$,
+  '42501', null, 'portal users cannot update rows directly: authenticated keeps only SELECT');
+select throws_ok($$ truncate public.kitchen cascade $$,
+  '42501', null, 'RLS does not cover TRUNCATE, so the grant is gone too');
+select is(tests.n($$ select 1 from public.xray where id = tests.id('X:xray') $$), 0, 'an X-ray without a PDF stays console only');
+select is(tests.n($$ select 1 from public.xray where id = tests.id('X:xray-pdf') $$), 1, 'Dono reads the X-ray with a PDF of own account (W01 Relatórios)');
+select is(tests.n($$ select 1 from public.xray where id = tests.id('Y:xray-pdf') $$), 0, 'A02: Dono of X reads no X-ray of Y');
 reset role;
 
 -- Gerente of X, kitchen 1 only (database side of A03).
@@ -220,6 +226,7 @@ select is(tests.n($$ select 1 from public.invoice $$), 1, 'A03: Gerente sees inv
 select is(tests.n($$ select 1 from public.contribution $$), 0, 'A03: contribution of the whole-account close needs all kitchens');
 select is(tests.n($$ select 1 from public.close_cost_line $$), 1, 'A03: W01 insumos of own kitchen stores only');
 select is(tests.n($$ select 1 from public.close_decision $$), 0, 'A03: the month''s decision of the whole-account close needs all kitchens');
+select is(tests.n($$ select 1 from public.xray where id = tests.id('X:xray-pdf') $$), 0, 'A03: the X-ray covers the whole account, so it needs all kitchens');
 reset role;
 
 -- Dono of Y, the other direction.
@@ -237,10 +244,22 @@ reset role;
 
 -- Anonymous.
 set local role anon;
-select is(tests.n($$ select 1 from public.account $$), 0, 'A02: anon reads no account');
-select is(tests.n($$ select 1 from public.person $$), 0, 'A02: anon reads no person');
-select is(tests.n($$ select 1 from public.plan $$), 3, 'anon reads plans (P07 shows trial days)');
+select throws_ok($$ select 1 from public.account $$, '42501', null, 'A02: anon has no table access: account');
+select throws_ok($$ select 1 from public.person $$, '42501', null, 'A02: anon has no table access: person');
+select throws_ok($$ select 1 from public.plan $$, '42501', null, 'anon does not read plans: P07 and /criar-conta read the trial days on the server');
 reset role;
+select is_empty($$ select table_name::text from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon' $$,
+  'A02: no table or view of public is granted to anon');
+select is_empty($$ select table_name::text from information_schema.role_table_grants
+                   where table_schema = 'public' and grantee = 'authenticated' and privilege_type <> 'SELECT' $$,
+  'authenticated keeps only SELECT: no policy grants a write');
+select ok(not has_table_privilege('anon', 'public.account', 'select'), 'A02: anon cannot select account');
+create table public.tmp_default_acl_probe (id int);
+select ok(not has_table_privilege('anon', 'public.tmp_default_acl_probe', 'select')
+       and not has_table_privilege('authenticated', 'public.tmp_default_acl_probe', 'insert')
+       and has_table_privilege('authenticated', 'public.tmp_default_acl_probe', 'select'),
+  'a new table starts closed to anon and read-only for authenticated (RLS still decides the rows)');
+drop table public.tmp_default_acl_probe;
 
 -- Console: Operação (04 §5, no billing, secrets or toggles).
 select tests.login('operacao');
@@ -259,7 +278,7 @@ select tests.login('fundador');
 select is(tests.n($$ select 1 from public.subscription where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees subscriptions');
 select is(tests.n($$ select 1 from public.billing_event where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees Asaas events');
 select is(tests.n($$ select 1 from public.feature_flag $$), 34, 'Fundador sees feature toggles');
-select is_empty($$ update public.feature_flag set default_raio_x = true returning id $$,
+select throws_ok($$ update public.feature_flag set default_raio_x = true $$, '42501', null,
   'even Fundador writes only through audited server actions');
 reset role;
 

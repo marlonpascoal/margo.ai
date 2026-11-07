@@ -5,6 +5,7 @@
 // No call to iFood from here: the merchant list is worker-import's job (06 §1).
 import { PARTNER_PORTAL_ORIGIN } from "@margoai/contracts";
 import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
 import { cnpjTail } from "@/lib/m2/structure";
 import { dayMonSP } from "./scope";
 
@@ -42,7 +43,7 @@ export function connectView(input: ConnectInput): ConnectView {
   };
 }
 
-export async function loadConnect(db: Db, accountId: string): Promise<ConnectView> {
+export async function loadConnect(db: ReadDb, accountId: string): Promise<ConnectView> {
   const [companies, auths, stores] = await Promise.all([
     db.from("company").select("id, cnpj, legal_name").eq("account_id", accountId),
     db.from("owner_authorization").select("company_id, signed_at").eq("account_id", accountId),

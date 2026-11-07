@@ -2,7 +2,8 @@
 // with their CNPJ, the stores of each kitchen per app, data arriving, the in-analysis toggle (Dono, drives
 // units_billed at the next charge) and the new iFood store without kitchen. Data filtered by kitchen scope
 // (A03): a Gerente sees only their kitchens and never a store without kitchen.
-import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
+import { lastImportsOk } from "./admin-reads";
 import { CHANNEL_LABEL, CHANNEL_ORDER, plural, type Channel } from "@/lib/m2/format";
 import { cnpjTail } from "@/lib/m2/structure";
 import { seesKitchen, shortKitchen, whenLabel, type Scope } from "./scope";
@@ -119,12 +120,12 @@ export function lojasLead(accountName: string, v: LojasView): string {
   return `${accountName} · ${plural(v.companies, "CNPJ", "CNPJs")} · ${plural(v.kitchens.length, "cozinha", "cozinhas")} · ${plural(v.stores, "loja", "lojas")} nos apps.`;
 }
 
-export async function loadLojas(db: Db, accountId: string, scope: Scope, now = new Date()): Promise<LojasView> {
+export async function loadLojas(db: ReadDb, accountId: string, scope: Scope, now = new Date()): Promise<LojasView> {
   const [companies, kitchens, stores, sources] = await Promise.all([
     db.from("company").select("id, cnpj").eq("account_id", accountId),
     db.from("kitchen").select("id, name, address, company_id, in_analysis").eq("account_id", accountId),
     db.from("channel_store").select("id, kitchen_id, channel, external_id, name, public_url, brand(name)").eq("account_id", accountId),
-    db.from("import_source").select("channel, last_ok_at").eq("account_id", accountId).not("last_ok_at", "is", null),
+    lastImportsOk(accountId),
   ]);
   for (const r of [companies, kitchens, stores, sources]) if (r.error) throw new Error(r.error.message);
   const lastOk: Partial<Record<Channel, string>> = {};

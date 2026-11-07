@@ -4,13 +4,12 @@
 import type { ReactNode } from "react";
 import MenuDono from "@/components/MenuDono";
 import { requireMember } from "@/lib/portal/session";
-import { adminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const m = await requireMember();
-  const { count } = await adminClient().from("kitchen").select("id", { count: "exact", head: true }).eq("account_id", m.account.id).eq("in_analysis", true);
+  const { count } = await m.db.from("kitchen").select("id", { count: "exact", head: true }).eq("account_id", m.account.id).eq("in_analysis", true);
   return (
     <div className="min-h-screen bg-bg font-sans text-ink">
       <MenuDono accountName={m.account.name} kitchensInAnalysis={count ?? 0} role={m.role} />

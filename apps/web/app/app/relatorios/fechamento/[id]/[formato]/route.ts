@@ -3,6 +3,8 @@
 import { canPortal } from "@/lib/permissions";
 import { portalMember } from "@/lib/portal/session";
 import { closeFilePath, storageFile } from "@/lib/portal/account-data";
+// The closes bucket is private and has no member policy: the file comes with the service role, after the row check.
+// eslint-disable-next-line no-restricted-imports -- see above
 import { adminClient } from "@/lib/supabase/admin";
 
 const TYPE = { pdf: "application/pdf", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } as const;
@@ -13,9 +15,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!m) return Response.redirect(new URL("/entrar", _req.url), 303);
   const { id, formato } = await params;
   if (!canPortal(m.role, "see_close") || (formato !== "pdf" && formato !== "xlsx") || !/^[0-9a-f-]{36}$/.test(id)) return notFound();
-  const db = adminClient();
-  const path = await closeFilePath(db, m.account.id, m, id, formato);
-  const file = path ? await storageFile(db, path) : null;
+  const path = await closeFilePath(m.db, m.account.id, m, id, formato);
+  const file = path ? await storageFile(adminClient(), path) : null;
   if (!path || !file) return notFound();
   return new Response(file, {
     headers: {

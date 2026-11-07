@@ -11,6 +11,8 @@ import { discardExpiredEmailChange } from "@/lib/portal/contact-change";
 import { maskWhatsapp } from "@/lib/portal/format";
 import { loadAccessLog, loadDevices, loadLatestExport } from "@/lib/portal/security";
 import { requireMember } from "@/lib/portal/session";
+// Not a read: opening W09 discards an e-mail change whose code ran out, an audited write with the service role.
+// eslint-disable-next-line no-restricted-imports -- see above
 import { adminClient } from "@/lib/supabase/admin";
 import { signOutDevice } from "./actions";
 
@@ -23,14 +25,13 @@ const small = "min-h-9 cursor-pointer rounded-sm border border-border-strong bg-
 
 export default async function SegurancaPage() {
   const m = await requireMember();
-  const db = adminClient();
   const dono = canPortal(m.role, "people");
   // An e-mail change whose code ran out leaves no Auth user behind.
-  await discardExpiredEmailChange(db, { personId: m.personId, accountId: m.account.id, now: new Date() });
+  await discardExpiredEmailChange(adminClient(), { personId: m.personId, accountId: m.account.id, now: new Date() });
   const [devices, log, latestExport] = await Promise.all([
-    loadDevices(db, m.personId, m.sessionDeviceId),
-    dono ? loadAccessLog(db, m.account.id, m.personId) : Promise.resolve([]),
-    dono ? loadLatestExport(db, m.account.id) : Promise.resolve(null),
+    loadDevices(m.db, m.personId, m.sessionDeviceId),
+    dono ? loadAccessLog(m.db, m.account.id, m.personId) : Promise.resolve([]),
+    dono ? loadLatestExport(m.account.id) : Promise.resolve(null),
   ]);
   return (
     <main className="mx-auto box-border flex max-w-[1180px] flex-col gap-5 px-4 py-5 md:px-8 md:py-7">

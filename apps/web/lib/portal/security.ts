@@ -2,7 +2,8 @@
 // (Dono only, as the audit_log RLS policy). Sessions older than 30 days or revoked are not listed.
 import { SESSION_TTL_MS } from "@/lib/auth/rules";
 import type { MemberRole } from "@/lib/permissions";
-import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
+import { actorNames, latestExportJob } from "./admin-reads";
 import { accessWhen, deviceName, deviceWhen } from "./format";
 import { PROFILE_LABEL } from "./entry";
 import { dayMonSP } from "./scope";
@@ -42,7 +43,7 @@ export function groupDevices(rows: SessionRow[], currentId: string, now: Date): 
     .map(({ ids, name, where, current: c }) => ({ ids, name, where, current: c }));
 }
 
-export async function loadDevices(db: Db, personId: string, currentId: string, now = new Date()): Promise<Device[]> {
+export async function loadDevices(db: ReadDb, personId: string, currentId: string, now = new Date()): Promise<Device[]> {
   const since = new Date(now.getTime() - SESSION_TTL_MS.portal).toISOString();
   const { data, error } = await db
     .from("session_device")
@@ -91,7 +92,7 @@ export function accessLine(r: AuditRow, me: string): string {
   }
 }
 
-export async function loadAccessLog(db: Db, accountId: string, me: string, now = new Date(), limit = 10): Promise<{ when: string; text: string }[]> {
+export async function loadAccessLog(db: ReadDb, accountId: string, me: string, now = new Date(), limit = 10): Promise<{ when: string; text: string }[]> {
   const { data, error } = await db
     .from("audit_log")
     .select("action, actor_person_id, after, at")
@@ -102,8 +103,7 @@ export async function loadAccessLog(db: Db, accountId: string, me: string, now =
     .limit(limit);
   if (error) throw new Error(error.message);
   const ids = [...new Set((data ?? []).map((r) => r.actor_person_id).filter((x): x is string => !!x))];
-  const { data: people } = ids.length ? await db.from("person").select("id, name").in("id", ids) : { data: [] as { id: string; name: string }[] };
-  const names = new Map((people ?? []).map((p) => [p.id, p.name]));
+  const names = await actorNames(ids);
   return (data ?? []).map((r) => ({
     when: accessWhen(new Date(r.at), now),
     text: accessLine({ ...r, actorName: r.actor_person_id ? (names.get(r.actor_person_id) ?? null) : null, after: (r.after ?? null) as Record<string, unknown> | null }, me),
@@ -125,17 +125,8 @@ export interface LatestExport {
 }
 
 /** E06: the account's last data export, to link "Baixar o arquivo" (route /app/dados/[job]). */
-export async function loadLatestExport(db: Db, accountId: string): Promise<LatestExport | null> {
-  const { data, error } = await db
-    .from("job")
-    .select("id, status, created_at")
-    .eq("account_id", accountId)
-    .eq("type", "account_export")
-    .in("status", ["queued", "running", "done"])
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
+export async function loadLatestExport(accountId: string): Promise<LatestExport | null> {
+  const data = await latestExportJob(accountId);
   if (!data) return null;
   const day = dayMonSP(data.created_at);
   return data.status === "done" ? { status: "ready", href: `/app/dados/${data.id}`, day } : { status: "preparing", href: null, day };

@@ -2,6 +2,7 @@
 // (recipe, recipe_line, contribution, close_decision); nothing here recomputes a rule. Server code only.
 import { CHANNEL_ORDER, type Channel } from "@/lib/m2/format";
 import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
 import type {
   ContributionRecord,
   DecisionRecord,
@@ -212,7 +213,7 @@ export async function loadContribution(
 
 /** DLV-01 of one close, or null when there is none (no contribution yet). */
 export async function loadDecision(
-  db: Db,
+  db: ReadDb,
   closeId: string,
   month: string,
 ): Promise<DecisionRecord | null> {

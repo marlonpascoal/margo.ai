@@ -8,7 +8,6 @@ import { plural } from "@/lib/m2/format";
 import { canPortal } from "@/lib/permissions";
 import { requirePortal } from "@/lib/portal/session";
 import { loadLojas, lojasLead } from "@/lib/portal/lojas";
-import { adminClient } from "@/lib/supabase/admin";
 import { linkNewStoreAction, setInAnalysisAction } from "./actions";
 
 export const metadata = { title: "Lojas · MargoAI" };
@@ -18,7 +17,7 @@ const PILL: Record<string, string> = { ifood: "bg-danger-bg", food99: "bg-warn-b
 export default async function LojasPage({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
   const m = await requirePortal();
   const q = await searchParams;
-  const v = await loadLojas(adminClient(), m.account.id, m);
+  const v = await loadLojas(m.db, m.account.id, m);
   const dono = canPortal(m.role, "choose_kitchens");
 
   const toggle = (k: (typeof v.kitchens)[number], extra: string) =>

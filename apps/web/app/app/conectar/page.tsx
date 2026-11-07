@@ -10,7 +10,6 @@ import { isEnabled } from "@/lib/flags";
 import { appOrigin, requirePortal } from "@/lib/portal/session";
 import { loadConnect, PARTNER_PORTAL_URL } from "@/lib/portal/connect";
 import { whatsappShareLink } from "@/lib/portal/scope";
-import { adminClient } from "@/lib/supabase/admin";
 import { acceptTermsAction } from "./actions";
 
 export const metadata = { title: "Conectar os apps · MargoAI" };
@@ -25,7 +24,7 @@ export default async function ConectarPage({ searchParams }: { searchParams: Pro
   const flags = ["m2.ifood_api", "m2.extensao_chrome"] as const;
   const m = await requirePortal({ roles: ["dono", "financeiro"], flags });
   const q = await searchParams;
-  const [ifoodOn, extOn, v] = await Promise.all([isEnabled("m2.ifood_api", m.account.id), isEnabled("m2.extensao_chrome", m.account.id), loadConnect(adminClient(), m.account.id)]);
+  const [ifoodOn, extOn, v] = await Promise.all([isEnabled("m2.ifood_api", m.account.id), isEnabled("m2.extensao_chrome", m.account.id), loadConnect(m.db, m.account.id)]);
   const dono = m.role === "dono";
   const pending = dono && v.pending.length > 0;
   const store = webStoreUrl();

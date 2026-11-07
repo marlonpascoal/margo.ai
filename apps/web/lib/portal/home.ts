@@ -6,7 +6,8 @@
 import type { Database } from "@margoai/contracts";
 import { CHANNEL_LABEL, CHANNEL_ORDER, type Channel } from "@/lib/m2/format";
 import { closePeriods, type ClosePeriod } from "@/lib/m2/close";
-import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
+import { closePeriodsOutsideScope } from "./admin-reads";
 import { kitchenShort } from "./format";
 import type { Member } from "./session";
 
@@ -108,7 +109,7 @@ export interface ScopeKitchen {
 }
 
 /** Kitchens of the account this member may see (04 §5), by name. */
-export async function scopeKitchens(db: Db, m: Pick<Member, "account" | "kitchenIds">): Promise<ScopeKitchen[]> {
+export async function scopeKitchens(db: ReadDb, m: Pick<Member, "account" | "kitchenIds">): Promise<ScopeKitchen[]> {
   if (m.kitchenIds.length === 0) return [];
   const { data, error } = await db.from("kitchen").select("id, name, in_analysis").eq("account_id", m.account.id).in("id", m.kitchenIds);
   if (error) throw new Error(error.message);
@@ -121,7 +122,7 @@ export function withoutCost(lines: HomeLine[]): HomeLine[] {
 }
 
 /** A03: close lines of one account-level close, only for stores of kitchens in scope (all, with "sem cozinha", when allKitchens). */
-export async function loadHomeLines(db: Db, closeId: string, m: Pick<Member, "allKitchens" | "kitchenIds">): Promise<HomeLine[]> {
+export async function loadHomeLines(db: ReadDb, closeId: string, m: Pick<Member, "allKitchens" | "kitchenIds">): Promise<HomeLine[]> {
   const [{ data, error }, { data: costs, error: costError }] = await Promise.all([
     db.from("close_line").select("channel_store_id, gross_cents, payout_cents, channel_store(channel, kitchen_id, kitchen(name))").eq("close_period_id", closeId),
     db.from("close_cost_line").select("channel_store_id, uncovered_units, ingredient_cents, packaging_cents").eq("close_period_id", closeId),
@@ -143,7 +144,7 @@ export async function loadHomeLines(db: Db, closeId: string, m: Pick<Member, "al
 }
 
 /** A03: differences of one close, shown ones only (04 §2), in scope. */
-export async function loadHomeDiffs(db: Db, closeId: string, m: Pick<Member, "allKitchens" | "kitchenIds">): Promise<HomeDiff[]> {
+export async function loadHomeDiffs(db: ReadDb, closeId: string, m: Pick<Member, "allKitchens" | "kitchenIds">): Promise<HomeDiff[]> {
   const { data, error } = await db
     .from("difference")
     .select("amount_cents, confidence, channel_store(kitchen_id), contestation(status, closed_at)")
@@ -160,7 +161,8 @@ export async function loadHomeDiffs(db: Db, closeId: string, m: Pick<Member, "al
 }
 
 /** Month list for the selector: account-level closes, newest first (same as C08). */
-export const homePeriods = (db: Db, accountId: string): Promise<ClosePeriod[]> => closePeriods(db, accountId);
+export const homePeriods = (m: Pick<Member, "db" | "allKitchens" | "account">): Promise<ClosePeriod[]> =>
+  m.allKitchens ? closePeriods(m.db, m.account.id) : closePeriodsOutsideScope(m.account.id);
 
 export interface HomeReport {
   kind: "close" | "xray";
@@ -175,7 +177,7 @@ export interface HomeReport {
  * W01 "Relatórios", P08 list. The closing PDF and the X-ray cover the whole account, so a person who sees
  * only some kitchens gets neither (A03: "pages, PDFs, exports").
  */
-export async function loadReports(db: Db, m: Pick<Member, "account" | "allKitchens">): Promise<HomeReport[]> {
+export async function loadReports(db: ReadDb, m: Pick<Member, "account" | "allKitchens">): Promise<HomeReport[]> {
   if (!m.allKitchens) return [];
   const [{ data: closes }, { data: xrays }] = await Promise.all([
     db.from("close_period").select("id, month, computed_at").eq("account_id", m.account.id).is("kitchen_id", null).not("pdf_path", "is", null).order("month", { ascending: false }).limit(1),

@@ -4,7 +4,6 @@ import { CopyButton } from "@/components/AutoSubmit";
 import { CARD, DeskFictitious, DeskTitle, Notice, PhoneTop, PortalMain, SMALL_BUTTON, SMALL_BUTTON_DARK, TD, TH } from "@/components/portal";
 import { requirePortal } from "@/lib/portal/session";
 import { infoOf, kitchenApp, loadOwnerContestations, money, ownerTotals, PILL_LABEL, PILL_TONE, pillOf, whatHappened, type OwnerContestation } from "@/lib/portal/contestacoes";
-import { adminClient } from "@/lib/supabase/admin";
 import { markContestationAction } from "./actions";
 
 export const metadata = { title: "Contestações · MargoAI" };
@@ -63,7 +62,7 @@ function ContestedPhone({ r }: { r: OwnerContestation }) {
 export default async function ContestacoesPage({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
   const m = await requirePortal({ action: "contestations", flags: ["m2.contestacao"] });
   const q = await searchParams;
-  const rows = await loadOwnerContestations(adminClient(), m.account.id, m);
+  const rows = await loadOwnerContestations(m.db, m.account.id, m);
   const t = ownerTotals(rows);
   const day = today();
   const desk = [

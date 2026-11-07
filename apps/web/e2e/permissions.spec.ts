@@ -2,7 +2,7 @@
 // G-SYN: Gerente do Centro (Cozinha Centro only) against the Dono of Grupo Exemplo. The P06 close of
 // September is rendered by worker-render and the data export by worker-account first.
 import { expect, test, type Page } from "@playwright/test";
-import { adminDb, portalSession, runWorker, sid } from "./helpers";
+import { adminDb, PANTANOS_EMAIL, portalSession, runWorker, sid } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -54,6 +54,7 @@ test("A03_gerente_do_centro_sees_nothing_of_other_kitchens", async ({ page }) =>
     const lojas = await bodyText(page, "/app/lojas");
     expect(lojas.status).toBe(200);
     expect(lojas.text).toContain("Cozinha Centro");
+    if (width === 1280) expect(lojas.text, "the menu chip counts own kitchens only").toContain("Grupo Exemplo · 1 cozinha");
     expect(lojas.text).not.toMatch(OTHER_KITCHENS);
     await expect(page.getByLabel("Incluir Cozinha Centro").first()).toBeDisabled();
 
@@ -133,3 +134,14 @@ async function dono_E04_W04_last_dono_cannot_demote_self_and_C04_W03_ja_conteste
     await db.from("difference").delete().eq("id", d!.id);
   }
 }
+
+test("A02_dono_of_another_account_opens_nothing_of_grupo_exemplo", async ({ page }) => {
+  await portalSession(page, PANTANOS_EMAIL);
+  for (const url of [`/app/relatorios/fechamento/${closeId}/pdf`, `/app/relatorios/fechamento/${closeId}/xlsx`, `/app/dados/${exportJob}`]) {
+    expect((await page.goto(url))!.status(), url).toBe(404);
+  }
+  const home = await bodyText(page, `/app?mes=2026-09&cozinha=${sid("G-02:centro")}`);
+  expect(home.status).toBe(200);
+  expect(home.text).toContain("Pantanos Burguer");
+  expect(home.text).not.toMatch(/Grupo Exemplo|Cozinha Centro|Zona Sul/);
+});

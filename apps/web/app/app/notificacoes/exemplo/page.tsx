@@ -7,15 +7,14 @@ import { isEnabled } from "@/lib/flags";
 import { homePeriods, loadHomeDiffs, loadHomeLines } from "@/lib/portal/home";
 import { closeReadyExample } from "@/lib/portal/notices";
 import { requireMember } from "@/lib/portal/session";
-import { adminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Exemplo de e-mail · MargoAI" };
 
 export default async function ExemploEmailPage() {
   const m = await requireMember();
-  const db = adminClient();
-  const [period] = await homePeriods(db, m.account.id);
+  const db = m.db;
+  const [period] = await homePeriods(m);
   const [lines, diffs] = period ? await Promise.all([loadHomeLines(db, period.id, m), loadHomeDiffs(db, period.id, m)]) : [[], []];
   const cost = await isEnabled("m3.custo", m.account.id);
   const msg = period

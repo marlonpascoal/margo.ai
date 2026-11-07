@@ -9,6 +9,7 @@ import { SupabaseNotifyStore } from "@/lib/notify/supabase-store";
 import { enqueueJob } from "@/lib/jobs/enqueue";
 import { enqueueDeps } from "@/lib/jobs/deps";
 import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
 import { audit, type M2Account } from "./account";
 import { brl, CHANNEL_LABEL, CHANNEL_ORDER, dayMon, deduction, monthShort, percent, plural, type Channel } from "./format";
 import { closeLeftCents } from "@/lib/m3/data";
@@ -139,7 +140,7 @@ export interface ClosePeriod {
   pdfPath: string | null;
 }
 
-export async function closePeriods(db: Db, accountId: string): Promise<ClosePeriod[]> {
+export async function closePeriods(db: ReadDb, accountId: string): Promise<ClosePeriod[]> {
   const { data, error } = await db.from("close_period").select("id, month, status, pdf_path").eq("account_id", accountId).is("kitchen_id", null).order("month", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((c) => ({ id: c.id, month: c.month, status: c.status, pdfPath: c.pdf_path }));

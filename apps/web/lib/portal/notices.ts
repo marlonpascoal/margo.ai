@@ -4,7 +4,7 @@ import { closeReadyEmail, type EmailContent } from "@/emails";
 import { CHANNEL_LABEL, CHANNEL_ORDER } from "@/lib/m2/format";
 import { effectivePref, type NoticeType, type Role } from "@/lib/notify/plan";
 import type { NoticeCode } from "@/lib/notify/templates";
-import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
 import { homeNumbers, withoutCost, type HomeDiff, type HomeLine } from "./home";
 
 /** W08 "Quando" and the profile line; P16 uses shorter names on phone. Order as drawn. */
@@ -43,7 +43,7 @@ export function noticeRows(types: NoticeType[], prefs: Map<string, { email: bool
   });
 }
 
-export async function loadNoticeRows(db: Db, personId: string, accountId: string, role: Role): Promise<NoticeRow[]> {
+export async function loadNoticeRows(db: ReadDb, personId: string, accountId: string, role: Role): Promise<NoticeRow[]> {
   const [{ data: types, error }, { data: prefs }] = await Promise.all([
     db.from("notice_type").select("code, name, audience_roles, email_locked, default_email, default_whatsapp"),
     db.from("notice_pref").select("notice_code, email, whatsapp").eq("person_id", personId).eq("account_id", accountId),

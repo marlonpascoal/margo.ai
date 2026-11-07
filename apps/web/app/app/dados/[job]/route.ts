@@ -3,6 +3,8 @@
 import { canPortal } from "@/lib/permissions";
 import { portalMember } from "@/lib/portal/session";
 import { exportPath, storageFile } from "@/lib/portal/account-data";
+// job is console only under RLS and its bucket is private: the row and the file come with the service role, after the Dono check.
+// eslint-disable-next-line no-restricted-imports -- see above
 import { adminClient } from "@/lib/supabase/admin";
 
 const notFound = () => new Response("Não encontrado", { status: 404 });

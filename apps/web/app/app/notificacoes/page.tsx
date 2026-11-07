@@ -5,14 +5,13 @@ import PrefToggle from "@/components/portal/PrefToggle";
 import { maskWhatsapp } from "@/lib/portal/format";
 import { loadNoticeRows } from "@/lib/portal/notices";
 import { requireMember } from "@/lib/portal/session";
-import { adminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Notificações · MargoAI" };
 
 export default async function NotificacoesPage() {
   const m = await requireMember();
-  const rows = await loadNoticeRows(adminClient(), m.personId, m.account.id, m.role);
+  const rows = await loadNoticeRows(m.db, m.personId, m.account.id, m.role);
   const td = "border-b border-border-subtle px-3.5 py-2.75";
   return (
     <>

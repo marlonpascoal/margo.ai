@@ -1,8 +1,9 @@
 // What P09/W05 (/app/plano) and C15 (/console/assinaturas) show, built from rows by pure functions
-// (tested in view.test.ts) and loaded with the service role after the page's permission check.
+// (tested in view.test.ts) and loaded after the page's permission check: P09/W05 as the person, C15 with the service role.
 // Copy is verbatim from design/P09-Plano, W05-Plano and C15-Assinaturas; lines not drawn are marked.
 import { brl, brlCents, monthShort } from "@/lib/m2/format";
 import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
 import { isSandbox, type AsaasConfig } from "./asaas";
 import {
   monthlyTotalCents,
@@ -17,7 +18,7 @@ import {
   type PlanRow,
   type SubscriptionStatus,
 } from "./rules";
-import { SupabaseBillingStore } from "./supabase-store";
+import { BillingReads, SupabaseBillingStore } from "./supabase-store";
 import type { InvoiceStatus, PilotRow, SubscriptionRow } from "./store";
 
 /** Whole reais when round ("R$ 300"), else with centavos ("R$ 47,60"). */
@@ -202,9 +203,9 @@ export function buildPlanView(input: PlanInput): PlanView {
   };
 }
 
-/** Service-role read for /app/plano, after requirePortal({ action: "billing" }). */
-export async function loadPlanView(db: Db, accountId: string, returnStatus: string | null, now: Date): Promise<PlanView> {
-  const store = new SupabaseBillingStore(db);
+/** /app/plano, after requirePortal({ action: "billing" }): every read is Dono under RLS (04 §5). */
+export async function loadPlanView(db: ReadDb, accountId: string, returnStatus: string | null, now: Date): Promise<PlanView> {
+  const store = new BillingReads(db);
   const [plans, sub, account] = await Promise.all([store.plans(), store.subscription(accountId), store.account(accountId)]);
   if (!sub || !account) throw new Error(`account ${accountId} has no subscription`);
   const lucro = plans.find((p) => p.code === "lucro");

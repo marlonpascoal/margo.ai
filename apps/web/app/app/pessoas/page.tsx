@@ -8,6 +8,8 @@ import { peopleLockUntil } from "@/lib/portal/pessoas";
 import { requirePortal } from "@/lib/portal/session";
 import { loadPeople, MATRIX, type PersonRow } from "@/lib/portal/pessoas";
 import { dayTimeSP, PROFILE_LABEL } from "@/lib/portal/scope";
+// people_lock_until is a function only the service role runs (W04 lock banner): that one read stays on admin.
+// eslint-disable-next-line no-restricted-imports -- see above
 import { adminClient } from "@/lib/supabase/admin";
 import { changeKitchensAction, changeRoleAction, removePersonAction } from "./actions";
 import { InviteForm, ResendInvite } from "./InviteForm";
@@ -85,9 +87,8 @@ function Action({ p, edit }: { p: PersonRow; edit: boolean }) {
 export default async function PessoasPage({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
   const m = await requirePortal({ flags: ["conta.pessoas"] });
   const q = await searchParams;
-  const db = adminClient();
   const dono = canPortal(m.role, "people");
-  const [v, lock] = await Promise.all([loadPeople(db, m.account.id, { personId: m.personId, dono }), dono ? peopleLockUntil(db, m.account.id, m.personId) : null]);
+  const [v, lock] = await Promise.all([loadPeople(m.db, m.account.id, { personId: m.personId, dono }), dono ? peopleLockUntil(adminClient(), m.account.id, m.personId) : null]);
   const edit = dono && !lock;
 
   return (

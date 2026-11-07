@@ -5,6 +5,7 @@
 import type { Database } from "@margoai/contracts";
 import { brl, CHANNEL_LABEL, dayMon, type Channel } from "@/lib/m2/format";
 import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
 import { isOwnerEvent, seesKitchen, shortKitchen, type OwnerEvent, type Scope } from "./scope";
 
 type Status = Database["public"]["Enums"]["contestation_status"];
@@ -138,7 +139,7 @@ export const money = brl;
 const PILL_ORDER: Pill[] = ["analise", "creditada", "contestar", "resposta", "espera", "negada", "vencida", "ok"];
 
 /** Contestations of the account the person may see (A03: own kitchens only), shown and not doubtful. */
-export async function loadOwnerContestations(db: Db, accountId: string, scope: Scope): Promise<OwnerContestation[]> {
+export async function loadOwnerContestations(db: ReadDb, accountId: string, scope: Scope): Promise<OwnerContestation[]> {
   const { data, error } = await db
     .from("difference")
     .select(

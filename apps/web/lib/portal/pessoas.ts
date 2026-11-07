@@ -3,6 +3,8 @@
 // through the SQL functions of migration 20261117000020 (Dono check, security_lock, last Dono, audit).
 import { createHash, randomBytes } from "node:crypto";
 import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
+import { lastSeenOf } from "./admin-reads";
 import type { MemberRole } from "@/lib/permissions";
 import { dayMonSP, PROFILE_LABEL, shortKitchen, whatsappShort, whenLabel } from "./scope";
 
@@ -98,7 +100,7 @@ export function peopleView(input: PeopleInput, selfPersonId: string, now: Date):
 }
 
 /** P14/W04 data. `dono` false: only the person's own row (05 P14 "others see only themselves"). */
-export async function loadPeople(db: Db, accountId: string, self: { personId: string; dono: boolean }, now = new Date()): Promise<PeopleView> {
+export async function loadPeople(db: ReadDb, accountId: string, self: { personId: string; dono: boolean }, now = new Date()): Promise<PeopleView> {
   let mq = db.from("membership").select("id, person_id, role, all_kitchens, person(name, email, whatsapp_e164), membership_kitchen(kitchen_id)").eq("account_id", accountId);
   if (!self.dono) mq = mq.eq("person_id", self.personId);
   const [kitchens, members, invites] = await Promise.all([
@@ -110,10 +112,7 @@ export async function loadPeople(db: Db, accountId: string, self: { personId: st
   ]);
   for (const r of [kitchens, members, invites]) if (r.error) throw new Error(r.error.message);
   const personIds = (members.data ?? []).map((x) => x.person_id);
-  const { data: devices, error } = await db.from("session_device").select("person_id, last_seen_at").in("person_id", personIds.length ? personIds : ["00000000-0000-0000-0000-000000000000"]);
-  if (error) throw new Error(error.message);
-  const last = new Map<string, string>();
-  for (const d of devices ?? []) if (!last.has(d.person_id) || d.last_seen_at > last.get(d.person_id)!) last.set(d.person_id, d.last_seen_at);
+  const last = await lastSeenOf(personIds);
   return peopleView(
     {
       kitchens: kitchens.data ?? [],

@@ -2,7 +2,8 @@
 // The one place that resolves which account a /app page or action acts on: the margo_conta cookie, else
 // the only membership, else the P15 chooser. Every portal page, route and server action calls
 // requireMember() or requirePortal() itself and checks its own 04 §5 row; the /app layout calls it too, but
-// the layout is not the permission check.
+// the layout is not the permission check. They read through the member's `db`: the person's session, so RLS
+// applies, scoped to the opened account (D63, 02 §5).
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
@@ -10,7 +11,9 @@ import { currentSession } from "@/lib/auth/session";
 import { requestMeta } from "@/lib/console/request";
 import { isEnabled, type FlagKey } from "@/lib/flags";
 import { canPortal, type MemberRole, type PortalAction } from "@/lib/permissions";
-import { adminClient, type Db } from "@/lib/supabase/admin";
+import type { Db } from "@/lib/supabase/admin";
+import type { ReadDb } from "@/lib/supabase/reader";
+import { sessionReader } from "@/lib/supabase/server";
 
 /** Which account the person opened, when they belong to more than one (P15). Checked on every read. */
 export const ACCOUNT_COOKIE = "margo_conta";
@@ -22,6 +25,8 @@ export interface MembershipChoice {
 }
 
 export interface Member {
+  /** Reads of this page: RLS as this person, in the opened account. Writes stay in audited server actions. */
+  db: ReadDb;
   personId: string;
   sessionDeviceId: string;
   name: string;
@@ -44,7 +49,7 @@ export function pickAccount(memberships: MembershipChoice[], chosen: string | un
   return memberships.length === 1 ? memberships[0].accountId : "choose";
 }
 
-export async function membershipsOf(db: Db, personId: string): Promise<MembershipChoice[]> {
+export async function membershipsOf(db: ReadDb, personId: string): Promise<MembershipChoice[]> {
   const { data, error } = await db.from("membership").select("account_id, role, account(name)").eq("person_id", personId);
   if (error) throw new Error(error.message);
   return (data ?? [])
@@ -57,12 +62,12 @@ type Resolved = { kind: "none" } | { kind: "choose"; personId: string } | { kind
 const resolve = cache(async (): Promise<Resolved> => {
   const session = await currentSession("portal");
   if (!session) return { kind: "none" };
-  const db = adminClient();
-  const memberships = await membershipsOf(db, session.personId);
+  const memberships = await membershipsOf(await sessionReader(null), session.personId);
   const picked = pickAccount(memberships, (await cookies()).get(ACCOUNT_COOKIE)?.value);
   if (picked === null) return { kind: "none" };
   if (picked === "choose") return { kind: "choose", personId: session.personId };
 
+  const db = await sessionReader(picked);
   const [{ data: person }, { data: m }, { data: kitchens }] = await Promise.all([
     db.from("person").select("name, email, whatsapp_e164").eq("id", session.personId).single(),
     db
@@ -79,6 +84,7 @@ const resolve = cache(async (): Promise<Resolved> => {
   return {
     kind: "member",
     member: {
+      db,
       personId: session.personId,
       sessionDeviceId: session.sessionDeviceId,
       name: person.name,

@@ -15,7 +15,8 @@ import { canPortal } from "@/lib/permissions";
 import { dayMon, kitchenShort, trialDaysLeft, trialUsedPct } from "@/lib/portal/format";
 import { homeNumbers, homePeriods, loadHomeDiffs, loadHomeLines, loadReports, scopeKitchens, withoutCost } from "@/lib/portal/home";
 import { requireMember, type Member } from "@/lib/portal/session";
-import { adminClient, type Db } from "@/lib/supabase/admin";
+import { extensionPaired } from "@/lib/portal/admin-reads";
+import type { ReadDb } from "@/lib/supabase/reader";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Início · MargoAI" };
@@ -29,7 +30,7 @@ interface Trial {
 }
 
 /** 04 §7 trial banner: Dono only (05 P08/W01), while the subscription is in trial. */
-async function loadTrial(db: Db, m: Member, now: Date): Promise<Trial | null> {
+async function loadTrial(db: ReadDb, m: Member, now: Date): Promise<Trial | null> {
   if (!canPortal(m.role, "billing") || !m.account.trialEndsAt) return null;
   const { data } = await db.from("subscription").select("status, plan(trial_days)").eq("account_id", m.account.id).maybeSingle();
   if (data?.status !== "trial") return null;
@@ -38,7 +39,7 @@ async function loadTrial(db: Db, m: Member, now: Date): Promise<Trial | null> {
 }
 
 /** P08 list counts, in scope. */
-async function loadCounts(db: Db, m: Member, flags: { contest: boolean; people: boolean; extension: boolean }) {
+async function loadCounts(db: ReadDb, m: Member, flags: { contest: boolean; people: boolean; extension: boolean }) {
   const scope = m.kitchenIds;
   const [people, contest, ifood, ext] = await Promise.all([
     canPortal(m.role, "people") ? db.from("membership").select("id", { count: "exact", head: true }).eq("account_id", m.account.id) : Promise.resolve({ count: 1 }),
@@ -51,7 +52,7 @@ async function loadCounts(db: Db, m: Member, flags: { contest: boolean; people: 
           .is("closed_at", null)
       : Promise.resolve({ data: [] }),
     db.from("channel_store").select("kitchen_id").eq("account_id", m.account.id).eq("channel", "ifood").eq("authorized", true),
-    flags.extension ? db.from("extension_token").select("id", { count: "exact", head: true }).eq("account_id", m.account.id).is("revoked_at", null) : Promise.resolve({ count: 0 }),
+    flags.extension ? extensionPaired(m.account.id) : Promise.resolve(false),
   ]);
   const inScope = (k: string | null | undefined) => m.allKitchens || (!!k && scope.includes(k));
   const toDo = ((contest.data ?? []) as { difference: { channel_store: { kitchen_id: string | null } | null } | null }[]).filter((c) => inScope(c.difference?.channel_store?.kitchen_id)).length;
@@ -60,14 +61,14 @@ async function loadCounts(db: Db, m: Member, flags: { contest: boolean; people: 
     people: people.count ?? 0,
     toDo,
     ifood: (ifood.data ?? []).some((s) => inScope(s.kitchen_id)),
-    extension: (ext.count ?? 0) > 0,
+    extension: ext,
   };
 }
 
 export default async function InicioPage({ searchParams }: { searchParams: Promise<{ mes?: string; cozinha?: string }> }) {
   const m = await requireMember();
   if (!canPortal(m.role, "see_close")) notFound();
-  const db = adminClient();
+  const db = m.db;
   const now = new Date();
   const sp = await searchParams;
 
@@ -79,7 +80,7 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
   ]);
   const [kitchens, periods, reports, trial, counts] = await Promise.all([
     scopeKitchens(db, m),
-    homePeriods(db, m.account.id),
+    homePeriods(m),
     loadReports(db, m),
     loadTrial(db, m, now),
     loadCounts(db, m, { contest, people, extension }),

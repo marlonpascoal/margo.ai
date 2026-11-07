@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { ROLE_LABEL } from "@/lib/portal/menu";
 import { membershipsOf, portalPersonId } from "@/lib/portal/session";
-import { adminClient } from "@/lib/supabase/admin";
+import { sessionReader } from "@/lib/supabase/server";
 import { chooseAccount } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export const metadata = { title: "Escolher grupo · MargoAI" };
 export default async function EscolherContaPage() {
   const personId = await portalPersonId();
   if (!personId) redirect("/entrar");
-  const memberships = await membershipsOf(adminClient(), personId);
+  const memberships = await membershipsOf(await sessionReader(null), personId);
   return (
     <div className="flex min-h-screen justify-center bg-surface text-ink md:bg-bg md:py-10">
       <div className="box-border flex w-full max-w-[440px] flex-col gap-4 px-5 py-7 md:rounded-2xl md:border md:border-border md:bg-surface md:p-8">

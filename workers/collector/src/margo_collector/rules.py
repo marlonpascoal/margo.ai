@@ -21,6 +21,21 @@ from fractions import Fraction
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
+from .attributes import (
+    NO_SAME_ATTRIBUTES,
+    NO_SIMILAR_ITEM,
+    UNKNOWN_CATEGORY,
+    BeverageAttrs,
+    Category,
+    beverage_attrs,
+    category_m1_04,
+    compare_beverages,
+    is_combo_m1_04,
+    missing_reason,
+    quantity_m1_04,
+    unreadable_reason,
+)
+
 SAO_PAULO = ZoneInfo("America/Sao_Paulo")
 EARTH_RADIUS_M = 6_371_008.8
 """Mean Earth radius (IUGG). Distances are great-circle (haversine), in whole metres."""
@@ -63,6 +78,11 @@ class Item:
     taxonomy_level2: str | None = None
     full_price_cents: int | None = None
     """M1-05: the price before a promotion (original_price_cents); None means the current price."""
+    section: str | None = None
+    """M1-04: the menu section (public_menu_item.category), one source of `category_m1_04`."""
+    description: str | None = None
+    size_from_name_ml: Decimal | float | int | None = None
+    """M1-04: public_menu_item.size_from_name_ml, what app.size_from_name_m1_03 reads in ml."""
 
 
 @dataclass(frozen=True)
@@ -264,8 +284,10 @@ def rank_m1_11(
         if total <= 0:
             return Fraction(0)
         count = c.rating_count or 0
-        ratings = Fraction(1) if count == highest and highest > 0 else (
-            Fraction(math.log1p(count) / math.log1p(highest)) if highest > 0 else Fraction(0)
+        ratings = (
+            Fraction(1)
+            if count == highest and highest > 0
+            else (Fraction(math.log1p(count) / math.log1p(highest)) if highest > 0 else Fraction(0))
         )
         near = Fraction(0)
         if c.distance_m is not None:
@@ -376,20 +398,85 @@ def same_taxonomy_m1_04(a: Item, b: Item) -> bool:
     return True
 
 
-def pair_item_m1_04(own: Item, pool: Iterable[Item], settings: Settings) -> Pairing:
-    """M1-03 and M1-04 for one item of the target store.
+def item_category_m1_04(item: Item) -> Category | None:
+    """M1-04: the item's category (`category_m1_04`), from its row."""
+    return category_m1_04(item.name, item.section, item.description, item.taxonomy_level2)
 
-    Comparable items ("Comparáveis" in C04) are items of the stores in the set with the same taxonomy when
-    both items have one (`same_taxonomy_m1_04`, applied before the name), the same normalized unit and a
-    name similarity of at least `candidate_floor`. The item pairs automatically when at least
-    `min_pairs` of them reach `similarity_threshold`; those pairs are accepted. Otherwise, and always for
-    a combo, it goes to `revisar` for a founder with nothing accepted. A paired item sold by weight or
-    pack shows `normalizado`.
-    """
-    norm = normalize_m1_03(own)
+
+def item_is_combo_m1_04(item: Item) -> bool:
+    """M1-04: a pack without a count (M1-03), or a combo by its words (`is_combo_m1_04`)."""
+    return normalize_m1_03(item).unit == "combo" or is_combo_m1_04(item.name, item.section)
+
+
+def item_beverage_attrs_m1_04(item: Item) -> BeverageAttrs:
+    """M1-04: the beverage attributes of a row. The size is the one M1-03 keeps: the row's millilitres,
+    else what the parser read in the name of a row whose unit says nothing (a pack of 6 has no size)."""
+    if item.unit == "ml" and item.unit_qty is not None:
+        return beverage_attrs(item.name, item.unit_qty)
+    if item.unit == "un" and item.unit_qty is None:
+        return beverage_attrs(item.name, item.size_from_name_ml)
+    return beverage_attrs(item.name)
+
+
+def _stores(items: Iterable[Item]) -> int:
+    return len({i.store_id for i in items})
+
+
+def _pair_beverage(own: Item, norm: Normalized, pool: Iterable[Item], settings: Settings) -> Pairing:
+    """M1-04: only beverages with the same type, brand, flavor, variant and size confirm, however many stores
+    sell them; similarity is then 1. An item with an unreadable attribute is listed for a founder and never
+    accepted."""
+    attrs = item_beverage_attrs_m1_04(own)
+    blocked_reason = unreadable_reason(attrs)
     found: list[Candidate] = []
     for c in pool:
-        if c.id == own.id or c.store_id == own.store_id:
+        if c.store_id == own.store_id or item_category_m1_04(c) != "bebidas" or item_is_combo_m1_04(c):
+            continue
+        if quantity_m1_04(c.name) != quantity_m1_04(own.name):
+            continue
+        if normalize_m1_03(c).unit != norm.unit:
+            continue
+        match = compare_beverages(attrs, item_beverage_attrs_m1_04(c))
+        if match == "identical":
+            found.append(Candidate(c, Fraction(1), True))
+        elif match == "unreadable":
+            sim = similarity_m1_04(own.name, c.name)
+            if sim >= settings.candidate_floor:
+                found.append(Candidate(c, sim, False))
+    found.sort(key=lambda c: (-c.similarity, c.item.name, c.item.id))
+    if any(c.accepted for c in found):
+        return Pairing(own, norm, "normalizado" if norm.by_weight_or_pack else "auto", None, tuple(found))
+    note = blocked_reason or missing_reason(attrs) or NO_SAME_ATTRIBUTES
+    return Pairing(own, norm, "revisar", note, tuple(found))
+
+
+def pair_item_m1_04(own: Item, pool: Iterable[Item], settings: Settings) -> Pairing:
+    """M1-03 and M1-04 for one item of the target store. A hard block comes before any name: a combo only
+    meets combos, an item only meets its category, an add-on nothing else, a count only the same count, and a
+    beverage only what `_pair_beverage` lets through.
+
+    Other categories keep the name similarity (Stage 2 replaces it): comparable ("Comparáveis" in C04) means
+    the same taxonomy when both have one, the same normalized unit and a similarity of at least
+    `candidate_floor`. The item pairs automatically when at least `min_pairs` distinct stores reach
+    `similarity_threshold`; those pairs are accepted. Otherwise, and always for a combo or an unknown
+    category, `revisar` for a founder with nothing accepted. A paired item sold by weight or pack shows
+    `normalizado`.
+    """
+    norm = normalize_m1_03(own)
+    category = item_category_m1_04(own)
+    combo = item_is_combo_m1_04(own)
+    if category == "bebidas" and not combo:
+        return _pair_beverage(own, norm, pool, settings)
+    found: list[Candidate] = []
+    for c in pool:
+        if c.id == own.id or c.store_id == own.store_id or item_is_combo_m1_04(c) != combo:
+            continue
+        if quantity_m1_04(c.name) != quantity_m1_04(own.name):
+            continue
+        other = item_category_m1_04(c)
+        if "bebidas" in (category, other) and not combo:
+            continue
+        if category != other and ("adicionais" in (category, other) or (category and other)):
             continue
         if not same_taxonomy_m1_04(own, c) or normalize_m1_03(c).unit != norm.unit:
             continue
@@ -397,14 +484,20 @@ def pair_item_m1_04(own: Item, pool: Iterable[Item], settings: Settings) -> Pair
         if sim >= settings.candidate_floor:
             found.append(Candidate(c, sim, False))
     found.sort(key=lambda c: (-c.similarity, c.item.name, c.item.id))
-    strong = [c for c in found if c.similarity >= settings.similarity_threshold]
-    if norm.unit == "combo":
+    if combo:
         return Pairing(own, norm, "revisar", "combos diferentes", tuple(found))
-    if len(strong) < settings.min_pairs:
+    if category is None:
+        return Pairing(own, norm, "revisar", UNKNOWN_CATEGORY, tuple(found))
+
+    def confirms(c: Candidate) -> bool:
+        return c.similarity >= settings.similarity_threshold and item_category_m1_04(c.item) == category
+
+    stores = _stores(c.item for c in found if confirms(c))
+    if stores == 0:
+        return Pairing(own, norm, "revisar", NO_SIMILAR_ITEM, tuple(found))
+    if stores < settings.min_pairs:
         return Pairing(own, norm, "revisar", "poucos pares", tuple(found))
-    accepted = tuple(
-        Candidate(c.item, c.similarity, c.similarity >= settings.similarity_threshold) for c in found
-    )
+    accepted = tuple(Candidate(c.item, c.similarity, confirms(c)) for c in found)
     return Pairing(own, norm, "normalizado" if norm.by_weight_or_pack else "auto", None, accepted)
 
 
@@ -417,6 +510,19 @@ def median(values: Sequence[Fraction]) -> Fraction:
     s = sorted(values)
     mid = len(s) // 2
     return s[mid] if len(s) % 2 else (s[mid - 1] + s[mid]) / 2
+
+
+def one_per_store_m1_05(accepted: Sequence[Item]) -> list[Item]:
+    """M1-05: a store counts once. Its duplicate or identical rows collapse into the row at its lower median
+    price per base unit, so the current and the full parity keep using the same items."""
+    by_store: dict[str, list[Item]] = {}
+    for i in accepted:
+        by_store.setdefault(i.store_id, []).append(i)
+    out = []
+    for rows in by_store.values():
+        rows.sort(key=lambda i: (normalize_m1_03(i).per_base, i.id))
+        out.append(rows[(len(rows) - 1) // 2])
+    return out
 
 
 def parity_m1_05(own: Item, accepted: Sequence[Item]) -> int | None:

@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import { calculate, confirmStores, createXray, markDelivered, prepareDelivery, reviewItem, saveMinutes, setStoreIncluded, type XrayDeps } from "./commands";
 import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./format";
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
-import { captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, retryLabel, targetCaptureRetry, XRAY_MESSAGES } from "./labels";
+import { confirmWaitLabel, leftOutLabel, captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, retryLabel, targetCaptureRetry, XRAY_MESSAGES, withoutParityLabel } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
-import { captureCounts, examplePair, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow } from "./view";
+import { captureCounts, examplePair, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow, withoutParity } from "./view";
 
 const PANTANOS = "https://www.ifood.com.br/delivery/londrina-pr/pantanos-burguer-igapo/91a9c35d-0000-4000-8000-000000000000";
 
@@ -90,6 +90,7 @@ const item = (o: Partial<ItemRow>): ItemRow => ({
   paretoRank: null,
   paretoCumShare: null,
   comparables: 5,
+  acceptedPairs: 5,
   exampleName: null,
   exampleCents: null,
   ...o,
@@ -177,7 +178,7 @@ describe("C03 captures of this X-ray", () => {
   });
 
   it("B01_C03_the_notice_says_how_many_are_left", () => {
-    expect(captureProgressLabel({ done: 12, missing: 3, failed: 1, beyondCap: 0, total: 16 })).toBe("Cardápios: 12 prontos, 3 faltando, 1 com falha. Confirme o conjunto quando terminar.");
+    expect(captureProgressLabel({ done: 12, missing: 3, failed: 1, beyondCap: 0, total: 16 })).toBe("Cardápios: 12 prontos, 3 faltando, 1 com falha.");
     expect(captureProgressLabel({ done: 1, missing: 0, failed: 0, beyondCap: 5, total: 6 })).toBe("Cardápios: 1 pronto, 0 faltando, 0 com falha, 5 sem captura pelo limite.");
   });
 
@@ -196,6 +197,7 @@ describe("C03 captures of this X-ray", () => {
     expect(storeState({ ...base, capture: "missing", retryAt: "2026-11-07T19:40:00Z" })).toBe("no conjunto, nova tentativa às 16:40");
     expect(storeState({ ...base, capture: "failed", retryAt: null })).toBe("no conjunto, captura falhou");
     expect(targetCaptureRetry("Alvo Sintético", "2026-11-07T19:40:00Z")).toBe("Cardápio de Alvo Sintético: nova tentativa às 16:40.");
+    expect(storeState({ ...base, capture: "missing", leftOut: true, retryAt: "2026-11-07T19:40:00Z" })).toBe("no conjunto, fora do pareamento, nova tentativa às 16:40");
   });
 
   it("B01_M1_11_the_rank_shows_only_when_there_is_one_and_rounds_only_for_display", () => {
@@ -359,5 +361,34 @@ describe("history labels", () => {
     expect(runDateLabel("2026-10-28T13:00:00Z")).toBe("28/out");
     expect(runDateLabel("2026-10-01T02:00:00Z")).toBe("30/set");
     expect(TARGET_KIND_LABEL.own).toBe("loja própria");
+  });
+});
+
+describe("M1-05 paired items with no parity stay visible in C05", () => {
+  const paired = { parityCents: null, acceptedPairs: 3, skipped: false, pairStatus: "normalizado" as const };
+  it("B3 keeps a confirmed item with too few stores, and only it", () => {
+    expect(withoutParity([paired])).toHaveLength(1);
+    expect(withoutParity([{ ...paired, parityCents: 500 }])).toHaveLength(0);
+    expect(withoutParity([{ ...paired, skipped: true }])).toHaveLength(0);
+    expect(withoutParity([{ ...paired, acceptedPairs: 0 }])).toHaveLength(0);
+    expect(withoutParity([{ ...paired, pairStatus: "revisar" as const }])).toHaveLength(0);
+  });
+  it("B3 names them in one sentence", () => {
+    expect(withoutParityLabel(["Sundae"])).toBe("Sem paridade, poucas lojas vendem o mesmo item: Sundae.");
+    expect(withoutParityLabel(["A", "B", "C"])).toBe("Sem paridade, poucas lojas vendem o mesmo item: A, B e C.");
+  });
+});
+
+describe("B01 B5 M1-04 pairing with most captures finished, C03", () => {
+  const q = { finished: 26, total: 31, required: 28 };
+  it("says what Confirmar waits for", () => {
+    expect(confirmWaitLabel("captures", q)).toBe("Confirmar libera com 28 de 31 cardápios terminados: faltam 2.");
+    expect(confirmWaitLabel("target", q)).toBe(XRAY_MESSAGES.confirmWaitsTarget);
+    expect(confirmWaitLabel("neighborhood", q)).toBe(XRAY_MESSAGES.confirmWaits);
+    expect(confirmWaitLabel(null, q)).toBeNull();
+  });
+  it("names the stores left out", () => {
+    expect(leftOutLabel(["A", "B"])).toBe("Fora do pareamento, a captura não tinha terminado: A, B.");
+    expect(storeState({ included: true, reason: null, leftOut: true, capture: "done" })).toBe("no conjunto, fora do pareamento");
   });
 });

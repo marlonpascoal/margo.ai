@@ -86,7 +86,15 @@ class XrayRepo(Protocol):
     def included_store_ids(self, xray_id: str) -> list[str]: ...
 
     def pair_blocker(self, xray_id: str) -> str | None:
-        """What pairing waits for: "captures", "neighborhood" or None (public.xray_pair_blocker)."""
+        """What pairing waits for: "captures", "neighborhood", "target" or None (xray_pair_blocker)."""
+        ...
+
+    def unfinished_captures(self, xray_id: str) -> list[str]:
+        """Stores of the set whose capture is still queued or running; pairing leaves them out."""
+        ...
+
+    def mark_left_out(self, xray_id: str, store_ids: list[str]) -> None:
+        """Which stores the last pairing left out; the only writer of xray_store.left_out_of_pairing."""
         ...
 
     def items_of_stores(self, store_ids: list[str]) -> list[Item]: ...
@@ -158,23 +166,26 @@ def neighborhood_job_step(
 
 
 def pair_step(repo: XrayRepo, xray_id: str) -> dict[str, int]:
-    """M1-03 and M1-04: the target's items against the items of the stores in the set, once the load ended. A
-    re-run replaces the pairs: stores no longer in the set leave, a founder's decision on a store still in it
-    stays."""
+    """M1-03 and M1-04: the target's items against the items of the stores in the set, once enough captures
+    finished. A store whose capture is still running is left out and marked; when it finishes the pairing
+    stays as it is until a person runs it again. A re-run replaces the pairs: stores no longer in the set
+    leave, a founder's decision on a store still in it stays."""
     if repo.pair_blocker(xray_id) is not None:
         raise LoadPending()
     x = repo.load_xray(xray_id)
     own = repo.items_of_stores([x.target_store_id])
-    pool = repo.items_of_stores(repo.included_store_ids(xray_id))
+    left_out = repo.unfinished_captures(xray_id)
+    pool = repo.items_of_stores([s for s in repo.included_store_ids(xray_id) if s not in set(left_out)])
     rows = build_pairs(own, pool, x.settings, repo.pair_decisions(xray_id))
     repo.save_pairs(xray_id, rows)
+    repo.mark_left_out(xray_id, left_out)
     return {"items": len(rows), "revisar": sum(1 for r in rows if r.pair_status == "revisar")}
 
 
 def calc_step(repo: XrayRepo, xray_id: str) -> dict[str, int]:
     """M1-05 to M1-08; the X-ray becomes ready."""
     x = repo.load_xray(xray_id)
-    result = calculate(repo.calc_inputs(xray_id), x.settings.reading_band)
+    result = calculate(repo.calc_inputs(xray_id), x.settings.reading_band, x.settings.min_pairs)
     repo.save_calc(xray_id, result)
     repo.snapshot(xray_id)
     return {"items": result.items_analyzed, "items_for_80": result.items_for_80}

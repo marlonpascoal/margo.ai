@@ -167,7 +167,7 @@ AUTO = [
         650,
         103,
         80,
-        ["Refrigerante lata 350 ml", "Refrigerante em lata"],
+        ["Refrigerante lata 350 ml", "Refrigerante em lata 350 ml"],
     ),
     OwnSpec(
         "batata",
@@ -182,7 +182,7 @@ AUTO = [
         [300, 400, 500, 250],
     ),
     OwnSpec("milk", "Milkshake 400 ml", 1690, 1990, 33, 33, ["Milkshake"], "ml", 400, [400, 500, 300, 700]),
-    OwnSpec("agua", "Água 500 ml", 450, 520, 80, 40, ["Água 500 ml", "Água"]),
+    OwnSpec("agua", "Água 500 ml", 450, 520, 80, 40, ["Água 500 ml", "Água mineral 500 ml"]),
     OwnSpec("aneis", "Anéis de cebola", 1690, 1890, 7, 25, ["Anéis de cebola", "Anel de cebola"]),
     OwnSpec("smash2", "Smash duplo", 2990, 3050, 20, 45, ["Smash duplo", "Smash burger duplo"]),
     OwnSpec("smash1", "Smash simples", 2290, 2390, 13, 38, ["Smash simples", "Smash burger simples"]),
@@ -200,7 +200,7 @@ AUTO = [
         ["Burger vegetariano", "Burger vegetariano artesanal"],
     ),
     OwnSpec(
-        "suco", "Suco natural 500 ml", 990, 1050, 20, 24, ["Suco natural 500 ml", "Suco natural de laranja"]
+        "suco", "Suco natural 500 ml", 990, 1050, 20, 24, ["Suco natural 500 ml", "Suco natural copo 500 ml"]
     ),
     OwnSpec(
         "guarana", "Guaraná 2 litros", 1290, 1390, 13, 44, ["Guaraná 2 litros", "Guaraná garrafa 2 litros"]
@@ -279,7 +279,45 @@ OWN_ORDER = [
     "brownie",
     "petit",
 ]
+# M1-04: the menu section of each item (public_menu_item.category), not drawn; the others are "Lanches".
+SECTIONS = {
+    "refri": "Bebidas",
+    "agua": "Bebidas",
+    "suco": "Bebidas",
+    "guarana": "Bebidas",
+    "batata": "Porções",
+    "aneis": "Porções",
+    "milk": "Sobremesas",
+    "sundae": "Sobremesas",
+    "acai": "Sobremesas",
+    "brownie": "Sobremesas",
+    "petit": "Sobremesas",
+    "molho": "Adicionais",
+    "combo": "Combos",
+}
 NOISE = ["Pizza calabresa", "Pastel de carne", "Coxinha", "Esfiha de carne", "Tapioca"]
+
+
+def section_of(ext: str) -> str | None:
+    """The section of an item from its code ("refri-001"); the noise rows ("outro") have none."""
+    code = ext.split("-")[0]
+    return None if code == "outro" else SECTIONS.get(code, "Lanches")
+
+
+def size_ml(name: str) -> int | None:
+    """M1-04: public_menu_item.size_from_name_ml of a seed name, which the database computes with
+    app.size_from_name_m1_03. Written out because this script runs without a database;
+    test_b01_xray_db checks the worker gets the same pairs from the column."""
+    return {
+        "Refrigerante lata 350 ml": 350,
+        "Refrigerante em lata 350 ml": 350,
+        "Água 500 ml": 500,
+        "Água mineral 500 ml": 500,
+        "Suco natural 500 ml": 500,
+        "Suco natural copo 500 ml": 500,
+        "Guaraná 2 litros": 2000,
+        "Guaraná garrafa 2 litros": 2000,
+    }.get(name)
 
 
 def step_for(parity: int) -> int:
@@ -351,7 +389,18 @@ def build() -> Seed:
     for code in OWN_ORDER:
         o = own_specs[code]
         unit_qty = Decimal(o.qty) if o.qty else None
-        own_items.append(Item(sid(f"m1:own:{code}"), target.id, o.name, o.price, o.unit, unit_qty))  # type: ignore[arg-type]
+        own_items.append(
+            Item(
+                sid(f"m1:own:{code}"),
+                target.id,
+                o.name,
+                o.price,
+                o.unit,  # type: ignore[arg-type]
+                unit_qty,
+                section=section_of(code),
+                size_from_name_ml=size_ml(o.name),
+            )
+        )
 
     decisions: dict[tuple[str, str], tuple[bool, str]] = {}
     offset = 0
@@ -377,7 +426,16 @@ def build() -> Seed:
     del inside
 
     pool_items = [
-        Item(sid(f"m1:item:{s.tag}:{ext}"), as_store(s).id, name, price, unit, qty)  # type: ignore[arg-type]
+        Item(
+            sid(f"m1:item:{s.tag}:{ext}"),
+            as_store(s).id,
+            name,
+            price,
+            unit,  # type: ignore[arg-type]
+            qty,
+            section=section_of(ext),
+            size_from_name_ml=size_ml(name),
+        )
         for s in stores
         for ext, name, price, unit, qty in s.items
     ]
@@ -484,9 +542,10 @@ def render_sql(seed: Seed, hood, decisions) -> str:
                 own_by_id[it.public_menu_item_id],
                 accepted,
                 spec.weekly_units,
+                reviewed=spec.code in REVIEWED_ITEMS,
             )
         )
-    calc = calculate(calc_in, SETTINGS.reading_band)
+    calc = calculate(calc_in, SETTINGS.reading_band, SETTINGS.min_pairs)
     check_drawn(hood, items, calc, {item_ids[k]: v for k, v in own_by_id.items()} | own_by_id)
     calc_by_key = {r.key: r for r in calc.rows}
 
@@ -538,16 +597,16 @@ def render_sql(seed: Seed, hood, decisions) -> str:
     out += [values(rows) + ";", ""]
 
     out.append(
-        "insert into public.public_menu_item (id, public_store_id, external_item_id, name, price_cents, unit, unit_qty, collected_at) values"
+        "insert into public.public_menu_item (id, public_store_id, external_item_id, name, category, price_cents, unit, unit_qty, collected_at) values"
     )
     rows = [
-        [i.id, target.id, f"own-{code}", i.name, i.price_cents, i.unit, i.unit_qty, COLLECTED]
+        [i.id, target.id, f"own-{code}", i.name, section_of(code), i.price_cents, i.unit, i.unit_qty, COLLECTED]
         for code, i in zip(OWN_ORDER, seed.own, strict=True)
     ]
     for s in stores:
         for ext, name, price, unit, qty in s.items:
             rows.append(
-                [sid(f"m1:item:{s.tag}:{ext}"), as_store(s).id, ext, name, price, unit, qty, COLLECTED]
+                [sid(f"m1:item:{s.tag}:{ext}"), as_store(s).id, ext, name, section_of(ext), price, unit, qty, COLLECTED]
             )
     out += [values(rows) + ";", ""]
 
@@ -596,8 +655,8 @@ def render_sql(seed: Seed, hood, decisions) -> str:
     out.append("-- C04, C05: items (M1-03, M1-04) and their calculation (M1-05 to M1-08).")
     out.append(
         "insert into public.xray_item (id, xray_id, public_menu_item_id, norm_unit, norm_price_cents, parity_cents, gap_pct, "
-        "loss_cents, reading, pair_status, pair_note, weekly_units, reviewed_by, reviewed_at, pareto_rank, pareto_cum_share, "
-        "parity_full_cents, gap_full_pct, full_price_room) values"
+        "loss_cents, reading, pair_status, pair_note, item_category, weekly_units, reviewed_by, reviewed_at, pareto_rank, "
+        "pareto_cum_share, parity_full_cents, gap_full_pct, full_price_room) values"
     )
     rows = []
     for it in items:
@@ -618,6 +677,7 @@ def render_sql(seed: Seed, hood, decisions) -> str:
                 c.reading,
                 it.pair_status,
                 it.pair_note,
+                it.item_category,
                 Decimal(spec.weekly_units),
                 MARLON if reviewed else None,
                 REVIEWED if reviewed else None,

@@ -201,7 +201,7 @@ The extractor makes one attempt per claim and never retries inside a claim. Marg
 - After a retried failure with attempts left, the same job (same `job_id`) returns to the queue with a `not_before` time: `m1.extract_retry_wait_minutes_1` (10) after the first attempt, `m1.extract_retry_wait_minutes_2` (30) after the second. No claim offers it before then; after it, it takes its place by age again, oldest first.
 - After the last attempt, or a final reason, the job fails as before.
 - A job stuck in running past 30 minutes counts that claim as an attempt (reason `stuck`) and waits the same way; after the last attempt it fails with an alert (02 §4.5). No extra attempts.
-- While it waits, the job is still pending: the daily cron does not queue a second job for the store, and pairing waits for it (C03 shows "nova tentativa às 16:40").
+- While it waits, the job is still pending, not finished: the daily cron does not queue a second job for the store, it counts as unfinished toward the pairing threshold (`m1.pair_min_captures_pct`), and if pairing runs without it the store is left out of pairing. C03 shows "nova tentativa às 16:40".
 - A general block (many stores refused in a row) is the extractor's to handle with its own circuit breaker: stop claiming for a while. The server's retry is per job and does not replace it.
 
 ## Retries of requests

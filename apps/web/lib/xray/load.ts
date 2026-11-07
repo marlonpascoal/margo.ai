@@ -94,9 +94,14 @@ export interface CaptureRow {
 }
 
 /** C03: the captures of this X-ray's stores and what pairing waits for, as the server decides them. */
-export async function captureProgress(db: Db, xrayId: string): Promise<{ states: CaptureRow[]; blocker: string | null }> {
-  const [states, blocker] = await Promise.all([db.rpc("xray_capture_states", { p_xray: xrayId }), db.rpc("xray_pair_blocker", { p_xray: xrayId })]);
-  return { states: list(states), blocker: check(blocker) };
+export async function captureProgress(db: Db, xrayId: string): Promise<{ states: CaptureRow[]; blocker: string | null; quorum: { finished: number; total: number; required: number } }> {
+  const [states, blocker, quorum] = await Promise.all([
+    db.rpc("xray_capture_states", { p_xray: xrayId }),
+    db.rpc("xray_pair_blocker", { p_xray: xrayId }),
+    db.rpc("xray_pair_quorum", { p_xray: xrayId }),
+  ]);
+  const q = check(quorum) as unknown as { finished: number; total: number; required: number } | { finished: number; total: number; required: number }[];
+  return { states: list(states), blocker: check(blocker), quorum: Array.isArray(q) ? q[0] : q };
 }
 
 /** C03: the stores whose capture waits to retry, with when it runs again (public.xray_capture_retries). */
@@ -110,7 +115,7 @@ export async function loadNeighborhood(db: Db, xrayId: string, states: CaptureRo
   const rows = list(
     await db
       .from("xray_store")
-      .select("id, public_store_id, distance_m, included, exclusion_reason, capture_rank, capture_score, public_store(name, category, lat, lng)")
+      .select("id, public_store_id, distance_m, included, exclusion_reason, capture_rank, capture_score, left_out_of_pairing, public_store(name, category, lat, lng)")
       .eq("xray_id", xrayId)
       .order("distance_m"),
   );
@@ -127,6 +132,7 @@ export async function loadNeighborhood(db: Db, xrayId: string, states: CaptureRo
     retryAt: retries.get(r.public_store_id) ?? null,
     captureRank: r.capture_rank,
     captureScore: r.capture_score === null ? null : Number(r.capture_score),
+    leftOut: r.left_out_of_pairing,
   }));
 }
 
@@ -153,6 +159,7 @@ export async function loadItems(db: Db, xrayId: string): Promise<ItemRow[]> {
     paretoRank: r.pareto_rank,
     paretoCumShare: r.pareto_cum_share === null ? null : Number(r.pareto_cum_share),
     comparables: r.comparables ?? 0,
+    acceptedPairs: r.accepted_pairs ?? 0,
     exampleName: r.example_name,
     exampleCents: r.example_cents,
   }));

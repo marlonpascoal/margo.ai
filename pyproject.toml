@@ -43,6 +43,9 @@ select = ["E", "F", "I", "B", "UP"]
 "scripts/gen_g_syn_m1.py" = ["E501"]
 "scripts/gen_g_syn_m3.py" = ["E501"]
 "workers/collector/src/margo_collector/repo.py" = ["E501"]
+"scripts/m1_pairing_report.py" = ["E501"]
+# Word lists read better unwrapped.
+"workers/collector/src/margo_collector/attributes.py" = ["E501"]
 "workers/render/src/margo_render/P01_raio_x.py" = ["E501"]
 "workers/render/src/margo_render/handlers.py" = ["E501"]
 # SQL statements and generated value lists read better unwrapped.

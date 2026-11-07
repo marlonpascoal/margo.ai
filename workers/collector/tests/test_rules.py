@@ -125,8 +125,8 @@ def _pool(name: str, n: int, unit="un", qty=None, price=1000, store_prefix="s"):
 
 
 def test_M1_04_pairs_automatically_with_min_pairs_above_threshold():
-    own = Item("own", "target", "Refrigerante lata 350 ml", 500)
-    p = pair_item_m1_04(own, _pool("Refrigerante em lata", 5) + _pool("Pizza grande", 3), Settings())
+    own = Item("own", "target", "Cheeseburger duplo", 500)
+    p = pair_item_m1_04(own, _pool("Cheeseburger duplo", 5) + _pool("Pizza grande", 3), Settings())
     assert (p.status, p.note, len(p.candidates)) == ("auto", None, 5)
     assert all(c.accepted for c in p.candidates)
 

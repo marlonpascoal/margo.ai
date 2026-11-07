@@ -28,15 +28,18 @@ from .rules import (
     full_price_m1_05,
     full_price_room_m1_07,
     gap_m1_06,
+    item_category_m1_04,
     loss_m1_08,
     neighborhood_m1_01,
     normalize_m1_03,
+    one_per_store_m1_05,
     pair_item_m1_04,
     pareto_m1_08,
     parity_full_m1_05,
     parity_m1_05,
     rank_m1_11,
     reading_m1_07,
+    similarity_m1_04,
 )
 
 # Neighborhood -------------------------------------------------------------------------------------
@@ -130,6 +133,8 @@ class ItemRow:
     pair_status: PairStatus
     pair_note: str | None
     pairs: tuple[PairRow, ...]
+    item_category: str | None = None
+    """M1-04: the item's category; None when nothing says one."""
 
 
 def build_pairs(
@@ -139,19 +144,37 @@ def build_pairs(
     decisions: Mapping[tuple[str, str], tuple[bool, str]] | None = None,
 ) -> list[ItemRow]:
     """M1-03 and M1-04 for every item of the target store against the items of the stores in the set.
-    `decisions` maps (own item id, comparable item id) to a founder's (accepted, person id)."""
+    `decisions` maps (own item id, comparable item id) to a founder's (accepted, person id). A decision stays
+    even when the rule alone would no longer list that item, as long as it is still in the pool."""
     kept = decisions or {}
+    by_id = {i.id: i for i in pool}
     out: list[ItemRow] = []
     for own in own_items:
         p = pair_item_m1_04(own, pool, settings)
         pairs = []
+        listed = set()
         for c in p.candidates:
+            listed.add(c.item.id)
             decided = kept.get((own.id, c.item.id))
             if decided is not None:
                 pairs.append(PairRow(c.item.id, c.similarity, decided[0], decided[1]))
             else:
                 pairs.append(PairRow(c.item.id, c.similarity, c.accepted, None))
-        out.append(ItemRow(own.id, p.norm.unit, p.norm.display_cents, p.status, p.note, tuple(pairs)))
+        for (own_id, item_id), (accepted, by) in sorted(kept.items()):
+            if own_id == own.id and item_id not in listed and item_id in by_id:
+                sim = similarity_m1_04(own.name, by_id[item_id].name)
+                pairs.append(PairRow(item_id, sim, accepted, by))
+        out.append(
+            ItemRow(
+                own.id,
+                p.norm.unit,
+                p.norm.display_cents,
+                p.status,
+                p.note,
+                tuple(pairs),
+                item_category_m1_04(own),
+            )
+        )
     return out
 
 
@@ -166,6 +189,8 @@ class CalcInput:
     accepted: tuple[Item, ...]
     weekly_units: Decimal | float | int | None
     skipped: bool = False
+    reviewed: bool = False
+    """C04: a founder reviewed this item; their accepted pairs stand without the M1-05 store count."""
 
 
 @dataclass(frozen=True)
@@ -192,16 +217,20 @@ class CalcResult:
     total_loss_cents: int
 
 
-def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10)) -> CalcResult:
-    """M1-05 to M1-08. Skipped items stay out of parity and of the Pareto (C04). The reading (M1-07) takes
-    both parities; the loss and the Pareto (M1-08) stay on the current one."""
+def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10), min_pairs: int = 1) -> CalcResult:
+    """M1-05 to M1-08. Skipped items stay out of parity and of the Pareto (C04). A store counts once, and
+    an item
+    not reviewed by a founder needs `min_pairs` distinct stores for a parity. The reading (M1-07) takes both
+    parities; the loss and the Pareto (M1-08) stay on the current one."""
     partial: dict[str, tuple[int, Fraction, Reading, int, int, Fraction]] = {}
     for it in items:
         if it.skipped:
             continue
         # M1-03: a pair accepted before a size was read from a name never mixes base units.
         unit = normalize_m1_03(it.own).unit
-        accepted = [a for a in it.accepted if normalize_m1_03(a).unit == unit]
+        accepted = one_per_store_m1_05([a for a in it.accepted if normalize_m1_03(a).unit == unit])
+        if len(accepted) < min_pairs and not it.reviewed:
+            continue
         parity = parity_m1_05(it.own, accepted)
         if parity is None:
             continue

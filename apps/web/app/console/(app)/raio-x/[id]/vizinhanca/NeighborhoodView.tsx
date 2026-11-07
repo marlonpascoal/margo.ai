@@ -4,7 +4,7 @@
 import { useOptimistic, useTransition, type ReactNode } from "react";
 import { FictitiousLabel } from "@/components/console";
 import { card, primaryButton } from "@/components/xray";
-import { captureRankLabel, XRAY_MESSAGES } from "@/lib/xray/labels";
+import { captureRankLabel } from "@/lib/xray/labels";
 import { kmLabel } from "@/lib/xray/format";
 import { mapOffset, neighborhoodCounts, storeState, type NeighborRow } from "@/lib/xray/view";
 import { confirmStoresAction, toggleStoreAction } from "../../actions";
@@ -26,8 +26,8 @@ export default function NeighborhoodView({
   target: { lat: number; lng: number } | null;
   radiusKm: number;
   synthetic: boolean;
-  /** The X-ray's captures or neighborhood job are active: pairing waits (the server refuses it too). */
-  waiting: boolean;
+  /** What pairing waits for, in words, or null when it may run (the server refuses it too). */
+  waiting: string | null;
 }) {
   const [, startTransition] = useTransition();
   const [view, setIncluded] = useOptimistic(rows, (state, change: { id: string; included: boolean }) =>
@@ -49,8 +49,8 @@ export default function NeighborhoodView({
         <form action={confirmStoresAction} className="flex flex-wrap items-center gap-2.5">
           {synthetic && <FictitiousLabel />}
           <input type="hidden" name="xray" value={xrayId} />
-          {waiting && <span className="text-sm text-ink-muted">{XRAY_MESSAGES.confirmWaits}</span>}
-          <button type="submit" className={primaryButton} disabled={counts.inSet === 0 || waiting}>
+          {waiting && <span className="text-sm text-ink-muted">{waiting}</span>}
+          <button type="submit" className={primaryButton} disabled={counts.inSet === 0 || waiting !== null}>
             Confirmar {counts.inSet} lojas
           </button>
         </form>

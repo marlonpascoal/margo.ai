@@ -79,8 +79,8 @@ class Scene:
 
     def item(self, store: str, name: str, price: int, original: int | None) -> None:
         self.conn.execute(
-            "insert into public.public_menu_item (public_store_id, external_item_id, name, price_cents,"
-            " original_price_cents, unit, collected_at) values (%s, %s, %s, %s, %s, 'un', %s)",
+            "insert into public.public_menu_item (public_store_id, external_item_id, name, category, price_cents,"
+            " original_price_cents, unit, collected_at) values (%s, %s, %s, 'Lanches', %s, %s, 'un', %s)",
             (store, name, name, price, original, COLLECTED),
         )
 

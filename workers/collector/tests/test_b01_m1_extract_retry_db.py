@@ -6,13 +6,20 @@ not_before time; a permanent one, or the last attempt, fails as before. All stor
 from __future__ import annotations
 
 import os
+import sys
 import uuid
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
 from margo_collector.handlers import local_db_url
+from margo_collector.repo import PostgresXrayRepo
+from margo_collector.steps import pair_step
 from psycopg.types.json import Jsonb
+
+sys.path.insert(0, str(Path(__file__).parent))
+from test_b01_m1_load_db import Hood as LoadHood  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not os.environ.get("MARGO_DB_TESTS"), reason="needs the local Supabase stack")
 
@@ -260,7 +267,7 @@ def test_B01_C03_waiting_to_retry_is_pending_for_pairing_and_failed_only_at_the_
     assert h.states()[h.stores[0]] == "failed"
     assert conn.execute("select * from public.xray_capture_retries(%s)", (h.xid,)).fetchall() == []
     conn.execute("update public.job set status = 'done', finished_at = now() where type = 'xray_neighborhood'")
-    assert h.blocker() is None
+    assert h.blocker() != "captures", "finished once it finally failed (this X-ray's target has no capture, so 'target')"
 
 
 def test_B01_daily_cron_queues_no_duplicate_for_a_store_waiting_to_retry(conn):
@@ -283,3 +290,45 @@ def test_B01_retry_functions_are_service_role_only(conn):
         assert conn.execute(priv, ("service_role", fn)).fetchone()["ok"]
         assert not conn.execute(priv, ("authenticated", fn)).fetchone()["ok"]
     assert not conn.execute(priv, ("authenticated", "app.extract_retry_at(text, integer, timestamptz)")).fetchone()["ok"]
+
+
+@pytest.fixture
+def repo():
+    r = PostgresXrayRepo(local_db_url())
+    yield r
+    r.close()
+
+
+def test_B01_B5_a_store_waiting_to_retry_is_not_finished_at_90_percent_and_is_left_out_of_pairing(conn, repo):
+    """Under m1.pair_min_captures_pct: waiting to retry counts as not finished; pairing without it marks it left out,
+    and C03 still has its retry time."""
+    h = LoadHood(conn, 10, rules={"min_pairs": 1})  # 11 slots: 10 must finish
+    late, other = h.stores[-1], h.stores[-2]
+    for i, s in enumerate([h.target, *h.stores]):
+        h.item(s, "x", "Cheeseburger peixe", 1500 + i)
+        conn.execute("update public.public_menu_item set category = 'Lanches' where public_store_id = %s", (s,))
+    h.queue_captures()
+    while (job := h.claim()) is not None:
+        if h.job_store(job["job_id"]) in (late, other):
+            fail(conn, job["job_id"], "timeout")
+        else:
+            conn.execute("select public.finish_job(%s, 'done', '{}')", (job["job_id"],))
+            conn.execute("update public.extract_run set status = 'done' where job_id = %s", (job["job_id"],))
+    quorum = "select * from public.xray_pair_quorum(%s)"
+    assert conn.execute(quorum, (h.xid,)).fetchone() == {"finished": 9, "total": 11, "required": 10}
+    assert h.blocker() == "captures", "two stores waiting to retry: below the threshold"
+
+    other_job = job_of(conn, other)["id"]
+    wait_over(conn, other_job)
+    assert h.claim()["job_id"] == other_job
+    fail(conn, other_job, "not_found")
+    assert conn.execute(quorum, (h.xid,)).fetchone()["finished"] == 10, "a final failure finishes; the retry does not"
+    assert h.states()[late] == "missing"
+    assert h.blocker() is None
+
+    h.confirm()
+    pair_step(repo, h.xid)
+    marked = "select public_store_id from public.xray_store where xray_id = %s and left_out_of_pairing"
+    assert sorted(str(r["public_store_id"]) for r in conn.execute(marked, (h.xid,)).fetchall()) == [late]
+    retries = conn.execute("select * from public.xray_capture_retries(%s)", (h.xid,)).fetchall()
+    assert [(str(r["public_store_id"]), r["retry_at"]) for r in retries] == [(late, job_of(conn, late)["not_before"])]

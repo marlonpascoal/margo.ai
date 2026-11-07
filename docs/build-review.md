@@ -38,6 +38,11 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 
 **Not drawn, added at Marlon's request (07/nov):** "Sair" in `Menu` (end of the sidebar) and `MenuDono` (next to the role, also on phone), ending this session only. The drawings need it.
 
+**Before the first real X-ray PDF:**
+- **P01 page 1:** the "Não mexa" list has no limit; from roughly 45 items it runs into the call-to-action box.
+- **P01 list:** item names past about 44 characters run into the "Hoje" column.
+- **C06:** "PDF · A4 · {n} páginas" shows the rendered count; before a file exists it shows only "PDF · A4", unlike the drawing.
+
 ### Open points from building the review answers
 
 - **Extension: check on the real portal** (`fixtures/m2/extension/README.md`):

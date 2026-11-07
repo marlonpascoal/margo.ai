@@ -15,6 +15,15 @@ export type NoticeCode =
   | "billing_result"
   | "security_event";
 
+/** M1 owner journey notices (PROVISIONAL, 20261230000001_m1_monitor.sql): notice_type rows and preferences exist; the
+ * e-mails, the W08 rows and the sending come with P19 to P24. Audience Dono and Gerente (their kitchens only, filtered by
+ * the sender on xray_monitor.kitchen_id). */
+export type M1NoticeCode = "xray_ready" | "xray_needs_answer";
+export const M1_NOTICE_NAMES: Record<M1NoticeCode, string> = {
+  xray_ready: "Seu raio-X está pronto",
+  xray_needs_answer: "Itens esperando sua resposta",
+};
+
 /** Builds one person's message from the notice data. */
 export type NoticeTemplate<D> = (data: D, to: Recipient) => NoticeMessage;
 

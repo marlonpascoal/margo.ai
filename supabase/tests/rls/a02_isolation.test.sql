@@ -68,6 +68,13 @@ begin
   insert into public.xray (id, account_id, target_store_id) values (tests.id(a || ':xray'), acc, tests.id(a || ':pub'));
   insert into public.xray (id, account_id, target_store_id, pdf_path) values (tests.id(a || ':xray-pdf'), acc, tests.id(a || ':pub'), 'pdf/' || a || '.pdf');
   insert into public.time_log (account_id, xray_id, step, minutes, person_id) values (acc, tests.id(a || ':xray'), 'entrega', 10, dono);
+  -- M1 monitoring (20261230000001): one on the store of kitchen 1, with a remembered answer.
+  insert into public.public_menu_item (id, public_store_id, external_item_id, name, price_cents)
+    values (tests.id(a || ':pmi'), tests.id(a || ':pub'), 'i1', 'Item ' || a, 1000);
+  insert into public.xray_monitor (id, account_id, target_store_id, target_kind, kitchen_id, every_days)
+    values (tests.id(a || ':mon'), acc, tests.id(a || ':pub'), 'competitor', tests.id(a || ':k1'), 7);
+  insert into public.monitor_pair_decision (monitor_id, account_id, own_item_id, candidate_item_id, accepted, decided_by)
+    values (tests.id(a || ':mon'), acc, tests.id(a || ':pmi'), tests.id(a || ':pmi'), true, dono);
   -- M2 (03 §3): one fact, close and contestation per store of kitchen 1 and kitchen 2.
   insert into public.import_source (account_id, channel, kind) values (acc, 'ifood', 'upload');
   insert into public.import_run (id, account_id, trigger, channel) values (tests.id(a || ':run'), acc, 'upload', 'ifood');
@@ -277,7 +284,7 @@ reset role;
 select tests.login('fundador');
 select is(tests.n($$ select 1 from public.subscription where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees subscriptions');
 select is(tests.n($$ select 1 from public.billing_event where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees Asaas events');
-select is(tests.n($$ select 1 from public.feature_flag $$), 36, 'Fundador sees feature toggles');
+select is(tests.n($$ select 1 from public.feature_flag $$), 38, 'Fundador sees feature toggles');
 select throws_ok($$ update public.feature_flag set default_raio_x = true $$, '42501', null,
   'even Fundador writes only through audited server actions');
 reset role;

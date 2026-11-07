@@ -272,3 +272,28 @@ Legal points to put to D01b: showing a named third party's prices to a business 
 | ID | Amends | Text |
 |---|---|---|
 | D65 | 01 §1, 04 M1-04, M1-05, §1 Collection, §5, §6, §9, 05 C02 to C06, D55 | Marlon decided on 07/nov: the price X-ray moves to the owner portal (P19 to P24, W10 to W15). The owner starts and follows **monitorings** of own stores and competitors: each is a standing order whose runs are ordinary X-rays with their snapshots, weekly by default (`m1.extract_every_days`), with pause, resume and remove. Pairing and calculation run by themselves; the owner answers only doubtful items ("é o mesmo produto que o seu?", suggestion pre-marked, "Confirmar todas as sugestões"), decisions are remembered per monitoring and audited, and Dono decides (Gerente for own kitchens, if approved). The waiting screen shows steps, live counts and a time range from the measured pace. Limits per plan: own stores 1 every 90 days / all in analysis / all; active competitor monitorings 0/3/10; `competitor_xrays_per_month` now counts competitor monitorings started. A downgrade pauses, never deletes. The console keeps every screen for support and leads (new C22). New flag `m1.portal`, off until the legal consult (D01b) clears the competitor data owners see |
+
+---
+
+## 10. Provisional choices (built on `nov/monitoring`, for Marlon's review)
+
+Marlon has not answered §7. The backend uses each proposed default, marked PROVISIONAL in the code, and keeps each one in a param, a flag or reference data, so changing it is data, not code. Migrations `20261230000001_m1_monitor.sql` and `20261230000002_m1_positions.sql`.
+
+| Question | Choice built | Where to change it |
+|---|---|---|
+| Q1 Gerente answers doubts | Yes, for monitorings of their kitchens (`xray_monitor.kitchen_id`); Financeiro only sees | `rule_param` `m1.portal_gerente_answers` (1 or 0) |
+| Q2 Limits | Active competitor monitorings limited by `plan.competitor_xrays_per_month` (0/3/10); starts per São Paulo month counted separately against the same field. Console one-off competitor X-rays keep their own count (monitored runs no longer count there) | `plan.competitor_xrays_per_month` (C15); `m1.monitor_count_month_starts` (1 counts starts, 0 only active) |
+| Q3 Free plan | One own store active, a run at most every 90 days; Lucro and Rede 7 days, no own-store limit. The owner's period is kept; a run waits the longer of it and the plan minimum, so a plan change rewrites nothing | `m1.monitor_own_max_<plan>` (no row: no limit), `m1.monitor_min_every_days_<plan>` |
+| Q4 Competitor doubts | Not asked: listed with `asked: false` ("Revisar mesmo assim"); the result is computed without them like any doubt | `m1.portal_competitor_doubts_asked` (0 or 1) |
+| Q5 `m1.portal` | On in sandbox, off in production, every plan | C20 |
+| Q7 Neighborhood store names | Shown by name; 0 shows "Loja vizinha NN" by its M1-11 rank in the run | `m1.portal_show_store_names` |
+| Q8 Who gets `xray_ready` / `xray_needs_answer` | Dono and Gerente (their kitchens, filtered by the sender). Rows and preferences exist; e-mails, W08 rows and sending come with the screens | `notice_type.audience_roles` |
+| Q9 "Por que demora?" | Not built (copy is the screens' part); the loader returns the real numbers it needs (`stores_chosen`, `items_read`) | |
+| Suggestion pre-marked (§2.6) | The candidate M1-04 ranks first (highest similarity), one per doubt | `app.monitor_suggestion` (one SQL function) |
+| Rediscovery | Every 28 days, or when radius, categories or rules change; between, a run copies the previous store set with its ranks and capture places | `m1.monitor_rediscover_days` |
+| Time range (§2.5) | Pace of the last 15 minutes; 50 s per capture with fewer than 3 done; "mais lenta" after 5 minutes without a finished capture | `m1.portal_pace_window_minutes`, `m1.capture_typical_seconds`, `m1.portal_slow_minutes` |
+| Downgrade and upgrade | A plan change (subscription or account) pauses the newest beyond the limit as `paused_by_plan` and resumes the oldest within it, audited as the system; `paused_by_person` stays; the daily cron applies it again | triggers on `subscription` and `account` |
+| A run that does not finish | The next one waits a day while the newest is still collecting or pairing | `monitor_queue_due` |
+| Score de preço (M1-12, proposed in spec 04) | v2 "share of the neighborhood price the store charges", with "diferença de preço por venda" and "risco" beside it; category score from 5 items; positions per category and per item | `m1.score_min_items`; formula in `app.score_captured_m1_12` with `app.score_version_m1_12` |
+
+Not built here: Q6 (capture budget), Q10 (drawings), the head-to-head block of §2.7, "Tirar da comparação" by an owner (§8), C22 and the C21 alerts of §4, the print route of the result and its token, `target_gone`.

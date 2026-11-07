@@ -328,7 +328,7 @@ describe("B01 cron", () => {
     const target = await storeRow(TARGET);
     const { data: jobs } = await db.from("job").select("dedupe_key, status").eq("type", "extract_capture").eq("payload->>public_store_id", target.id);
     expect(jobs).toEqual([{ dedupe_key: `extract_capture:${target.id}`, status: "queued" }]);
-    expect(await (await get("dummy-int-cron")).json()).toEqual({ ok: true, queued: 0 });
+    expect(await (await get("dummy-int-cron")).json()).toEqual({ ok: true, queued: 0, runs: 0 });
     await db.from("xray").delete().eq("id", x);
   });
 });

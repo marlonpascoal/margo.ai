@@ -104,7 +104,8 @@ def neighborhood_step(
     own = found.get(x.target_store_id)
     # M1-01: with a discovery, only what it found; other runs and seed rows nearby are no neighbors.
     discovered = set(found) - {x.target_store_id}
-    stores = [s for s in repo.public_stores(list(found)) if not discovered or s.id in discovered or s.id == x.target_store_id]
+    keep = discovered | {x.target_store_id}
+    stores = [s for s in repo.public_stores(list(found)) if not discovered or s.id in keep]
     rows = build_neighborhood(
         repo.store(x.target_store_id),
         stores,

@@ -21,6 +21,7 @@ from .rules import (
     Reading,
     Settings,
     Store,
+    candidate_m1_02,
     exclusion_m1_02,
     gap_m1_06,
     loss_m1_08,
@@ -57,18 +58,29 @@ def build_neighborhood(
     settings: Settings,
     delivers_to_target: Mapping[str, bool | None] | None = None,
     manual: Mapping[str, tuple[bool, str]] | None = None,
+    discovered_m: Mapping[str, int | None] | None = None,
+    target_terms: Iterable[str] = (),
+    store_terms: Mapping[str, Iterable[str]] | None = None,
 ) -> list[StoreRow]:
     """M1-01 then M1-02 for every public store; `manual` holds the founder's C03 choices to keep."""
+    terms = store_terms or {}
+    wanted = list(target_terms)
     delivers = delivers_to_target or {}
     kept = manual or {}
     rows: list[StoreRow] = []
-    for store, distance in neighborhood_m1_01(target, stores, settings.radius_km):
+    for store, distance in neighborhood_m1_01(target, stores, settings.radius_km, discovered_m):
         d = delivers.get(store.id)
         if store.id in kept:
             included, reason = kept[store.id]
             rows.append(StoreRow(store.id, distance, d, included, reason))
             continue
-        reason = exclusion_m1_02(store, collected_at=collected_at, delivers_to_target=d, settings=settings)
+        reason = exclusion_m1_02(
+            store,
+            collected_at=collected_at,
+            delivers_to_target=d,
+            settings=settings,
+            is_candidate=candidate_m1_02(wanted, terms.get(store.id, ())),
+        )
         rows.append(StoreRow(store.id, distance, d, reason is None, reason))
     return rows
 

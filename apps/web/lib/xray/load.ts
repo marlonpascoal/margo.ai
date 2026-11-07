@@ -80,6 +80,14 @@ export async function latestJob(db: Db, type: string, xrayId: string): Promise<J
   return { status: j.status, error: typeof last.error === "string" ? last.error : null, reason: typeof last.reason === "string" ? last.reason : null };
 }
 
+/** C03: extract_capture jobs still queued or running for the X-ray's target and stores. */
+export async function pendingCaptures(db: Db, xrayId: string, targetStoreId: string): Promise<number> {
+  const stores = list(await db.from("xray_store").select("public_store_id").eq("xray_id", xrayId));
+  const ids = new Set([targetStoreId, ...stores.map((s) => s.public_store_id)]);
+  const jobs = list(await db.from("job").select("payload->>public_store_id").eq("type", "extract_capture").in("status", ["queued", "running"]));
+  return jobs.filter((j) => ids.has((j as { public_store_id: string | null }).public_store_id ?? "")).length;
+}
+
 /** C03 list, nearest first. */
 export async function loadNeighborhood(db: Db, xrayId: string): Promise<NeighborRow[]> {
   const rows = list(
@@ -141,7 +149,7 @@ export async function loadPairs(db: Db, xrayId: string, itemId: string): Promise
   const rows = list(
     await db
       .from("xray_pair")
-      .select("id, similarity, accepted, public_menu_item(name, price_cents, public_store(name)), xray_item!inner(xray_id)")
+      .select("id, similarity, accepted, public_menu_item(name, comparison_price_cents, public_store(name)), xray_item!inner(xray_id)")
       .eq("xray_item_id", itemId)
       .eq("xray_item.xray_id", xrayId)
       .order("similarity", { ascending: false }),
@@ -150,7 +158,7 @@ export async function loadPairs(db: Db, xrayId: string, itemId: string): Promise
     id: r.id,
     name: r.public_menu_item?.name ?? "",
     store: r.public_menu_item?.public_store?.name ?? "",
-    priceCents: r.public_menu_item?.price_cents ?? 0,
+    priceCents: r.public_menu_item?.comparison_price_cents ?? 0,
     similarity: Number(r.similarity),
     accepted: r.accepted,
   }));

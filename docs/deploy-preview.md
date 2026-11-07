@@ -56,8 +56,9 @@ What works there: login, the console and the owner portal on G-SYN's synthetic d
    | `MARGO_FLAG_ENV` | `sandbox` |
    | `MARGO_APP_URL` | the preview URL, once known (redeploy after setting it) |
    | `CRON_SECRET` | a long random string, e.g. from `openssl rand -hex 32` (Sensitive) |
+   | `MARGO_EXTRACT_TOKEN` | another long random string, also given to the extractor (Sensitive, `docs/extract-api.md`) |
 4. Under Deployment Protection, turn on Vercel Authentication for Preview, so only your team opens it.
-5. **Plan:** Pro, since Hobby is for non-commercial use only. `vercel.json` already sets the São Paulo region (`gru1`) and the daily billing cron.
+5. **Plan:** Pro, since Hobby is for non-commercial use only. `vercel.json` already sets the São Paulo region (`gru1`) and the daily billing and extraction crons.
 6. Deploy from a branch to get a preview. Production stays off until 14/nov (08).
 
 ## 3. Check it

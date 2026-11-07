@@ -675,6 +675,66 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"extract_content": {
+                  Row: {
+                    "content_hash": string,"created_at": string,"id": string,"payload": NonNullable<Json>,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content_hash": string,"created_at"?: string,"id"?: string,"payload": NonNullable<Json>,"updated_at"?: string
+                  }
+                  Update: {
+                    "content_hash"?: string,"created_at"?: string,"id"?: string,"payload"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"extract_copy": {
+                  Row: {
+                    "channel": Database["public"]['Enums']["channel"],"collected_at": string,"content_hash": string,"created_at": string,"id": string,"run_id": string,"store_external_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "channel": Database["public"]['Enums']["channel"],"collected_at": string,"content_hash": string,"created_at"?: string,"id"?: string,"run_id": string,"store_external_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "channel"?: Database["public"]['Enums']["channel"],"collected_at"?: string,"content_hash"?: string,"created_at"?: string,"id"?: string,"run_id"?: string,"store_external_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "extract_copy_content_hash_fkey"
+      columns: ["content_hash"]
+isOneToOne: false
+      referencedRelation: "extract_content"
+      referencedColumns: ["content_hash"]
+    },{
+      foreignKeyName: "extract_copy_run_id_fkey"
+      columns: ["run_id"]
+isOneToOne: false
+      referencedRelation: "extract_run"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"extract_run": {
+                  Row: {
+                    "copies": number,"created_at": string,"error": string | null,"finished_at": string | null,"id": string,"job_id": string | null,"kind": Database["public"]['Enums']["extract_kind"],"request": NonNullable<Json>,"source": string | null,"started_at": string,"status": Database["public"]['Enums']["extract_run_status"],"updated_at": string,"worker": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "copies"?: number,"created_at"?: string,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job_id"?: string | null,"kind": Database["public"]['Enums']["extract_kind"],"request"?: NonNullable<Json>,"source"?: string | null,"started_at"?: string,"status"?: Database["public"]['Enums']["extract_run_status"],"updated_at"?: string,"worker"?: string | null
+                  }
+                  Update: {
+                    "copies"?: number,"created_at"?: string,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job_id"?: string | null,"kind"?: Database["public"]['Enums']["extract_kind"],"request"?: NonNullable<Json>,"source"?: string | null,"started_at"?: string,"status"?: Database["public"]['Enums']["extract_run_status"],"updated_at"?: string,"worker"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "extract_run_job_id_fkey"
+      columns: ["job_id"]
+isOneToOne: false
+      referencedRelation: "job"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"feature_flag": {
                   Row: {
                     "created_at": string,"default_lucro": boolean,"default_raio_x": boolean,"default_rede": boolean,"description": string,"env": Database["public"]['Enums']["flag_env"],"id": string,"key": string,"updated_at": string
@@ -1513,14 +1573,14 @@ isOneToOne: false
                   ]
                 },"public_menu_item": {
                   Row: {
-                    "collected_at": string,"created_at": string,"description": string | null,"external_item_id": string,"id": string,"name": string,"price_cents": number,"public_store_id": string,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty": number | null,"updated_at": string
+                    "category": string | null,"collected_at": string,"comparison_price_cents": number | null,"created_at": string,"description": string | null,"external_item_id": string,"id": string,"minimum_price_cents": number | null,"name": string,"original_price_cents": number | null,"price_cents": number,"public_store_id": string,"removed_at": string | null,"taxonomy_level1": string | null,"taxonomy_level2": string | null,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "collected_at"?: string,"created_at"?: string,"description"?: string | null,"external_item_id": string,"id"?: string,"name": string,"price_cents": number,"public_store_id": string,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string
+                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id": string,"id"?: string,"minimum_price_cents"?: number | null,"name": string,"original_price_cents"?: number | null,"price_cents": number,"public_store_id": string,"removed_at"?: string | null,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "collected_at"?: string,"created_at"?: string,"description"?: string | null,"external_item_id"?: string,"id"?: string,"name"?: string,"price_cents"?: number,"public_store_id"?: string,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string
+                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id"?: string,"id"?: string,"minimum_price_cents"?: number | null,"name"?: string,"original_price_cents"?: number | null,"price_cents"?: number,"public_store_id"?: string,"removed_at"?: string | null,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1565,17 +1625,37 @@ isOneToOne: false
                   ]
                 },"public_store": {
                   Row: {
-                    "area": string | null,"category": string | null,"channel": Database["public"]['Enums']["channel"],"created_at": string,"external_id": string,"id": string,"is_national_chain": boolean,"last_seen_open_at": string | null,"lat": number | null,"lng": number | null,"name": string | null,"updated_at": string,"url": string | null
+                    "area": string | null,"category": string | null,"channel": Database["public"]['Enums']["channel"],"created_at": string,"external_id": string,"id": string,"is_national_chain": boolean,"last_seen_open_at": string | null,"lat": number | null,"lng": number | null,"main_category_code": string | null,"name": string | null,"rating": number | null,"rating_count": number | null,"slug": string | null,"super_categories": (string)[] | null,"updated_at": string,"url": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "area"?: string | null,"category"?: string | null,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"external_id": string,"id"?: string,"is_national_chain"?: boolean,"last_seen_open_at"?: string | null,"lat"?: number | null,"lng"?: number | null,"name"?: string | null,"updated_at"?: string,"url"?: string | null
+                    "area"?: string | null,"category"?: string | null,"channel": Database["public"]['Enums']["channel"],"created_at"?: string,"external_id": string,"id"?: string,"is_national_chain"?: boolean,"last_seen_open_at"?: string | null,"lat"?: number | null,"lng"?: number | null,"main_category_code"?: string | null,"name"?: string | null,"rating"?: number | null,"rating_count"?: number | null,"slug"?: string | null,"super_categories"?: (string)[] | null,"updated_at"?: string,"url"?: string | null
                   }
                   Update: {
-                    "area"?: string | null,"category"?: string | null,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"external_id"?: string,"id"?: string,"is_national_chain"?: boolean,"last_seen_open_at"?: string | null,"lat"?: number | null,"lng"?: number | null,"name"?: string | null,"updated_at"?: string,"url"?: string | null
+                    "area"?: string | null,"category"?: string | null,"channel"?: Database["public"]['Enums']["channel"],"created_at"?: string,"external_id"?: string,"id"?: string,"is_national_chain"?: boolean,"last_seen_open_at"?: string | null,"lat"?: number | null,"lng"?: number | null,"main_category_code"?: string | null,"name"?: string | null,"rating"?: number | null,"rating_count"?: number | null,"slug"?: string | null,"super_categories"?: (string)[] | null,"updated_at"?: string,"url"?: string | null
                   }
                   Relationships: [
                     
+                  ]
+                },"public_store_private": {
+                  Row: {
+                    "address": string,"collected_at": string,"created_at": string,"public_store_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address": string,"collected_at": string,"created_at"?: string,"public_store_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "address"?: string,"collected_at"?: string,"created_at"?: string,"public_store_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "public_store_private_public_store_id_fkey"
+      columns: ["public_store_id"]
+isOneToOne: true
+      referencedRelation: "public_store"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"public_store_snapshot": {
                   Row: {
@@ -1976,7 +2056,7 @@ isOneToOne: false
           Views: {
             "xray_item_view": {
                   Row: {
-                    "accepted_pairs": number | null,"comparables": number | null,"example_cents": number | null,"example_name": string | null,"gap_pct": number | null,"id": string,"loss_cents": number | null,"name": string,"norm_price_cents": number,"norm_unit": string,"own_cents": number,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"public_menu_item_id": string,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"skipped": boolean,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty": number | null,"weekly_units": number | null,"xray_id": string
+                    "accepted_pairs": number | null,"comparables": number | null,"example_cents": number | null,"example_name": string | null,"gap_pct": number | null,"id": string,"loss_cents": number | null,"name": string,"norm_price_cents": number,"norm_unit": string,"own_cents": number | null,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"public_menu_item_id": string,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"skipped": boolean,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty": number | null,"weekly_units": number | null,"xray_id": string
                   }
                   ComputedFields: never
                   Relationships: [
@@ -2065,6 +2145,29 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"extract_claim_next":
+{ Args: { "p_env"?: Database["public"]['Enums']["flag_env"],"p_worker": string }; Returns: {
+              "job_id": string,"kind": Database["public"]['Enums']["extract_kind"],"payload": Json
+            }[]
+                           },
+"extract_job_state":
+{ Args: { "p_job": string }; Returns: Json
+                           },
+"extract_queue_discover":
+{ Args: { "p_env"?: Database["public"]['Enums']["flag_env"],"p_xray": string }; Returns: string
+                           },
+"extract_queue_due":
+{ Args: { "p_env"?: Database["public"]['Enums']["flag_env"],"p_now"?: string }; Returns: number
+                           },
+"extract_queue_xray_captures":
+{ Args: { "p_env"?: Database["public"]['Enums']["flag_env"],"p_xray": string }; Returns: number
+                           },
+"extract_record_failure":
+{ Args: { "p_detail": string,"p_job": string,"p_reason": string }; Returns: Json
+                           },
+"extract_record_result":
+{ Args: { "p_collected_at": string,"p_copies": Json,"p_job": string,"p_source": string }; Returns: Json
+                           },
 "finish_job":
 { Args: { "p_entry"?: Json,"p_job_id": string,"p_status": Database["public"]['Enums']["job_status"] }; Returns: boolean
                            },
@@ -2189,6 +2292,11 @@ isOneToOne: false
 "xray_create":
 { Args: { "p_account"?: string,"p_actor": string,"p_categories": (string)[],"p_env"?: Database["public"]['Enums']["flag_env"],"p_external_id": string,"p_ip"?: unknown,"p_radius_km": number,"p_rules": Json,"p_url": string,"p_user_agent"?: string }; Returns: string
                            },
+"xray_discovery":
+{ Args: { "p_xray": string }; Returns: {
+              "distance_m": number,"public_store_id": string,"terms": (string)[]
+            }[]
+                           },
 "xray_item_review":
 { Args: { "p_accepted": (string)[],"p_actor": string,"p_ip"?: unknown,"p_item": string,"p_user_agent"?: string }; Returns: undefined
                            },
@@ -2206,7 +2314,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","base_unit": "g"|"ml"|"un","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","decision_kind": "campaign"|"lowest","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","invoice_source": "xml_zip"|"key_typed"|"qr_url"|"whatsapp_photo","invoice_status": "pending"|"confirmed"|"overdue"|"refused"|"canceled","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","match_method": "gtin"|"rule"|"ai"|"manual","match_status": "suggested"|"confirmed"|"rejected","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","price_source": "invoice"|"regional_prior","recipe_status": "draft"|"ready","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered","yield_confidence": "medido"|"declarado"|"estimado"
+            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","base_unit": "g"|"ml"|"un","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","decision_kind": "campaign"|"lowest","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","extract_kind": "discover"|"capture","extract_run_status": "running"|"done"|"failed","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","invoice_source": "xml_zip"|"key_typed"|"qr_url"|"whatsapp_photo","invoice_status": "pending"|"confirmed"|"overdue"|"refused"|"canceled","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","match_method": "gtin"|"rule"|"ai"|"manual","match_status": "suggested"|"confirmed"|"rejected","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","price_source": "invoice"|"regional_prior","recipe_status": "draft"|"ready","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered","yield_confidence": "medido"|"declarado"|"estimado"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -2326,7 +2434,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"base_unit": ["g", "ml", "un"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"decision_kind": ["campaign", "lowest"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"invoice_source": ["xml_zip", "key_typed", "qr_url", "whatsapp_photo"],"invoice_status": ["pending", "confirmed", "overdue", "refused", "canceled"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"match_method": ["gtin", "rule", "ai", "manual"],"match_status": ["suggested", "confirmed", "rejected"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"price_source": ["invoice", "regional_prior"],"recipe_status": ["draft", "ready"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"],"yield_confidence": ["medido", "declarado", "estimado"]
+            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"base_unit": ["g", "ml", "un"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"decision_kind": ["campaign", "lowest"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"extract_kind": ["discover", "capture"],"extract_run_status": ["running", "done", "failed"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"invoice_source": ["xml_zip", "key_typed", "qr_url", "whatsapp_photo"],"invoice_status": ["pending", "confirmed", "overdue", "refused", "canceled"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"match_method": ["gtin", "rule", "ai", "manual"],"match_status": ["suggested", "confirmed", "rejected"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"price_source": ["invoice", "regional_prior"],"recipe_status": ["draft", "ready"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"],"yield_confidence": ["medido", "declarado", "estimado"]
           }
         }
 } as const

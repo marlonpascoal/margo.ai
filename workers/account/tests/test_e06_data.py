@@ -192,3 +192,25 @@ def test_E06_job_types_are_registered_without_a_flag() -> None:
 
     assert find_handler("account_export") is not None and find_handler("account_delete") is not None
     assert "account_export" not in JOB_FLAGS and "account_delete" not in JOB_FLAGS
+
+
+@db
+def test_E06_export_leaves_out_the_street_address_and_the_extraction_tables(conn: Any) -> None:
+    """D47c: public_store_private and the extraction copies never reach an account's export."""
+    from margo_account.export import build_zip
+
+    store = conn.execute(
+        "select target_store_id as id from public.xray where account_id = %s limit 1", (G01,)
+    ).fetchone()["id"]
+    conn.execute(
+        "insert into public.public_store_private (public_store_id, address, collected_at) values (%s, %s, now())"
+        " on conflict (public_store_id) do update set address = excluded.address",
+        (store, "Rua Sintética E06, 1"),
+    )
+    try:
+        blob, _, _ = build_zip(conn, storage(conn), G01)
+    finally:
+        conn.execute("delete from public.public_store_private where public_store_id = %s", (store,))
+    z = read_zip(blob)
+    assert not [n for n in z if "public_store_private" in n or "extract_" in n]
+    assert not [n for n, body in z.items() if "Rua Sintética E06".encode() in body]

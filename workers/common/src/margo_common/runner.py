@@ -40,6 +40,9 @@ Outcome = Literal["done", "failed", "not_claimed", "idle"]
 
 JOB_FLAGS: dict[str, str] = {
     "collect": "m1.raio_x",  # 05 C02: "Buscar vizinhança" creates a collect job (worker-collector)
+    "xray_neighborhood": "m1.raio_x",  # after a discovery and its captures: M1-01, M1-02
+    "extract_discover": "m1.extracao",  # docs/extract-api.md: claimed by an extractor over /api/extract/claim
+    "extract_capture": "m1.extracao",  # docs/extract-api.md: same; queued after the neighborhood and by cron
     "xray_pair": "m1.raio_x",  # 05 C03: "Confirmar N lojas" starts pairing (worker-collector)
     "xray_calc": "m1.raio_x",  # 05 C04: "Calcular raio-X" (worker-collector)
     "render_xray": "m1.raio_x",  # 05 C05: "Preparar entrega" renders P01 (worker-render)

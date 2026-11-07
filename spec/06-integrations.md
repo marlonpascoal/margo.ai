@@ -76,3 +76,13 @@ Each integration is an adapter behind an interface in `workers/common` or `apps/
 - Pairing: the owner clicks "Adicionar ao Chrome" from W07 while logged in; the portal issues an `extension_token` shown once and passed to the extension through a one-time pairing page.
 - Action: on the open portal page, click Export for the requested report and period, capture the download, upload to `/api/ext/upload`. Never reads credentials, never navigates on its own beyond the report page the owner opened.
 - The legal consult (D01b) covers the extension against iFood's terms before it is offered to owners outside the test case.
+
+## 10. External extractor (D47b, D47c)
+
+- **Contract:** `docs/extract-api.md`, the only one, for any source. The first is `margoai-menu-scraper`, owned and run by Marlon. It only extracts; all logic lives in MargoAI. It holds `MARGO_EXTRACT_TOKEN` and no database credential.
+- **Queue:** `extract_discover` and `extract_capture` rows of `job`, claimed with `POST /api/extract/claim`, one at a time (02 §4). Flag `m1.extracao`.
+- **Pipeline:** C02 creates the `collect` job, which queues `extract_discover` for the target. The result is written as copies and applied by `app.apply_extract_copy`, in the database, then queues `xray_neighborhood` (M1-01, M1-02) in worker-collector. That job queues `extract_capture` for the target and the stores in the set; when the last capture ends, the neighborhood runs again with the item taxonomies.
+- **Refresh:** Vercel Cron `/api/cron/extract`, daily, per `m1.extract_every_days`.
+- **What is kept:** allowlisted structured fields only, as dated copies that are never rewritten (D47c). No raw HTML, no customer reviews. The street address goes to `public_store_private` only.
+- **Not sent by the extractor today:** a signal for "delivers to the target's neighborhood". The C02 toggle stays without effect until one exists.
+- The legal consult (D01b) still comes before the first X-ray delivered outside the test case.

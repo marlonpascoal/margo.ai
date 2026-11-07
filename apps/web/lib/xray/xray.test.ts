@@ -61,8 +61,9 @@ describe("C03", () => {
   });
 
   it("B02_C03_shows_why_the_collection_stopped", () => {
-    expect(collectStopReason("CaptchaBlock")).toBe("Coleta parada: o iFood pediu captcha. Nada foi contornado.");
-    expect(collectStopReason("AwaitingRecordings")).toContain("fixtures/m1");
+    expect(collectStopReason(null, "blocked")).toBe("Coleta parada: o canal recusou o acesso.");
+    expect(collectStopReason("ExtractionOff")).toContain("extração está desligada");
+    expect(collectStopReason(null, "other")).toBe("Coleta parada: erro ao ler as páginas públicas.");
     expect(collectStopReason(null, "flag_off")).toContain("desligado");
   });
 });

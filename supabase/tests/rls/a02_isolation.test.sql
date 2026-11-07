@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(67);
+select plan(69);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated;
@@ -277,9 +277,23 @@ reset role;
 select tests.login('fundador');
 select is(tests.n($$ select 1 from public.subscription where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees subscriptions');
 select is(tests.n($$ select 1 from public.billing_event where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees Asaas events');
-select is(tests.n($$ select 1 from public.feature_flag $$), 34, 'Fundador sees feature toggles');
+select is(tests.n($$ select 1 from public.feature_flag $$), 36, 'Fundador sees feature toggles');
 select throws_ok($$ update public.feature_flag set default_raio_x = true $$, '42501', null,
   'even Fundador writes only through audited server actions');
+reset role;
+
+-- D47c: extraction copies and the street address reach no person, staff included.
+reset role;
+insert into public.extract_run (id, kind) values (tests.id('run'), 'capture');
+insert into public.extract_content (content_hash, payload) values ('h', '{"store": {"address": "Rua Sintética"}}');
+insert into public.extract_copy (run_id, channel, store_external_id, collected_at, content_hash)
+  values (tests.id('run'), 'ifood', 'x', now(), 'h');
+insert into public.public_store_private (public_store_id, address, collected_at)
+  values (tests.id('X:pub'), 'Rua Sintética', now());
+select tests.login('fundador');
+select is(tests.n('select 1 from public.extract_run union all select 1 from public.extract_content union all select 1 from public.extract_copy'), 0,
+  'D47c: staff reads no extraction row');
+select is(tests.n('select 1 from public.public_store_private'), 0, 'D47c: staff does not read the street address');
 reset role;
 
 select * from finish();

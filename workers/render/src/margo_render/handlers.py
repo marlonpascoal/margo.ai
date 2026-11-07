@@ -62,9 +62,9 @@ def load_report(conn, xray_id: str) -> tuple[XrayReport, str]:
     if x is None:
         raise LookupError("unknown X-ray")
     rows = conn.execute(
-        "select m.name, m.price_cents, i.parity_cents, i.gap_pct, i.reading, i.loss_cents, i.skipped, i.pareto_rank,"
-        " i.pareto_cum_share from public.xray_item i join public.public_menu_item m on m.id = i.public_menu_item_id"
-        " where i.xray_id = %s order by m.name",
+        "select v.name, v.own_cents as price_cents, i.parity_cents, i.gap_pct, i.reading, i.loss_cents, i.skipped,"
+        " i.pareto_rank, i.pareto_cum_share from public.xray_item i join public.xray_item_view v on v.id = i.id"
+        " where i.xray_id = %s order by v.name",
         (xray_id,),
     ).fetchall()
     items = tuple(

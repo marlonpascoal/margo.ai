@@ -1,0 +1,60 @@
+{
+  "_label": "SINTÉTICO: lojas, endereços e preços inventados para testes (docs/extract-api.md)",
+  "job_id": "00000000-0000-4000-8000-000000000000",
+  "source": "scraper",
+  "collected_at": "2026-10-31T10:00:00-03:00",
+  "discover": {
+    "target": {
+      "external_id": "5e000000-0000-4000-8000-000000000001",
+      "url": "https://www.ifood.com.br/delivery/cidade-sintetica-pr/alvo-sintetico/5e000000-0000-4000-8000-000000000001",
+      "slug": "cidade-sintetica-pr/alvo-sintetico",
+      "name": "Alvo Sintético",
+      "category": "Lanches",
+      "main_category_code": "LAN",
+      "super_categories": ["RESTAURANT"],
+      "rating": 4.6,
+      "rating_count": 120,
+      "address": "Rua Sintética, 100",
+      "area": "Bairro Sintético",
+      "lat": -10.0,
+      "lng": -40.0,
+      "is_open": true
+    },
+    "stores": [
+      {
+        "external_id": "5e000000-0000-4000-8000-000000000002",
+        "url": "https://www.ifood.com.br/delivery/cidade-sintetica-pr/vizinha-a/5e000000-0000-4000-8000-000000000002",
+        "slug": "cidade-sintetica-pr/vizinha-a",
+        "name": "Vizinha A Sintética",
+        "category": "Lanches",
+        "main_category_code": "LAN",
+        "super_categories": ["RESTAURANT"],
+        "rating": 4.1,
+        "rating_count": 45,
+        "distance_km": 1.2,
+        "search_terms": ["Lanches"],
+        "taxonomies": ["HAMBURGUERES"],
+        "reviews": [{ "text": "SINTÉTICO: comentário que nunca entra" }],
+        "raw_html": "<html>SINTÉTICO</html>",
+        "last_seen_open_at": "2026-10-31T10:00:00-03:00"
+      },
+      {
+        "external_id": "5e000000-0000-4000-8000-000000000003",
+        "url": "https://www.ifood.com.br/delivery/cidade-sintetica-pr/vizinha-b/5e000000-0000-4000-8000-000000000003",
+        "name": "Vizinha B Sintética",
+        "category": "Japonesa",
+        "distance_km": 2.1,
+        "search_terms": ["Sushi"],
+        "taxonomies": ["SUSHI"]
+      },
+      {
+        "external_id": "5e000000-0000-4000-8000-000000000004",
+        "url": "https://www.ifood.com.br/delivery/cidade-sintetica-pr/longe/5e000000-0000-4000-8000-000000000004",
+        "name": "Vizinha Longe Sintética",
+        "category": "Lanches",
+        "distance_km": 8.5,
+        "search_terms": ["Lanches"]
+      }
+    ]
+  }
+}

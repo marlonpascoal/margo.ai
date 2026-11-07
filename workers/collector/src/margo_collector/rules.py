@@ -55,8 +55,11 @@ class Item:
     store_id: str
     name: str
     price_cents: int
+    """M1-05: public_menu_item.comparison_price_cents, the price that enters parity."""
     unit: Unit = "un"
     unit_qty: Decimal | float | int | None = None
+    taxonomy_level1: str | None = None
+    taxonomy_level2: str | None = None
 
 
 @dataclass(frozen=True)
@@ -133,16 +136,30 @@ def distance_m_m1_01(
     return round(2 * EARTH_RADIUS_M * math.asin(math.sqrt(a)))
 
 
-def neighborhood_m1_01(target: Store, stores: Iterable[Store], radius_km: int) -> list[tuple[Store, int]]:
-    """M1-01: public stores within `radius_km` of the target, nearest first. Stores without coordinates
-    and the target itself are left out."""
-    if target.lat is None or target.lng is None:
-        raise ValueError("M1-01 needs the target store's coordinates")
+def neighborhood_m1_01(
+    target: Store,
+    stores: Iterable[Store],
+    radius_km: int,
+    discovered_m: Mapping[str, int | None] | None = None,
+) -> list[tuple[Store, int]]:
+    """M1-01: public stores within `radius_km` of the target, nearest first. Haversine when both stores have
+    coordinates, else the distance of the discovery copy (`discovered_m`: store id to metres). A store with
+    neither and the target itself are left out."""
+    known = discovered_m or {}
+    has_target = target.lat is not None and target.lng is not None
+    if not has_target and not any(v is not None for v in known.values()):
+        raise ValueError("M1-01 needs the target store's coordinates or a discovery distance")
     out: list[tuple[Store, int]] = []
     for s in stores:
-        if s.id == target.id or s.lat is None or s.lng is None:
+        if s.id == target.id:
             continue
-        d = distance_m_m1_01(target.lat, target.lng, s.lat, s.lng)
+        if has_target and s.lat is not None and s.lng is not None:
+            d = distance_m_m1_01(target.lat, target.lng, s.lat, s.lng)  # type: ignore[arg-type]
+        else:
+            found = known.get(s.id)
+            if found is None:
+                continue
+            d = found
         if d <= radius_km * 1000:
             out.append((s, d))
     return sorted(out, key=lambda sd: (sd[1], sd[0].name or "", sd[0].id))
@@ -155,16 +172,33 @@ def _local_date(at: datetime) -> date:
     return at.astimezone(SAO_PAULO).date()
 
 
+def _term(value: str) -> str:
+    return unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode().strip().casefold()
+
+
+def candidate_m1_02(target_terms: Iterable[str], store_terms: Iterable[str]) -> bool:
+    """M1-02: a store is a candidate when its discovered search terms or item taxonomies intersect the
+    target's (the C02 categories and the taxonomies of its items). Case and accents do not count. A side with
+    no terms says nothing, and the store stays."""
+    a, b = {_term(t) for t in target_terms}, {_term(t) for t in store_terms}
+    return not a or not b or bool(a & b)
+
+
 def exclusion_m1_02(
-    store: Store, *, collected_at: datetime, delivers_to_target: bool | None, settings: Settings
+    store: Store,
+    *,
+    collected_at: datetime,
+    delivers_to_target: bool | None,
+    settings: Settings,
+    is_candidate: bool = True,
 ) -> str | None:
     """M1-02: the C03 exclusion reason for a store in the neighborhood, or None when it is in the set.
 
     The three C02 toggles, in this order: national chains with list prices, stores closed more than
     `closed_days` days (days between the last time the store was seen open and the collection, in São
     Paulo dates), stores that do not deliver to the target's neighborhood (unknown counts as delivering).
-    The category part of M1-02 is applied by the collector, which only searches the categories chosen in
-    C02; a store listed there under another category is taken out by hand in C03 ("manual: ...").
+    Then the category part (`candidate_m1_02`), which is no toggle. A store never seen open has no closed
+    days. A founder can still take a store out by hand in C03 ("manual: ...").
     """
     if settings.exclude_national_chains and store.is_national_chain:
         return "regra: rede tabelada"
@@ -174,6 +208,8 @@ def exclusion_m1_02(
             return f"regra: fechada há {days} dias"
     if settings.same_neighborhood_only and delivers_to_target is False:
         return "regra: não entrega no bairro"
+    if not is_candidate:
+        return "regra: outra categoria"
     return None
 
 
@@ -264,11 +300,21 @@ class Pairing:
     candidates: tuple[Candidate, ...] = field(default=())
 
 
+def same_taxonomy_m1_04(a: Item, b: Item) -> bool:
+    """M1-04: level 2 when both items have it, else level 1 when both have it; no taxonomy, no filter."""
+    if a.taxonomy_level2 and b.taxonomy_level2:
+        return a.taxonomy_level2 == b.taxonomy_level2
+    if a.taxonomy_level1 and b.taxonomy_level1:
+        return a.taxonomy_level1 == b.taxonomy_level1
+    return True
+
+
 def pair_item_m1_04(own: Item, pool: Iterable[Item], settings: Settings) -> Pairing:
     """M1-03 and M1-04 for one item of the target store.
 
-    Comparable items ("Comparáveis" in C04) are items of the stores in the set with the same normalized
-    unit and a name similarity of at least `candidate_floor`. The item pairs automatically when at least
+    Comparable items ("Comparáveis" in C04) are items of the stores in the set with the same taxonomy when
+    both items have one (`same_taxonomy_m1_04`, applied before the name), the same normalized unit and a
+    name similarity of at least `candidate_floor`. The item pairs automatically when at least
     `min_pairs` of them reach `similarity_threshold`; those pairs are accepted. Otherwise, and always for
     a combo, it goes to `revisar` for a founder with nothing accepted. A paired item sold by weight or
     pack shows `normalizado`.
@@ -278,7 +324,7 @@ def pair_item_m1_04(own: Item, pool: Iterable[Item], settings: Settings) -> Pair
     for c in pool:
         if c.id == own.id or c.store_id == own.store_id:
             continue
-        if normalize_m1_03(c).unit != norm.unit:
+        if not same_taxonomy_m1_04(own, c) or normalize_m1_03(c).unit != norm.unit:
             continue
         sim = similarity_m1_04(own.name, c.name)
         if sim >= settings.candidate_floor:

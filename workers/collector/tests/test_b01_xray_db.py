@@ -46,7 +46,8 @@ def snapshot(conn, xid: str):
     ).fetchall()
     items = conn.execute(
         "select public_menu_item_id, norm_unit, norm_price_cents, parity_cents, gap_pct, loss_cents, reading, pair_status,"
-        " pair_note, pareto_rank, pareto_cum_share from public.xray_item where xray_id = %s order by public_menu_item_id",
+        " pair_note, pareto_rank, pareto_cum_share,"
+        " parity_full_cents, gap_full_pct, full_price_room from public.xray_item where xray_id = %s order by public_menu_item_id",
         (xid,),
     ).fetchall()
     pairs = conn.execute(
@@ -111,6 +112,18 @@ def test_B01_drawn_numbers_from_the_worker_rows(conn):
         ("Sundae", "78%"),
         ("Molho especial extra", "80%"),
     ]
+
+
+def test_B01_M1_05_the_seed_has_no_promotion_so_both_parities_agree(conn):
+    """The numbers drawn in design/ stay to the centavo: no G-SYN item has a full parity of its own."""
+    rows = conn.execute(
+        "select parity_cents, parity_full_cents, gap_pct, gap_full_pct, full_price_room from public.xray_item"
+        " where xray_id = %s and parity_cents is not null",
+        (xray_id(conn),),
+    ).fetchall()
+    assert len(rows) == 24
+    for r in rows:
+        assert (r["parity_full_cents"], r["gap_full_pct"], r["full_price_room"]) == (r["parity_cents"], r["gap_pct"], False)
 
 
 def test_B02_advisory_lock_lets_one_collector_run(conn):

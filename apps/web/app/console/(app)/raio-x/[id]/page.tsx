@@ -7,9 +7,9 @@ import { requireFlag } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { adminClient } from "@/lib/supabase/admin";
 import { gapLabel, money, runDateLabel, shareLabel } from "@/lib/xray/format";
-import { READING_LABEL, TARGET_KIND_LABEL, XRAY_MESSAGES } from "@/lib/xray/labels";
+import { fullParityLabel, READING_LABEL, TARGET_KIND_LABEL, XRAY_MESSAGES } from "@/lib/xray/labels";
 import { latestJob, loadHistory, loadItems, loadNeighborhood, loadXrayHead } from "@/lib/xray/load";
-import { neighborhoodCounts, priceHistory, xrayResult } from "@/lib/xray/view";
+import { fullParityInfo, neighborhoodCounts, priceHistory, xrayResult } from "@/lib/xray/view";
 import { prepareDeliveryAction } from "../actions";
 
 export const metadata = { title: "Raio-X de preço · MargoAI" };
@@ -78,15 +78,24 @@ export default async function XrayPage({ params }: { params: Promise<{ id: strin
                   </tr>
                 </thead>
                 <tbody>
-                  {r.rows.map((i) => (
-                    <tr key={i.id} data-item={i.name}>
-                      <td className={`${td} font-semibold`}>{i.name}</td>
-                      <td className={`${td} ${num}`}>{money(i.ownCents)}</td>
-                      <td className={`${td} ${num}`}>{money(i.parityCents!)}</td>
-                      <td className={`${td} ${num} font-semibold ${TONE[i.reading!]}`}>{gapLabel(i.gapPct)}</td>
-                      <td className={`${td} ${TONE[i.reading!]}`}>{READING_LABEL[i.reading!]}</td>
-                    </tr>
-                  ))}
+                  {r.rows.map((i) => {
+                    const full = fullParityInfo(i);
+                    return (
+                      <tr key={i.id} data-item={i.name}>
+                        <td className={`${td} font-semibold`}>{i.name}</td>
+                        <td className={`${td} ${num}`}>{money(i.ownCents)}</td>
+                        <td className={`${td} ${num}`}>
+                          {money(i.parityCents!)}
+                          {full && <div className="text-xs font-normal text-ink-muted" data-full-parity>{fullParityLabel(full)}</div>}
+                        </td>
+                        <td className={`${td} ${num} font-semibold ${TONE[i.reading!]}`}>{gapLabel(i.gapPct)}</td>
+                        <td className={`${td} ${TONE[i.reading!]}`}>
+                          {READING_LABEL[i.reading!]}
+                          {i.fullPriceRoom && <div className="text-xs text-ink-muted" data-full-price-room>{XRAY_MESSAGES.fullPriceRoom}</div>}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

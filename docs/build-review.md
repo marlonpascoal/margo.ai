@@ -34,7 +34,7 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - M1 consumes the external `margoai-menu-scraper`, which uses Bright Data Web Unlocker. This replaces the fetcher D47 describes. Claude does not run the scraper or change how it fetches; Marlon connects it.
 - The scraper only extracts: `discover` and `capture` work over HTTPS with its own token. Every copy is dated and kept; all logic lives in margo.ai.
 - The legal consult (D01b) still comes before the first X-ray delivered outside the test case, unless Marlon changes that.
-- **To decide:** which price enters parity under a promotion (M1-05). Until then parity keeps using the current price, and the full price is stored.
+- **Decided (Marlon, 07/nov), dual parity:** a promotion is evaluated at the current and at the full price, and the reading takes the more cautious one; loss, Pareto and P01's top 3 stay on current prices (04 M1-05 to M1-09).
 
 ### Open points from building the review answers
 

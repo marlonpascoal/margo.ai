@@ -120,6 +120,56 @@ def test_M1_09_top_three_by_loss_and_every_item_above():
     assert [i.name for i in hold] == ["X-Bacon artesanal", "Combo casal"]
 
 
+def promo(name, own, parity, gap, reading, loss, parity_full, gap_full, room=False):
+    return ReportItem(
+        name, own, parity, Decimal(str(gap)), reading, loss, False, parity_full, Decimal(str(gap_full)), room
+    )
+
+
+def test_B03_M1_05_page_two_shows_the_full_parity_only_when_it_differs():
+    items = (
+        promo("Alfa", 1000, 1300, -0.2308, "pode_subir", 300, 1500, -0.3333),
+        promo("Delta", 1000, 1000, 0, "na_media", 0, 1000, 0),
+        ReportItem("Antigo", 1000, 1000, Decimal(0), "na_media", 0),
+    )
+    _, (_, two) = pages(render_p01(report(items=items)))
+    assert "Alfa R$ 10,00 R$ 13,00 −23% pode subir hoje sem promoção: R$ 15,00, −33%" in two
+    assert two.count("sem promoção") == 1, "equal parity or a null one: nothing"
+
+
+def test_B03_M1_07_page_two_carries_the_note_of_a_na_media_item_with_room_at_full_price():
+    items = (promo("Bravo", 1000, 1050, -0.0476, "na_media", 50, 1300, -0.2308, room=True),)
+    _, (_, two) = pages(render_p01(report(items=items)))
+    assert (
+        "Bravo R$ 10,00 R$ 10,50 −5% na faixa sem promoção: R$ 13,00, −23% · "
+        "pode subir quando os vizinhos não estão em promoção"
+    ) in two
+    assert "—" not in two
+
+
+def test_B03_M1_07_do_not_lower_list_never_says_a_cheaper_item_is_above_the_neighborhood():
+    """M1-07: an item in the list only because of its full gap shows that gap, named as such."""
+    items = (
+        promo("Charlie", 1000, 1300, -0.2308, "nao_mexer", 300, 1300, 0.1538),
+        promo("X-Bacon", 3690, 3150, 0.1714, "nao_mexer", -540, 3150, 0.1714),
+        promo("Item 1", 500, 650, -0.2308, "pode_subir", 150, 650, -0.2308),
+    )
+    _, (one, _) = pages(render_p01(report(items=items)))
+    assert "X-Bacon (+17%) e Charlie (+15% sem promoção) estão acima da vizinhança" in one
+    assert "Charlie (−23%)" not in one
+
+
+def test_M1_09_top_three_stay_on_the_loss_of_the_current_parity():
+    items = [
+        promo("Pouca perda, muito cheio", 1000, 1200, -0.1667, "pode_subir", 200, 9000, -0.8889),
+        promo("A", 1000, 1500, -0.3333, "pode_subir", 500, 1500, -0.3333),
+        promo("B", 1000, 1400, -0.2857, "pode_subir", 400, 1400, -0.2857),
+        promo("C", 1000, 1300, -0.2308, "pode_subir", 300, 1300, -0.2308),
+    ]
+    up, _ = report_items_m1_09(items)
+    assert [i.name for i in up] == ["A", "B", "C"]
+
+
 def test_formats():
     assert (money(149000), money(500), money(5)) == ("R$ 1.490,00", "R$ 5,00", "R$ 0,05")
     assert (pct(Decimal("-0.2308")), pct(Decimal("0.1714")), pct(Decimal("0.31"), signed=False)) == (

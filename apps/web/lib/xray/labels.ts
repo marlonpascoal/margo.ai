@@ -1,6 +1,7 @@
 // Words on the M1 screens. Drawn copy is verbatim; entries marked "not drawn" follow the console style
 // and are listed in the wave report for Marlon.
 import type { Database } from "@margoai/contracts";
+import { gapLabel, money } from "./format";
 
 export type Reading = Database["public"]["Enums"]["xray_reading"];
 export type PairStatus = Database["public"]["Enums"]["pair_status"];
@@ -55,7 +56,11 @@ export const XRAY_MESSAGES = {
   invalidHours: "Horas: use números como 0,5.",
   jobFailed: "A tarefa falhou. Peça para rodar de novo.",
   unknownAccount: "Conta não encontrada.",
+  fullPriceRoom: "pode subir quando os vizinhos não estão em promoção",
 } as const;
+
+/** C05 under "Paridade" (M1-05, M1-06): the parity and gap at full prices. Not drawn. */
+export const fullParityLabel = (i: { cents: number; gap: number }) => `sem promoção: ${money(i.cents)}, ${gapLabel(i.gap)}`;
 
 /** C02 refusal of a competitor X-ray (B01 competitor, migration 20261212000001): limit 0 means not in the
  * plan or flag m1.concorrente off. Not drawn. */

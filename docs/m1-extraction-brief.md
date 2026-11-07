@@ -33,7 +33,7 @@ Whatever the source (recorded pages, an owner upload, typed prices, an official 
 | `external_item_id` | yes | dedup, history | Any id stable between runs of the same store |
 | `name` | yes | M1-04 | Pairing by name similarity: comparable at 0.6, automatic at 0.75 with at least `min_pairs` (5) |
 | `description` | optional | M1-03, M1-04 | Helps find weight or size ("180 g", "500 ml") |
-| `price_cents` | yes | M1-05, M1-06 | The current price shown; when a promotion is on, the price before the discount too, if visible (open: which one counts) |
+| `price_cents` | yes | M1-05, M1-06 | The current price shown; when a promotion is on, the price before the discount too, if visible (both count: 04 M1-05) |
 | `unit`, `unit_qty` | yes when sold by weight or pack | M1-03 | g, ml, un; null `unit_qty` for a mixed combo |
 | `collected_at` | yes | M1-10 history | When the price was seen |
 

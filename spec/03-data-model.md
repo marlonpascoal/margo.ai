@@ -40,7 +40,8 @@ Postgres in Supabase. Migrations in `supabase/migrations/` are the contract betw
 | `extract_content` | `content_hash` (unique), `payload jsonb` | Allowlisted fields of a copy; identical copies reuse a row. May hold the street address, so RLS on, no policy. Append-only |
 | `extract_copy` | `run_id`, `channel`, `store_external_id`, `collected_at`, `content_hash` | Dated copy of a store (D47c). Unique (`run_id`,`channel`,`store_external_id`). Append-only: a trigger refuses update and delete. RLS on, no policy |
 | `xray_store` | `xray_id`, `public_store_id`, `distance_m`, `included bool`, `exclusion_reason` | C03 |
-| `xray_item` | `xray_id`, `menu_item_id`, `norm_unit`, `norm_price_cents`, `parity_cents`, `gap_pct`, `loss_cents`, `reading` enum(`pode_subir`,`na_media`,`nao_mexer`), `pair_status` enum(`auto`,`revisar`,`normalizado`,`manual`) | C04, C05 |
+| `xray_item` | `xray_id`, `menu_item_id`, `norm_unit`, `norm_price_cents`, `parity_cents`, `gap_pct`, `parity_full_cents`, `gap_full_pct`, `full_price_room bool`, `loss_cents`, `reading` enum(`pode_subir`,`na_media`,`nao_mexer`), `pair_status` enum(`auto`,`revisar`,`normalizado`,`manual`) | C04, C05. `parity_cents`, `gap_pct` are at current prices, `_full` at full prices (M1-05, M1-06); a null `parity_full_cents` is a run from before dual parity |
+| `public_menu_item_snapshot` | `xray_id`, `public_store_id`, `public_menu_item_id`, `name`, `price_cents`, `full_price_cents null`, `unit`, `unit_qty`, `collected_at` | A menu item in one X-ray run, never changed. `price_cents` is the M1-05 current price; a null `full_price_cents` means current, also in every run from before dual parity. A weekly capture does not reach it |
 | `xray_pair` | `xray_item_id`, `public_menu_item_id`, `accepted bool`, `by` | Comparable items |
 | `time_log` | `account_id null`, `xray_id null`, `step`, `minutes`, `person_id` | Hours per step (V1 criterion, C06) |
 

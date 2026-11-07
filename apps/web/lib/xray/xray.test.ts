@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import { calculate, confirmStores, createXray, markDelivered, prepareDelivery, reviewItem, saveMinutes, setStoreIncluded, type XrayDeps } from "./commands";
 import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./format";
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
-import { collectStopReason, competitorRefusal, pairStatusLabel, XRAY_MESSAGES } from "./labels";
+import { collectStopReason, competitorRefusal, fullParityLabel, pairStatusLabel, XRAY_MESSAGES } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
-import { examplePair, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow } from "./view";
+import { examplePair, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow } from "./view";
 
 const PANTANOS = "https://www.ifood.com.br/delivery/londrina-pr/pantanos-burguer-igapo/91a9c35d-0000-4000-8000-000000000000";
 
@@ -75,6 +75,9 @@ const item = (o: Partial<ItemRow>): ItemRow => ({
   normUnit: "un",
   normPriceCents: 100,
   parityCents: 100,
+  parityFullCents: null,
+  gapFullPct: null,
+  fullPriceRoom: false,
   gapPct: 0,
   lossCents: 0,
   reading: "na_media",
@@ -125,6 +128,24 @@ describe("C05", () => {
       { name: "Batata", width: 100, cumShare: 0.6 },
       { name: "Refri", width: 71, cumShare: 0.85 },
     ]);
+  });
+});
+
+describe("C05 dual parity (M1-05, M1-07)", () => {
+  it("B01_C05_shows_the_full_parity_only_when_it_differs_from_the_current", () => {
+    const differs = fullParityInfo({ parityCents: 1050, parityFullCents: 1300, gapFullPct: -0.2308 });
+    expect(differs).toEqual({ cents: 1300, gap: -0.2308 });
+    expect(fullParityLabel(differs!)).toBe("sem promoção: R$ 13,00, −23%");
+    expect(fullParityInfo({ parityCents: 1050, parityFullCents: 1050, gapFullPct: -0.0476 })).toBeNull();
+  });
+
+  it("B01_C05_a_run_from_before_dual_parity_shows_no_secondary_info", () => {
+    expect(fullParityInfo({ parityCents: 1050, parityFullCents: null, gapFullPct: null })).toBeNull();
+  });
+
+  it("B01_C05_the_note_has_no_em_dash", () => {
+    expect(XRAY_MESSAGES.fullPriceRoom).toBe("pode subir quando os vizinhos não estão em promoção");
+    expect(fullParityLabel({ cents: 1300, gap: 0.1 })).not.toContain("—");
   });
 });
 

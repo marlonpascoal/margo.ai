@@ -23,11 +23,14 @@ from .rules import (
     Store,
     candidate_m1_02,
     exclusion_m1_02,
+    full_price_m1_05,
+    full_price_room_m1_07,
     gap_m1_06,
     loss_m1_08,
     neighborhood_m1_01,
     pair_item_m1_04,
     pareto_m1_08,
+    parity_full_m1_05,
     parity_m1_05,
     reading_m1_07,
 )
@@ -157,6 +160,9 @@ class CalcRow:
     loss_cents: int | None
     pareto_rank: int | None
     pareto_cum_share: Fraction | None
+    parity_full_cents: int | None = None
+    gap_full: Fraction | None = None
+    full_price_room: bool = False
 
 
 @dataclass(frozen=True)
@@ -168,8 +174,9 @@ class CalcResult:
 
 
 def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10)) -> CalcResult:
-    """M1-05 to M1-08. Skipped items stay out of parity and of the Pareto (C04)."""
-    partial: dict[str, tuple[int, Fraction, Reading, int]] = {}
+    """M1-05 to M1-08. Skipped items stay out of parity and of the Pareto (C04). The reading (M1-07) takes
+    both parities; the loss and the Pareto (M1-08) stay on the current one."""
+    partial: dict[str, tuple[int, Fraction, Reading, int, int, Fraction]] = {}
     for it in items:
         if it.skipped:
             continue
@@ -177,11 +184,16 @@ def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10)) -> C
         if parity is None:
             continue
         gap = gap_m1_06(it.own.price_cents, parity)
+        parity_full = parity_full_m1_05(it.own, it.accepted)
+        assert parity_full is not None, "same accepted items as the current parity"
+        gap_full = gap_m1_06(full_price_m1_05(it.own), parity_full)
         partial[it.key] = (
             parity,
             gap,
-            reading_m1_07(gap, band),
+            reading_m1_07(gap, band, gap_full),
             loss_m1_08(parity, it.own.price_cents, it.weekly_units),
+            parity_full,
+            gap_full,
         )
     names = {it.key: it.own.name for it in items}
     pareto = pareto_m1_08({k: (names[k], v[3]) for k, v in partial.items()}, items_total=len(partial))
@@ -191,9 +203,20 @@ def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10)) -> C
         if it.key not in partial:
             rows.append(CalcRow(it.key, None, None, None, None, None, None))
             continue
-        parity, gap, reading, loss = partial[it.key]
+        parity, gap, reading, loss, parity_full, gap_full = partial[it.key]
         r = ranks.get(it.key)
         rows.append(
-            CalcRow(it.key, parity, gap, reading, loss, r.rank if r else None, r.cum_share if r else None)
+            CalcRow(
+                it.key,
+                parity,
+                gap,
+                reading,
+                loss,
+                r.rank if r else None,
+                r.cum_share if r else None,
+                parity_full,
+                gap_full,
+                full_price_room_m1_07(reading, gap_full, band),
+            )
         )
     return CalcResult(tuple(rows), len(partial), pareto.items_for_80, pareto.total_loss_cents)

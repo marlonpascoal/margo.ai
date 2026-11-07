@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import urllib.request
+from fractions import Fraction
 from typing import Protocol
 from uuid import UUID
 
@@ -52,7 +53,7 @@ class SupabaseStorage:
 def load_report(conn, xray_id: str) -> tuple[XrayReport, str]:
     """The report data for one X-ray, and the account's code or 'lead' for the file path."""
     x = conn.execute(
-        "select x.id, x.radius_km, (x.collected_at at time zone %s)::date as on_day, s.name as store_name,"
+        "select x.id, x.radius_km, x.rules ->> 'reading_band' as reading_band, (x.collected_at at time zone %s)::date as on_day, s.name as store_name,"
         " coalesce(a.is_synthetic, false) as synthetic, a.code,"
         " (select count(*) from public.xray_store xs where xs.xray_id = x.id and xs.included) as stores"
         " from public.xray x join public.public_store s on s.id = x.target_store_id"
@@ -63,7 +64,8 @@ def load_report(conn, xray_id: str) -> tuple[XrayReport, str]:
         raise LookupError("unknown X-ray")
     rows = conn.execute(
         "select v.name, v.own_cents as price_cents, i.parity_cents, i.gap_pct, i.reading, i.loss_cents, i.skipped,"
-        " i.pareto_rank, i.pareto_cum_share from public.xray_item i join public.xray_item_view v on v.id = i.id"
+        " i.pareto_rank, i.pareto_cum_share, i.parity_full_cents, i.gap_full_pct, i.full_price_room"
+        " from public.xray_item i join public.xray_item_view v on v.id = i.id"
         " where i.xray_id = %s order by v.name",
         (xray_id,),
     ).fetchall()
@@ -76,6 +78,9 @@ def load_report(conn, xray_id: str) -> tuple[XrayReport, str]:
             r["reading"],
             r["loss_cents"],
             r["skipped"],
+            r["parity_full_cents"],
+            r["gap_full_pct"],
+            r["full_price_room"],
         )
         for r in rows
     )
@@ -90,6 +95,7 @@ def load_report(conn, xray_id: str) -> tuple[XrayReport, str]:
         pareto_count=pareto,
         synthetic=x["synthetic"],
         seed=x["synthetic"],
+        reading_band=Fraction(x["reading_band"]) if x["reading_band"] else Fraction(1, 10),
     )
     return report, x["code"] or "lead"
 

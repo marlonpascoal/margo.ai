@@ -596,7 +596,8 @@ def render_sql(seed: Seed, hood, decisions) -> str:
     out.append("-- C04, C05: items (M1-03, M1-04) and their calculation (M1-05 to M1-08).")
     out.append(
         "insert into public.xray_item (id, xray_id, public_menu_item_id, norm_unit, norm_price_cents, parity_cents, gap_pct, "
-        "loss_cents, reading, pair_status, pair_note, weekly_units, reviewed_by, reviewed_at, pareto_rank, pareto_cum_share) values"
+        "loss_cents, reading, pair_status, pair_note, weekly_units, reviewed_by, reviewed_at, pareto_rank, pareto_cum_share, "
+        "parity_full_cents, gap_full_pct, full_price_room) values"
     )
     rows = []
     for it in items:
@@ -622,6 +623,9 @@ def render_sql(seed: Seed, hood, decisions) -> str:
                 REVIEWED if reviewed else None,
                 c.pareto_rank,
                 to_numeric(c.pareto_cum_share) if c.pareto_cum_share is not None else None,
+                c.parity_full_cents,
+                to_numeric(c.gap_full) if c.gap_full is not None else None,
+                c.full_price_room,
             ]
         )
     out += [values(rows) + ";", ""]

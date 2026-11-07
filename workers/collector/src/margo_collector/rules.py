@@ -14,7 +14,7 @@ import math
 import re
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from fractions import Fraction
@@ -60,6 +60,8 @@ class Item:
     unit_qty: Decimal | float | int | None = None
     taxonomy_level1: str | None = None
     taxonomy_level2: str | None = None
+    full_price_cents: int | None = None
+    """M1-05: the price before a promotion (original_price_cents); None means the current price."""
 
 
 @dataclass(frozen=True)
@@ -362,6 +364,20 @@ def parity_m1_05(own: Item, accepted: Sequence[Item]) -> int | None:
     return round_half_away(per_base * norm.own_base_qty)
 
 
+def full_price_m1_05(item: Item) -> int:
+    """M1-05: the full price is the original price when present (a zero is no price), else the current one."""
+    return item.full_price_cents or item.price_cents
+
+
+def _at_full_price(item: Item) -> Item:
+    return replace(item, price_cents=full_price_m1_05(item), full_price_cents=None)
+
+
+def parity_full_m1_05(own: Item, accepted: Sequence[Item]) -> int | None:
+    """M1-05: the same parity over the same accepted items and M1-03 normalization, at full prices."""
+    return parity_m1_05(_at_full_price(own), [_at_full_price(i) for i in accepted])
+
+
 def gap_m1_06(own_cents: int, parity_cents: int) -> Fraction:
     """M1-06: gap = (own price minus parity) / parity."""
     if parity_cents <= 0:
@@ -369,14 +385,25 @@ def gap_m1_06(own_cents: int, parity_cents: int) -> Fraction:
     return Fraction(own_cents - parity_cents, parity_cents)
 
 
-def reading_m1_07(gap: Fraction, band: Fraction = Fraction(1, 10)) -> Reading:
-    """M1-07: at or below minus the band, `pode_subir`; at or above plus the band, `nao_mexer` (raising
-    is safe without cost data, lowering is not); otherwise `na_media`."""
-    if gap <= -band:
-        return "pode_subir"
-    if gap >= band:
+def reading_m1_07(
+    gap: Fraction, band: Fraction = Fraction(1, 10), gap_full: Fraction | None = None
+) -> Reading:
+    """M1-07, the more cautious of the current and the full-price gap: either at or above plus the band,
+    `nao_mexer` (raising is safe without cost data, lowering is not); else both at or below minus the band,
+    `pode_subir`; otherwise `na_media`. Without a full gap, the current one counts for both."""
+    full = gap if gap_full is None else gap_full
+    if gap >= band or full >= band:
         return "nao_mexer"
+    if gap <= -band and full <= -band:
+        return "pode_subir"
     return "na_media"
+
+
+def full_price_room_m1_07(
+    reading: Reading, gap_full: Fraction | None, band: Fraction = Fraction(1, 10)
+) -> bool:
+    """M1-07: the note of a `na_media` item whose full-price gap is at or below minus the band."""
+    return reading == "na_media" and gap_full is not None and gap_full <= -band
 
 
 READING_LABEL: dict[Reading, str] = {

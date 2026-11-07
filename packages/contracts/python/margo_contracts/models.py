@@ -1104,6 +1104,7 @@ class PublicMenuItem(Row):
 class PublicMenuItemSnapshot(Row):
     collected_at: datetime
     created_at: datetime
+    full_price_cents: int | None
     id: UUID
     name: str
     price_cents: int
@@ -1275,6 +1276,8 @@ class Xray(Row):
 
 class XrayItem(Row):
     created_at: datetime
+    full_price_room: bool
+    gap_full_pct: Decimal | None
     gap_pct: Decimal | None
     id: UUID
     loss_cents: int | None
@@ -1286,6 +1289,7 @@ class XrayItem(Row):
     pareto_cum_share: Decimal | None
     pareto_rank: int | None
     parity_cents: int | None
+    parity_full_cents: int | None
     public_menu_item_id: UUID
     reading: XrayReading | None
     reviewed_at: datetime | None

@@ -37,6 +37,11 @@ export interface ItemRow {
   normPriceCents: number;
   parityCents: number | null;
   gapPct: number | null;
+  /** M1-05: parity at full prices; null in a run calculated before dual parity. */
+  parityFullCents: number | null;
+  gapFullPct: number | null;
+  /** M1-07: `na_media` with the full-price gap at or below minus the band. */
+  fullPriceRoom: boolean;
   lossCents: number | null;
   reading: Reading | null;
   pairStatus: PairStatus;
@@ -64,6 +69,12 @@ export const pendingReview = (items: Pick<ItemRow, "pairStatus" | "reviewed" | "
 export function examplePair(i: Pick<ItemRow, "exampleName" | "exampleCents" | "normUnit">, money: (c: number) => string): string {
   if (!i.exampleName) return "";
   return i.normUnit === "100g" || i.normUnit === "100ml" ? `${i.exampleName}, ${money(i.exampleCents ?? 0)}` : i.exampleName;
+}
+
+/** C05 secondary line (M1-05, M1-06): the full-price parity and gap, only when that parity differs from the current one. */
+export function fullParityInfo(i: Pick<ItemRow, "parityCents" | "parityFullCents" | "gapFullPct">): { cents: number; gap: number } | null {
+  if (i.parityFullCents === null || i.gapFullPct === null || i.parityFullCents === i.parityCents) return null;
+  return { cents: i.parityFullCents, gap: i.gapFullPct };
 }
 
 const ORDER: Record<Reading, number> = { pode_subir: 0, na_media: 1, nao_mexer: 2 };

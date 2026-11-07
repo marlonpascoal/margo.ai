@@ -50,6 +50,11 @@ class ReportItem:
     reading: Reading | None
     loss_cents: int | None
     skipped: bool = False
+    parity_full_cents: int | None = None
+    """M1-05: parity at full prices; None in a run calculated before dual parity."""
+    gap_full: Fraction | Decimal | None = None
+    full_price_room: bool = False
+    """M1-07: `na_media` with the full-price gap at or below minus the band."""
 
 
 @dataclass(frozen=True)
@@ -65,6 +70,8 @@ class XrayReport:
     seed: bool = True
     """Rendering the seed: the header says "dados fictícios" as drawn (05 intro)."""
     extra: dict[str, str] = field(default_factory=dict)
+    reading_band: Fraction = Fraction(1, 10)
+    """M1-07 band of this X-ray (xray.rules)."""
 
     @property
     def analyzed(self) -> list[ReportItem]:
@@ -84,8 +91,13 @@ def report_items_m1_09(items: list[ReportItem]) -> tuple[list[ReportItem], list[
     up = sorted(
         (i for i in items if i.reading == "pode_subir"), key=lambda i: (-(i.loss_cents or 0), i.name)
     )[:3]
-    hold = sorted((i for i in items if i.reading == "nao_mexer"), key=lambda i: (-_gap(i), i.name))
+    hold = sorted((i for i in items if i.reading == "nao_mexer"), key=lambda i: (-_highest_gap(i), i.name))
     return sorted(up, key=lambda i: (_gap(i), i.name)), hold
+
+
+def _highest_gap(i: ReportItem) -> Fraction:
+    """M1-07: an item is `nao_mexer` by either gap, so the list orders by the higher one."""
+    return max(_gap(i), Fraction(i.gap_full)) if i.gap_full is not None else _gap(i)
 
 
 # Formats ----------------------------------------------------------------------------------------
@@ -106,6 +118,25 @@ def pct(x: Fraction | Decimal, signed: bool = True) -> str:
     if not signed:
         return f"{n}%"
     return f"+{n}%" if n > 0 else (f"−{-n}%" if n < 0 else "0%")
+
+
+def hold_gap_label_m1_07(i: ReportItem, band: Fraction) -> str:
+    """M1-07, the gap beside an item in "Não mexa": the current one when it alone puts the item there, else the
+    full-price one, named. A current gap of −23% must not read as "acima da vizinhança"."""
+    if i.gap_full is None or _gap(i) >= band:
+        return pct(_gap(i))
+    return f"{pct(i.gap_full)} sem promoção"
+
+
+def full_price_line_m1_05(i: ReportItem) -> str | None:
+    """Page 2, under the row: the full-price parity and gap when that parity differs from the current one, and the
+    M1-07 note. None for a run calculated before dual parity."""
+    parts = []
+    if i.parity_full_cents is not None and i.gap_full is not None and i.parity_full_cents != i.parity_cents:
+        parts.append(f"sem promoção: {money(i.parity_full_cents)}, {pct(i.gap_full)}")
+    if i.full_price_room:
+        parts.append("pode subir quando os vizinhos não estão em promoção")
+    return " · ".join(parts) or None
 
 
 def join_pt(parts: list[str]) -> str:
@@ -206,17 +237,26 @@ def _footer(p: _Page, r: XrayReport) -> None:
 
 
 def _table(
-    p: _Page, cols: list[tuple[str, float, bool]], rows: list[list[tuple[str, str]]], size: float = 11
+    p: _Page,
+    cols: list[tuple[str, float, bool]],
+    rows: list[list[tuple[str, str]]],
+    size: float = 11,
+    notes: list[str | None] | None = None,
 ) -> None:
-    """cols: (title, right edge or left x, right-aligned). Each cell is (text, color token)."""
+    """cols: (title, right edge or left x, right-aligned). Each cell is (text, color token). `notes` are small lines
+    under their rows; a row without one keeps its height."""
     for title, x, right in cols:
         p.text(x, title.upper(), 7.5, color="ink-muted", right=right)
     p.y -= 6
     p.rule("ink", 0.75)
-    for row in rows:
+    for k, row in enumerate(rows):
         p.y -= size + 7
         for (txt, color), (_, x, right) in zip(row, cols, strict=True):
             p.text(x, txt, size, color=color, right=right)
+        note = notes[k] if notes else None
+        if note:
+            p.y -= 9
+            p.text(M, note, 7, color="ink-muted")
         p.y -= 7
         p.rule()
 
@@ -305,7 +345,7 @@ def render_p01(r: XrayReport) -> bytes:
     if hold:
         p.text(M, "Não mexa sem saber o custo", 16, bold=True)
         p.y -= 20
-        names = join_pt([f"{i.name} ({pct(_gap(i))})" for i in hold])
+        names = join_pt([f"{i.name} ({hold_gap_label_m1_07(i, r.reading_band)})" for i in hold])
         verb = "está acima" if len(hold) == 1 else "estão acima"
         p.wrap(
             f"{names} {verb} da vizinhança. Baixar pode deixar o item no prejuízo. Só dá para saber com o seu "
@@ -357,6 +397,7 @@ def render_p01(r: XrayReport) -> bytes:
             for i in rows
         ],
         size=8.5,
+        notes=[full_price_line_m1_05(i) for i in rows],
     )
     p.y -= 20
     p.text(M, f"{r.pareto_count} de {len(analyzed)} itens somam 80% da perda por preço", 11, bold=True)

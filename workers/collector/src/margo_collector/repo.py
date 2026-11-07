@@ -337,7 +337,8 @@ class PostgresXrayRepo:
                     " pair_note) values (%s, %s, %s, %s, %s, %s) on conflict (xray_id, public_menu_item_id) do update set"
                     " norm_unit = excluded.norm_unit, norm_price_cents = excluded.norm_price_cents,"
                     " pair_status = excluded.pair_status, pair_note = excluded.pair_note, parity_cents = null,"
-                    " gap_pct = null, loss_cents = null, reading = null, pareto_rank = null, pareto_cum_share = null"
+                    " gap_pct = null, loss_cents = null, reading = null, pareto_rank = null, pareto_cum_share = null,"
+                    " parity_full_cents = null, gap_full_pct = null, full_price_room = false"
                     " returning id",
                     (
                         xray_id,
@@ -367,10 +368,15 @@ class PostgresXrayRepo:
 
     # calculation
     def calc_inputs(self, xray_id: str) -> list[CalcInput]:
-        # A run keeps its prices: the snapshot when there is one, else the catalog (M1-05 comparison price).
+        # A run keeps its prices: the snapshot when there is one, else the catalog (M1-05 comparison price). The
+        # same for the full price: a null in a snapshot means current, never the catalog's original of today.
+        full = (
+            "case when sn.id is null then nullif(m.original_price_cents, 0) else sn.full_price_cents end"
+            " as full_price_cents"
+        )
         items = self._all(
             "select i.id as xray_item_id, i.weekly_units, i.skipped, m.id as item_id, m.public_store_id, m.name,"
-            " coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, m.unit, m.unit_qty"
+            f" coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, m.unit, m.unit_qty, {full}"
             " from public.xray_item i join public.public_menu_item m on m.id = i.public_menu_item_id"
             " left join public.public_menu_item_snapshot sn on sn.xray_id = i.xray_id and sn.public_menu_item_id = m.id"
             " where i.xray_id = %s and m.removed_at is null order by i.id",
@@ -378,7 +384,7 @@ class PostgresXrayRepo:
         )
         pairs = self._all(
             "select p.xray_item_id, m.id, m.public_store_id, m.name, m.unit, m.unit_qty,"
-            " coalesce(sn.price_cents, m.comparison_price_cents) as price_cents"
+            f" coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, {full}"
             " from public.xray_pair p join public.public_menu_item m on m.id = p.public_menu_item_id"
             " join public.xray_item i on i.id = p.xray_item_id"
             " left join public.public_menu_item_snapshot sn on sn.xray_id = i.xray_id and sn.public_menu_item_id = m.id"
@@ -395,6 +401,7 @@ class PostgresXrayRepo:
                     r["price_cents"],
                     r["unit"],
                     r["unit_qty"],
+                    full_price_cents=r["full_price_cents"],
                 )
             )
         return [
@@ -407,6 +414,7 @@ class PostgresXrayRepo:
                     r["price_cents"],
                     r["unit"],
                     r["unit_qty"],
+                    full_price_cents=r["full_price_cents"],
                 ),
                 tuple(accepted.get(str(r["xray_item_id"]), [])),
                 r["weekly_units"],
@@ -420,7 +428,8 @@ class PostgresXrayRepo:
             for r in result.rows:
                 c.execute(
                     "update public.xray_item set parity_cents = %s, gap_pct = %s, loss_cents = %s, reading = %s,"
-                    " pareto_rank = %s, pareto_cum_share = %s where id = %s and xray_id = %s",
+                    " pareto_rank = %s, pareto_cum_share = %s, parity_full_cents = %s, gap_full_pct = %s,"
+                    " full_price_room = %s where id = %s and xray_id = %s",
                     (
                         r.parity_cents,
                         to_numeric(r.gap) if r.gap is not None else None,
@@ -428,6 +437,9 @@ class PostgresXrayRepo:
                         r.reading,
                         r.pareto_rank,
                         to_numeric(r.pareto_cum_share) if r.pareto_cum_share is not None else None,
+                        r.parity_full_cents,
+                        to_numeric(r.gap_full) if r.gap_full is not None else None,
+                        r.full_price_room,
                         r.key,
                         xray_id,
                     ),

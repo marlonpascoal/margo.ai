@@ -127,7 +127,7 @@ A store with neither `search_terms` nor `taxonomies` stays a candidate. A store 
 | `category` | | string | The item's menu section |
 | `taxonomy_level1`, `taxonomy_level2` | | string | The channel's taxonomy. M1-04 compares items of the same taxonomy |
 | `price_cents` | yes | integer | The current price |
-| `original_price_cents` | | integer | The price before a promotion. Stored only |
+| `original_price_cents` | | integer | The price before a promotion. Enters the full parity (`spec/04-rules.md` M1-05) |
 | `minimum_price_cents` | | integer | Used when `price_cents` is 0 |
 | `unit` | | `"g"`, `"ml"`, `"un"`, `"pack"` | Default `"un"` |
 | `unit_qty` | | number | Required when `unit` is `"g"` or `"ml"`. For a pack, the units in it; leave it out for a combo of different items |

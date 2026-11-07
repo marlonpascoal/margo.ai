@@ -62,6 +62,9 @@ export const XRAY_MESSAGES = {
 /** C05 under "Paridade" (M1-05, M1-06): the parity and gap at full prices. Not drawn. */
 export const fullParityLabel = (i: { cents: number; gap: number }) => `sem promoção: ${money(i.cents)}, ${gapLabel(i.gap)}`;
 
+/** C06 file thumbnail, as drawn ("PDF · A4 · 2 páginas") with the rendered file's real count; none before there is one. */
+export const pdfFileLabel = (pages: number | null) => (pages === null ? "PDF · A4" : `PDF · A4 · ${pages} páginas`);
+
 /** C02 refusal of a competitor X-ray (B01 competitor, migration 20261212000001): limit 0 means not in the
  * plan or flag m1.concorrente off. Not drawn. */
 export function competitorRefusal(limit: number): string {

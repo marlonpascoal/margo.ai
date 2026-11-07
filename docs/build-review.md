@@ -38,10 +38,6 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 
 **Not drawn, added at Marlon's request (07/nov):** "Sair" in `Menu` (end of the sidebar) and `MenuDono` (next to the role, also on phone), ending this session only. The drawings need it.
 
-**Before the first real X-ray PDF:**
-- **P01 page 2 pagination:** there is none; about 27 rows fit, and real menus can overflow. Not run on that case yet.
-- **C05 "sem promoção" line:** it shows only when the parities differ, so an own-store promotion reads -23% and "precisa do custo" with no explanation. Decide on a real case.
-
 ### Open points from building the review answers
 
 - **Extension: check on the real portal** (`fixtures/m2/extension/README.md`):
@@ -101,7 +97,7 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
   - C04 review sets `reviewed_at` and keeps the rule status.
   - Pareto bars for Sundae and Molho are computed (8%, 7%), not the drawn 19% and 13%.
   - P01 "Não mexa" lists all 5 items above parity (drawing shows 2).
-  - P02 text follows C06 ("2 páginas"), not the P02 drawing.
+  - P02 text follows C06 ("2 páginas"), not the P02 drawing. C06 states the rendered file's page count: 2 for the seed, more when the list runs on.
   - Raw page cache (7 days, D47) may hold reviewer names.
   - Collector user-agent contact `contato@margoai.com`.
 - **M2 (lane B):**

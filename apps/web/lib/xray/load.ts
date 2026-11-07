@@ -66,6 +66,8 @@ export interface JobState {
   status: "queued" | "running" | "done" | "failed";
   error: string | null;
   reason: string | null;
+  /** render_xray: the page count the job logged for the file (C06). */
+  pages: number | null;
 }
 
 /** The newest job of a type for this X-ray, with the failure from its last log entry. */
@@ -77,7 +79,12 @@ export async function latestJob(db: Db, type: string, xrayId: string): Promise<J
   if (!j) return null;
   const log = Array.isArray(j.log) ? (j.log as Record<string, unknown>[]) : [];
   const last = log[log.length - 1] ?? {};
-  return { status: j.status, error: typeof last.error === "string" ? last.error : null, reason: typeof last.reason === "string" ? last.reason : null };
+  return {
+    status: j.status,
+    error: typeof last.error === "string" ? last.error : null,
+    reason: typeof last.reason === "string" ? last.reason : null,
+    pages: typeof last.pages === "number" ? last.pages : null,
+  };
 }
 
 /** C03: extract_capture jobs still queued or running for the X-ray's target and stores. */

@@ -1,9 +1,10 @@
 """`render_xray` job (C05 "Preparar entrega"): P01 from the stored X-ray, saved to the private `pdf` bucket,
-path written to xray.pdf_path. Run locally with `node scripts/with-local-env.mjs uv run worker render_xray
+path written to xray.pdf_path; the job log keeps the page count C06 states. Run locally with `node scripts/with-local-env.mjs uv run worker render_xray
 --local` (the storage upload needs the local stack's URL and service key, which that script provides)."""
 
 from __future__ import annotations
 
+import io
 import os
 import urllib.request
 from fractions import Fraction
@@ -12,6 +13,7 @@ from uuid import UUID
 
 from margo_common.runner import JobRun
 from pydantic import BaseModel
+from pypdf import PdfReader
 
 from .P01_raio_x import ReportItem, XrayReport, render_p01
 
@@ -100,6 +102,11 @@ def load_report(conn, xray_id: str) -> tuple[XrayReport, str]:
     return report, x["code"] or "lead"
 
 
+def pdf_pages(pdf: bytes) -> int:
+    """How many pages the file has, for C06: the list runs on when the menu is long."""
+    return len(PdfReader(io.BytesIO(pdf)).pages)
+
+
 def render_and_store(conn, store: PdfStore, xray_id: str) -> dict[str, int]:
     report, code = load_report(conn, xray_id)
     if not report.analyzed:
@@ -108,7 +115,7 @@ def render_and_store(conn, store: PdfStore, xray_id: str) -> dict[str, int]:
     path = f"raio-x/{code}/{xray_id}.pdf"
     store.put(path, pdf)
     conn.execute("update public.xray set pdf_path = %s where id = %s", (path, xray_id))
-    return {"bytes": len(pdf)}
+    return {"bytes": len(pdf), "pages": pdf_pages(pdf)}
 
 
 def render_xray(run: JobRun[XrayPayload]) -> dict[str, int]:

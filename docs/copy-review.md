@@ -85,13 +85,14 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | Calcule o raio-X no passo 3. | `apps/web/lib/xray/labels.ts:49` | C05 opened before step 3 ran | |
 | A tarefa falhou. Peça para rodar de novo. | `apps/web/lib/xray/labels.ts:56` | Any X-ray job failed | |
 | loja própria | `apps/web/lib/xray/labels.ts:89` | Small label next to the store: own store (vs competitor) | |
-| sem promoção: {paridade}, {diferença} | `apps/web/lib/xray/labels.ts:63` | Under "Paridade": parity and gap at full prices, only when that parity differs from the current one (M1-05) | |
+| sem promoção: {paridade}, {diferença} | `apps/web/lib/xray/labels.ts:63` | Under "Paridade": parity and gap at full prices, when the parity or the gap differs from the current one (M1-05) | |
 | pode subir quando os vizinhos não estão em promoção | `apps/web/lib/xray/labels.ts:59` | Under "Leitura" of a `na_media` item with room at full prices (M1-07) | |
 
 ## C06 Entrega ao dono
 
 | Texto atual | Onde (path:line) | Quando aparece | Nova versão |
 |---|---|---|---|
+| PDF · A4 · {n} páginas | `apps/web/lib/xray/labels.ts:66` | C06 file thumbnail: the rendered file's real page count (drawn: "2 páginas", which the seed still shows). Before there is a file: "PDF · A4" | |
 | PDF em preparação. Atualize a página em instantes. | `apps/web/lib/xray/labels.ts:47` | PDF job running | |
 | Prepare a entrega no passo 4 para gerar o PDF. | `apps/web/lib/xray/labels.ts:48` | PDF link before the delivery is prepared | |
 | Horas: use números como 0,5. | `apps/web/lib/xray/labels.ts:55` | Hours field not a number | |
@@ -664,12 +665,12 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | {n} arquivos citados nos dados não estavam mais guardados. | `workers/account/src/margo_account/export.py:69` | LEIA-ME.txt when stored files were missing | |
 | SINTÉTICO: dados fictícios de teste. | `workers/account/src/margo_account/export.py:71` | LEIA-ME.txt of a synthetic account | |
 | um preço | `workers/render/src/margo_render/P01_raio_x.py:40` | P01 count word, 1 price (drawn: "três preços") | |
-| {item} está acima da vizinhança. | `workers/render/src/margo_render/P01_raio_x.py:309` | P01 "Não mexa" block with one item (drawn: plural) | |
-| {item} ({diferença} sem promoção) | `workers/render/src/margo_render/P01_raio_x.py:128` | P01 "Não mexa" block: an item there only because of its full-price gap (M1-07) | |
-| O raio-X completo | `workers/render/src/margo_render/P01_raio_x.py:334` | P01 page 2 title | |
-| sem promoção: {paridade}, {diferença} | `workers/render/src/margo_render/P01_raio_x.py:136` | P01 page 2, small line under a row: parity and gap at full prices, only when that parity differs from the current one (M1-05) | |
-| pode subir quando os vizinhos não estão em promoção | `workers/render/src/margo_render/P01_raio_x.py:138` | P01 page 2, small line under a `na_media` row with room at full prices (M1-07) | |
-| Fora da conta, sem pares confiáveis: {itens}. | `workers/render/src/margo_render/P01_raio_x.py:366` | P01 page 2 footnote: skipped items | |
+| {item} está acima da vizinhança. | `workers/render/src/margo_render/P01_raio_x.py:378` | P01 "Não mexa" block with one item (drawn: plural) | |
+| {item} ({diferença} sem promoção) | `workers/render/src/margo_render/P01_raio_x.py:130` | P01 "Não mexa" block: an item there only because of its full-price gap (M1-07) | |
+| O raio-X completo | `workers/render/src/margo_render/P01_raio_x.py:403` | P01 page 2 title | |
+| sem promoção: {paridade}, {diferença} | `workers/render/src/margo_render/P01_raio_x.py:143` | P01 list, small line under a row: parity and gap at full prices, when the parity or the gap differs from the current one (M1-05) | |
+| pode subir quando os vizinhos não estão em promoção | `workers/render/src/margo_render/P01_raio_x.py:145` | P01 list, small line under a `na_media` row with room at full prices (M1-07) | |
+| Fora da conta, sem pares confiáveis: {itens}. | `workers/render/src/margo_render/P01_raio_x.py:434` | P01 last page footnote: skipped items | |
 | arquivo do iFood | `workers/render/src/margo_render/close_job.py:25` | P06 "Fontes": iFood file source | |
 | Nada cobrado errado neste mês. | `workers/render/src/margo_render/templates/P06-fechamento.json:17` | P06 when no difference | |
 | falta custo | `workers/render/src/margo_render/templates/P06-fechamento.json:19` | P06 cost cells without cost | |

@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { FOUNDER_EMAIL, adminDb, loginToConsole } from "./helpers";
 
-test("B01_M1_05_M1_07_C05_shows_the_full_parity_and_the_note_only_when_they_apply", async ({ page }) => {
+test("B01_B02_B03_M1_05_M1_07_C05_shows_the_full_parity_and_the_note_only_when_they_apply", async ({ page }) => {
   const db = adminDb();
   const { data: me } = await db.from("person").select("id").eq("email", FOUNDER_EMAIL).single();
   const { data: store, error: storeError } = await db
@@ -25,6 +25,8 @@ test("B01_M1_05_M1_07_C05_shows_the_full_parity_and_the_note_only_when_they_appl
       // Own price, then current parity and gap, then full parity and gap, then the M1-07 note.
       { name: "Alfa", own: 1000, parity: 1300, gap: -0.2308, reading: "pode_subir", full: 1500, gapFull: -0.3333, room: false },
       { name: "Bravo", own: 1000, parity: 1050, gap: -0.0476, reading: "na_media", full: 1300, gapFull: -0.2308, room: true },
+      // Only the target is on promotion: same parity, a different gap.
+      { name: "Eco", own: 1000, parity: 1300, gap: -0.2308, reading: "nao_mexer", full: 1300, gapFull: 0.1538, room: false },
       { name: "Delta", own: 1000, parity: 1000, gap: 0, reading: "na_media", full: 1000, gapFull: 0, room: false },
       { name: "Antigo", own: 1000, parity: 1200, gap: -0.1667, reading: "pode_subir", full: null, gapFull: null, room: false },
     ] as const;
@@ -57,6 +59,7 @@ test("B01_M1_05_M1_07_C05_shows_the_full_parity_and_the_note_only_when_they_appl
     const row = (name: string) => page.locator(`tr[data-item="${name}"]`);
     await expect(row("Alfa")).toHaveText("AlfaR$ 10,00R$ 13,00sem promoção: R$ 15,00, −33%−23%pode subir hoje");
     await expect(row("Bravo")).toHaveText("BravoR$ 10,00R$ 10,50sem promoção: R$ 13,00, −23%−5%na faixapode subir quando os vizinhos não estão em promoção");
+    await expect(row("Eco")).toHaveText("EcoR$ 10,00R$ 13,00sem promoção: R$ 13,00, +15%−23%precisa do custo");
     await expect(row("Delta")).toHaveText("DeltaR$ 10,00R$ 10,000%na faixa");
     await expect(row("Antigo")).toHaveText("AntigoR$ 10,00R$ 12,00−17%pode subir hoje");
   } finally {

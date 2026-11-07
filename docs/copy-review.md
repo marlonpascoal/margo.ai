@@ -57,7 +57,8 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | Coleta parada: a loja não foi encontrada nesse link. | `apps/web/lib/xray/labels.ts:76` | Collection stopped: store not found | |
 | Coleta parada: a página veio em um formato que não sabemos ler. | `apps/web/lib/xray/labels.ts:78` | Collection stopped: extractor could not parse the page | |
 | Coleta parada: a leitura demorou demais. | `apps/web/lib/xray/labels.ts:80` | Collection stopped: extractor timed out | |
-| Coleta parada: a leitura travou duas vezes. | `apps/web/lib/xray/labels.ts:82` | Collection stopped: the job got stuck twice | |
+| Coleta parada: a conexão com o canal falhou. | `apps/web/lib/xray/labels.ts` (`collectStopReason`) | Collection stopped: the extractor's connection failed on every attempt (`network`) | |
+| Coleta parada: a leitura travou e as tentativas acabaram. | `apps/web/lib/xray/labels.ts` (`collectStopReason`) | Collection stopped: the job got stuck and had no attempts left | |
 | Coleta parada: erro ao ler as páginas públicas. | `apps/web/lib/xray/labels.ts:84` | Collection stopped: any other read error | |
 | Cardápios: {N} {pronto \| prontos}, {N} faltando, {N} com falha{, N sem captura pelo limite}. {Confirme o conjunto quando terminar.} | `apps/web/lib/xray/labels.ts` (`captureProgressLabel`) | C03: the captures of this X-ray's stores; the last sentence only while some are missing, the limit part only when stores are past `m1.extract_max_captures_per_xray` | |
 | prioridade {N}, nota {N} | `apps/web/lib/xray/labels.ts` (`captureRankLabel`) | C03 store list, after the distance: the M1-11 capture ranking; only for stores that have one | |
@@ -65,6 +66,8 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | Atualizando a vizinhança com os cardápios capturados. | `apps/web/lib/xray/labels.ts` (`neighborhoodPending`) | C03: the neighborhood job runs again after the last capture | |
 | A captura do cardápio de {loja} falhou. | `apps/web/lib/xray/labels.ts` (`targetCaptureFailed`) | C03: the capture of the X-ray's own target failed | |
 | no conjunto, captura falhou | `apps/web/lib/xray/view.ts` (`storeState`) | C03 store list: a store in the set whose capture failed | |
+| no conjunto, nova tentativa às {16:40} | `apps/web/lib/xray/view.ts` (`storeState`), `apps/web/lib/xray/labels.ts` (`retryLabel`) | C03 store list: a store in the set whose capture waits to retry; the time in São Paulo | |
+| Cardápio de {loja}: nova tentativa às {16:40}. | `apps/web/lib/xray/labels.ts` (`targetCaptureRetry`) | C03: the capture of the X-ray's own target waits to retry | |
 | no conjunto, sem captura pelo limite | `apps/web/lib/xray/view.ts` (`storeState`) | C03 store list: a store in the set past the capture limit | |
 | regra: não entrega no bairro | `workers/collector/src/margo_collector/rules.py:210` | Exclusion reason in the store list (M1-02, store does not deliver to the area) | |
 | regra: outra categoria | `workers/collector/src/margo_collector/rules.py:212` | Exclusion reason in the store list (M1-02, no search term or taxonomy in common) | |
@@ -374,6 +377,7 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | Verificar acesso do único Dono: CNPJ {cnpj}, contato {contato} | `apps/web/lib/portal/entry.ts:216` | Alert title: P17 verification request | |
 | Tarefa %s travou 2 vezes: mais de 30 minutos rodando | `supabase/migrations/20261031000006_jobs.sql:79` | Alert title: a job stuck twice (SQL sweeper) | |
 | Tarefa {tarefa} travou 2 vezes: mais de 30 minutos rodando | `workers/common/src/margo_common/stores.py:110` | Alert title: a job stuck twice (worker sweeper) | |
+| Tarefa %s travou na última tentativa: mais de 30 minutos rodando | `supabase/migrations/20261228000001_m1_extract_retry.sql` (`requeue_stuck_jobs`) | Alert title: an extract job stuck on its last attempt | |
 
 ## P07 Criar conta
 
@@ -750,7 +754,7 @@ Listed as written without a drawing in `docs/build-review.md`, but the same word
 | C00 Login do console | 5 |
 | C01 Clientes | 1 |
 | C02 Novo raio-X | 7 |
-| C03 Vizinhança | 20 |
+| C03 Vizinhança | 23 |
 | C04 Pareamento | 7 |
 | C05 Raio-X de preço | 7 |
 | C06 Entrega ao dono | 3 |
@@ -768,7 +772,7 @@ Listed as written without a drawing in `docs/build-review.md`, but the same word
 | C18 Parceiros BPO | 10 |
 | C19 Estrutura do cliente | 2 |
 | C20 Funcionalidades | 7 |
-| C21 Alertas | 26 |
+| C21 Alertas | 27 |
 | P07 Criar conta | 7 |
 | P11 Termos e privacidade | 1 |
 | P17 Não consigo entrar | 5 |
@@ -788,4 +792,4 @@ Listed as written without a drawing in `docs/build-review.md`, but the same word
 | PDFs and files | 16 |
 | Flags (C20 descriptions) | 5 |
 | Browser tab titles | 31 |
-| **Total** | **504** |
+| **Total** | **508** |

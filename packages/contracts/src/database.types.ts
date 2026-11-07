@@ -1137,14 +1137,14 @@ isOneToOne: false
                   ]
                 },"job": {
                   Row: {
-                    "account_id": string | null,"attempts": number,"claimed_at": string | null,"created_at": string,"dedupe_key": string | null,"finished_at": string | null,"id": string,"log": NonNullable<Json>,"payload": NonNullable<Json>,"status": Database["public"]['Enums']["job_status"],"type": string,"updated_at": string
+                    "account_id": string | null,"attempts": number,"claimed_at": string | null,"created_at": string,"dedupe_key": string | null,"finished_at": string | null,"id": string,"log": NonNullable<Json>,"not_before": string | null,"payload": NonNullable<Json>,"status": Database["public"]['Enums']["job_status"],"type": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id"?: string | null,"attempts"?: number,"claimed_at"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"finished_at"?: string | null,"id"?: string,"log"?: NonNullable<Json>,"payload"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["job_status"],"type": string,"updated_at"?: string
+                    "account_id"?: string | null,"attempts"?: number,"claimed_at"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"finished_at"?: string | null,"id"?: string,"log"?: NonNullable<Json>,"not_before"?: string | null,"payload"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["job_status"],"type": string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string | null,"attempts"?: number,"claimed_at"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"finished_at"?: string | null,"id"?: string,"log"?: NonNullable<Json>,"payload"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["job_status"],"type"?: string,"updated_at"?: string
+                    "account_id"?: string | null,"attempts"?: number,"claimed_at"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"finished_at"?: string | null,"id"?: string,"log"?: NonNullable<Json>,"not_before"?: string | null,"payload"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["job_status"],"type"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -2087,6 +2087,7 @@ isOneToOne: false
 "finished_at": string | null,
 "id": string,
 "log": NonNullable<Json>,
+"not_before": string | null,
 "payload": NonNullable<Json>,
 "status": Database["public"]['Enums']["job_status"],
 "type": string,
@@ -2108,6 +2109,7 @@ isOneToOne: false
 "finished_at": string | null,
 "id": string,
 "log": NonNullable<Json>,
+"not_before": string | null,
 "payload": NonNullable<Json>,
 "status": Database["public"]['Enums']["job_status"],
 "type": string,
@@ -2285,6 +2287,11 @@ isOneToOne: false
                            },
 "xray_calculate":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
+                           },
+"xray_capture_retries":
+{ Args: { "p_xray": string }; Returns: {
+              "public_store_id": string,"retry_at": string
+            }[]
                            },
 "xray_capture_states":
 { Args: { "p_xray": string }; Returns: {

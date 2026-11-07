@@ -56,6 +56,7 @@ class MemoryJobStore:
                 "attempts": 0,
                 "claimed_at": None,
                 "finished_at": None,
+                "not_before": None,
                 "log": [],
                 "created_at": now,
                 "updated_at": now,

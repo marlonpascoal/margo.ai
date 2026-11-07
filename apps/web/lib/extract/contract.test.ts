@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { extractAuthorized } from "./server";
-import { parseExtractResult } from "./contract";
+import { FAIL_REASONS, isFailReason, parseExtractResult } from "./contract";
 
 const fixture = (name: string) =>
   JSON.parse(readFileSync(resolve(__dirname, "../../../../fixtures/m1/extract", name), "utf8")) as Record<string, never> & {
@@ -106,5 +106,13 @@ describe("B01 allowlist", () => {
       const r = parseExtractResult("capture", STORE_A, { ...body, collected_at: at }, NOW);
       expect(r.ok).toBe(false);
     }
+  });
+});
+
+describe("B01 fail reasons", () => {
+  it("B01_fail_accepts_network_besides_the_old_reasons", () => {
+    expect([...FAIL_REASONS]).toEqual(["blocked", "not_found", "parse_error", "timeout", "network", "other"]);
+    expect(isFailReason("network")).toBe(true);
+    expect(isFailReason("stuck")).toBe(false);
   });
 });

@@ -864,6 +864,7 @@ class Job(Row):
     finished_at: datetime | None
     id: UUID
     log: JsonValue
+    not_before: datetime | None
     payload: JsonValue
     status: JobStatus
     type: str

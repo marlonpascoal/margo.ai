@@ -9,6 +9,7 @@ import { GET as cron } from "@/app/api/cron/extract/route";
 import { POST as claim } from "@/app/api/extract/claim/route";
 import { POST as fail } from "@/app/api/extract/fail/route";
 import { POST as result } from "@/app/api/extract/result/route";
+import { FAIL_REASONS } from "@/lib/extract/contract";
 import { adminClient } from "@/lib/supabase/admin";
 
 const TOKEN = "dummy-int-extract-token";
@@ -115,20 +116,32 @@ describe("B01 claim", () => {
     }
   });
 
-  it("B01_A08_a_job_stuck_over_30_minutes_requeues_once_then_fails_with_an_alert", async () => {
+  it("B01_A08_a_stuck_job_is_an_attempt_and_fails_with_an_alert_after_the_last", async () => {
     const x = await newXray();
     const first = await (await post(claim, { worker: "w" })).json();
     const stale = new Date(Date.now() - 31 * 60_000).toISOString();
+    const past = new Date(Date.now() - 1000).toISOString();
     await db.from("job").update({ claimed_at: stale }).eq("id", first.job_id);
+    expect((await post(claim, { worker: "w" })).status).toBe(204);
+    const { data: waiting } = await db.from("job").select("status, not_before").eq("id", first.job_id).single();
+    expect(waiting!.status).toBe("queued");
+    expect(new Date(waiting!.not_before!).getTime()).toBeGreaterThan(Date.now());
+    await db.from("job").update({ not_before: past }).eq("id", first.job_id);
     const again = await (await post(claim, { worker: "w" })).json();
     expect(again.job_id).toBe(first.job_id);
     const { data: runs } = await db.from("extract_run").select("status, error").eq("job_id", first.job_id).order("started_at");
     expect(runs).toEqual([{ status: "failed", error: "stuck" }, { status: "running", error: null }]);
     await db.from("job").update({ claimed_at: stale }).eq("id", first.job_id);
     expect((await post(claim, { worker: "w" })).status).toBe(204);
-    const { data: job } = await db.from("job").select("status").eq("id", first.job_id).single();
-    expect(job!.status).toBe("failed");
+    await db.from("job").update({ not_before: past }).eq("id", first.job_id);
+    expect((await (await post(claim, { worker: "w" })).json()).job_id).toBe(first.job_id);
+    await db.from("job").update({ claimed_at: stale }).eq("id", first.job_id);
+    expect((await post(claim, { worker: "w" })).status).toBe(204);
+    const { data: job } = await db.from("job").select("status, attempts").eq("id", first.job_id).single();
+    expect(job).toEqual({ status: "failed", attempts: 3 });
     expect((await post(result, fixtureFor("discover.json", first.job_id))).status).toBe(409);
+    const { data: alerts } = await db.from("alert").select("id").like("title", "Tarefa extract_discover travou na última tentativa%");
+    expect(alerts!.length).toBeGreaterThan(0);
     await db.from("alert").delete().like("title", "Tarefa extract_discover travou%");
     await db.from("xray").delete().eq("id", x);
   });
@@ -254,22 +267,50 @@ describe("B01 result", () => {
 });
 
 describe("B01 fail", () => {
-  it("B01_fail_records_the_reason_and_closes_the_job", async () => {
+  it("B01_fail_records_the_reason_and_closes_the_job_on_a_permanent_reason", async () => {
     const x = await newXray();
     const { job_id: jobId } = await (await post(claim, { worker: "w" })).json();
     expect((await post(fail, { job_id: jobId, reason: "bloqueado" })).status).toBe(422);
-    const res = await post(fail, { job_id: jobId, reason: "blocked", detail: "403 na página" });
+    const res = await post(fail, { job_id: jobId, reason: "not_found", detail: "404 na página" });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
     const { data: run } = await db.from("extract_run").select("status, error").eq("job_id", jobId).single();
-    expect(run).toEqual({ status: "failed", error: "blocked: 403 na página" });
+    expect(run).toEqual({ status: "failed", error: "not_found: 404 na página" });
     const { data: job } = await db.from("job").select("status, log").eq("id", jobId).single();
     expect(job!.status).toBe("failed");
-    expect(JSON.stringify(job!.log)).not.toContain("403 na página");
-    expect((job!.log as { reason?: string }[]).at(-1)?.reason).toBe("blocked");
+    expect(JSON.stringify(job!.log)).not.toContain("404 na página");
+    expect((job!.log as { reason?: string }[]).at(-1)?.reason).toBe("not_found");
     expect((await post(fail, { job_id: jobId, reason: "other" })).status).toBe(409);
     expect((await post(result, fixtureFor("discover.json", jobId))).status).toBe(409);
     await db.from("xray").delete().eq("id", x);
+  });
+
+  it("B01_fail_with_a_transitory_reason_requeues_the_same_job_for_later", async () => {
+    const x = await newXray();
+    const { job_id: jobId } = await (await post(claim, { worker: "w" })).json();
+    const res = await post(fail, { job_id: jobId, reason: "network", detail: "ECONNRESET" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    const { data: job } = await db.from("job").select("status, attempts, not_before").eq("id", jobId).single();
+    expect(job!.status).toBe("queued");
+    expect(job!.attempts).toBe(1);
+    expect(new Date(job!.not_before!).getTime()).toBeGreaterThan(Date.now() + 9 * 60_000);
+    expect((await post(claim, { worker: "w" })).status).toBe(204);
+    expect((await post(fail, { job_id: jobId, reason: "other" })).status).toBe(409);
+    expect((await post(result, fixtureFor("discover.json", jobId))).status).toBe(409);
+    await db.from("job").update({ not_before: new Date(Date.now() - 1000).toISOString() }).eq("id", jobId);
+    expect((await (await post(claim, { worker: "w" })).json()).job_id).toBe(jobId);
+    expect((await post(result, fixtureFor("discover.json", jobId))).status).toBe(200);
+    const { data: runs } = await db.from("extract_run").select("status").eq("job_id", jobId).order("started_at");
+    expect(runs!.map((r) => r.status)).toEqual(["failed", "done"]);
+    await db.from("xray").delete().eq("id", x);
+  });
+
+  it("B01_every_fail_reason_is_classed_in_rule_param_and_nothing_else", async () => {
+    const { data } = await db.from("rule_param").select("key, value").like("key", "m1.extract_retry_reason_%");
+    const classed = Object.fromEntries(data!.map((r) => [r.key.replace("m1.extract_retry_reason_", ""), Number(r.value)]));
+    expect(classed).toEqual({ blocked: 1, timeout: 1, network: 1, stuck: 1, not_found: 0, parse_error: 0, other: 0 });
+    expect(Object.keys(classed).filter((k) => k !== "stuck").sort()).toEqual([...FAIL_REASONS].sort());
   });
 });
 

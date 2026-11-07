@@ -30,6 +30,12 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - **Everything else in this file** is accepted as built and parked for go-live: seed-only numbers, internal names, M2 confidence labels, and copy written without a drawing (to be read as one sheet).
 - **For `docs/decisions.md`:** Marlon pastes the rows in `docs/decisions-amendments-draft.md`.
 
+**M1 source (Marlon, 07/nov):**
+- M1 consumes the external `margoai-menu-scraper`, which uses Bright Data Web Unlocker. This replaces the fetcher D47 describes. Claude does not run the scraper or change how it fetches; Marlon connects it.
+- The scraper only extracts: `discover` and `capture` work over HTTPS with its own token. Every copy is dated and kept; all logic lives in margo.ai.
+- The legal consult (D01b) still comes before the first X-ray delivered outside the test case, unless Marlon changes that.
+- **To decide:** which price enters parity under a promotion (M1-05). Until then parity keeps using the current price, and the full price is stored.
+
 ### Open points from building the review answers
 
 - **Extension: check on the real portal** (`fixtures/m2/extension/README.md`):

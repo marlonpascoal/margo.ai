@@ -18,7 +18,7 @@ export const metadata = { title: "Pareamento · MargoAI" };
 
 const th = "border-b border-border px-4 py-3";
 const td = "border-b border-border-subtle px-4 py-3";
-const PILL: Record<string, string> = { auto: "bg-ok-bg", normalizado: "bg-sunken", revisar: "bg-warn-bg", manual: "bg-sunken" };
+const PILL: Record<string, string> = { auto: "bg-ok-bg", normalizado: "bg-sunken", revisar: "bg-warn-bg", manual: "bg-sunken", exclusivo: "bg-sunken" };
 
 function PairsPanel({ xrayId, item, pairs }: { xrayId: string; item: ItemRow; pairs: Awaited<ReturnType<typeof loadPairs>> }) {
   return (

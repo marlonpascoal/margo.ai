@@ -591,12 +591,13 @@ def test_B01_M1_03_a_newer_copy_overrides_a_parsed_size_and_a_renamed_item_loses
 
 
 def test_B01_M1_03_sql_and_python_agree_and_pairs_stay_in_the_same_base_unit(conn, repo):
+    # A can without a size takes 350 ml (M1-04 default sizes); a bottle without one stays per unit.
     h = Hood(conn, 2, rules={"min_pairs": 1})
     own_ext, a_ext, b_ext = h.ext(0), h.ext(1), h.ext(2)
     h.capture(own_ext, [{"external_item_id": "own", "name": "Fanta lata 350ml", "price_cents": 700},
-                        {"external_item_id": "own2", "name": "Fanta lata", "price_cents": 500}])
+                        {"external_item_id": "own2", "name": "Fanta garrafa", "price_cents": 500}])
     h.capture(a_ext, [{"external_item_id": "a", "name": "Fanta lata 350 ml", "price_cents": 800},
-                      {"external_item_id": "a2", "name": "Fanta lata", "price_cents": 600}])
+                      {"external_item_id": "a2", "name": "Fanta garrafa", "price_cents": 600}])
     h.capture(b_ext, [{"external_item_id": "b", "name": "Fanta lata 12 unidades", "price_cents": 6000}])
     conn.execute("update public.job set status = 'done', finished_at = now() where type = 'xray_neighborhood'")
     pair_step(repo, h.xid)
@@ -612,8 +613,8 @@ def test_B01_M1_03_sql_and_python_agree_and_pairs_stay_in_the_same_base_unit(con
     assert by["Fanta lata 350ml"]["norm_price_cents"] == 200
     assert by["Fanta lata 350ml"]["cands"] == ["Fanta lata 350 ml"]
     assert by["Fanta lata 350ml"]["pair_status"] == "normalizado"
-    assert by["Fanta lata"]["norm_unit"] == "un"
-    assert "Fanta lata 350 ml" not in by["Fanta lata"]["cands"]
+    assert by["Fanta garrafa"]["norm_unit"] == "un"
+    assert "Fanta lata 350 ml" not in by["Fanta garrafa"]["cands"]
 
     for item in repo.items_of_stores([h.target, *h.stores]):
         sql = conn.execute(

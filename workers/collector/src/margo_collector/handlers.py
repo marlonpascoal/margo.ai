@@ -13,6 +13,7 @@ from margo_common.flags import flag_env
 from margo_common.runner import JobRun
 from pydantic import BaseModel
 
+from .ai_attrs import reader_from_env
 from .repo import PostgresXrayRepo
 from .steps import calc_step, collect_step, neighborhood_job_step, pair_step
 
@@ -51,11 +52,12 @@ def xray_neighborhood(run: JobRun[NeighborhoodPayload]) -> dict[str, int]:
         repo.close()
 
 
-def xray_pair(run: JobRun[XrayPayload]) -> dict[str, int]:
-    """C03 "Confirmar N lojas": M1-03 and M1-04."""
+def xray_pair(run: JobRun[XrayPayload]) -> dict[str, int | str | bool | None]:
+    """C03 "Confirmar N lojas": M1-03 and M1-04. Without ANTHROPIC_API_KEY the attribute AI step is skipped.
+    """
     repo = PostgresXrayRepo(local_db_url())
     try:
-        return pair_step(repo, str(run.payload.xray_id))
+        return pair_step(repo, str(run.payload.xray_id), reader_from_env())
     finally:
         repo.close()
 

@@ -180,6 +180,8 @@ class BeverageAttrs:
     flavor: str | None
     variant: str
     size_ml: Fraction | None
+    size_presumed: bool = False
+    """M1-04: the size is a default (`SizeDefaults`), not written in the item."""
 
 
 def _beverage_type(name: str, brand: _Brand | None) -> str | None:
@@ -225,6 +227,26 @@ def beverage_attrs(name: str | None, size_ml: Decimal | float | int | None = Non
     else:
         variant = "original"
     return BeverageAttrs(kind, brand_name, flavor, variant, Fraction(str(size_ml)) if size_ml is not None else None)
+
+
+# Containers: where a default size can come from when the name gives none (M1-04 default sizes).
+CONTAINERS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("lata", _words("latas?", "latinhas?")),
+    ("long_neck", _words(r"long ?necks?")),
+    ("ks", _words("ks")),
+    ("garrafa", _words("garrafas?", "garrafinhas?")),
+    ("pet", _words("pet")),
+    ("copo", _words("copos?")),
+    ("caneca", _words("canecas?", "jarras?")),
+    ("mini", _words("mini")),
+)
+
+
+def container_m1_04(name: str | None) -> str | None:
+    """The container a beverage's name says ("lata", "long neck"...), the first one written; None when none."""
+    n = plain(name)
+    found = [(m.start(), c) for c, p in CONTAINERS if (m := p.search(n))]
+    return min(found)[1] if found else None
 
 
 Match = Literal["identical", "unreadable", "conflict"]

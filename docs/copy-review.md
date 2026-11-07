@@ -85,6 +85,10 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | revisar: nenhuma loja com os mesmos atributos | `workers/collector/src/margo_collector/attributes.py` | A beverage no store sells with the same attributes (M1-04) | |
 | revisar: nenhum item parecido | `workers/collector/src/margo_collector/attributes.py` | An item no store sells under a close name (M1-04) | |
 | revisar: categoria não identificada | `workers/collector/src/margo_collector/attributes.py` | An item no source places in a category (M1-04) | |
+| exclusivo, sem comparação | `apps/web/lib/xray/labels.ts:30`, `workers/collector/src/margo_collector/food.py` (`EXCLUSIVE_NOTE`) | A lanche or porção no store of the set sells with the same attributes (M1-04 Stage 2): not a problem, outside parity, loss and the Pareto; a founder can still pair it | |
+| {pareado \| normalizado}, tamanho presumido {n} ml | `apps/web/lib/xray/labels.ts`, `workers/collector/src/margo_collector/rules.py` (`presumed_note`) | A beverage pair that rests on a default size (water 500 ml, a "lata" 350 ml, or a brand and container's dominant stated size) (M1-04) | |
+| revisar: proteína ilegível | `workers/collector/src/margo_collector/food.py` | A lanche whose protein neither the rules nor the AI can read (M1-04 Stage 2) | |
+| revisar: tipo ilegível | `workers/collector/src/margo_collector/food.py` | A porção whose type and protein neither the rules nor the AI can read (M1-04 Stage 2); same words as the beverage note | |
 | Pares de {nome} | `apps/web/app/console/(app)/raio-x/[id]/pareamento/page.tsx:26` | Accessible name of an item's pairs panel | |
 | O pareamento não rodou: ainda havia cardápios na fila. Confirme o conjunto de novo na vizinhança quando terminarem. | `apps/web/lib/xray/labels.ts` (`pairWaitedForLoad`) | C04: an `xray_pair` job arrived while captures ran | |
 | Pareando os itens. Atualize a página em instantes. | `apps/web/lib/xray/labels.ts:45` | Pairing job running | |
@@ -105,7 +109,8 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | A tarefa falhou. Peça para rodar de novo. | `apps/web/lib/xray/labels.ts:56` | Any X-ray job failed | |
 | loja própria | `apps/web/lib/xray/labels.ts:89` | Small label next to the store: own store (vs competitor) | |
 | sem promoção: {paridade}, {diferença} | `apps/web/lib/xray/labels.ts:63` | Under "Paridade": parity and gap at full prices, when the parity or the gap differs from the current one (M1-05) | |
-| Sem paridade, poucas lojas vendem o mesmo item: {itens}. | `apps/web/lib/xray/labels.ts:68` | Under the C05 table: paired items with too few stores for a parity (M1-05) | |
+| Sem paridade, poucas lojas vendem o mesmo item: {itens}. | `apps/web/lib/xray/labels.ts:78` | Under the C05 table: paired items with too few stores for a parity (M1-05) | |
+| Exclusivos, sem comparação, nenhuma loja do raio-X vende o mesmo item: {itens}. | `apps/web/lib/xray/labels.ts:84` | Under the C05 table: exclusive items with no parity (M1-04 Stage 2) | |
 | pode subir quando os vizinhos não estão em promoção | `apps/web/lib/xray/labels.ts:59` | Under "Leitura" of a `na_media` item with room at full prices (M1-07) | |
 
 ## C06 Entrega ao dono

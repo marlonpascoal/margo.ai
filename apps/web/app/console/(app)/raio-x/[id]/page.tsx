@@ -7,7 +7,7 @@ import { requireFlag } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { adminClient } from "@/lib/supabase/admin";
 import { gapLabel, money, runDateLabel, shareLabel } from "@/lib/xray/format";
-import { fullParityLabel, READING_LABEL, TARGET_KIND_LABEL, withoutParityLabel, XRAY_MESSAGES } from "@/lib/xray/labels";
+import { exclusiveLabel, fullParityLabel, READING_LABEL, TARGET_KIND_LABEL, withoutParityLabel, XRAY_MESSAGES } from "@/lib/xray/labels";
 import { latestJob, loadHistory, loadItems, loadNeighborhood, loadXrayHead } from "@/lib/xray/load";
 import { fullParityInfo, neighborhoodCounts, priceHistory, xrayResult } from "@/lib/xray/view";
 import { prepareDeliveryAction } from "../actions";
@@ -120,6 +120,11 @@ export default async function XrayPage({ params }: { params: Promise<{ id: strin
           {r.withoutParity.length > 0 && (
             <p className="text-sm text-ink-muted" data-without-parity>
               {withoutParityLabel(r.withoutParity)}
+            </p>
+          )}
+          {r.exclusives.length > 0 && (
+            <p className="text-sm text-ink-muted" data-exclusives>
+              {exclusiveLabel(r.exclusives)}
             </p>
           )}
           {history.runs.length > 1 && (

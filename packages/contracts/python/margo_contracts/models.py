@@ -209,6 +209,7 @@ class PairStatus(StrEnum):
     REVISAR = "revisar"
     NORMALIZADO = "normalizado"
     MANUAL = "manual"
+    EXCLUSIVO = "exclusivo"
 
 
 class PriceSource(StrEnum):
@@ -901,6 +902,30 @@ class LedgerEntry(Row):
     updated_at: datetime
 
 
+class M1AttrLearning(Row):
+    category: str
+    created_at: datetime
+    founder_at: datetime | None
+    founder_attrs: JsonValue | None
+    founder_by: UUID | None
+    founder_disputed_at: datetime | None
+    hints: list[str]
+    id: UUID
+    items_seen: int
+    tokens: list[str]
+    updated_at: datetime
+
+
+class M1AttrLearningRun(Row):
+    attrs: JsonValue
+    confidence: Decimal | None
+    created_at: datetime
+    learning_id: UUID
+    model: str
+    updated_at: datetime
+    xray_id: UUID
+
+
 class Membership(Row):
     account_id: UUID
     all_kitchens: bool
@@ -1297,6 +1322,7 @@ class XrayItem(Row):
     reading: XrayReading | None
     reviewed_at: datetime | None
     reviewed_by: UUID | None
+    size_presumed_ml: Decimal | None
     skipped: bool
     updated_at: datetime
     weekly_units: Decimal | None
@@ -1310,6 +1336,7 @@ class XrayPair(Row):
     id: UUID
     public_menu_item_id: UUID
     similarity: Decimal
+    size_presumed_ml: Decimal | None
     updated_at: datetime
     xray_item_id: UUID
 

@@ -16,6 +16,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 from .rules import (
+    FoodOverrides,
     Item,
     PairStatus,
     RankCandidate,
@@ -37,9 +38,11 @@ from .rules import (
     pareto_m1_08,
     parity_full_m1_05,
     parity_m1_05,
+    presumed_size_m1_04,
     rank_m1_11,
     reading_m1_07,
     similarity_m1_04,
+    size_defaults_m1_04,
 )
 
 # Neighborhood -------------------------------------------------------------------------------------
@@ -121,6 +124,8 @@ class PairRow:
     similarity: Fraction
     accepted: bool
     by: str | None
+    size_presumed_ml: int | None = None
+    """M1-04: the default size the comparable item took (xray_pair.size_presumed_ml)."""
 
 
 @dataclass(frozen=True)
@@ -135,6 +140,8 @@ class ItemRow:
     pairs: tuple[PairRow, ...]
     item_category: str | None = None
     """M1-04: the item's category; None when nothing says one."""
+    size_presumed_ml: int | None = None
+    """M1-04: the default size the item took (xray_item.size_presumed_ml)."""
 
 
 def build_pairs(
@@ -142,28 +149,33 @@ def build_pairs(
     pool: Sequence[Item],
     settings: Settings,
     decisions: Mapping[tuple[str, str], tuple[bool, str]] | None = None,
+    food: FoodOverrides | None = None,
 ) -> list[ItemRow]:
     """M1-03 and M1-04 for every item of the target store against the items of the stores in the set.
     `decisions` maps (own item id, comparable item id) to a founder's (accepted, person id). A decision stays
-    even when the rule alone would no longer list that item, as long as it is still in the pool."""
+    even when the rule alone would no longer list that item, as long as it is still in the pool. `food` holds
+    the attributes a learning or the AI read for lanches and porções the rule cannot read (M1-04 Stage 2)."""
     kept = decisions or {}
     by_id = {i.id: i for i in pool}
+    defaults = size_defaults_m1_04([*own_items, *pool], settings)
     out: list[ItemRow] = []
     for own in own_items:
-        p = pair_item_m1_04(own, pool, settings)
+        p = pair_item_m1_04(own, pool, settings, food, defaults)
         pairs = []
         listed = set()
         for c in p.candidates:
             listed.add(c.item.id)
             decided = kept.get((own.id, c.item.id))
+            presumed = presumed_size_m1_04(c.item, defaults)
             if decided is not None:
-                pairs.append(PairRow(c.item.id, c.similarity, decided[0], decided[1]))
+                pairs.append(PairRow(c.item.id, c.similarity, decided[0], decided[1], presumed))
             else:
-                pairs.append(PairRow(c.item.id, c.similarity, c.accepted, None))
+                pairs.append(PairRow(c.item.id, c.similarity, c.accepted, None, presumed))
         for (own_id, item_id), (accepted, by) in sorted(kept.items()):
             if own_id == own.id and item_id not in listed and item_id in by_id:
                 sim = similarity_m1_04(own.name, by_id[item_id].name)
-                pairs.append(PairRow(item_id, sim, accepted, by))
+                presumed = presumed_size_m1_04(by_id[item_id], defaults)
+                pairs.append(PairRow(item_id, sim, accepted, by, presumed))
         out.append(
             ItemRow(
                 own.id,
@@ -173,9 +185,16 @@ def build_pairs(
                 p.note,
                 tuple(pairs),
                 item_category_m1_04(own),
+                presumed_size_m1_04(own, defaults),
             )
         )
     return out
+
+
+def presumed_m1_04(item: Item, ml: int | None) -> Item:
+    """M1-03 for a row that took a default size when it was paired: priced per 100 ml like the rows that
+    state it."""
+    return item if ml is None else replace(item, unit="ml", unit_qty=Decimal(ml))
 
 
 # Calculation --------------------------------------------------------------------------------------

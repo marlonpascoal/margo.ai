@@ -16,11 +16,18 @@ export const READING_LABEL: Record<Reading, string> = {
 /** C04 "Unidade", as drawn ("unidade", "por 100 g", "por 100 ml", "combo"). */
 export const UNIT_LABEL: Record<string, string> = { un: "unidade", "100g": "por 100 g", "100ml": "por 100 ml", combo: "combo" };
 
-/** C04 "Situação" (M1-04), as drawn: "pareado", "normalizado", "revisar: poucos pares". */
+/** C04 "Situação" (M1-04), as drawn: "pareado", "normalizado", "revisar: poucos pares". "exclusivo, sem comparação"
+ * (Stage 2) is not drawn. */
 export function pairStatusLabel(status: PairStatus, note: string | null): string {
   if (status === "revisar") return note ? `revisar: ${note}` : "revisar";
-  return { auto: "pareado", normalizado: "normalizado", manual: "manual" }[status];
+  if (status === "exclusivo") return EXCLUSIVE_LABEL;
+  const base = { auto: "pareado", normalizado: "normalizado", manual: "manual" }[status];
+  // M1-04: a pair that rests on a default size says so ("normalizado, tamanho presumido 500 ml"). Not drawn.
+  return note ? `${base}, ${note}` : base;
 }
+
+/** M1-04 Stage 2: an item no store sells with the same attributes. Not drawn. */
+export const EXCLUSIVE_LABEL = "exclusivo, sem comparação";
 
 /** C02 category choices, as drawn, and the iFood categories each one searches (M1-02). */
 export const CATEGORY_OPTIONS = [
@@ -68,10 +75,13 @@ export const XRAY_MESSAGES = {
 export const fullParityLabel = (i: { cents: number; gap: number }) => `sem promoção: ${money(i.cents)}, ${gapLabel(i.gap)}`;
 
 /** C05 under the table (M1-05): paired items that have no parity. Not drawn. */
-export const withoutParityLabel = (names: string[]) => {
-  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}` : names[0];
-  return `Sem paridade, poucas lojas vendem o mesmo item: ${list}.`;
-};
+export const withoutParityLabel = (names: string[]) => `Sem paridade, poucas lojas vendem o mesmo item: ${listNames(names)}.`;
+
+/** "A", "A e B", "A, B e C". */
+const listNames = (names: string[]) => (names.length > 1 ? `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}` : names[0]);
+
+/** C05 under the table (M1-04 Stage 2): the exclusive items, outside parity, loss and the Pareto. Not drawn. */
+export const exclusiveLabel = (names: string[]) => `Exclusivos, sem comparação, nenhuma loja do raio-X vende o mesmo item: ${listNames(names)}.`;
 
 /** C06 file thumbnail, as drawn ("PDF · A4 · 2 páginas") with the rendered file's real count; none before there is one. */
 export const pdfFileLabel = (pages: number | null) => (pages === null ? "PDF · A4" : `PDF · A4 · ${pages} páginas`);

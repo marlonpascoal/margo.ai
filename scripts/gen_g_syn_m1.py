@@ -215,7 +215,7 @@ AUTO = [
         3150,
         30,
         61,
-        ["X-Bacon artesanal", "Bacon artesanal", "Burger bacon artesanal"],
+        ["X-Bacon artesanal", "Bacon burger artesanal", "Burger bacon artesanal"],
     ),
     OwnSpec("costela", "Costela burger", 3990, 3590, 9, 26, ["Costela burger", "Burger de costela"]),
     OwnSpec("bacon2", "Bacon duplo", 3490, 3150, 10, 33, ["Bacon duplo", "Burger bacon duplo"]),

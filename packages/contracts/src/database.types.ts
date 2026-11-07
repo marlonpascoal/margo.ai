@@ -1219,6 +1219,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"m1_attr_learning": {
+                  Row: {
+                    "category": string,"created_at": string,"founder_at": string | null,"founder_attrs": Json | null,"founder_by": string | null,"founder_disputed_at": string | null,"hints": (string)[],"id": string,"items_seen": number,"tokens": (string)[],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category": string,"created_at"?: string,"founder_at"?: string | null,"founder_attrs"?: Json | null,"founder_by"?: string | null,"founder_disputed_at"?: string | null,"hints"?: (string)[],"id"?: string,"items_seen"?: number,"tokens": (string)[],"updated_at"?: string
+                  }
+                  Update: {
+                    "category"?: string,"created_at"?: string,"founder_at"?: string | null,"founder_attrs"?: Json | null,"founder_by"?: string | null,"founder_disputed_at"?: string | null,"hints"?: (string)[],"id"?: string,"items_seen"?: number,"tokens"?: (string)[],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "m1_attr_learning_founder_by_fkey"
+      columns: ["founder_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"m1_attr_learning_run": {
+                  Row: {
+                    "attrs": NonNullable<Json>,"confidence": number | null,"created_at": string,"learning_id": string,"model": string,"updated_at": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attrs": NonNullable<Json>,"confidence"?: number | null,"created_at"?: string,"learning_id": string,"model": string,"updated_at"?: string,"xray_id": string
+                  }
+                  Update: {
+                    "attrs"?: NonNullable<Json>,"confidence"?: number | null,"created_at"?: string,"learning_id"?: string,"model"?: string,"updated_at"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "m1_attr_learning_run_learning_id_fkey"
+      columns: ["learning_id"]
+isOneToOne: false
+      referencedRelation: "m1_attr_learning"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "m1_attr_learning_run_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"membership": {
                   Row: {
                     "account_id": string,"all_kitchens": boolean,"created_at": string,"id": string,"person_id": string,"role": Database["public"]['Enums']["member_role"],"updated_at": string
@@ -1925,14 +1971,14 @@ isOneToOne: false
                   ]
                 },"xray_item": {
                   Row: {
-                    "created_at": string,"full_price_room": boolean,"gap_full_pct": number | null,"gap_pct": number | null,"id": string,"item_category": string | null,"loss_cents": number | null,"menu_item_id": string | null,"norm_price_cents": number,"norm_unit": string,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"parity_full_cents": number | null,"public_menu_item_id": string,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"reviewed_by": string | null,"skipped": boolean,"updated_at": string,"weekly_units": number | null,"xray_id": string
+                    "created_at": string,"full_price_room": boolean,"gap_full_pct": number | null,"gap_pct": number | null,"id": string,"item_category": string | null,"loss_cents": number | null,"menu_item_id": string | null,"norm_price_cents": number,"norm_unit": string,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"parity_full_cents": number | null,"public_menu_item_id": string,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"reviewed_by": string | null,"size_presumed_ml": number | null,"skipped": boolean,"updated_at": string,"weekly_units": number | null,"xray_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents": number,"norm_unit": string,"pair_note"?: string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id": string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id": string
+                    "created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents": number,"norm_unit": string,"pair_note"?: string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id": string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"size_presumed_ml"?: number | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id": string
                   }
                   Update: {
-                    "created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents"?: number,"norm_unit"?: string,"pair_note"?: string | null,"pair_status"?: Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id"?: string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id"?: string
+                    "created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents"?: number,"norm_unit"?: string,"pair_note"?: string | null,"pair_status"?: Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id"?: string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"size_presumed_ml"?: number | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id"?: string
                   }
                   Relationships: [
                     {
@@ -1963,14 +2009,14 @@ isOneToOne: false
                   ]
                 },"xray_pair": {
                   Row: {
-                    "accepted": boolean,"by": string | null,"created_at": string,"id": string,"public_menu_item_id": string,"similarity": number,"updated_at": string,"xray_item_id": string
+                    "accepted": boolean,"by": string | null,"created_at": string,"id": string,"public_menu_item_id": string,"similarity": number,"size_presumed_ml": number | null,"updated_at": string,"xray_item_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted": boolean,"by"?: string | null,"created_at"?: string,"id"?: string,"public_menu_item_id": string,"similarity": number,"updated_at"?: string,"xray_item_id": string
+                    "accepted": boolean,"by"?: string | null,"created_at"?: string,"id"?: string,"public_menu_item_id": string,"similarity": number,"size_presumed_ml"?: number | null,"updated_at"?: string,"xray_item_id": string
                   }
                   Update: {
-                    "accepted"?: boolean,"by"?: string | null,"created_at"?: string,"id"?: string,"public_menu_item_id"?: string,"similarity"?: number,"updated_at"?: string,"xray_item_id"?: string
+                    "accepted"?: boolean,"by"?: string | null,"created_at"?: string,"id"?: string,"public_menu_item_id"?: string,"similarity"?: number,"size_presumed_ml"?: number | null,"updated_at"?: string,"xray_item_id"?: string
                   }
                   Relationships: [
                     {
@@ -2325,7 +2371,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","base_unit": "g"|"ml"|"un","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","decision_kind": "campaign"|"lowest","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","extract_kind": "discover"|"capture","extract_run_status": "running"|"done"|"failed","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","invoice_source": "xml_zip"|"key_typed"|"qr_url"|"whatsapp_photo","invoice_status": "pending"|"confirmed"|"overdue"|"refused"|"canceled","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","match_method": "gtin"|"rule"|"ai"|"manual","match_status": "suggested"|"confirmed"|"rejected","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual","price_source": "invoice"|"regional_prior","recipe_status": "draft"|"ready","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered","yield_confidence": "medido"|"declarado"|"estimado"
+            "actor_kind": "person"|"staff"|"system","alert_severity": "urgente"|"medio"|"baixo","base_unit": "g"|"ml"|"un","billing_unit": "kitchen"|"channel_store","cancel_party": "loja"|"cliente"|"canal","channel": "ifood"|"food99"|"keeta"|"rappi","close_status": "open"|"computed"|"delivered","contact_channel": "email"|"whatsapp","contestation_status": "a_contestar"|"precisa_resposta"|"contestada"|"creditada"|"negada"|"prazo_vencido","decision_kind": "campaign"|"lowest","delivery_model": "canal"|"loja","difference_confidence": "certa"|"provavel"|"duvidosa","extract_kind": "discover"|"capture","extract_run_status": "running"|"done"|"failed","flag_env": "sandbox"|"production","import_kind": "api"|"extension"|"upload"|"bpo_folder"|"whatsapp","import_status": "queued"|"running"|"ok"|"failed"|"needs_mapping","import_trigger": "schedule"|"extension"|"upload"|"rerun"|"manual","invoice_source": "xml_zip"|"key_typed"|"qr_url"|"whatsapp_photo","invoice_status": "pending"|"confirmed"|"overdue"|"refused"|"canceled","job_status": "queued"|"running"|"done"|"failed","ledger_type": "commission"|"payment_fee"|"delivery"|"promotion"|"subsidy"|"refund"|"cancellation"|"anticipation"|"adjustment"|"payout"|"other","match_method": "gtin"|"rule"|"ai"|"manual","match_status": "suggested"|"confirmed"|"rejected","member_role": "dono"|"financeiro"|"gerente","menu_unit": "un"|"g"|"ml"|"pack","notification_channel": "email"|"whatsapp"|"whatsapp_manual","notification_status": "queued"|"sent"|"failed"|"held_quiet_hours","order_status": "concluido"|"cancelado","pair_status": "auto"|"revisar"|"normalizado"|"manual"|"exclusivo","price_source": "invoice"|"regional_prior","recipe_status": "draft"|"ready","session_surface": "console"|"portal","staff_role": "fundador"|"operacao","store_source": "public"|"api"|"file"|"extension"|"manual","subscription_status": "trial"|"active"|"past_due"|"canceled"|"free","xray_reading": "pode_subir"|"na_media"|"nao_mexer","xray_status": "draft"|"collecting"|"pairing"|"ready"|"delivered","yield_confidence": "medido"|"declarado"|"estimado"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -2445,7 +2491,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"base_unit": ["g", "ml", "un"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"decision_kind": ["campaign", "lowest"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"extract_kind": ["discover", "capture"],"extract_run_status": ["running", "done", "failed"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"invoice_source": ["xml_zip", "key_typed", "qr_url", "whatsapp_photo"],"invoice_status": ["pending", "confirmed", "overdue", "refused", "canceled"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"match_method": ["gtin", "rule", "ai", "manual"],"match_status": ["suggested", "confirmed", "rejected"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual"],"price_source": ["invoice", "regional_prior"],"recipe_status": ["draft", "ready"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"],"yield_confidence": ["medido", "declarado", "estimado"]
+            "actor_kind": ["person", "staff", "system"],"alert_severity": ["urgente", "medio", "baixo"],"base_unit": ["g", "ml", "un"],"billing_unit": ["kitchen", "channel_store"],"cancel_party": ["loja", "cliente", "canal"],"channel": ["ifood", "food99", "keeta", "rappi"],"close_status": ["open", "computed", "delivered"],"contact_channel": ["email", "whatsapp"],"contestation_status": ["a_contestar", "precisa_resposta", "contestada", "creditada", "negada", "prazo_vencido"],"decision_kind": ["campaign", "lowest"],"delivery_model": ["canal", "loja"],"difference_confidence": ["certa", "provavel", "duvidosa"],"extract_kind": ["discover", "capture"],"extract_run_status": ["running", "done", "failed"],"flag_env": ["sandbox", "production"],"import_kind": ["api", "extension", "upload", "bpo_folder", "whatsapp"],"import_status": ["queued", "running", "ok", "failed", "needs_mapping"],"import_trigger": ["schedule", "extension", "upload", "rerun", "manual"],"invoice_source": ["xml_zip", "key_typed", "qr_url", "whatsapp_photo"],"invoice_status": ["pending", "confirmed", "overdue", "refused", "canceled"],"job_status": ["queued", "running", "done", "failed"],"ledger_type": ["commission", "payment_fee", "delivery", "promotion", "subsidy", "refund", "cancellation", "anticipation", "adjustment", "payout", "other"],"match_method": ["gtin", "rule", "ai", "manual"],"match_status": ["suggested", "confirmed", "rejected"],"member_role": ["dono", "financeiro", "gerente"],"menu_unit": ["un", "g", "ml", "pack"],"notification_channel": ["email", "whatsapp", "whatsapp_manual"],"notification_status": ["queued", "sent", "failed", "held_quiet_hours"],"order_status": ["concluido", "cancelado"],"pair_status": ["auto", "revisar", "normalizado", "manual", "exclusivo"],"price_source": ["invoice", "regional_prior"],"recipe_status": ["draft", "ready"],"session_surface": ["console", "portal"],"staff_role": ["fundador", "operacao"],"store_source": ["public", "api", "file", "extension", "manual"],"subscription_status": ["trial", "active", "past_due", "canceled", "free"],"xray_reading": ["pode_subir", "na_media", "nao_mexer"],"xray_status": ["draft", "collecting", "pairing", "ready", "delivered"],"yield_confidence": ["medido", "declarado", "estimado"]
           }
         }
 } as const

@@ -1097,6 +1097,7 @@ class PublicMenuItem(Row):
     taxonomy_level1: str | None
     taxonomy_level2: str | None
     unit: MenuUnit
+    unit_from_name: bool
     unit_qty: Decimal | None
     updated_at: datetime
 
@@ -1312,6 +1313,9 @@ class XrayPair(Row):
 
 
 class XrayStore(Row):
+    capture_rank: int | None
+    capture_score: Decimal | None
+    capture_slot: bool
     created_at: datetime
     delivers_to_target: bool | None
     distance_m: int

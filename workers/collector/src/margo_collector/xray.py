@@ -10,7 +10,7 @@ founder accepted or rejected keeps that decision, and items keep their review, s
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from decimal import Decimal
 from fractions import Fraction
@@ -18,6 +18,8 @@ from fractions import Fraction
 from .rules import (
     Item,
     PairStatus,
+    RankCandidate,
+    RankWeights,
     Reading,
     Settings,
     Store,
@@ -28,10 +30,12 @@ from .rules import (
     gap_m1_06,
     loss_m1_08,
     neighborhood_m1_01,
+    normalize_m1_03,
     pair_item_m1_04,
     pareto_m1_08,
     parity_full_m1_05,
     parity_m1_05,
+    rank_m1_11,
     reading_m1_07,
 )
 
@@ -47,6 +51,9 @@ class StoreRow:
     delivers_to_target: bool | None
     included: bool
     exclusion_reason: str | None
+    capture_score: Fraction | None = None
+    """M1-11; None for a store the filters left out."""
+    capture_rank: int | None = None
 
 
 def is_manual(reason: str | None) -> bool:
@@ -64,19 +71,18 @@ def build_neighborhood(
     discovered_m: Mapping[str, int | None] | None = None,
     target_terms: Iterable[str] = (),
     store_terms: Mapping[str, Iterable[str]] | None = None,
+    rank_weights: RankWeights = RankWeights(),  # noqa: B008 (frozen)
 ) -> list[StoreRow]:
-    """M1-01 then M1-02 for every public store; `manual` holds the founder's C03 choices to keep."""
+    """M1-01, M1-02, then M1-11 over the stores those filters kept; `manual` holds the founder's C03 choices.
+    A manual choice wins over the filters and changes no rank."""
     terms = store_terms or {}
     wanted = list(target_terms)
     delivers = delivers_to_target or {}
     kept = manual or {}
     rows: list[StoreRow] = []
+    candidates: list[RankCandidate] = []
     for store, distance in neighborhood_m1_01(target, stores, settings.radius_km, discovered_m):
         d = delivers.get(store.id)
-        if store.id in kept:
-            included, reason = kept[store.id]
-            rows.append(StoreRow(store.id, distance, d, included, reason))
-            continue
         reason = exclusion_m1_02(
             store,
             collected_at=collected_at,
@@ -84,8 +90,21 @@ def build_neighborhood(
             settings=settings,
             is_candidate=candidate_m1_02(wanted, terms.get(store.id, ())),
         )
-        rows.append(StoreRow(store.id, distance, d, reason is None, reason))
-    return rows
+        if reason is None:
+            own = tuple(terms.get(store.id, ()))
+            candidates.append(RankCandidate(store.id, distance, store.rating_count, own))
+        if store.id in kept:
+            included, manual_reason = kept[store.id]
+            rows.append(StoreRow(store.id, distance, d, included, manual_reason))
+        else:
+            rows.append(StoreRow(store.id, distance, d, reason is None, reason))
+    ranked = {r.store_id: r for r in rank_m1_11(candidates, wanted, settings.radius_km, rank_weights)}
+    return [
+        replace(r, capture_score=ranked[r.public_store_id].score, capture_rank=ranked[r.public_store_id].rank)
+        if r.public_store_id in ranked
+        else r
+        for r in rows
+    ]
 
 
 # Pairing ------------------------------------------------------------------------------------------
@@ -180,11 +199,14 @@ def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10)) -> C
     for it in items:
         if it.skipped:
             continue
-        parity = parity_m1_05(it.own, it.accepted)
+        # M1-03: a pair accepted before a size was read from a name never mixes base units.
+        unit = normalize_m1_03(it.own).unit
+        accepted = [a for a in it.accepted if normalize_m1_03(a).unit == unit]
+        parity = parity_m1_05(it.own, accepted)
         if parity is None:
             continue
         gap = gap_m1_06(it.own.price_cents, parity)
-        parity_full = parity_full_m1_05(it.own, it.accepted)
+        parity_full = parity_full_m1_05(it.own, accepted)
         assert parity_full is not None, "same accepted items as the current parity"
         gap_full = gap_m1_06(full_price_m1_05(it.own), parity_full)
         partial[it.key] = (

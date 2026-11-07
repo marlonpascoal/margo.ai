@@ -70,6 +70,8 @@ def test_B01_worker_steps_reproduce_the_seeded_xray_from_canonical_rows(conn):
         assert pair_step(repo, xid) == {"items": 24, "revisar": 3}
         assert calc_step(repo, xid) == {"items": 24, "items_for_80": 6}
     finally:
+        # The seed has no rank (M1-11 is null for rows from before the rule): C03 stays as drawn.
+        conn.execute("update public.xray_store set capture_score = null, capture_rank = null where xray_id = %s", (xid,))
         repo.close()
     after = snapshot(conn, xid)
     assert after == before

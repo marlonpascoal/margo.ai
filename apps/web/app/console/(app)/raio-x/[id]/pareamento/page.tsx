@@ -9,7 +9,7 @@ import { requireFlag } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { adminClient } from "@/lib/supabase/admin";
 import { money } from "@/lib/xray/format";
-import { pairStatusLabel, UNIT_LABEL, XRAY_MESSAGES } from "@/lib/xray/labels";
+import { pairFailure, pairStatusLabel, UNIT_LABEL, XRAY_MESSAGES } from "@/lib/xray/labels";
 import { latestJob, loadItems, loadNeighborhood, loadPairs, loadXrayHead } from "@/lib/xray/load";
 import { examplePair, neighborhoodCounts, pairingTotals, pendingReview, type ItemRow } from "@/lib/xray/view";
 import { calculateAction, reviewItemAction, skipItemAction } from "../../actions";
@@ -94,7 +94,7 @@ export default async function PairingPage({ params, searchParams }: { params: Pr
         </form>
       </div>
       {working && <Notice>{XRAY_MESSAGES.pairingPending}</Notice>}
-      {job?.status === "failed" && <Notice tone="danger">{XRAY_MESSAGES.jobFailed}</Notice>}
+      {job?.status === "failed" && <Notice tone="danger">{pairFailure(job.error)}</Notice>}
       <div className="flex flex-wrap gap-2 text-sm">
         <span className="rounded-full border border-border bg-surface px-3 py-1.5">{totals.items} itens no cardápio</span>
         <span className="rounded-full border border-ok-border bg-ok-bg px-3 py-1.5">{totals.auto} pareados sozinhos</span>

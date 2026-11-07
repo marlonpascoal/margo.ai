@@ -1573,14 +1573,14 @@ isOneToOne: false
                   ]
                 },"public_menu_item": {
                   Row: {
-                    "category": string | null,"collected_at": string,"comparison_price_cents": number | null,"created_at": string,"description": string | null,"external_item_id": string,"id": string,"minimum_price_cents": number | null,"name": string,"original_price_cents": number | null,"price_cents": number,"public_store_id": string,"removed_at": string | null,"taxonomy_level1": string | null,"taxonomy_level2": string | null,"unit": Database["public"]['Enums']["menu_unit"],"unit_qty": number | null,"updated_at": string
+                    "category": string | null,"collected_at": string,"comparison_price_cents": number | null,"created_at": string,"description": string | null,"external_item_id": string,"id": string,"minimum_price_cents": number | null,"name": string,"original_price_cents": number | null,"price_cents": number,"public_store_id": string,"removed_at": string | null,"taxonomy_level1": string | null,"taxonomy_level2": string | null,"unit": Database["public"]['Enums']["menu_unit"],"unit_from_name": boolean,"unit_qty": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id": string,"id"?: string,"minimum_price_cents"?: number | null,"name": string,"original_price_cents"?: number | null,"price_cents": number,"public_store_id": string,"removed_at"?: string | null,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string
+                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id": string,"id"?: string,"minimum_price_cents"?: number | null,"name": string,"original_price_cents"?: number | null,"price_cents": number,"public_store_id": string,"removed_at"?: string | null,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_from_name"?: boolean,"unit_qty"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id"?: string,"id"?: string,"minimum_price_cents"?: number | null,"name"?: string,"original_price_cents"?: number | null,"price_cents"?: number,"public_store_id"?: string,"removed_at"?: string | null,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_qty"?: number | null,"updated_at"?: string
+                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id"?: string,"id"?: string,"minimum_price_cents"?: number | null,"name"?: string,"original_price_cents"?: number | null,"price_cents"?: number,"public_store_id"?: string,"removed_at"?: string | null,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_from_name"?: boolean,"unit_qty"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -2001,14 +2001,14 @@ isOneToOne: false
                   ]
                 },"xray_store": {
                   Row: {
-                    "created_at": string,"delivers_to_target": boolean | null,"distance_m": number,"exclusion_reason": string | null,"id": string,"included": boolean,"public_store_id": string,"updated_at": string,"xray_id": string
+                    "capture_rank": number | null,"capture_score": number | null,"capture_slot": boolean,"created_at": string,"delivers_to_target": boolean | null,"distance_m": number,"exclusion_reason": string | null,"id": string,"included": boolean,"public_store_id": string,"updated_at": string,"xray_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m": number,"exclusion_reason"?: string | null,"id"?: string,"included": boolean,"public_store_id": string,"updated_at"?: string,"xray_id": string
+                    "capture_rank"?: number | null,"capture_score"?: number | null,"capture_slot"?: boolean,"created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m": number,"exclusion_reason"?: string | null,"id"?: string,"included": boolean,"public_store_id": string,"updated_at"?: string,"xray_id": string
                   }
                   Update: {
-                    "created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m"?: number,"exclusion_reason"?: string | null,"id"?: string,"included"?: boolean,"public_store_id"?: string,"updated_at"?: string,"xray_id"?: string
+                    "capture_rank"?: number | null,"capture_score"?: number | null,"capture_slot"?: boolean,"created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m"?: number,"exclusion_reason"?: string | null,"id"?: string,"included"?: boolean,"public_store_id"?: string,"updated_at"?: string,"xray_id"?: string
                   }
                   Relationships: [
                     {
@@ -2286,6 +2286,11 @@ isOneToOne: false
 "xray_calculate":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
                            },
+"xray_capture_states":
+{ Args: { "p_xray": string }; Returns: {
+              "is_target": boolean,"public_store_id": string,"state": string
+            }[]
+                           },
 "xray_confirm_stores":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
                            },
@@ -2305,6 +2310,9 @@ isOneToOne: false
                            },
 "xray_mark_delivered":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_message": string,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
+                           },
+"xray_pair_blocker":
+{ Args: { "p_xray": string }; Returns: string
                            },
 "xray_prepare_delivery":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined

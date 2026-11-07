@@ -45,6 +45,7 @@ class Store:
     lng: Decimal | float | None
     last_seen_open_at: datetime | None = None
     is_national_chain: bool = False
+    rating_count: int | None = None
 
 
 @dataclass(frozen=True)
@@ -213,6 +214,70 @@ def exclusion_m1_02(
     if not is_candidate:
         return "regra: outra categoria"
     return None
+
+
+# M1-11 capture ranking ----------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class RankWeights:
+    """`m1.rank_weight_ratings`, `m1.rank_weight_distance`, `m1.rank_weight_terms` (04 §1, param)."""
+
+    ratings: Fraction = Fraction(50)
+    distance: Fraction = Fraction(30)
+    terms: Fraction = Fraction(20)
+
+
+@dataclass(frozen=True)
+class RankCandidate:
+    store_id: str
+    distance_m: int | None
+    rating_count: int | None
+    terms: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class Ranked:
+    store_id: str
+    score: Fraction
+    """From 0 to 100. Exact, except for the logarithm of the rating count; rounded only to store and show."""
+    rank: int
+
+
+def rank_m1_11(
+    candidates: Iterable[RankCandidate],
+    target_terms: Iterable[str],
+    radius_km: int,
+    weights: RankWeights = RankWeights(),  # noqa: B008 (frozen)
+) -> list[Ranked]:
+    """M1-11: which stores deserve a capture, best first; the one place that decides. Candidates are the
+    stores that passed M1-01 and M1-02. Score = weighted share of: rating count on a log scale over the
+    highest among candidates, proximity (1 - distance / radius, clamped; 0 when unknown), and the share of
+    the target's terms the store has (`_term`). The rating value does not enter. Ties: smaller distance,
+    unknown last, then store id."""
+    pool = list(candidates)
+    wanted = {_term(t) for t in target_terms}
+    highest = max((c.rating_count or 0 for c in pool), default=0)
+    total = weights.ratings + weights.distance + weights.terms
+
+    def score(c: RankCandidate) -> Fraction:
+        if total <= 0:
+            return Fraction(0)
+        count = c.rating_count or 0
+        ratings = Fraction(1) if count == highest and highest > 0 else (
+            Fraction(math.log1p(count) / math.log1p(highest)) if highest > 0 else Fraction(0)
+        )
+        near = Fraction(0)
+        if c.distance_m is not None:
+            near = min(Fraction(1), max(Fraction(0), 1 - Fraction(c.distance_m, radius_km * 1000)))
+        terms = Fraction(len(wanted & {_term(t) for t in c.terms}), len(wanted)) if wanted else Fraction(0)
+        return 100 * (weights.ratings * ratings + weights.distance * near + weights.terms * terms) / total
+
+    scored = sorted(
+        ((score(c), c) for c in pool),
+        key=lambda sc: (-sc[0], sc[1].distance_m is None, sc[1].distance_m or 0, sc[1].store_id),
+    )
+    return [Ranked(c.store_id, s, i) for i, (s, c) in enumerate(scored, start=1)]
 
 
 # M1-03 unit normalization -------------------------------------------------------------------------

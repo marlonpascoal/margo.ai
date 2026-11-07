@@ -11,6 +11,19 @@ export interface NeighborRow {
   reason: string | null;
   lat: number | null;
   lng: number | null;
+  /** The store's capture (public.xray_capture_states); null with no capture job. */
+  capture: CaptureState | null;
+  /** M1-11, null for a store the filters left out or from before the rule. */
+  captureRank: number | null;
+  captureScore: number | null;
+}
+
+export type CaptureState = "done" | "missing" | "failed" | "beyond_cap";
+
+/** C03: the captures of this X-ray. Stores past the cap (D47c) are neither missing nor failed. */
+export function captureCounts(rows: { state: string }[]) {
+  const n = (s: CaptureState) => rows.filter((r) => r.state === s).length;
+  return { done: n("done"), missing: n("missing"), failed: n("failed"), beyondCap: n("beyond_cap"), total: rows.length };
 }
 
 /** C03 counts: found, in the set, excluded. */
@@ -19,8 +32,14 @@ export function neighborhoodCounts(rows: Pick<NeighborRow, "included">[]) {
   return { found: rows.length, inSet, excluded: rows.length - inSet };
 }
 
-/** C03 status text of a store, as drawn: "no conjunto" or its exclusion reason. */
-export const storeState = (r: Pick<NeighborRow, "included" | "reason">) => (r.included ? "no conjunto" : (r.reason ?? "manual"));
+/** C03 status text of a store, as drawn: "no conjunto" or its exclusion reason. A store in the set whose capture
+ * failed or stayed past the cap says so (not drawn). */
+export function storeState(r: Pick<NeighborRow, "included" | "reason"> & { capture?: CaptureState | null }): string {
+  if (!r.included) return r.reason ?? "manual";
+  if (r.capture === "failed") return "no conjunto, captura falhou";
+  if (r.capture === "beyond_cap") return "no conjunto, sem captura pelo limite";
+  return "no conjunto";
+}
 
 /** C03 map placeholder: offset of a store from the target in px, `scale` px per km (north up). */
 export function mapOffset(target: { lat: number; lng: number }, s: { lat: number; lng: number }, scalePxPerKm: number) {

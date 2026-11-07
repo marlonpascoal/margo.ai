@@ -139,6 +139,7 @@ def test_B01_from_discovery_to_pairs_with_copies_only(conn, repo, run):
     again = conn.execute("select payload from public.job where type = 'xray_neighborhood' and status = 'queued'").fetchall()
     assert again == [{"payload": {"xray_id": xid, "queue_captures": False}}]
     assert neighborhood_job_step(repo, xid, "sandbox", queue_captures=False)["captures"] == 0
+    conn.execute("update public.job set status = 'done', finished_at = now() where type = 'xray_neighborhood' and status = 'queued'")
     rows = rows_of(conn, xid)
     # M1-01: haversine now that both have coordinates (0.01 degree of latitude is about 1.11 km).
     assert rows[run.store_id(2)]["distance_m"] == 1112

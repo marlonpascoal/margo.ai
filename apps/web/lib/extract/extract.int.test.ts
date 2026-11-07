@@ -90,7 +90,7 @@ describe("B01 claim", () => {
     expect(await res.text()).toBe("");
   });
 
-  it("B01_claim_gives_the_contract_payload_and_one_run_at_a_time", async () => {
+  it("B01_claim_gives_the_contract_payload_and_runs_up_to_the_limit", async () => {
     const x = await newXray();
     const res = await post(claim, { worker: "w-1" });
     expect(res.status).toBe(200);
@@ -102,8 +102,10 @@ describe("B01 claim", () => {
     expect(run).toEqual({ worker: "w-1", status: "running", kind: "discover" });
     const { data: job } = await db.from("job").select("status").eq("id", body.job_id).single();
     expect(job!.status).toBe("running");
-    await db.from("job").insert({ type: "extract_capture", payload: { url: "https://exemplo.test/a" } });
-    expect((await post(claim, { worker: "w-2" })).status).toBe(204);
+    for (const u of ["a", "b", "c"]) await db.from("job").insert({ type: "extract_capture", payload: { url: `https://exemplo.test/${u}` } });
+    expect((await post(claim, { worker: "w-2" })).status).toBe(200);
+    expect((await post(claim, { worker: "w-3" })).status).toBe(200);
+    expect((await post(claim, { worker: "w-4" })).status).toBe(204);
     await db.from("xray").delete().eq("id", x);
   });
 

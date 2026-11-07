@@ -6,7 +6,7 @@ Examples below are synthetic. The complete bodies are in `fixtures/m1/extract/`,
 
 ## Flow
 
-1. Poll `POST /api/extract/claim`. One job runs at a time across all extractors, so a claim while another job runs answers 204.
+1. Poll `POST /api/extract/claim`. Jobs run in parallel up to a limit the server decides (`m1.extract_max_running`, today 3) across all extractors; at the limit, or with nothing queued, a claim answers 204. The limit does not change how fast an extractor may read pages: it keeps its own pacing (D47).
 2. Do the job.
 3. Send `POST /api/extract/result`, or `POST /api/extract/fail` if it could not be done.
 
@@ -111,7 +111,7 @@ A store with neither `search_terms` nor `taxonomies` stays a candidate. A store 
 | `main_category_code` | | string | |
 | `super_categories` | | array of strings | |
 | `rating` | | number | 0 to 5 |
-| `rating_count` | | integer | |
+| `rating_count` | | integer | M1-11: the main part of the capture ranking. Without it the ranking works from distance and terms only |
 | `address` | | string | Street address. Internal only: it reaches no screen, PDF, message, snapshot or export (D47c) |
 | `area` | | string | Neighborhood or locality |
 | `lat`, `lng` | | number | |
@@ -130,7 +130,7 @@ A store with neither `search_terms` nor `taxonomies` stays a candidate. A store 
 | `original_price_cents` | | integer | The price before a promotion. Enters the full parity (`spec/04-rules.md` M1-05) |
 | `minimum_price_cents` | | integer | Used when `price_cents` is 0 |
 | `unit` | | `"g"`, `"ml"`, `"un"`, `"pack"` | Default `"un"` |
-| `unit_qty` | | number | Required when `unit` is `"g"` or `"ml"`. For a pack, the units in it; leave it out for a combo of different items |
+| `unit_qty` | | number | Required when `unit` is `"g"` or `"ml"`. For a pack, the units in it; leave it out for a combo of different items. Without it, and with `unit` absent or `"un"`, MargoAI reads the size from `name` when it is unambiguous (M1-03); what you send always wins |
 
 ### Answers
 
@@ -168,6 +168,7 @@ Also refused with 422: a capture with an empty `items` (it would mark the whole 
 - A capture carries the complete menu, so for an item in it a missing `original_price_cents` or `minimum_price_cents` means there is none now, and the stored value is cleared. A discovery copy never clears them.
 - An item missing from a newer capture is marked removed, never deleted; it returns if a later capture lists it.
 - Older copies arriving late do not overwrite newer values.
+- Captures go to the target and the top `m1.extract_max_captures_per_xray` stores of the ranking (M1-11); the others stay in the neighborhood with no capture job.
 
 ## Retries
 

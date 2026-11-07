@@ -78,7 +78,13 @@ test("B01_C02_to_C04_from_extraction_copies", async ({ page, request }) => {
   await expect(row("Vizinha A Sintética")).toContainText("no conjunto");
   await expect(row("Vizinha B Sintética")).toContainText("regra: outra categoria");
   await expect(row("Vizinha Longe Sintética")).toHaveCount(0);
-  await expect(page.getByText("Capturando os cardápios: faltam 2 lojas.")).toBeVisible();
+  // B01: pairing waits for the captures, on screen and on the server.
+  await expect(page.getByText("Cardápios: 0 prontos, 2 faltando, 0 com falha.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirmar 1 loja" })).toBeDisabled();
+  await expect(page.getByText("Confirmar libera quando os cardápios terminarem.")).toBeVisible();
+  const { data: blocker } = await db.rpc("xray_pair_blocker", { p_xray: xrayId });
+  expect(blocker).toBe("captures");
+  await expect(row("Vizinha A Sintética")).toContainText("prioridade 1, nota");
 
   await answer(request, (await claim(request)).job_id, "capture-target.json");
   await answer(request, (await claim(request)).job_id, "capture-store.json");
@@ -86,7 +92,8 @@ test("B01_C02_to_C04_from_extraction_copies", async ({ page, request }) => {
   runWorker("xray_neighborhood");
 
   await page.reload();
-  await expect(page.getByText("Capturando os cardápios")).toHaveCount(0);
+  await expect(page.getByText("Cardápios: 2 prontos, 0 faltando, 0 com falha.")).toBeVisible();
+  await expect(page.getByText("Confirmar libera quando os cardápios terminarem.")).toHaveCount(0);
   expect(await page.content()).not.toContain("Sintética, 100");
   expect(await page.content()).not.toContain("Avenida Sintética");
 
@@ -99,4 +106,27 @@ test("B01_C02_to_C04_from_extraction_copies", async ({ page, request }) => {
 
   const { data: items } = await db.from("xray_item").select("id").eq("xray_id", xrayId);
   expect(items).toHaveLength(2);
+});
+
+test("B01_C03_captures_of_this_xray_a_failed_store_is_named_and_does_not_block", async ({ page }) => {
+  const db = adminDb();
+  await loginToConsole(page, FOUNDER_EMAIL);
+  const xray = "9aae2f75-4168-fde3-4570-d7bd0f4669d0"; // G-SYN
+  const { data: stores } = await db.from("xray_store").select("public_store_id, public_store(name)").eq("xray_id", xray).eq("included", true).order("distance_m").limit(2);
+  const [failed, queued] = stores!;
+  const job = (s: { public_store_id: string }, status: "failed" | "queued") => ({ type: "extract_capture", status, payload: { public_store_id: s.public_store_id, url: "https://exemplo.test/x" } });
+  try {
+    await db.from("job").insert([job(failed, "failed"), job(queued, "queued")]);
+    await page.goto(`/console/raio-x/${xray}/vizinhanca`);
+    await expect(page.getByText("Cardápios: 0 prontos, 1 faltando, 1 com falha.")).toBeVisible();
+    await expect(page.locator(`li[data-store="${(failed.public_store as unknown as { name: string }).name}"]`)).toContainText("no conjunto, captura falhou");
+    await expect(page.getByRole("button", { name: /^Confirmar \d+ lojas$/ })).toBeDisabled();
+
+    await db.from("job").update({ status: "done" }).eq("type", "extract_capture").eq("status", "queued");
+    await page.reload();
+    await expect(page.getByText("Cardápios: 1 pronto, 0 faltando, 1 com falha.")).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Confirmar \d+ lojas$/ })).toBeEnabled();
+  } finally {
+    await clearQueue();
+  }
 });

@@ -9,11 +9,12 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
+from fractions import Fraction
 from typing import Any
 
 from .fetcher import CACHE_DAYS, CachedPage
 from .ifood_public import ParsedStore
-from .rules import Item, Store, to_numeric
+from .rules import Item, RankWeights, Store, to_numeric
 from .steps import Discovered, XrayRun
 from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual
 
@@ -36,6 +37,7 @@ class MemoryXrayRepo:
     discoveries: dict[str, dict[str, Discovered]] = field(default_factory=dict)
     queued: list[tuple[str, str]] = field(default_factory=list)
     extraction_on: bool = True
+    blockers: dict[str, str] = field(default_factory=dict)
 
     def load_xray(self, xray_id: str) -> XrayRun:
         return self.xrays[xray_id]
@@ -83,11 +85,23 @@ class MemoryXrayRepo:
         }
         return manual, {r.public_store_id: r.delivers_to_target for r in rows}  # type: ignore[return-value]
 
-    def save_neighborhood(self, xray_id: str, rows: list[StoreRow]) -> None:
-        self.hood[xray_id] = rows
+    def save_neighborhood(self, xray_id: str, rows: list[StoreRow], *, keep_rank: bool = False) -> None:
+        old = {r.public_store_id: r for r in self.hood.get(xray_id, [])} if keep_rank else {}
+        self.hood[xray_id] = [
+            replace(r, capture_score=old[r.public_store_id].capture_score, capture_rank=old[r.public_store_id].capture_rank)
+            if r.public_store_id in old
+            else r
+            for r in rows
+        ]
+
+    def rank_weights(self) -> RankWeights:
+        return RankWeights()
 
     def included_store_ids(self, xray_id: str) -> list[str]:
         return [r.public_store_id for r in self.hood.get(xray_id, []) if r.included]
+
+    def pair_blocker(self, xray_id: str) -> str | None:
+        return self.blockers.get(xray_id)
 
     def items_of_stores(self, store_ids: list[str]) -> list[Item]:
         ids = set(store_ids)
@@ -190,6 +204,7 @@ class PostgresXrayRepo:
             r["lng"],
             r["last_seen_open_at"],
             r["is_national_chain"],
+            r["rating_count"],
         )
 
     def store(self, store_id: str) -> Store:
@@ -267,14 +282,27 @@ class PostgresXrayRepo:
         }
         return manual, {str(r["public_store_id"]): r["delivers_to_target"] for r in rows}
 
-    def save_neighborhood(self, xray_id: str, rows: list[StoreRow]) -> None:
+    def rank_weights(self) -> RankWeights:
+        rows = self._all("select key, value from public.rule_param where key like 'm1.rank_weight_%%'")
+        v = {r["key"]: Fraction(r["value"]) for r in rows}
+        d = RankWeights()
+        return RankWeights(
+            v.get("m1.rank_weight_ratings", d.ratings),
+            v.get("m1.rank_weight_distance", d.distance),
+            v.get("m1.rank_weight_terms", d.terms),
+        )
+
+    def save_neighborhood(self, xray_id: str, rows: list[StoreRow], *, keep_rank: bool = False) -> None:
         with self._tx() as c:
             for r in rows:
                 c.execute(
                     "insert into public.xray_store (xray_id, public_store_id, distance_m, delivers_to_target, included,"
-                    " exclusion_reason) values (%s, %s, %s, %s, %s, %s) on conflict (xray_id, public_store_id) do update"
+                    " exclusion_reason, capture_score, capture_rank) values (%s, %s, %s, %s, %s, %s, %s, %s)"
+                    " on conflict (xray_id, public_store_id) do update"
                     " set distance_m = excluded.distance_m, delivers_to_target = excluded.delivers_to_target,"
-                    " included = excluded.included, exclusion_reason = excluded.exclusion_reason",
+                    " included = excluded.included, exclusion_reason = excluded.exclusion_reason,"
+                    " capture_score = case when %s then public.xray_store.capture_score else excluded.capture_score end,"
+                    " capture_rank = case when %s then public.xray_store.capture_rank else excluded.capture_rank end",
                     (
                         xray_id,
                         r.public_store_id,
@@ -282,6 +310,10 @@ class PostgresXrayRepo:
                         r.delivers_to_target,
                         r.included,
                         r.exclusion_reason,
+                        to_numeric(r.capture_score) if r.capture_score is not None else None,
+                        r.capture_rank,
+                        keep_rank,
+                        keep_rank,
                     ),
                 )
             c.execute(
@@ -299,6 +331,9 @@ class PostgresXrayRepo:
         ]
 
     # pairing
+    def pair_blocker(self, xray_id: str) -> str | None:
+        return self._all("select public.xray_pair_blocker(%s) as b", (xray_id,))[0]["b"]
+
     def items_of_stores(self, store_ids: list[str]) -> list[Item]:
         rows = self._all(
             "select id, public_store_id, name, comparison_price_cents as price_cents, unit, unit_qty, taxonomy_level1,"

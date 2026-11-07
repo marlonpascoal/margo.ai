@@ -92,8 +92,8 @@ export async function toggleStoreAction(xrayId: string, xrayStoreId: string, inc
 
 export async function confirmStoresAction(form: FormData): Promise<void> {
   const { a, x } = await xrayFor(form);
-  await cmd.confirmStores(xrayDeps(), a, x.id, x.accountId);
-  redirect(`${base(x.id)}/pareamento`);
+  const { ok } = await cmd.confirmStores(xrayDeps(), a, x.id, x.accountId);
+  redirect(`${base(x.id)}/${ok ? "pareamento" : "vizinhanca"}`);
 }
 
 // C04 ---------------------------------------------------------------------------------------------

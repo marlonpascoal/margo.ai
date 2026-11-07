@@ -55,6 +55,9 @@ export const XRAY_MESSAGES = {
   unskip: "Voltar para a conta",
   invalidHours: "Horas: use números como 0,5.",
   jobFailed: "A tarefa falhou. Peça para rodar de novo.",
+  confirmWaits: "Confirmar libera quando os cardápios terminarem.",
+  neighborhoodPending: "Atualizando a vizinhança com os cardápios capturados.",
+  pairWaitedForLoad: "O pareamento não rodou: ainda havia cardápios na fila. Confirme o conjunto de novo na vizinhança quando terminarem.",
   unknownAccount: "Conta não encontrada.",
   fullPriceRoom: "pode subir quando os vizinhos não estão em promoção",
 } as const;
@@ -90,8 +93,21 @@ export function collectStopReason(error: string | null | undefined, reason?: str
   }
 }
 
-/** C03: captures still queued or running for the X-ray's stores. Not drawn. */
-export const capturesPending = (n: number) => `Capturando os cardápios: ${n === 1 ? "falta 1 loja" : `faltam ${n} lojas`}. Confirme o conjunto quando terminar.`;
+/** C03: the captures of this X-ray's stores (public.xray_capture_states). Not drawn. */
+export function captureProgressLabel(c: { done: number; missing: number; failed: number; beyondCap: number; total?: number }): string {
+  const parts = [`${c.done} ${c.done === 1 ? "pronto" : "prontos"}`, `${c.missing} faltando`, `${c.failed} com falha`];
+  if (c.beyondCap > 0) parts.push(`${c.beyondCap} sem captura pelo limite`);
+  return `Cardápios: ${parts.join(", ")}.${c.missing > 0 ? " Confirme o conjunto quando terminar." : ""}`;
+}
+
+/** C03 under the store's name (M1-11), rounded only here. Not drawn. */
+export const captureRankLabel = (rank: number | null, score: number | null) => (rank === null || score === null ? null : `prioridade ${rank}, nota ${Math.round(score)}`);
+
+/** C03: the capture of the X-ray's own target failed; it is in no list. Not drawn. */
+export const targetCaptureFailed = (name: string | null) => `A captura do cardápio de ${name ?? "loja do raio-X"} falhou.`;
+
+/** C04: why the xray_pair job failed, from its log. Not drawn. */
+export const pairFailure = (error: string | null | undefined) => (error === "LoadPending" ? XRAY_MESSAGES.pairWaitedForLoad : XRAY_MESSAGES.jobFailed);
 
 /** xray.target_kind as a small label in C02 and C05. */
 export const TARGET_KIND_LABEL = { own: "loja própria", competitor: "concorrente" } as const;

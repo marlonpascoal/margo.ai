@@ -40,7 +40,7 @@ export interface Claimed {
   payload: Json;
 }
 
-/** 02 §4: the next job, one at a time. Null when there is no work. */
+/** 02 §4: the next job, up to the running limit. Null when there is no work or at the limit. */
 export async function claimNext(db: Db, worker: string): Promise<Claimed | null> {
   const res = await db.rpc("extract_claim_next", { p_worker: worker, p_env: flagEnv() });
   if (res.error) throw new Error(res.error.message);

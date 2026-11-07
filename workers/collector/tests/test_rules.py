@@ -7,6 +7,8 @@ from fractions import Fraction
 import pytest
 from margo_collector.rules import (
     Item,
+    RankCandidate,
+    RankWeights,
     Settings,
     Store,
     distance_m_m1_01,
@@ -21,10 +23,12 @@ from margo_collector.rules import (
     pareto_m1_08,
     parity_m1_05,
     percent_label,
+    rank_m1_11,
     reading_m1_07,
     round_half_away,
     similarity_m1_04,
 )
+from margo_collector.xray import CalcInput, build_neighborhood, calculate
 
 TARGET = Store("t", "Alvo", "Lanches", Decimal("-23.330000"), Decimal("-51.150000"))
 COLLECTED = datetime(2026, 10, 28, 13, 0, tzinfo=UTC)
@@ -208,3 +212,88 @@ def test_settings_from_xray_rules_uses_defaults_for_missing_keys():
         s.min_pairs,
         s.similarity_threshold,
     ) == (5, False, True, 7, Fraction(7, 10))
+
+
+def test_B01_M1_05_a_pair_in_another_base_unit_stays_out_of_parity():
+    """M1-03: an accepted pair from before a size was read from a name never mixes base units."""
+    own = Item("own", "t", "Fanta lata 350ml", 700, "ml", Decimal(350))
+    same = Item("a", "s", "Fanta lata 350 ml", 700, "ml", Decimal(350))
+    other = Item("b", "s", "Fanta lata", 99900)
+    r = calculate([CalcInput("k", own, (same, other), None)])
+    assert r.rows[0].parity_cents == 700
+    lone = calculate([CalcInput("k", own, (other,), None)])
+    assert lone.rows[0].parity_cents is None
+
+
+def _cand(sid, distance=None, count=None, terms=()):
+    return RankCandidate(sid, distance, count, tuple(terms))
+
+
+def test_B01_M1_11_score_weights_each_part_and_normalizes_by_their_sum():
+    target = ["Lanches", "Hambúrguer"]
+    ranked = {
+        r.store_id: r
+        for r in rank_m1_11(
+            [
+                _cand("top", 0, 999, ["lanches", "HAMBURGUER"]),
+                _cand("half", 1500, 0, ["lanches"]),
+                _cand("none"),
+            ],
+            target,
+            3,
+        )
+    }
+    assert ranked["top"].score == 100
+    assert ranked["half"].score == Fraction(30, 100) * Fraction(1, 2) * 100 + Fraction(20, 100) * Fraction(1, 2) * 100
+    assert ranked["none"].score == 0
+    assert [ranked[s].rank for s in ("top", "half", "none")] == [1, 2, 3]
+    doubled = rank_m1_11([_cand("a", 1500, None, ["lanches"])], target, 3, RankWeights(100, 60, 40))
+    assert doubled[0].score == ranked["half"].score, "weights count by their share"
+
+
+def test_B01_M1_11_rating_count_is_a_log_scale_over_the_highest_among_candidates():
+    ranked = {r.store_id: r for r in rank_m1_11([_cand("a", count=99), _cand("b", count=9)], [], 3)}
+    assert ranked["a"].score == 50
+    assert float(ranked["b"].score) == pytest.approx(25)
+
+
+def test_B01_M1_11_works_without_any_rating_count():
+    ranked = rank_m1_11([_cand("far", 3000, None, ["x"]), _cand("near", 300, None, ["x"])], ["x"], 3)
+    assert [r.store_id for r in ranked] == ["near", "far"]
+    assert ranked[0].score == 27 + 20
+    assert ranked[1].score == 20
+
+
+def test_B01_M1_11_distance_is_clamped_and_terms_without_target_say_nothing():
+    ranked = {r.store_id: r for r in rank_m1_11([_cand("beyond", 9000, None, ["x"]), _cand("unknown", None)], [], 3)}
+    assert ranked["beyond"].score == 0 and ranked["unknown"].score == 0
+
+
+def test_B01_M1_11_ties_break_by_distance_unknown_last_then_store_id():
+    ranked = rank_m1_11(
+        [_cand("z", 3000), _cand("b", 3000), _cand("a"), _cand("c", 3000)], [], 3
+    )
+    assert [r.store_id for r in ranked] == ["b", "c", "z", "a"]
+    assert [r.rank for r in ranked] == [1, 2, 3, 4]
+
+
+def test_B01_M1_11_rating_value_does_not_enter_and_manual_does_not_change_the_rank():
+    near = Store("near", "n", "L", None, None, rating_count=10)
+    far = Store("far", "f", "L", None, None, rating_count=1000)
+    out = Store("out", "o", "L", None, None, is_national_chain=True, rating_count=99999)
+    target = Store("t", "t", "L", Decimal("-23.3"), Decimal("-51.1"))
+    at = datetime(2026, 11, 7, tzinfo=UTC)
+    args = {
+        "collected_at": at,
+        "settings": Settings(),
+        "discovered_m": {"near": 100, "far": 2900, "out": 50},
+        "target_terms": ["L"],
+    }
+    rows = {r.public_store_id: r for r in build_neighborhood(target, [near, far, out], **args)}
+    assert rows["out"].capture_rank is None and rows["out"].capture_score is None, "the filters come first"
+    assert {rows["near"].capture_rank, rows["far"].capture_rank} == {1, 2}
+    manual = {"out": (True, "manual"), "near": (False, "manual: fora")}
+    again = {r.public_store_id: r for r in build_neighborhood(target, [near, far, out], manual=manual, **args)}
+    assert again["out"].included and again["out"].capture_rank is None, "a manual inclusion does not enter the rank"
+    assert not again["near"].included
+    assert again["near"].capture_rank == rows["near"].capture_rank, "a manual exclusion does not change it"

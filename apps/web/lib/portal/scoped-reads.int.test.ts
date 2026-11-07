@@ -11,7 +11,7 @@ import { loadPlanView } from "@/lib/billing/view";
 import { closePeriods } from "@/lib/m2/close";
 import { loadDecision } from "@/lib/m3/data";
 import { adminClient, type Db } from "@/lib/supabase/admin";
-import { loadPairs, pendingCaptures } from "@/lib/xray/load";
+import { captureProgress, loadPairs } from "@/lib/xray/load";
 import { accountReader, personReader, type ReadDb, type TableName } from "@/lib/supabase/reader";
 import { closeFilePath } from "./account-data";
 import { loadConnect } from "./connect";
@@ -276,7 +276,7 @@ describe("D63: the console keeps the service role for the X-ray loaders the extr
     const page = webFile("app/console/(app)/raio-x/[id]/vizinhanca/page.tsx");
     expect(page).toContain('await requireConsole("clients")');
     expect(page).toContain("const db = adminClient()");
-    expect(page).toContain("pendingCaptures(db, x.id, x.targetStoreId)");
+    expect(page).toContain("captureProgress(db, x.id)");
     expect(page).not.toMatch(/requireMember|requirePortal|Member\.db/);
     for (const f of ["lib/portal/home.ts", "lib/portal/reports.ts", "app/app/page.tsx"]) expect(webFile(f)).not.toContain("xray/load");
   });
@@ -290,8 +290,10 @@ describe("D63: the console keeps the service role for the X-ray loaders the extr
       .single();
     if (error) throw error;
     try {
-      expect(await pendingCaptures(admin, x!.id, x!.target_store_id)).toBeGreaterThan(0);
-      expect(await pendingCaptures(session.aDono, x!.id, x!.target_store_id)).toBe(0);
+      const seen = await captureProgress(admin, x!.id);
+      expect(seen.states.filter((c) => c.state === "missing").length).toBeGreaterThan(0);
+      expect(seen.blocker).toBe("captures");
+      await expect(captureProgress(session.aDono, x!.id)).rejects.toThrow();
     } finally {
       await admin.from("job").delete().eq("id", job.id);
     }

@@ -1,4 +1,4 @@
-// POST /api/extract/claim: the next queued discover or capture job, one at a time (docs/extract-api.md, 02 §4).
+// POST /api/extract/claim: the next queued discover or capture job, up to the running limit (docs/extract-api.md, 02 §4).
 import { NextResponse } from "next/server";
 import { claimNext } from "@/lib/extract/server";
 import { adminClient } from "@/lib/supabase/admin";

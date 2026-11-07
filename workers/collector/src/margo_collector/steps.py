@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Any, Protocol
 
 from .ifood_public import ParsedStore
-from .rules import Item, Settings, Store
+from .rules import Item, RankWeights, Settings, Store
 from .xray import CalcInput, CalcResult, ItemRow, StoreRow, build_neighborhood, build_pairs, calculate
 
 
@@ -33,6 +33,11 @@ class XrayRun:
     @property
     def settings(self) -> Settings:
         return Settings.from_xray(self.radius_km, self.rules)
+
+
+class LoadPending(Exception):
+    """Pairing arrived while the X-ray's captures or its neighborhood job are active. The job fails with this
+    name; C04 turns it into the reason and C03 lets the founder confirm again when the load ends."""
 
 
 class ExtractionOff(Exception):
@@ -72,9 +77,17 @@ class XrayRepo(Protocol):
         """(manual choices to keep, delivers_to_target per store) from the current xray_store rows."""
         ...
 
-    def save_neighborhood(self, xray_id: str, rows: list[StoreRow]) -> None: ...
+    def save_neighborhood(self, xray_id: str, rows: list[StoreRow], *, keep_rank: bool = False) -> None:
+        """Saves the rows; with keep_rank, M1-11 scores and ranks already recorded stay."""
+        ...
+
+    def rank_weights(self) -> RankWeights: ...
 
     def included_store_ids(self, xray_id: str) -> list[str]: ...
+
+    def pair_blocker(self, xray_id: str) -> str | None:
+        """What pairing waits for: "captures", "neighborhood" or None (public.xray_pair_blocker)."""
+        ...
 
     def items_of_stores(self, store_ids: list[str]) -> list[Item]: ...
 
@@ -92,9 +105,13 @@ class XrayRepo(Protocol):
 
 
 def neighborhood_step(
-    repo: XrayRepo, xray_id: str, delivers_to_target: dict[str, bool | None] | None = None
+    repo: XrayRepo,
+    xray_id: str,
+    delivers_to_target: dict[str, bool | None] | None = None,
+    *,
+    keep_rank: bool = False,
 ) -> dict[str, int]:
-    """M1-01 and M1-02 over the public catalog and the discovery copies; manual C03 choices are kept."""
+    """M1-01, M1-02 and M1-11 over the public catalog and the discovery copies; manual C03 choices stay."""
     x = repo.load_xray(xray_id)
     if x.collected_at is None:
         raise ValueError("the neighborhood needs a collection date")
@@ -116,8 +133,9 @@ def neighborhood_step(
         discovered_m={sid: d.distance_m for sid, d in found.items()},
         target_terms=[*x.categories, *(own.terms if own else ())],
         store_terms={sid: d.terms for sid, d in found.items()},
+        rank_weights=repo.rank_weights(),
     )
-    repo.save_neighborhood(xray_id, rows)
+    repo.save_neighborhood(xray_id, rows, keep_rank=keep_rank)
     return {"stores": len(rows), "in_set": sum(1 for r in rows if r.included)}
 
 
@@ -132,14 +150,19 @@ def collect_step(repo: XrayRepo, xray_id: str, env: str) -> dict[str, int]:
 def neighborhood_job_step(
     repo: XrayRepo, xray_id: str, env: str, *, queue_captures: bool
 ) -> dict[str, int]:
-    """M1-01 and M1-02 from the applied copies; on the first run, the captures of the target and the set."""
-    result = neighborhood_step(repo, xray_id)
+    """M1-01, M1-02 and M1-11 from the applied copies; on a discovery's run, the captures of the target and
+    the top of the rank (public.extract_queue_xray_captures). The run after the captures keeps the rank."""
+    result = neighborhood_step(repo, xray_id, keep_rank=not queue_captures)
     captures = repo.queue_captures(xray_id, env) if queue_captures else 0
     return {**result, "captures": captures}
 
 
 def pair_step(repo: XrayRepo, xray_id: str) -> dict[str, int]:
-    """M1-03 and M1-04: the target's items against the items of the stores in the set."""
+    """M1-03 and M1-04: the target's items against the items of the stores in the set, once the load ended. A
+    re-run replaces the pairs: stores no longer in the set leave, a founder's decision on a store still in it
+    stays."""
+    if repo.pair_blocker(xray_id) is not None:
+        raise LoadPending()
     x = repo.load_xray(xray_id)
     own = repo.items_of_stores([x.target_store_id])
     pool = repo.items_of_stores(repo.included_store_ids(xray_id))

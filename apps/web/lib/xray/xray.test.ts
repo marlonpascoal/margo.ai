@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import { calculate, confirmStores, createXray, markDelivered, prepareDelivery, reviewItem, saveMinutes, setStoreIncluded, type XrayDeps } from "./commands";
 import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./format";
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
-import { collectStopReason, competitorRefusal, fullParityLabel, pairStatusLabel, XRAY_MESSAGES } from "./labels";
+import { captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, XRAY_MESSAGES } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
-import { examplePair, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow } from "./view";
+import { captureCounts, examplePair, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow } from "./view";
 
 const PANTANOS = "https://www.ifood.com.br/delivery/londrina-pr/pantanos-burguer-igapo/91a9c35d-0000-4000-8000-000000000000";
 
@@ -149,6 +149,39 @@ describe("C05 dual parity (M1-05, M1-07)", () => {
   });
 });
 
+describe("C03 captures of this X-ray", () => {
+  const states = (...s: string[]) => s.map((state, i) => ({ public_store_id: `s${i}`, is_target: i === 0, state }));
+
+  it("B01_C03_counts_done_missing_failed_and_beyond_the_cap", () => {
+    expect(captureCounts(states("done", "done", "missing", "failed", "beyond_cap"))).toEqual({ done: 2, missing: 1, failed: 1, beyondCap: 1, total: 5 });
+    expect(captureCounts([])).toEqual({ done: 0, missing: 0, failed: 0, beyondCap: 0, total: 0 });
+  });
+
+  it("B01_C03_the_notice_says_how_many_are_left", () => {
+    expect(captureProgressLabel({ done: 12, missing: 3, failed: 1, beyondCap: 0, total: 16 })).toBe("Cardápios: 12 prontos, 3 faltando, 1 com falha. Confirme o conjunto quando terminar.");
+    expect(captureProgressLabel({ done: 1, missing: 0, failed: 0, beyondCap: 5, total: 6 })).toBe("Cardápios: 1 pronto, 0 faltando, 0 com falha, 5 sem captura pelo limite.");
+  });
+
+  it("B01_C03_a_failed_store_is_named_failed_and_a_store_past_the_cap_is_neither", () => {
+    const base = { included: true, reason: null };
+    expect(storeState({ ...base, capture: "failed" })).toBe("no conjunto, captura falhou");
+    expect(storeState({ ...base, capture: "beyond_cap" })).toBe("no conjunto, sem captura pelo limite");
+    expect(storeState({ ...base, capture: "missing" })).toBe("no conjunto");
+    expect(storeState({ included: false, reason: "manual", capture: "failed" })).toBe("manual");
+  });
+
+  it("B01_M1_11_the_rank_shows_only_when_there_is_one_and_rounds_only_for_display", () => {
+    expect(captureRankLabel(3, 71.6)).toBe("prioridade 3, nota 72");
+    expect(captureRankLabel(null, null)).toBeNull();
+  });
+
+  it("B01_C04_a_pair_job_that_came_early_says_why", () => {
+    expect(pairFailure("LoadPending")).toBe(XRAY_MESSAGES.pairWaitedForLoad);
+    expect(pairFailure("KeyError")).toBe(XRAY_MESSAGES.jobFailed);
+    for (const s of [XRAY_MESSAGES.pairWaitedForLoad, XRAY_MESSAGES.confirmWaits, XRAY_MESSAGES.neighborhoodPending]) expect(s).not.toContain("—");
+  });
+});
+
 describe("commands (A04: every write through an audited function)", () => {
   function fake() {
     const calls: [string, Record<string, unknown>][] = [];
@@ -165,6 +198,15 @@ describe("commands (A04: every write through an audited function)", () => {
     return { calls, jobs, deps };
   }
   const actor = { personId: "p-1", ip: "127.0.0.1", userAgent: "ua" };
+
+  it("B01_C03_confirm_while_the_load_runs_is_refused_and_queues_nothing", async () => {
+    const { jobs, deps } = fake();
+    deps.rpc = async () => {
+      throw new Error("xray_load_pending");
+    };
+    await expect(confirmStores(deps, actor, "x-1", "acc")).resolves.toEqual({ ok: false });
+    expect(jobs).toEqual([]);
+  });
 
   it("C02_buscar_vizinhanca_creates_the_xray_and_a_collect_job", async () => {
     const { calls, jobs, deps } = fake();

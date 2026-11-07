@@ -1,6 +1,6 @@
 // Reads for the M1 console screens, with the service role, after requireConsole("clients") (02 §5).
 import type { Db } from "@/lib/supabase/admin";
-import type { HistoryPrice, HistoryRun, ItemRow, NeighborRow } from "./view";
+import type { CaptureState, HistoryPrice, HistoryRun, ItemRow, NeighborRow } from "./view";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = (s: string) => UUID.test(s);
@@ -80,20 +80,25 @@ export async function latestJob(db: Db, type: string, xrayId: string): Promise<J
   return { status: j.status, error: typeof last.error === "string" ? last.error : null, reason: typeof last.reason === "string" ? last.reason : null };
 }
 
-/** C03: extract_capture jobs still queued or running for the X-ray's target and stores. */
-export async function pendingCaptures(db: Db, xrayId: string, targetStoreId: string): Promise<number> {
-  const stores = list(await db.from("xray_store").select("public_store_id").eq("xray_id", xrayId));
-  const ids = new Set([targetStoreId, ...stores.map((s) => s.public_store_id)]);
-  const jobs = list(await db.from("job").select("payload->>public_store_id").eq("type", "extract_capture").in("status", ["queued", "running"]));
-  return jobs.filter((j) => ids.has((j as { public_store_id: string | null }).public_store_id ?? "")).length;
+export interface CaptureRow {
+  public_store_id: string;
+  is_target: boolean;
+  state: string;
+}
+
+/** C03: the captures of this X-ray's stores and what pairing waits for, as the server decides them. */
+export async function captureProgress(db: Db, xrayId: string): Promise<{ states: CaptureRow[]; blocker: string | null }> {
+  const [states, blocker] = await Promise.all([db.rpc("xray_capture_states", { p_xray: xrayId }), db.rpc("xray_pair_blocker", { p_xray: xrayId })]);
+  return { states: list(states), blocker: check(blocker) };
 }
 
 /** C03 list, nearest first. */
-export async function loadNeighborhood(db: Db, xrayId: string): Promise<NeighborRow[]> {
+export async function loadNeighborhood(db: Db, xrayId: string, states: CaptureRow[] = []): Promise<NeighborRow[]> {
+  const capture = new Map(states.map((c) => [c.public_store_id, c.state as CaptureState]));
   const rows = list(
     await db
       .from("xray_store")
-      .select("id, distance_m, included, exclusion_reason, public_store(name, category, lat, lng)")
+      .select("id, public_store_id, distance_m, included, exclusion_reason, capture_rank, capture_score, public_store(name, category, lat, lng)")
       .eq("xray_id", xrayId)
       .order("distance_m"),
   );
@@ -106,6 +111,9 @@ export async function loadNeighborhood(db: Db, xrayId: string): Promise<Neighbor
     reason: r.exclusion_reason,
     lat: r.public_store?.lat != null ? Number(r.public_store.lat) : null,
     lng: r.public_store?.lng != null ? Number(r.public_store.lng) : null,
+    capture: capture.get(r.public_store_id) ?? null,
+    captureRank: r.capture_rank,
+    captureScore: r.capture_score === null ? null : Number(r.capture_score),
   }));
 }
 

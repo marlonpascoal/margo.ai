@@ -44,8 +44,8 @@ Every screen shows the label `dados fictícios` only when rendering the seed; re
 
 ### C03. Vizinhança de 3 km (step 2)
 - **Route** `/console/raio-x/[id]/vizinhanca`.
-- **Shows** count found, in set, excluded; list with name, distance, reason for exclusion; map placeholder (real map optional, not V1).
-- **Actions** toggle a store in or out (writes `xray_store.included`, reason `manual`); "Confirmar N lojas" starts pairing and opens C04.
+- **Shows** count found, in set, excluded; list with name, distance, M1-11 rank when there is one, reason for exclusion; map placeholder (real map optional, not V1). Counts of this X-ray's captures: done, missing, failed, past the cap; a failed store and a store past the cap say so in the list. The page re-reads itself while the load runs.
+- **Actions** toggle a store in or out (writes `xray_store.included`, reason `manual`); "Confirmar N lojas" starts pairing and opens C04; disabled while the X-ray's load runs, refused on the server too (04 §1).
 - **Done when** counts update live and the excluded reason is shown for every excluded store.
 
 ### C04. Pareamento de itens (step 3)

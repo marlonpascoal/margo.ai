@@ -7,7 +7,7 @@ import { requireFlag } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { adminClient } from "@/lib/supabase/admin";
 import { gapLabel, money, runDateLabel, shareLabel } from "@/lib/xray/format";
-import { fullParityLabel, READING_LABEL, TARGET_KIND_LABEL, XRAY_MESSAGES } from "@/lib/xray/labels";
+import { fullParityLabel, READING_LABEL, TARGET_KIND_LABEL, withoutParityLabel, XRAY_MESSAGES } from "@/lib/xray/labels";
 import { latestJob, loadHistory, loadItems, loadNeighborhood, loadXrayHead } from "@/lib/xray/load";
 import { fullParityInfo, neighborhoodCounts, priceHistory, xrayResult } from "@/lib/xray/view";
 import { prepareDeliveryAction } from "../actions";
@@ -117,6 +117,11 @@ export default async function XrayPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
           </div>
+          {r.withoutParity.length > 0 && (
+            <p className="text-sm text-ink-muted" data-without-parity>
+              {withoutParityLabel(r.withoutParity)}
+            </p>
+          )}
           {history.runs.length > 1 && (
             <section className={`${card} overflow-x-auto p-4`} data-history>
               <h2 className="mb-1 font-bold">Histórico</h2>

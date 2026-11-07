@@ -85,8 +85,8 @@ export async function setStoreIncluded(deps: XrayDeps, actor: Actor, xrayStoreId
   await deps.rpc("xray_store_set_included", { p_xray_store: xrayStoreId, p_included: included, ...who(actor) });
 }
 
-/** C03 "Confirmar N lojas": pairing starts (xray_pair job). xray_confirm_stores refuses while the X-ray's captures or
- * neighborhood job are active; then nothing is queued. */
+/** C03 "Confirmar N lojas": pairing starts (xray_pair job). xray_confirm_stores refuses until enough captures finished
+ * and the target has its menu, and while the neighborhood job is active (M1-04); then nothing is queued. */
 export async function confirmStores(deps: XrayDeps, actor: Actor, xrayId: string, accountId: string | null): Promise<{ ok: boolean }> {
   try {
     await deps.rpc("xray_confirm_stores", { p_xray: xrayId, ...who(actor) });

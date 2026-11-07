@@ -55,6 +55,8 @@ class Hood:
             ).fetchone()["id"]
         )
         self.target = self.store_id(target_ext)
+        # M1-04: a target with no menu never pairs.
+        self.item(self.target, "menu-do-alvo", "Item do alvo sintético", 1000)
         self.stores = [self.neighbor(i, 100 * i) for i in range(1, n + 1)]
 
     def ext(self, n: int) -> str:

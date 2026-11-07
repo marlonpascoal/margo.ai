@@ -55,7 +55,9 @@ export const XRAY_MESSAGES = {
   unskip: "Voltar para a conta",
   invalidHours: "Horas: use números como 0,5.",
   jobFailed: "A tarefa falhou. Peça para rodar de novo.",
-  confirmWaits: "Confirmar libera quando os cardápios terminarem.",
+  confirmWaits: "Confirmar libera quando a vizinhança atualizar.",
+  confirmWaitsTarget: "Confirmar libera quando o cardápio da loja do raio-X estiver pronto.",
+  confirmLeavesOut: "Confirmar agora deixa de fora as lojas que faltam. Quando terminarem, só os dados delas mudam.",
   neighborhoodPending: "Atualizando a vizinhança com os cardápios capturados.",
   pairWaitedForLoad: "O pareamento não rodou: ainda havia cardápios na fila. Confirme o conjunto de novo na vizinhança quando terminarem.",
   unknownAccount: "Conta não encontrada.",
@@ -64,6 +66,12 @@ export const XRAY_MESSAGES = {
 
 /** C05 under "Paridade" (M1-05, M1-06): the parity and gap at full prices. Not drawn. */
 export const fullParityLabel = (i: { cents: number; gap: number }) => `sem promoção: ${money(i.cents)}, ${gapLabel(i.gap)}`;
+
+/** C05 under the table (M1-05): paired items that have no parity. Not drawn. */
+export const withoutParityLabel = (names: string[]) => {
+  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}` : names[0];
+  return `Sem paridade, poucas lojas vendem o mesmo item: ${list}.`;
+};
 
 /** C06 file thumbnail, as drawn ("PDF · A4 · 2 páginas") with the rendered file's real count; none before there is one. */
 export const pdfFileLabel = (pages: number | null) => (pages === null ? "PDF · A4" : `PDF · A4 · ${pages} páginas`);
@@ -100,8 +108,19 @@ export function collectStopReason(error: string | null | undefined, reason?: str
 export function captureProgressLabel(c: { done: number; missing: number; failed: number; beyondCap: number; total?: number }): string {
   const parts = [`${c.done} ${c.done === 1 ? "pronto" : "prontos"}`, `${c.missing} faltando`, `${c.failed} com falha`];
   if (c.beyondCap > 0) parts.push(`${c.beyondCap} sem captura pelo limite`);
-  return `Cardápios: ${parts.join(", ")}.${c.missing > 0 ? " Confirme o conjunto quando terminar." : ""}`;
+  return `Cardápios: ${parts.join(", ")}.`;
 }
+
+/** C03 next to "Confirmar" (M1-04): what pairing waits for, as public.xray_pair_blocker says. Not drawn. */
+export function confirmWaitLabel(blocker: string | null, q: { finished: number; total: number; required: number }): string | null {
+  if (blocker === null) return null;
+  if (blocker === "target") return XRAY_MESSAGES.confirmWaitsTarget;
+  if (blocker === "captures") return `Confirmar libera com ${q.required} de ${q.total} cardápios terminados: faltam ${q.required - q.finished}.`;
+  return XRAY_MESSAGES.confirmWaits;
+}
+
+/** C03 (M1-04): the stores the last pairing left out. Not drawn. */
+export const leftOutLabel = (names: string[]) => `Fora do pareamento, a captura não tinha terminado: ${names.join(", ")}.`;
 
 /** C03 under the store's name (M1-11), rounded only here. Not drawn. */
 export const captureRankLabel = (rank: number | null, score: number | null) => (rank === null || score === null ? null : `prioridade ${rank}, nota ${Math.round(score)}`);

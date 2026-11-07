@@ -89,8 +89,8 @@ def test_B01_M1_04_falls_back_to_level_1_and_without_taxonomy_is_unchanged():
     own = item("o", "t", "Pastel de carne", 1000, None, "SALGADOS")
     assert [c.item.id for c in pair_item_m1_04(own, [item("c1", "s", "Pastel de carne", 1, None, "DOCES")], FIVE).candidates] == []
     assert [c.item.id for c in pair_item_m1_04(own, [item("c2", "s", "Pastel de carne", 1)], FIVE).candidates] == ["c2"]
-    plain = item("p", "t", "Pastel de carne", 1000)
-    assert [c.item.id for c in pair_item_m1_04(plain, [item("c3", "s", "Pastel de carne", 1, "DOCES")], FIVE).candidates] == ["c3"]
+    plain = item("p", "t", "Gigante da casa", 1000)
+    assert [c.item.id for c in pair_item_m1_04(plain, [item("c3", "s", "Gigante da casa", 1, "PASTEIS")], FIVE).candidates] == ["c3"]
 
 
 def setup_repo() -> MemoryXrayRepo:

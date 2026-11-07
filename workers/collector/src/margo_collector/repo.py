@@ -38,6 +38,8 @@ class MemoryXrayRepo:
     queued: list[tuple[str, str]] = field(default_factory=list)
     extraction_on: bool = True
     blockers: dict[str, str] = field(default_factory=dict)
+    unfinished: dict[str, list[str]] = field(default_factory=dict)
+    left_out: dict[str, list[str]] = field(default_factory=dict)
 
     def load_xray(self, xray_id: str) -> XrayRun:
         return self.xrays[xray_id]
@@ -103,6 +105,12 @@ class MemoryXrayRepo:
     def pair_blocker(self, xray_id: str) -> str | None:
         return self.blockers.get(xray_id)
 
+    def unfinished_captures(self, xray_id: str) -> list[str]:
+        return self.unfinished.get(xray_id, [])
+
+    def mark_left_out(self, xray_id: str, store_ids: list[str]) -> None:
+        self.left_out[xray_id] = store_ids
+
     def items_of_stores(self, store_ids: list[str]) -> list[Item]:
         ids = set(store_ids)
         return sorted((i for i in self.items.values() if i.store_id in ids), key=lambda i: i.id)
@@ -130,6 +138,7 @@ class MemoryXrayRepo:
                     accepted,
                     extra.get("weekly_units"),
                     bool(extra.get("skipped")),
+                    bool(extra.get("reviewed")),
                 )
             )
         return out
@@ -334,10 +343,23 @@ class PostgresXrayRepo:
     def pair_blocker(self, xray_id: str) -> str | None:
         return self._all("select public.xray_pair_blocker(%s) as b", (xray_id,))[0]["b"]
 
+    def unfinished_captures(self, xray_id: str) -> list[str]:
+        rows = self._all(
+            "select public_store_id from public.xray_capture_states(%s) where state = 'missing' and not is_target",
+            (xray_id,),
+        )
+        return [str(r["public_store_id"]) for r in rows]
+
+    def mark_left_out(self, xray_id: str, store_ids: list[str]) -> None:
+        self._conn.execute(
+            "update public.xray_store set left_out_of_pairing = public_store_id = any(%s::uuid[]) where xray_id = %s",
+            (store_ids, xray_id),
+        )
+
     def items_of_stores(self, store_ids: list[str]) -> list[Item]:
         rows = self._all(
             "select id, public_store_id, name, comparison_price_cents as price_cents, unit, unit_qty, taxonomy_level1,"
-            " taxonomy_level2 from public.public_menu_item where public_store_id = any(%s::uuid[])"
+            " taxonomy_level2, category, description, size_from_name_ml from public.public_menu_item where public_store_id = any(%s::uuid[])"
             " and removed_at is null and comparison_price_cents > 0 order by id",
             (store_ids,),
         )
@@ -351,6 +373,9 @@ class PostgresXrayRepo:
                 r["unit_qty"],
                 r["taxonomy_level1"],
                 r["taxonomy_level2"],
+                section=r["category"],
+                description=r["description"],
+                size_from_name_ml=r["size_from_name_ml"],
             )
             for r in rows
         ]
@@ -369,7 +394,8 @@ class PostgresXrayRepo:
             for r in rows:
                 item = c.execute(
                     "insert into public.xray_item (xray_id, public_menu_item_id, norm_unit, norm_price_cents, pair_status,"
-                    " pair_note) values (%s, %s, %s, %s, %s, %s) on conflict (xray_id, public_menu_item_id) do update set"
+                    " pair_note, item_category) values (%s, %s, %s, %s, %s, %s, %s)"
+                    " on conflict (xray_id, public_menu_item_id) do update set item_category = excluded.item_category,"
                     " norm_unit = excluded.norm_unit, norm_price_cents = excluded.norm_price_cents,"
                     " pair_status = excluded.pair_status, pair_note = excluded.pair_note, parity_cents = null,"
                     " gap_pct = null, loss_cents = null, reading = null, pareto_rank = null, pareto_cum_share = null,"
@@ -382,6 +408,7 @@ class PostgresXrayRepo:
                         r.norm_price_cents,
                         r.pair_status,
                         r.pair_note,
+                        r.item_category,
                     ),
                 ).fetchone()["id"]
                 keep_items.append(item)
@@ -410,7 +437,7 @@ class PostgresXrayRepo:
             " as full_price_cents"
         )
         items = self._all(
-            "select i.id as xray_item_id, i.weekly_units, i.skipped, m.id as item_id, m.public_store_id, m.name,"
+            "select i.id as xray_item_id, i.weekly_units, i.skipped, i.reviewed_by, m.id as item_id, m.public_store_id, m.name,"
             f" coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, m.unit, m.unit_qty, {full}"
             " from public.xray_item i join public.public_menu_item m on m.id = i.public_menu_item_id"
             " left join public.public_menu_item_snapshot sn on sn.xray_id = i.xray_id and sn.public_menu_item_id = m.id"
@@ -454,6 +481,7 @@ class PostgresXrayRepo:
                 tuple(accepted.get(str(r["xray_item_id"]), [])),
                 r["weekly_units"],
                 r["skipped"],
+                r["reviewed_by"] is not None,
             )
             for r in items
         ]

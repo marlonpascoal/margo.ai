@@ -1573,14 +1573,14 @@ isOneToOne: false
                   ]
                 },"public_menu_item": {
                   Row: {
-                    "category": string | null,"collected_at": string,"comparison_price_cents": number | null,"created_at": string,"description": string | null,"external_item_id": string,"id": string,"minimum_price_cents": number | null,"name": string,"original_price_cents": number | null,"price_cents": number,"public_store_id": string,"removed_at": string | null,"taxonomy_level1": string | null,"taxonomy_level2": string | null,"unit": Database["public"]['Enums']["menu_unit"],"unit_from_name": boolean,"unit_qty": number | null,"updated_at": string
+                    "category": string | null,"collected_at": string,"comparison_price_cents": number | null,"created_at": string,"description": string | null,"external_item_id": string,"id": string,"minimum_price_cents": number | null,"name": string,"original_price_cents": number | null,"price_cents": number,"public_store_id": string,"removed_at": string | null,"size_from_name_ml": number | null,"taxonomy_level1": string | null,"taxonomy_level2": string | null,"unit": Database["public"]['Enums']["menu_unit"],"unit_from_name": boolean,"unit_qty": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id": string,"id"?: string,"minimum_price_cents"?: number | null,"name": string,"original_price_cents"?: number | null,"price_cents": number,"public_store_id": string,"removed_at"?: string | null,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_from_name"?: boolean,"unit_qty"?: number | null,"updated_at"?: string
+                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id": string,"id"?: string,"minimum_price_cents"?: number | null,"name": string,"original_price_cents"?: number | null,"price_cents": number,"public_store_id": string,"removed_at"?: string | null,"size_from_name_ml"?: never,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_from_name"?: boolean,"unit_qty"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id"?: string,"id"?: string,"minimum_price_cents"?: number | null,"name"?: string,"original_price_cents"?: number | null,"price_cents"?: number,"public_store_id"?: string,"removed_at"?: string | null,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_from_name"?: boolean,"unit_qty"?: number | null,"updated_at"?: string
+                    "category"?: string | null,"collected_at"?: string,"comparison_price_cents"?: never,"created_at"?: string,"description"?: string | null,"external_item_id"?: string,"id"?: string,"minimum_price_cents"?: number | null,"name"?: string,"original_price_cents"?: number | null,"price_cents"?: number,"public_store_id"?: string,"removed_at"?: string | null,"size_from_name_ml"?: never,"taxonomy_level1"?: string | null,"taxonomy_level2"?: string | null,"unit"?: Database["public"]['Enums']["menu_unit"],"unit_from_name"?: boolean,"unit_qty"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1925,14 +1925,14 @@ isOneToOne: false
                   ]
                 },"xray_item": {
                   Row: {
-                    "created_at": string,"full_price_room": boolean,"gap_full_pct": number | null,"gap_pct": number | null,"id": string,"loss_cents": number | null,"menu_item_id": string | null,"norm_price_cents": number,"norm_unit": string,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"parity_full_cents": number | null,"public_menu_item_id": string,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"reviewed_by": string | null,"skipped": boolean,"updated_at": string,"weekly_units": number | null,"xray_id": string
+                    "created_at": string,"full_price_room": boolean,"gap_full_pct": number | null,"gap_pct": number | null,"id": string,"item_category": string | null,"loss_cents": number | null,"menu_item_id": string | null,"norm_price_cents": number,"norm_unit": string,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"parity_full_cents": number | null,"public_menu_item_id": string,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"reviewed_by": string | null,"skipped": boolean,"updated_at": string,"weekly_units": number | null,"xray_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents": number,"norm_unit": string,"pair_note"?: string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id": string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id": string
+                    "created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents": number,"norm_unit": string,"pair_note"?: string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id": string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id": string
                   }
                   Update: {
-                    "created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents"?: number,"norm_unit"?: string,"pair_note"?: string | null,"pair_status"?: Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id"?: string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id"?: string
+                    "created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents"?: number,"norm_unit"?: string,"pair_note"?: string | null,"pair_status"?: Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id"?: string,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id"?: string
                   }
                   Relationships: [
                     {
@@ -2001,14 +2001,14 @@ isOneToOne: false
                   ]
                 },"xray_store": {
                   Row: {
-                    "capture_rank": number | null,"capture_score": number | null,"capture_slot": boolean,"created_at": string,"delivers_to_target": boolean | null,"distance_m": number,"exclusion_reason": string | null,"id": string,"included": boolean,"public_store_id": string,"updated_at": string,"xray_id": string
+                    "capture_rank": number | null,"capture_score": number | null,"capture_slot": boolean,"created_at": string,"delivers_to_target": boolean | null,"distance_m": number,"exclusion_reason": string | null,"id": string,"included": boolean,"left_out_of_pairing": boolean,"public_store_id": string,"updated_at": string,"xray_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "capture_rank"?: number | null,"capture_score"?: number | null,"capture_slot"?: boolean,"created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m": number,"exclusion_reason"?: string | null,"id"?: string,"included": boolean,"public_store_id": string,"updated_at"?: string,"xray_id": string
+                    "capture_rank"?: number | null,"capture_score"?: number | null,"capture_slot"?: boolean,"created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m": number,"exclusion_reason"?: string | null,"id"?: string,"included": boolean,"left_out_of_pairing"?: boolean,"public_store_id": string,"updated_at"?: string,"xray_id": string
                   }
                   Update: {
-                    "capture_rank"?: number | null,"capture_score"?: number | null,"capture_slot"?: boolean,"created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m"?: number,"exclusion_reason"?: string | null,"id"?: string,"included"?: boolean,"public_store_id"?: string,"updated_at"?: string,"xray_id"?: string
+                    "capture_rank"?: number | null,"capture_score"?: number | null,"capture_slot"?: boolean,"created_at"?: string,"delivers_to_target"?: boolean | null,"distance_m"?: number,"exclusion_reason"?: string | null,"id"?: string,"included"?: boolean,"left_out_of_pairing"?: boolean,"public_store_id"?: string,"updated_at"?: string,"xray_id"?: string
                   }
                   Relationships: [
                     {
@@ -2313,6 +2313,9 @@ isOneToOne: false
                            },
 "xray_pair_blocker":
 { Args: { "p_xray": string }; Returns: string
+                           },
+"xray_pair_quorum":
+{ Args: { "p_xray": string }; Returns: Record<string, unknown>
                            },
 "xray_prepare_delivery":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined

@@ -16,6 +16,8 @@ export interface NeighborRow {
   /** M1-11, null for a store the filters left out or from before the rule. */
   captureRank: number | null;
   captureScore: number | null;
+  /** The store's capture had not finished when pairing last ran (xray_store.left_out_of_pairing). */
+  leftOut?: boolean;
 }
 
 export type CaptureState = "done" | "missing" | "failed" | "beyond_cap";
@@ -34,8 +36,9 @@ export function neighborhoodCounts(rows: Pick<NeighborRow, "included">[]) {
 
 /** C03 status text of a store, as drawn: "no conjunto" or its exclusion reason. A store in the set whose capture
  * failed or stayed past the cap says so (not drawn). */
-export function storeState(r: Pick<NeighborRow, "included" | "reason"> & { capture?: CaptureState | null }): string {
+export function storeState(r: Pick<NeighborRow, "included" | "reason" | "leftOut"> & { capture?: CaptureState | null }): string {
   if (!r.included) return r.reason ?? "manual";
+  if (r.leftOut) return "no conjunto, fora do pareamento";
   if (r.capture === "failed") return "no conjunto, captura falhou";
   if (r.capture === "beyond_cap") return "no conjunto, sem captura pelo limite";
   return "no conjunto";
@@ -70,6 +73,8 @@ export interface ItemRow {
   paretoRank: number | null;
   paretoCumShare: number | null;
   comparables: number;
+  /** M1-05: accepted pairs, by the rule or a founder (xray_item_view). */
+  acceptedPairs: number;
   exampleName: string | null;
   exampleCents: number | null;
 }
@@ -83,6 +88,10 @@ export function pairingTotals(items: Pick<ItemRow, "pairStatus">[]) {
 /** C04: "Calcular raio-X" stays disabled while a `revisar` item is neither reviewed nor skipped. */
 export const pendingReview = (items: Pick<ItemRow, "pairStatus" | "reviewed" | "skipped">[]) =>
   items.filter((i) => i.pairStatus === "revisar" && !i.reviewed && !i.skipped).length;
+
+/** M1-05: paired items with no parity, because too few stores sell the same item. A skipped item or one to review is not one. */
+export const withoutParity = <T extends Pick<ItemRow, "parityCents" | "acceptedPairs" | "skipped" | "pairStatus">>(items: T[]) =>
+  items.filter((i) => i.parityCents === null && i.acceptedPairs > 0 && !i.skipped && i.pairStatus !== "revisar");
 
 /** C04 "Exemplo de par": the name, with the price for a normalized item ("Fritas 400 g, R$ 22,00"). */
 export function examplePair(i: Pick<ItemRow, "exampleName" | "exampleCents" | "normUnit">, money: (c: number) => string): string {
@@ -115,6 +124,7 @@ export function xrayResult(items: ItemRow[]) {
     below: analyzed.filter((i) => i.reading === "pode_subir").length,
     above: analyzed.filter((i) => i.reading === "nao_mexer").length,
     rows,
+    withoutParity: withoutParity(items).map((i) => i.name),
     paretoCount: n80,
     pareto: top.map((i) => ({ name: i.name, width: maxLoss ? Math.round(((i.lossCents ?? 0) / maxLoss) * 100) : 0, cumShare: i.paretoCumShare ?? 0 })),
     /** M1-09: how many prices to raise go in P01 and the message (at most 3). */

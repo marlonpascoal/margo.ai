@@ -59,9 +59,14 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | Coleta parada: a leitura demorou demais. | `apps/web/lib/xray/labels.ts:80` | Collection stopped: extractor timed out | |
 | Coleta parada: a leitura travou duas vezes. | `apps/web/lib/xray/labels.ts:82` | Collection stopped: the job got stuck twice | |
 | Coleta parada: erro ao ler as páginas públicas. | `apps/web/lib/xray/labels.ts:84` | Collection stopped: any other read error | |
-| Cardápios: {N} {pronto \| prontos}, {N} faltando, {N} com falha{, N sem captura pelo limite}. {Confirme o conjunto quando terminar.} | `apps/web/lib/xray/labels.ts` (`captureProgressLabel`) | C03: the captures of this X-ray's stores; the last sentence only while some are missing, the limit part only when stores are past `m1.extract_max_captures_per_xray` | |
+| Cardápios: {N} {pronto \| prontos}, {N} faltando, {N} com falha{, N sem captura pelo limite}. | `apps/web/lib/xray/labels.ts` (`captureProgressLabel`) | C03: the captures of this X-ray's stores; the limit part only when stores are past `m1.extract_max_captures_per_xray` | |
 | prioridade {N}, nota {N} | `apps/web/lib/xray/labels.ts` (`captureRankLabel`) | C03 store list, after the distance: the M1-11 capture ranking; only for stores that have one | |
-| Confirmar libera quando os cardápios terminarem. | `apps/web/lib/xray/labels.ts` (`confirmWaits`) | C03: beside the disabled "Confirmar N lojas" while pairing waits | |
+| Confirmar libera quando a vizinhança atualizar. | `apps/web/lib/xray/labels.ts` | C03: the neighborhood job is active | |
+| Confirmar libera quando o cardápio da loja do raio-X estiver pronto. | `apps/web/lib/xray/labels.ts` | C03: the target has no finished capture or no menu | |
+| Confirmar libera com {necessários} de {total} cardápios terminados: faltam {n}. | `apps/web/lib/xray/labels.ts` | C03: too few captures finished (M1-04) | |
+| Confirmar agora deixa de fora as lojas que faltam. Quando terminarem, só os dados delas mudam. | `apps/web/lib/xray/labels.ts` | C03: enough captures finished, some still running | |
+| Fora do pareamento, a captura não tinha terminado: {lojas}. | `apps/web/lib/xray/labels.ts` | C03 after pairing: stores left out | |
+| no conjunto, fora do pareamento | `apps/web/lib/xray/view.ts` | C03 store row: left out of the last pairing | |
 | Atualizando a vizinhança com os cardápios capturados. | `apps/web/lib/xray/labels.ts` (`neighborhoodPending`) | C03: the neighborhood job runs again after the last capture | |
 | A captura do cardápio de {loja} falhou. | `apps/web/lib/xray/labels.ts` (`targetCaptureFailed`) | C03: the capture of the X-ray's own target failed | |
 | no conjunto, captura falhou | `apps/web/lib/xray/view.ts` (`storeState`) | C03 store list: a store in the set whose capture failed | |
@@ -73,6 +78,13 @@ No product string in the code contains an em dash (—). Checked every Portugues
 
 | Texto atual | Onde (path:line) | Quando aparece | Nova versão |
 |---|---|---|---|
+| revisar: tipo ilegível | `workers/collector/src/margo_collector/attributes.py` | A beverage whose type the rules cannot read (M1-04) | |
+| revisar: tamanho ilegível | `workers/collector/src/margo_collector/attributes.py` | A beverage with no size in its name (M1-04) | |
+| revisar: marca ilegível | `workers/collector/src/margo_collector/attributes.py` | A beverage with no brand and no identical item (M1-04) | |
+| revisar: sabor ilegível | `workers/collector/src/margo_collector/attributes.py` | A beverage with no flavor and no identical item (M1-04) | |
+| revisar: nenhuma loja com os mesmos atributos | `workers/collector/src/margo_collector/attributes.py` | A beverage no store sells with the same attributes (M1-04) | |
+| revisar: nenhum item parecido | `workers/collector/src/margo_collector/attributes.py` | An item no store sells under a close name (M1-04) | |
+| revisar: categoria não identificada | `workers/collector/src/margo_collector/attributes.py` | An item no source places in a category (M1-04) | |
 | Pares de {nome} | `apps/web/app/console/(app)/raio-x/[id]/pareamento/page.tsx:26` | Accessible name of an item's pairs panel | |
 | O pareamento não rodou: ainda havia cardápios na fila. Confirme o conjunto de novo na vizinhança quando terminarem. | `apps/web/lib/xray/labels.ts` (`pairWaitedForLoad`) | C04: an `xray_pair` job arrived while captures ran | |
 | Pareando os itens. Atualize a página em instantes. | `apps/web/lib/xray/labels.ts:45` | Pairing job running | |
@@ -93,6 +105,7 @@ No product string in the code contains an em dash (—). Checked every Portugues
 | A tarefa falhou. Peça para rodar de novo. | `apps/web/lib/xray/labels.ts:56` | Any X-ray job failed | |
 | loja própria | `apps/web/lib/xray/labels.ts:89` | Small label next to the store: own store (vs competitor) | |
 | sem promoção: {paridade}, {diferença} | `apps/web/lib/xray/labels.ts:63` | Under "Paridade": parity and gap at full prices, when the parity or the gap differs from the current one (M1-05) | |
+| Sem paridade, poucas lojas vendem o mesmo item: {itens}. | `apps/web/lib/xray/labels.ts:68` | Under the C05 table: paired items with too few stores for a parity (M1-05) | |
 | pode subir quando os vizinhos não estão em promoção | `apps/web/lib/xray/labels.ts:59` | Under "Leitura" of a `na_media` item with room at full prices (M1-07) | |
 
 ## C06 Entrega ao dono

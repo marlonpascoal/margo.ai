@@ -1094,6 +1094,7 @@ class PublicMenuItem(Row):
     price_cents: int
     public_store_id: UUID
     removed_at: datetime | None
+    size_from_name_ml: Decimal | None
     taxonomy_level1: str | None
     taxonomy_level2: str | None
     unit: MenuUnit
@@ -1281,6 +1282,7 @@ class XrayItem(Row):
     gap_full_pct: Decimal | None
     gap_pct: Decimal | None
     id: UUID
+    item_category: str | None
     loss_cents: int | None
     menu_item_id: UUID | None
     norm_price_cents: int
@@ -1322,6 +1324,7 @@ class XrayStore(Row):
     exclusion_reason: str | None
     id: UUID
     included: bool
+    left_out_of_pairing: bool
     public_store_id: UUID
     updated_at: datetime
     xray_id: UUID

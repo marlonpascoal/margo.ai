@@ -81,7 +81,7 @@ test("B01_C02_to_C04_from_extraction_copies", async ({ page, request }) => {
   // B01: pairing waits for the captures, on screen and on the server.
   await expect(page.getByText("Cardápios: 0 prontos, 2 faltando, 0 com falha.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirmar 1 loja" })).toBeDisabled();
-  await expect(page.getByText("Confirmar libera quando os cardápios terminarem.")).toBeVisible();
+  await expect(page.getByText("Confirmar libera com 2 de 2 cardápios terminados: faltam 2.")).toBeVisible();
   const { data: blocker } = await db.rpc("xray_pair_blocker", { p_xray: xrayId });
   expect(blocker).toBe("captures");
   await expect(row("Vizinha A Sintética")).toContainText("prioridade 1, nota");
@@ -93,7 +93,7 @@ test("B01_C02_to_C04_from_extraction_copies", async ({ page, request }) => {
 
   await page.reload();
   await expect(page.getByText("Cardápios: 2 prontos, 0 faltando, 0 com falha.")).toBeVisible();
-  await expect(page.getByText("Confirmar libera quando os cardápios terminarem.")).toHaveCount(0);
+  await expect(page.getByText("Confirmar libera com")).toHaveCount(0);
   expect(await page.content()).not.toContain("Sintética, 100");
   expect(await page.content()).not.toContain("Avenida Sintética");
 

@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(69);
+select plan(79);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated;
@@ -295,6 +295,32 @@ select is(tests.n('select 1 from public.extract_run union all select 1 from publ
   'D47c: staff reads no extraction row');
 select is(tests.n('select 1 from public.public_store_private'), 0, 'D47c: staff does not read the street address');
 reset role;
+select tests.login('X:dono');
+select is(tests.n('select 1 from public.extract_run union all select 1 from public.extract_content union all select 1 from public.extract_copy'), 0,
+  'D47c: a Dono reads no extraction row');
+select is(tests.n('select address from public.public_store_private'), 0, 'D47c: a Dono does not read the street address, even of the own X-ray target');
+reset role;
+select tests.login('fundador');
+select is(tests.n('select address from public.public_store_private'), 0, 'D47c: a Fundador does not read the street address column');
+reset role;
+-- The revokes of 20261221000002 run after the tables of 20261220000001: the order must leave anon nothing.
+set local role anon;
+select throws_ok('select 1 from public.extract_run', '42501', null, 'D63: anon has no access to extract_run');
+select throws_ok('select 1 from public.extract_content', '42501', null, 'D63: anon has no access to extract_content');
+select throws_ok('select 1 from public.extract_copy', '42501', null, 'D63: anon has no access to extract_copy');
+select throws_ok('select address from public.public_store_private', '42501', null, 'D63: anon has no access to the street address');
+reset role;
+select is_empty($$ select table_name::text from information_schema.role_table_grants
+                   where table_schema = 'public' and grantee in ('anon', 'authenticated') and privilege_type <> 'SELECT'
+                     and table_name in ('extract_run', 'extract_content', 'extract_copy', 'public_store_private') $$,
+  'D63: no session role can write the extraction tables');
+select ok(not exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                       where n.nspname = 'public' and c.relname in ('extract_run', 'extract_content', 'extract_copy', 'public_store_private')
+                         and not c.relrowsecurity)
+          and not (select bool_or(rolbypassrls) from pg_roles where rolname in ('anon', 'authenticated', 'authenticator')),
+  'D47c: RLS is on for the four tables and no session role bypasses it');
+select ok(not has_table_privilege('authenticator', 'public.public_store_private', 'select'),
+  'D47c: the login role behind every session has no direct access to the street address');
 
 select * from finish();
 rollback;

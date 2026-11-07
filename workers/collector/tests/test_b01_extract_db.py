@@ -189,3 +189,36 @@ def test_B01_a_delivered_xray_keeps_its_numbers_after_a_newer_capture(conn, repo
         (run.store_id(1),),
     )
     assert conn.execute(cents, (xid,)).fetchone()["own_cents"] == 2500
+
+
+def test_B01_a_capture_without_the_minimum_takes_the_item_out_of_pairing(conn, repo, run):
+    """M1-05: a stale minimum at price 0 must not enter parity once the complete menu no longer has it."""
+    run.xray(["Lanches"])
+    conn.execute(
+        "insert into public.job (type, payload) values ('extract_capture', %s)",
+        (Jsonb({"url": "u", "channel": "ifood", "external_id": run.ext(2)}),),
+    )
+    run.record(run.claim()["job_id"], "capture-store-newer.json")
+    sid = run.store_id(2)
+    assert {i.name: i.price_cents for i in repo.items_of_stores([sid])}["Monte seu lanche sintético"] == 1900
+
+    conn.execute(
+        "insert into public.job (type, payload) values ('extract_capture', %s)",
+        (Jsonb({"url": "u", "channel": "ifood", "external_id": run.ext(2)}),),
+    )
+    later = {
+        "kind": "capture",
+        "store": {"external_id": run.ext(2)},
+        "items": [{"external_item_id": "item-a-2", "name": "Monte seu lanche sintético", "price_cents": 0}],
+    }
+    conn.execute(
+        "select public.extract_record_result(%s, 'scraper', '2026-11-14T08:00:00-03:00', %s)",
+        (run.claim()["job_id"], Jsonb([{"external_id": run.ext(2), "content": later}])),
+    )
+    assert "Monte seu lanche sintético" not in {i.name for i in repo.items_of_stores([sid])}
+    row = conn.execute(
+        "select minimum_price_cents, comparison_price_cents, taxonomy_level2 from public.public_menu_item"
+        " where public_store_id = %s and external_item_id = 'item-a-2'",
+        (sid,),
+    ).fetchone()
+    assert row == {"minimum_price_cents": None, "comparison_price_cents": 0, "taxonomy_level2": "HAMBURGUERES"}

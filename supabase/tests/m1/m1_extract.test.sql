@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(35);
+select plan(44);
 
 create function pg_temp.copy(p_run uuid, p_ext text, p_at timestamptz, p_payload jsonb) returns uuid
 language plpgsql as $$
@@ -92,6 +92,54 @@ select pg_temp.copy(pg_temp.run('capture'), 'ext-1', '2026-10-22 10:00-03',
 select app.apply_extract_copy((select c.id from public.extract_copy c where c.store_external_id = 'ext-1' and c.collected_at = '2026-10-22 10:00-03'));
 select is((select removed_at from public.public_menu_item where external_item_id = 'i2' and public_store_id = (select id from s1)), null,
   'D47c: an item that comes back loses removed_at');
+
+-- B01: a capture carries the complete menu, so no promotion or minimum in it means none now. A discovery does not ---
+create function pg_temp.b01_prices(item text) returns table (o bigint, m bigint, c bigint) language sql as $$
+  select i.original_price_cents, i.minimum_price_cents, i.comparison_price_cents
+    from public.public_menu_item i join public.public_store s on s.id = i.public_store_id
+   where s.external_id = 'ext-b01' and i.external_item_id = item
+$$;
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-b01', '2026-10-01 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-b01", "name": "Loja B01", "category": "Lanches"},
+    "items": [{"external_item_id": "promo", "name": "Promo", "price_cents": 1000, "original_price_cents": 1200, "description": "descr",
+               "category": "Mais", "taxonomy_level1": "T1", "taxonomy_level2": "T2", "unit": "g", "unit_qty": 100},
+              {"external_item_id": "monte", "name": "Monte", "price_cents": 0, "minimum_price_cents": 1900}]}'));
+select results_eq($$ select * from pg_temp.b01_prices('monte') $$, $$ values (null::bigint, 1900::bigint, 1900::bigint) $$,
+  'B01: the first capture stores the minimum, which enters parity at price 0');
+
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('discover'), 'ext-b01', '2026-10-08 10:00-03',
+  '{"kind": "discover_store", "store": {"external_id": "ext-b01"},
+    "items": [{"external_item_id": "promo", "name": "Promo", "price_cents": 1000}, {"external_item_id": "monte", "name": "Monte", "price_cents": 0}]}'));
+select results_eq($$ select * from pg_temp.b01_prices('promo') $$, $$ values (1200::bigint, null::bigint, 1000::bigint) $$,
+  'B01: a discovery copy lacking the full price leaves it');
+select results_eq($$ select * from pg_temp.b01_prices('monte') $$, $$ values (null::bigint, 1900::bigint, 1900::bigint) $$,
+  'B01: a discovery copy lacking the minimum leaves it');
+
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-b01', '2026-10-15 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-b01"},
+    "items": [{"external_item_id": "promo", "name": "Promo", "price_cents": 1100}, {"external_item_id": "monte", "name": "Monte", "price_cents": 0}]}'));
+select results_eq($$ select * from pg_temp.b01_prices('promo') $$, $$ values (null::bigint, null::bigint, 1100::bigint) $$,
+  'B01: a capture without the full price means the promotion ended');
+select results_eq($$ select * from pg_temp.b01_prices('monte') $$, $$ values (null::bigint, null::bigint, 0::bigint) $$,
+  'B01, M1-05: a capture without the minimum clears it, so a stale minimum cannot enter parity at price 0');
+select results_eq($$ select i.description, i.category, i.taxonomy_level1, i.taxonomy_level2, i.unit::text, i.unit_qty, s.name, s.category
+                      from public.public_menu_item i join public.public_store s on s.id = i.public_store_id
+                     where s.external_id = 'ext-b01' and i.external_item_id = 'promo' $$,
+  $$ values ('descr', 'Mais', 'T1', 'T2', 'g', 100.00::numeric(10,2), 'Loja B01', 'Lanches') $$,
+  'B01: the same capture nulls no other item field and no store field');
+
+select app.apply_extract_copy(c.id) from public.extract_copy c
+ where c.store_external_id = 'ext-b01' and c.collected_at = '2026-10-01 10:00-03';
+select results_eq($$ select * from pg_temp.b01_prices('monte') $$, $$ values (null::bigint, null::bigint, 0::bigint) $$,
+  'B01: re-applying the old capture does not bring the old minimum back');
+
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-b01', '2026-10-22 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-b01"},
+    "items": [{"external_item_id": "promo", "name": "Promo", "price_cents": 800, "original_price_cents": 1100}, {"external_item_id": "monte", "name": "Monte", "price_cents": 0, "minimum_price_cents": 2100}]}'));
+select results_eq($$ select * from pg_temp.b01_prices('promo') $$, $$ values (1100::bigint, null::bigint, 800::bigint) $$,
+  'B01: a later capture with a promotion stores it again');
+select results_eq($$ select * from pg_temp.b01_prices('monte') $$, $$ values (null::bigint, 2100::bigint, 2100::bigint) $$,
+  'B01: a later capture with a minimum stores it again');
 
 -- snapshot_xray and the view -----------------------------------------------------------------------------------
 insert into public.xray (id, target_store_id, status, collected_at) values ('aaaaaaaa-0000-4000-8000-000000000001', (select id from s1), 'collecting', now());

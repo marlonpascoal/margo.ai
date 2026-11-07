@@ -165,6 +165,7 @@ Also refused with 422: a capture with an empty `items` (it would mark the whole 
 
 - Each store becomes a dated copy that is never rewritten. Identical content is stored once.
 - The catalog updates at once. A field a copy lacks is left as it was, and a founder's choices (national chain, store taken out of a set) are never touched.
+- A capture carries the complete menu, so for an item in it a missing `original_price_cents` or `minimum_price_cents` means there is none now, and the stored value is cleared. A discovery copy never clears them.
 - An item missing from a newer capture is marked removed, never deleted; it returns if a later capture lists it.
 - Older copies arriving late do not overwrite newer values.
 

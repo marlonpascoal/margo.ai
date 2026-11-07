@@ -24,6 +24,8 @@ type WithoutAccountColumn = { [N in TableName]: "account_id" extends keyof Table
 /**
  * Tables with no account_id: RLS alone scopes them. A table missing here is filtered by account_id and fails
  * loudly (no such column), never open; the type refuses a table that does have the column.
+ * Console-only tables stay out on purpose, so a portal read of them fails: extract_run, extract_content,
+ * extract_copy and public_store_private (D47c) have no read policy and no screen of the portal.
  */
 const NO_ACCOUNT_COLUMN: ReadonlySet<string> = new Set<WithoutAccountColumn>([
   "person",

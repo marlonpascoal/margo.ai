@@ -1,7 +1,8 @@
 // A02, A03, D63: the owner portal's reads through a real person's session on the local stack. Two accounts of
 // G-SYN: A is G-01 (Pantanos) and B is G-02 (Grupo Exemplo, with a Gerente of Cozinha Centro). Temporary Auth
 // users are linked to the seed people for the run; temporary rows go when it ends.
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@margoai/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -10,6 +11,7 @@ import { loadPlanView } from "@/lib/billing/view";
 import { closePeriods } from "@/lib/m2/close";
 import { loadDecision } from "@/lib/m3/data";
 import { adminClient, type Db } from "@/lib/supabase/admin";
+import { loadPairs, pendingCaptures } from "@/lib/xray/load";
 import { accountReader, personReader, type ReadDb, type TableName } from "@/lib/supabase/reader";
 import { closeFilePath } from "./account-data";
 import { loadConnect } from "./connect";
@@ -212,6 +214,95 @@ describe("A02: the scoped reader", () => {
     for (const t of [...accountTables, "person", "membership_kitchen", "session_device", "channel_store_url_history", "plan", "notice_type", "rule_param", "ingredient", "account"]) {
       expect((await selectAll(reader, t)).error, t).toBeNull();
     }
+  });
+});
+
+describe("D47c, D63: extraction copies and the street address reach no session", () => {
+  const TABLES = ["extract_run", "extract_content", "extract_copy", "public_store_private"] as const;
+  const tag = randomUUID();
+  let storeId = "";
+
+  beforeAll(async () => {
+    // Copies are append-only, so these rows stay; the tag keeps them apart from every other run.
+    const { data: store, error } = await admin.from("public_store").insert({ channel: "ifood", external_id: `scoped-reads-${tag}` }).select("id").single();
+    if (error) throw error;
+    storeId = store.id;
+    cleanup.push(() => admin.from("public_store").delete().eq("id", storeId));
+    const steps = [
+      await admin.from("public_store_private").insert({ public_store_id: storeId, address: "Rua Sintética, 1", collected_at: new Date().toISOString() }),
+      await admin.from("extract_content").insert({ content_hash: tag, payload: { store: { address: "Rua Sintética, 1" } } }),
+    ];
+    for (const s of steps) if (s.error) throw s.error;
+    const run = await admin.from("extract_run").insert({ kind: "capture" }).select("id").single();
+    if (run.error) throw run.error;
+    const copy = await admin.from("extract_copy").insert({ run_id: run.data.id, channel: "ifood", store_external_id: `scoped-reads-${tag}`, collected_at: new Date().toISOString(), content_hash: tag });
+    if (copy.error) throw copy.error;
+  });
+
+  it("A02_D47c_the_test_is_not_vacuous_the_service_role_sees_the_rows", async () => {
+    for (const t of TABLES) expect((await admin.from(t).select("*")).data!.length, t).toBeGreaterThan(0);
+  });
+
+  it("A02_D47c_no_dono_gerente_or_fundador_session_reads_a_row_of_the_extraction_tables", async () => {
+    for (const who of [session.aDono, session.bDono, session.bGer, session.staff]) {
+      for (const t of TABLES) {
+        const { data, error } = await who.from(t).select("*");
+        expect(error, t).toBeNull();
+        expect(data, t).toEqual([]);
+      }
+    }
+  });
+
+  it("A02_D47c_the_street_address_is_unreadable_by_every_session_role", async () => {
+    for (const who of [session.aDono, session.bDono, session.bFin, session.bGer, session.staff]) {
+      expect((await who.from("public_store_private").select("address").eq("public_store_id", storeId)).data).toEqual([]);
+    }
+    expect((await anonClient().from("public_store_private").select("address")).error?.code).toBe("42501");
+  });
+
+  it("D63_anon_has_no_access_to_the_extraction_tables", async () => {
+    for (const t of TABLES) expect((await anonClient().from(t).select("*")).error?.code, t).toBe("42501");
+  });
+
+  it("A02_D47c_the_scoped_reader_fails_loudly_on_the_extraction_tables_never_open", async () => {
+    for (const t of TABLES) expect((await selectAll(accountReader(session.bDono, B), t)).error, t).toMatchObject({ code: "42703" });
+  });
+});
+
+describe("D63: the console keeps the service role for the X-ray loaders the extract branch changed", () => {
+  const webFile = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
+
+  it("D63_C03_the_page_and_its_loaders_stay_on_adminClient_and_out_of_the_portal", () => {
+    const page = webFile("app/console/(app)/raio-x/[id]/vizinhanca/page.tsx");
+    expect(page).toContain('await requireConsole("clients")');
+    expect(page).toContain("const db = adminClient()");
+    expect(page).toContain("pendingCaptures(db, x.id, x.targetStoreId)");
+    expect(page).not.toMatch(/requireMember|requirePortal|Member\.db/);
+    for (const f of ["lib/portal/home.ts", "lib/portal/reports.ts", "app/app/page.tsx"]) expect(webFile(f)).not.toContain("xray/load");
+  });
+
+  it("D63_C03_pending_captures_are_seen_by_the_service_role_and_not_by_a_member_session", async () => {
+    const { data: x } = await admin.from("xray").select("id, target_store_id").eq("account_id", A).limit(1).single();
+    const { data: job, error } = await admin
+      .from("job")
+      .insert({ type: "extract_capture", account_id: A, dedupe_key: `scoped-reads:${randomUUID()}`, payload: { public_store_id: x!.target_store_id, url: "https://exemplo.test/x" } })
+      .select("id")
+      .single();
+    if (error) throw error;
+    try {
+      expect(await pendingCaptures(admin, x!.id, x!.target_store_id)).toBeGreaterThan(0);
+      expect(await pendingCaptures(session.aDono, x!.id, x!.target_store_id)).toBe(0);
+    } finally {
+      await admin.from("job").delete().eq("id", job.id);
+    }
+  });
+
+  it("D63_C04_the_pair_list_shows_the_comparison_price_on_the_service_role", async () => {
+    const { data: pair, error } = await admin.from("xray_pair").select("xray_item_id, public_menu_item(comparison_price_cents), xray_item!inner(xray_id)").limit(1).single();
+    if (error) throw error;
+    const rows = await loadPairs(admin, pair.xray_item!.xray_id, pair.xray_item_id);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.map((r) => r.priceCents)).toContain(pair.public_menu_item!.comparison_price_cents);
   });
 });
 

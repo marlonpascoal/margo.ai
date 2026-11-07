@@ -47,6 +47,13 @@ describe("accountReader", () => {
     expect(calls.map((c) => c.eq)).toEqual([[], []]);
   });
 
+  it("A02_D47c_extract_tables_are_not_listed_so_a_portal_read_of_them_fails_loudly", () => {
+    const { client, calls } = fake();
+    const r = accountReader(client, "acc-a");
+    for (const t of ["extract_run", "extract_content", "extract_copy", "public_store_private"] as const) r.from(t).select("*");
+    expect(calls.map((c) => c.eq)).toEqual(Array(4).fill([["account_id", "acc-a"]]));
+  });
+
   it("A02_passes_select_options_through_for_counts", () => {
     const { client, calls } = fake();
     accountReader(client, "acc-a").from("kitchen").select("id", { count: "exact", head: true });

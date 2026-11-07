@@ -36,6 +36,8 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - The legal consult (D01b) still comes before the first X-ray delivered outside the test case, unless Marlon changes that.
 - **Decided (Marlon, 07/nov), dual parity:** a promotion is evaluated at the current and at the full price, and the reading takes the more cautious one; loss, Pareto and P01's top 3 stay on current prices (04 M1-05 to M1-09).
 
+**Not drawn, added at Marlon's request (07/nov):** "Sair" in `Menu` (end of the sidebar) and `MenuDono` (next to the role, also on phone), ending this session only. The drawings need it.
+
 **Before the first real X-ray PDF:**
 - **P01 page 2 pagination:** there is none; about 27 rows fit, and real menus can overflow. Not run on that case yet.
 - **C05 "sem promoção" line:** it shows only when the parities differ, so an own-store promotion reads -23% and "precisa do custo" with no explanation. Decide on a real case.

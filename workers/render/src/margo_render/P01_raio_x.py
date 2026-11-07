@@ -1,8 +1,10 @@
-"""P01 Raio-X em PDF (design/P01-RaioXPDF.dc.html, 05 §C): A4, 2 pages, from the stored X-ray rows.
+"""P01 Raio-X em PDF (design/P01-RaioXPDF.dc.html, 05 §C): A4, from the stored X-ray rows. Two pages as drawn; the
+list runs on to more pages when it needs them.
 
 Page 1 is the drawing: "três preços que você pode subir hoje" (M1-09: the top 3 `pode_subir` items by loss)
 and the "Não mexa sem saber o custo" list (every `nao_mexer` item). Page 2 is the full table of C05 with the
-Pareto sentence, the items skipped in C04 and the source footnote. Synthetic accounts carry SINTÉTICO (D46).
+Pareto sentence, the items skipped in C04 and the source footnote; a long table continues on further pages,
+each with the same header, table head and footer. Synthetic accounts carry SINTÉTICO on every page (D46).
 
 Library: reportlab (pure Python wheels, nothing to install on the system). Its bundled Bitstream Vera
 font covers Portuguese and the minus sign; the design's Public Sans and IBM Plex Mono are not shipped as
@@ -129,10 +131,15 @@ def hold_gap_label_m1_07(i: ReportItem, band: Fraction) -> str:
 
 
 def full_price_line_m1_05(i: ReportItem) -> str | None:
-    """Page 2, under the row: the full-price parity and gap when that parity differs from the current one, and the
-    M1-07 note. None for a run calculated before dual parity."""
+    """The list, under the row: the full-price parity and gap when the parity or the gap differs from the current
+    one (a promotion at the neighbors moves the parity, one at the target moves only the gap), and the M1-07 note.
+    None for a run calculated before dual parity."""
     parts = []
-    if i.parity_full_cents is not None and i.gap_full is not None and i.parity_full_cents != i.parity_cents:
+    if (
+        i.parity_full_cents is not None
+        and i.gap_full is not None
+        and (i.parity_full_cents != i.parity_cents or Fraction(i.gap_full) != _gap(i))
+    ):
         parts.append(f"sem promoção: {money(i.parity_full_cents)}, {pct(i.gap_full)}")
     if i.full_price_room:
         parts.append("pode subir quando os vizinhos não estão em promoção")
@@ -168,6 +175,7 @@ def c(token: str) -> HexColor:
 
 W, H = A4
 M = 48.0  # margin, as the drawing's 64 px at 794 px wide
+FLOOR = M + 16  # the lowest the list may reach: clear of the footer, whose baseline sits on the margin
 
 
 class _Page:
@@ -185,19 +193,7 @@ class _Page:
     def wrap(
         self, s: str, size: float, width: float, *, bold: bool = False, color: str = "ink", lead: float = 1.45
     ) -> None:
-        font = "Vera-Bold" if bold else "Vera"
-        words, line = s.split(), ""
-        lines = []
-        for w in words:
-            trial = f"{line} {w}".strip()
-            if pdfmetrics.stringWidth(trial, font, size) > width and line:
-                lines.append(line)
-                line = w
-            else:
-                line = trial
-        if line:
-            lines.append(line)
-        for ln in lines:
+        for ln in _lines(s, "Vera-Bold" if bold else "Vera", size, width):
             self.text(M, ln, size, bold=bold, color=color)
             self.y -= size * lead
 
@@ -205,6 +201,21 @@ class _Page:
         self.cv.setStrokeColor(c(color))
         self.cv.setLineWidth(width)
         self.cv.line(M, self.y, W - M, self.y)
+
+
+def _lines(s: str, font: str, size: float, width: float) -> list[str]:
+    words, line = s.split(), ""
+    lines = []
+    for w in words:
+        trial = f"{line} {w}".strip()
+        if pdfmetrics.stringWidth(trial, font, size) > width and line:
+            lines.append(line)
+            line = w
+        else:
+            line = trial
+    if line:
+        lines.append(line)
+    return lines
 
 
 def _header(p: _Page, r: XrayReport) -> None:
@@ -236,20 +247,38 @@ def _footer(p: _Page, r: XrayReport) -> None:
     )
 
 
+def _next_page(p: _Page, r: XrayReport) -> None:
+    """Close the page with its footer and open the next with the same header."""
+    _footer(p, r)
+    p.cv.showPage()
+    p.y = H - M
+    _header(p, r)
+
+
+def _table_head(p: _Page, cols: list[tuple[str, float, bool]]) -> None:
+    for title, x, right in cols:
+        p.text(x, title.upper(), 7.5, color="ink-muted", right=right)
+    p.y -= 6
+    p.rule("ink", 0.75)
+
+
 def _table(
     p: _Page,
     cols: list[tuple[str, float, bool]],
     rows: list[list[tuple[str, str]]],
     size: float = 11,
     notes: list[str | None] | None = None,
+    continued: XrayReport | None = None,
 ) -> None:
     """cols: (title, right edge or left x, right-aligned). Each cell is (text, color token). `notes` are small lines
-    under their rows; a row without one keeps its height."""
-    for title, x, right in cols:
-        p.text(x, title.upper(), 7.5, color="ink-muted", right=right)
-    p.y -= 6
-    p.rule("ink", 0.75)
+    under their rows; a row without one keeps its height. With `continued`, a row that would pass FLOOR moves whole,
+    with its note, to a new page that repeats the header and the table head."""
+    _table_head(p, cols)
     for k, row in enumerate(rows):
+        note_height = 9 if notes and notes[k] else 0
+        if continued is not None and p.y - (size + 7 + note_height + 7) < FLOOR:
+            _next_page(p, continued)
+            _table_head(p, cols)
         p.y -= size + 7
         for (txt, color), (_, x, right) in zip(row, cols, strict=True):
             p.text(x, txt, size, color=color, right=right)
@@ -368,7 +397,7 @@ def render_p01(r: XrayReport) -> bytes:
     _footer(p, r)
     cv.showPage()
 
-    # Page 2: the full X-ray (C05), the Pareto sentence and what was left out.
+    # Page 2 onward: the full X-ray (C05), the Pareto sentence and what was left out.
     p = _Page(cv)
     _header(p, r)
     p.text(M, "O raio-X completo", 16, bold=True)
@@ -398,13 +427,22 @@ def render_p01(r: XrayReport) -> bytes:
         ],
         size=8.5,
         notes=[full_price_line_m1_05(i) for i in rows],
+        continued=r,
     )
-    p.y -= 20
+    # The closing block: the sentence stays with the first line of the footnote, the footnote may run on.
+    skipped = [i.name for i in r.items if i.skipped]
+    note = f"Fora da conta, sem pares confiáveis: {join_pt(skipped)}." if skipped else ""
+    if p.y - 20 - (16 if note else 0) < FLOOR:
+        _next_page(p, r)
+    else:
+        p.y -= 20
     p.text(M, f"{r.pareto_count} de {len(analyzed)} itens somam 80% da perda por preço", 11, bold=True)
     p.y -= 16
-    skipped = [i.name for i in r.items if i.skipped]
-    if skipped:
-        p.wrap(f"Fora da conta, sem pares confiáveis: {join_pt(skipped)}.", 9, W - 2 * M, color="ink-muted")
+    for line in _lines(note, "Vera", 9, W - 2 * M):
+        if p.y < FLOOR:
+            _next_page(p, r)
+        p.text(M, line, 9, color="ink-muted")
+        p.y -= 9 * 1.45
     _footer(p, r)
     cv.showPage()
     cv.save()

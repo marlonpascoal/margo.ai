@@ -8,12 +8,23 @@ from __future__ import annotations
 
 import io
 import os
+import re
 from datetime import date
 from decimal import Decimal
 
 import pytest
-from margo_render.P01_raio_x import ReportItem, XrayReport, money, pct, render_p01, report_items_m1_09
+from margo_render.handlers import pdf_pages
+from margo_render.P01_raio_x import (
+    ReportItem,
+    XrayReport,
+    full_price_line_m1_05,
+    money,
+    pct,
+    render_p01,
+    report_items_m1_09,
+)
 from pypdf import PdfReader
+from pypdf.generic import ContentStream
 
 
 def item(name, own, parity, reading, loss, skipped=False):
@@ -209,7 +220,7 @@ def test_B03_p01_from_the_seeded_xray():
     ((path, pdf),) = store.files.items()
     assert path == f"raio-x/G-01/{xid}.pdf"
     r, (one, two) = pages(pdf)
-    assert len(r.pages) == 2
+    assert len(r.pages) == 2 and pdf_pages(pdf) == 2
     assert "Pantanos Burguer: três preços que você pode subir hoje" in one
     assert "84 lojas comparadas 7 itens abaixo da vizinhança 5 itens acima da vizinhança" in one
     for row in (
@@ -222,3 +233,160 @@ def test_B03_p01_from_the_seeded_xray():
     assert "estão acima da vizinhança" in one
     assert "6 de 24 itens somam 80% da perda por preço" in two
     assert "SINTÉTICO" in one
+
+
+# B03: the list flows over as many pages as it needs -------------------------------------------------------
+
+FOOTER = "Fonte: cardápios públicos no iFood. Paridade = mediana dos itens comparáveis em 3 km. Sem dado de custo."
+BOTTOM_MARGIN = 48.0
+PAGE_TOP = 841.89
+
+
+def menu(n: int, notes: bool = False) -> tuple[ReportItem, ...]:
+    """`n` analyzed rows named Prato 001, ...: three to raise and two to hold on page 1, the rest in the band."""
+
+    def row(k: int) -> ReportItem:
+        name = f"Prato {k:03d}"
+        reading = "pode_subir" if k <= 3 else "nao_mexer" if k <= 5 else "na_media"
+        own, parity = (1000, 1300) if k <= 3 else (1500, 1300) if k <= 5 else (1000, 1050)
+        gap = Decimal(own - parity) / Decimal(parity)
+        if not notes:
+            return ReportItem(name, own, parity, gap, reading, parity - own)
+        return ReportItem(name, own, parity, gap, reading, parity - own, False, 1400, Decimal("-0.2857"))
+
+    return tuple(row(k) for k in range(1, n + 1))
+
+
+def drawn_ys(page) -> list[float]:
+    """The y of every text baseline and every line end on a page, from its content stream."""
+    ys: list[float] = []
+
+    def visit(text, _cm, tm, _font, _size):
+        if text.strip():
+            ys.append(float(tm[5]))
+
+    page.extract_text(visitor_text=visit)
+    ops = ContentStream(page.get_contents(), page.pdf).operations
+    ys += [float(args[1]) for args, op in ops if op in (b"m", b"l")]
+    return ys
+
+
+def assert_flows(pdf: bytes, n: int) -> tuple[PdfReader, list[str]]:
+    r, text = pages(pdf)
+    for k in range(1, n + 1):
+        name = f"Prato {k:03d}"
+        assert sum(t.count(name) for t in text[1:]) == 1, f"{name} once in the list"
+    for pg in r.pages:
+        ys = drawn_ys(pg)
+        assert min(ys) >= BOTTOM_MARGIN, "nothing below the bottom margin"
+        assert max(ys) <= PAGE_TOP
+    return r, text
+
+
+@pytest.mark.parametrize(
+    "n,notes,expected_pages",
+    [(24, False, 2), (27, False, 2), (60, True, None), (200, False, None)],
+    ids=["24_rows", "27_rows", "60_rows_with_secondary_lines", "200_rows"],
+)
+def test_B03_list_flows_with_every_item_once_and_nothing_below_the_margin(n, notes, expected_pages):
+    r, text = assert_flows(render_p01(report(items=menu(n, notes))), n)
+    if expected_pages:
+        assert len(r.pages) == expected_pages
+    else:
+        assert len(r.pages) > 2
+    assert sum(t.count("O raio-X completo") for t in text) == 1
+    assert sum(t.count("itens somam 80% da perda por preço") for t in text) == 1
+    assert "itens somam 80% da perda por preço" in text[-1]
+
+
+def test_B03_every_list_page_repeats_header_table_head_and_footer():
+    _, text = assert_flows(render_p01(report(items=menu(60, True))), 60)
+    assert len(text) >= 4
+    for t in text[1:]:
+        assert "MargoAI" in t
+        assert "Raio-X de preço · 28/out/2026 · dados fictícios" in t
+        assert "SINTÉTICO" in t
+        assert FOOTER in t
+    for t in text[1:]:
+        if "Prato" in t:
+            assert "ITEM HOJE VIZINHANÇA DIFERENÇA LEITURA" in t
+
+
+def test_B03_a_real_account_has_no_synthetic_label_on_any_page():
+    _, text = pages(render_p01(report(items=menu(60, True), synthetic=False, seed=False)))
+    assert len(text) > 2
+    assert all("SINTÉTICO" not in t and "dados fictícios" not in t for t in text)
+    assert all(FOOTER in t for t in text)
+
+
+def test_B03_a_row_and_its_secondary_line_stay_on_the_same_page():
+    _, text = assert_flows(render_p01(report(items=menu(60, True))), 60)
+    for k in range(1, 61):
+        assert re.search(rf"Prato {k:03d} R\$ [^·]*? sem promoção: R\$ 14,00, −29%", " ".join(text[1:]))
+    for t in text[1:]:
+        assert t.count("Prato") == t.count("sem promoção:"), "no row split from its line"
+
+
+def test_B03_rows_keep_their_order_across_pages():
+    _, text = pages(render_p01(report(items=menu(200))))
+    names = re.findall(r"Prato \d{3}", " ".join(text[1:]))
+    assert len(names) == 200
+    assert names[:3] == ["Prato 001", "Prato 002", "Prato 003"]
+    assert names[-2:] == ["Prato 004", "Prato 005"], "the items above parity close the list"
+
+
+def test_B03_pareto_sentence_never_lands_on_the_footer_when_the_page_is_exactly_full():
+    """Whatever the count, the closing block keeps its distance from the footer or moves to its own page."""
+    for n in range(26, 34):
+        r, text = assert_flows(render_p01(report(items=menu(n))), n)
+        assert "itens somam 80% da perda por preço" in text[-1]
+        assert FOOTER in text[-1]
+        last_body = [y for y in drawn_ys(r.pages[-1]) if y > BOTTOM_MARGIN + 0.5]
+        assert min(last_body) >= BOTTOM_MARGIN + 12, f"{n} rows: clear of the footer"
+
+
+def test_B03_a_long_skipped_list_flows_too():
+    skipped = tuple(ReportItem(f"Fora{k:04d}", 1000, None, None, None, None, True) for k in range(1, 1201))
+    items = menu(10) + skipped
+    r, text = pages(render_p01(report(items=items)))
+    assert len(r.pages) > 2
+    joined = " ".join(text[1:])
+    for k in range(1, 1201):
+        assert joined.count(f"Fora{k:04d}") == 1
+    for pg in r.pages:
+        assert min(drawn_ys(pg)) >= BOTTOM_MARGIN
+    assert all("SINTÉTICO" in t and FOOTER in t for t in text)
+
+
+def test_B03_pdf_page_count_is_what_the_file_has():
+    assert pdf_pages(render_p01(report())) == 2
+    pdf = render_p01(report(items=menu(60, True)))
+    assert pdf_pages(pdf) == len(PdfReader(io.BytesIO(pdf)).pages) > 2
+
+
+def test_B03_no_em_dash_on_any_page_of_a_long_list():
+    _, text = pages(render_p01(report(items=menu(60, True))))
+    assert all("—" not in t for t in text)
+
+
+# C05 secondary line on page 2: the parity OR the gap differs from the current one ----------------------------
+
+
+def test_B03_M1_05_page_two_explains_an_own_store_promotion():
+    """Same parity, different gap: only the target is on promotion, so the row must say why it reads as it does."""
+    items = (
+        promo("Eco", 1000, 1300, -0.2308, "nao_mexer", 300, 1300, 0.1538),
+        promo("Foxtrot", 1000, 1000, 0, "na_media", 0, 1000, 0),
+    )
+    _, text = pages(render_p01(report(items=items)))
+    two = text[1]
+    assert "Eco R$ 10,00 R$ 13,00 −23% precisa do custo sem promoção: R$ 13,00, +15%" in two
+    assert two.count("sem promoção:") == 1, "same parity and same gap: nothing"
+
+
+def test_B03_M1_05_a_run_from_before_dual_parity_still_shows_nothing():
+    items = (ReportItem("Antigo", 1000, 1300, Decimal("-0.2308"), "pode_subir", 300),)
+    _, text = pages(render_p01(report(items=items)))
+    assert "sem promoção:" not in text[1]
+    half = (ReportItem("Meio", 1000, 1300, Decimal("-0.2308"), "pode_subir", 300, False, None, Decimal("0.1")),)
+    assert full_price_line_m1_05(half[0]) is None

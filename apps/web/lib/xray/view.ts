@@ -90,9 +90,11 @@ export function examplePair(i: Pick<ItemRow, "exampleName" | "exampleCents" | "n
   return i.normUnit === "100g" || i.normUnit === "100ml" ? `${i.exampleName}, ${money(i.exampleCents ?? 0)}` : i.exampleName;
 }
 
-/** C05 secondary line (M1-05, M1-06): the full-price parity and gap, only when that parity differs from the current one. */
-export function fullParityInfo(i: Pick<ItemRow, "parityCents" | "parityFullCents" | "gapFullPct">): { cents: number; gap: number } | null {
-  if (i.parityFullCents === null || i.gapFullPct === null || i.parityFullCents === i.parityCents) return null;
+/** C05 secondary line (M1-05, M1-06): the full-price parity and gap, when the parity or the gap differs from the current one.
+ * A promotion at the neighbors moves the parity; one at the target alone moves only the gap. */
+export function fullParityInfo(i: Pick<ItemRow, "parityCents" | "gapPct" | "parityFullCents" | "gapFullPct">): { cents: number; gap: number } | null {
+  if (i.parityFullCents === null || i.gapFullPct === null) return null;
+  if (i.parityFullCents === i.parityCents && i.gapFullPct === i.gapPct) return null;
   return { cents: i.parityFullCents, gap: i.gapFullPct };
 }
 

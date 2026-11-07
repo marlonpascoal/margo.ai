@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { calculate, confirmStores, createXray, markDelivered, prepareDelivery, reviewItem, saveMinutes, setStoreIncluded, type XrayDeps } from "./commands";
 import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./format";
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
-import { captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, XRAY_MESSAGES } from "./labels";
+import { captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, XRAY_MESSAGES } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
 import { captureCounts, examplePair, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow } from "./view";
 
@@ -133,14 +133,31 @@ describe("C05", () => {
 
 describe("C05 dual parity (M1-05, M1-07)", () => {
   it("B01_C05_shows_the_full_parity_only_when_it_differs_from_the_current", () => {
-    const differs = fullParityInfo({ parityCents: 1050, parityFullCents: 1300, gapFullPct: -0.2308 });
+    const differs = fullParityInfo({ parityCents: 1050, gapPct: -0.0476, parityFullCents: 1300, gapFullPct: -0.2308 });
     expect(differs).toEqual({ cents: 1300, gap: -0.2308 });
     expect(fullParityLabel(differs!)).toBe("sem promoção: R$ 13,00, −23%");
-    expect(fullParityInfo({ parityCents: 1050, parityFullCents: 1050, gapFullPct: -0.0476 })).toBeNull();
+    expect(fullParityInfo({ parityCents: 1050, gapPct: -0.0476, parityFullCents: 1050, gapFullPct: -0.0476 })).toBeNull();
   });
 
   it("B01_C05_a_run_from_before_dual_parity_shows_no_secondary_info", () => {
-    expect(fullParityInfo({ parityCents: 1050, parityFullCents: null, gapFullPct: null })).toBeNull();
+    expect(fullParityInfo({ parityCents: 1050, gapPct: -0.0476, parityFullCents: null, gapFullPct: null })).toBeNull();
+  });
+
+  it("B02_B03_C05_explains_an_own_store_promotion_when_only_the_gap_differs", () => {
+    const own = fullParityInfo({ parityCents: 1300, gapPct: -0.2308, parityFullCents: 1300, gapFullPct: 0.1538 });
+    expect(own).toEqual({ cents: 1300, gap: 0.1538 });
+    expect(fullParityLabel(own!)).toBe("sem promoção: R$ 13,00, +15%");
+  });
+
+  it("B02_B03_C05_a_half_filled_old_snapshot_shows_nothing", () => {
+    expect(fullParityInfo({ parityCents: 1300, gapPct: -0.2308, parityFullCents: 1300, gapFullPct: null })).toBeNull();
+    expect(fullParityInfo({ parityCents: 1300, gapPct: -0.2308, parityFullCents: null, gapFullPct: 0.1 })).toBeNull();
+  });
+
+  it("B03_C06_states_the_page_count_of_the_rendered_file_or_none", () => {
+    expect(pdfFileLabel(2)).toBe("PDF · A4 · 2 páginas");
+    expect(pdfFileLabel(5)).toBe("PDF · A4 · 5 páginas");
+    expect(pdfFileLabel(null)).toBe("PDF · A4");
   });
 
   it("B01_C05_the_note_has_no_em_dash", () => {

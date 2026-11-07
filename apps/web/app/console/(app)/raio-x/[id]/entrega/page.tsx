@@ -9,7 +9,7 @@ import { requireFlag } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { adminClient } from "@/lib/supabase/admin";
 import { hoursLabel } from "@/lib/xray/format";
-import { XRAY_MESSAGES } from "@/lib/xray/labels";
+import { pdfFileLabel, XRAY_MESSAGES } from "@/lib/xray/labels";
 import { latestJob, loadItems, loadMinutes, loadNeighborhood, loadXrayHead } from "@/lib/xray/load";
 import { signupLink, xrayMessage } from "@/lib/xray/P02-whatsapp-raio-x";
 import { neighborhoodCounts, xrayResult } from "@/lib/xray/view";
@@ -53,7 +53,7 @@ export default async function DeliveryPage({ params }: { params: Promise<{ id: s
         <div className={`${card} flex flex-[1_1_300px] flex-col gap-3 p-4`}>
           <div className="font-bold">O arquivo</div>
           <div className="box-border flex h-[260px] flex-col gap-2 rounded-sm border border-border bg-bg p-4" aria-hidden="true">
-            <span className="font-mono text-2xs text-ink-muted">PDF · A4 · 2 páginas</span>
+            <span className="font-mono text-2xs text-ink-muted">{pdfFileLabel(rendering || !x.pdfPath ? null : (job?.pages ?? null))}</span>
             <span className="text-lg font-bold">{store}: raio-X de preço</span>
             <span className="h-2.5 w-4/5 rounded-[2px] bg-border" />
             <span className="h-2.5 w-[65%] rounded-[2px] bg-border" />

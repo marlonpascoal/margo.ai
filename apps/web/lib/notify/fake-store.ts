@@ -13,6 +13,8 @@ export const NOTICE_TYPES: NoticeType[] = [
   ["trial_ending", "Teste grátis acabando", ["dono"], true, true, true],
   ["billing_result", "Cobrança aprovada ou recusada", ["dono"], true, true, false],
   ["security_event", "Pessoa nova ou login em aparelho novo", ["dono"], true, true, false],
+  ["xray_ready", "Seu raio-X está pronto", ["dono", "gerente"], false, true, true],
+  ["xray_needs_answer", "Itens esperando sua resposta", ["dono", "gerente"], false, true, false],
 ].map(([code, name, audienceRoles, emailLocked, defaultEmail, defaultWhatsapp]) => ({
   code, name, audienceRoles, emailLocked, defaultEmail, defaultWhatsapp,
 }) as NoticeType);

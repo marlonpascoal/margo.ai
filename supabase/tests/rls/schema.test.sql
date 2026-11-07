@@ -20,7 +20,7 @@ select tables_are('public', array[
   'contract_terms', 'campaign', 'close_period', 'close_line', 'difference', 'difference_order', 'contestation',
   'invoice', 'invoice_line', 'ingredient', 'ingredient_match', 'ingredient_price', 'recipe', 'recipe_line',
   'packaging_cost', 'contribution', 'campaign_item', 'close_cost_line', 'close_decision', 'invoice_import', 'ingredient_rule',
-  'ingredient_account_rule'
+  'ingredient_account_rule', 'xray_monitor', 'monitor_pair_decision', 'xray_category_rank', 'xray_item_position', 'xray_menu_score'
 ], 'A02: tables of 03 §1 to §5, the login code guard (04 §8), the M1 page cache (D47) and M2 params and evidence');
 
 select is_empty($$
@@ -67,12 +67,12 @@ select results_eq($$ select code from public.plan order by code $$,
   array['lucro', 'raio_x', 'rede'], 'three plans');
 select results_eq($$ select trial_days from public.plan where code = 'lucro' $$,
   array[14], 'trial placeholder of 14 days (D40)');
-select is((select count(*)::int from public.feature_flag), 36, '18 flags in sandbox and production (m3.custo: 20261211000001, m1.concorrente: 20261212000001, m1.extracao: 20261220000001)');
+select is((select count(*)::int from public.feature_flag), 38, '19 flags in sandbox and production (m3.custo: 20261211000001, m1.concorrente: 20261212000001, m1.extracao: 20261220000001, m1.portal: 20261230000001)');
 select results_eq($$
   select default_raio_x, default_lucro, default_rede from public.feature_flag
   where key = 'm2.ifood_api' and env = 'production'
 $$, $$ values (false, true, true) $$, 'flag defaults per plan follow 04 §6');
-select is((select count(*)::int from public.notice_type), 10, 'ten notices of 04 §9');
+select is((select count(*)::int from public.notice_type), 12, 'ten notices of 04 §9 plus xray_ready and xray_needs_answer (20261230000001, provisional)');
 select results_eq($$ select code from public.notice_type where email_locked order by code $$,
   array['billing_result', 'security_event', 'trial_ending'], 'billing and security notices are e-mail locked');
 

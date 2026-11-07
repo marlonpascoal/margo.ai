@@ -381,9 +381,11 @@ class PostgresXrayRepo:
         ]
 
     def pair_decisions(self, xray_id: str):
+        # M1-04: this run's person decisions (founder or owner), then the answers its monitoring remembers for pairs the
+        # run has not decided (public.xray_pair_decisions, migration 20261230000001).
         rows = self._all(
-            "select i.public_menu_item_id as own, p.public_menu_item_id as cand, p.accepted, p.by from public.xray_pair p"
-            " join public.xray_item i on i.id = p.xray_item_id where i.xray_id = %s and p.by is not null",
+            "select own_item_id as own, candidate_item_id as cand, accepted, decided_by as by"
+            " from public.xray_pair_decisions(%s)",
             (xray_id,),
         )
         return {(str(r["own"]), str(r["cand"])): (r["accepted"], str(r["by"])) for r in rows}

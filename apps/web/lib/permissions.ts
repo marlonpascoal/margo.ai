@@ -55,6 +55,8 @@ export type PortalAction =
   | "contestations"
   | "send_invoices"
   | "see_xray"
+  | "manage_monitors"
+  | "answer_doubts"
   | "choose_kitchens"
   | "billing"
   | "people"
@@ -66,6 +68,10 @@ const PORTAL: Record<PortalAction, readonly MemberRole[]> = {
   contestations: ["dono", "financeiro", "gerente"],
   send_invoices: ["dono", "financeiro", "gerente"],
   see_xray: ["dono", "financeiro", "gerente"],
+  // M1 owner journey (PROVISIONAL, docs/m1-owner-journey-draft.md §2.1): start, pause, resume, remove, change period.
+  manage_monitors: ["dono"],
+  // Answer "é o mesmo produto que o seu?": Gerente own kitchens only, while m1.portal_gerente_answers is 1 (checked in SQL).
+  answer_doubts: ["dono", "gerente"],
   choose_kitchens: ["dono"],
   billing: ["dono"],
   people: ["dono"],

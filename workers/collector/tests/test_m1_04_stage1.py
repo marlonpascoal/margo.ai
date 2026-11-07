@@ -568,12 +568,14 @@ def test_B1_original_means_the_default_and_spacing_does_not_count():
 
 
 def test_B2_the_note_says_why_for_every_category():
-    # Stage 2 reads lanches and porções by attributes (test_m1_04_stage2.py); pratos keep the Stage 1 notes.
+    # Stage 2 reads every category by attributes (test_m1_04_stage2.py); an item with no category keeps its note.
     own = Item("o", "t", "Moqueca de peixe", 2000, section="Pratos")
     far = [Item(f"a{i}", f"s{i}", "Pizza grande", 3000, section="Pratos") for i in range(5)]
-    assert pair_item_m1_04(own, far, Settings()).note == "nenhum item parecido"
+    assert pair_item_m1_04(own, far, Settings()).note == "exclusivo, sem comparação"
     near = [Item("a", "s0", "Moqueca de peixe", 2100, section="Pratos")]
     assert pair_item_m1_04(own, near, Settings()).note == "poucos pares"
+    unknown = Item("o", "t", "Coisa desconhecida", 2000)
+    assert pair_item_m1_04(unknown, far, Settings()).note == "categoria não identificada"
     burger = Item("o", "t", "Burger peixe", 2000, section="Lanches")
     far = [Item(f"a{i}", f"s{i}", "Pizza grande", 3000, section="Lanches") for i in range(5)]
     assert pair_item_m1_04(burger, far, Settings()).note == "exclusivo, sem comparação"

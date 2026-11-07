@@ -567,7 +567,7 @@ def _pair_beverage(
     return Pairing(own, norm, "revisar", note, tuple(found))
 
 
-FOOD_CATEGORIES = frozenset({"lanches", "porcoes"})
+FOOD_CATEGORIES = frozenset({"lanches", "porcoes", "pratos", "sobremesas", "adicionais"})
 FoodOverrides = Mapping[str, FoodAttrs]
 """M1-04 Stage 2: attributes read by a learning or the AI, by item id, for items the rule cannot read."""
 
@@ -583,14 +583,14 @@ def item_food_attrs_m1_04(item: Item, food: FoodOverrides | None = None) -> Food
 
 
 def is_food_m1_04(item: Item) -> bool:
-    """M1-04 Stage 2: a single lanche or porção, the items paired by attributes."""
+    """M1-04 Stage 2: a single non-beverage item, the items paired by attributes."""
     return item_category_m1_04(item) in FOOD_CATEGORIES and not item_is_combo_m1_04(item)
 
 
 def _pair_food(
     own: Item, norm: Normalized, pool: Iterable[Item], settings: Settings, food: FoodOverrides | None
 ) -> Pairing:
-    """M1-04 Stage 2: a lanche or porção pairs only with items of the same proteins, patty count, base,
+    """M1-04 Stage 2: a non-beverage item pairs only with items of the same proteins, patty count, base,
     weight and portion size (`compare_food_m1_04`) whose name shares at least `attribute_floor` of
     similarity. Inside a store, the most similar name wins (tie-break). At least `min_pairs` stores pair it;
     fewer is `revisar`, "poucos pares"; none is `exclusivo`, "exclusivo, sem comparação": no problem, outside
@@ -599,7 +599,7 @@ def _pair_food(
     category = item_category_m1_04(own)
     attrs = item_food_attrs_m1_04(own, food)
     reason = unreadable_food_m1_04(attrs, category)
-    by_weight = norm.unit == "100g"
+    by_weight = norm.unit in ("100g", "100ml")
     matched: dict[str, list[Candidate]] = {}
     listed: list[Candidate] = []
     for c in pool:

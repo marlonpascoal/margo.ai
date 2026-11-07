@@ -21,7 +21,7 @@ request and the SDK's response. No restaurant, CNPJ, CPF or person is sent; a su
 - `ANTHROPIC_API_KEY`: read by the SDK by name; never logged or stored.
 - `MARGO_MATCH_MODEL`: optional, overrides the default model `claude-sonnet-5-5`.
 
-## M1-04 Stage 2: attributes of lanches and porções (worker-collector)
+## M1-04 Stage 2: attributes of non-beverage items (worker-collector)
 
 `xray_pair` asks the Claude API, in one structured-output call per X-ray, for the attributes of the lanches and
 porções the rules cannot read (`margo_collector.ai_attrs`). Tests use a fake reader and replay every

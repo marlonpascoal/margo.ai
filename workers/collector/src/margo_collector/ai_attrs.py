@@ -1,4 +1,4 @@
-"""M1-04 Stage 2: the attributes of the lanches and porções the rules cannot read, from the Claude API,
+"""M1-04 Stage 2: the attributes of the non-beverage items the rules cannot read, from the Claude API,
 behind the `AttrReader` interface (learning.py). Same pattern as worker-match (margo_match.ai): one
 structured-output call, the key read by name, the model a parameter, a recorder Marlon runs.
 
@@ -16,7 +16,7 @@ import os
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .food import EXTRAS, LANCHE_BASES, PORCAO_BASES, PORTIONS, PROTEINS, FoodAttrs, attrs_from_json
+from .food import BASES, EXTRAS, FLAVORS, PORTIONS, PROTEINS, FoodAttrs, attrs_from_json
 from .learning import AiItem
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
@@ -25,15 +25,19 @@ MAX_ITEMS = 200
 """Items per call (one call per X-ray); the rest waits for the next run."""
 
 SYSTEM = (
-    "Você lê itens de cardápio de lanchonetes (lanches e porções) e devolve os atributos de cada um. "
+    "Você lê itens de cardápio de restaurantes (lanches, porções, pratos, sobremesas, adicionais) "
+    "e devolve os atributos de cada um. "
     "Use só o nome, a descrição e a categoria. "
     "base: o tipo do lanche ou da porção, uma palavra da lista, ou null se não der para saber. "
     "proteinas: as proteínas principais, da lista; "
     "num hambúrguer sem outra carne dita, bovino; num dog, salsicha. "
     "carnes: quantas carnes (hambúrgueres, ou salsichas num dog), 1 a 3. "
     "peso_g: o peso em gramas só quando escrito, senão null. "
-    "porcao: pequena, media, grande ou 'N pessoas' só quando escrito, senão null. "
+    "porcao: pequena, media, grande, 'N pessoas', 'N fatias' ou 'N cm' só quando escrito, senão null. "
     "extras: os outros ingredientes que o nome cita, da lista. "
+    "sabores: os sabores de uma sobremesa ou de uma pizza, da lista. "
+    "pecas: quantas peças de um sushi ou combinado, só quando escrito. "
+    "volume_ml: o volume em ml só quando escrito. "
     "confianca: de 0 a 1. Não invente: o que não estiver escrito fica null ou vazio."
 )
 
@@ -46,15 +50,30 @@ OUTPUT_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "properties": {
                     "ref": {"type": "string"},
-                    "base": {"type": ["string", "null"], "enum": [*LANCHE_BASES, *PORCAO_BASES, None]},
+                    "base": {"type": ["string", "null"], "enum": [*BASES, None]},
                     "proteinas": {"type": "array", "items": {"type": "string", "enum": list(PROTEINS)}},
                     "carnes": {"type": "integer"},
                     "peso_g": {"type": ["integer", "null"]},
                     "porcao": {"type": ["string", "null"]},
                     "extras": {"type": "array", "items": {"type": "string", "enum": list(EXTRAS)}},
+                    "sabores": {"type": "array", "items": {"type": "string", "enum": list(FLAVORS)}},
+                    "pecas": {"type": ["integer", "null"]},
+                    "volume_ml": {"type": ["integer", "null"]},
                     "confianca": {"type": "number"},
                 },
-                "required": ["ref", "base", "proteinas", "carnes", "peso_g", "porcao", "extras", "confianca"],
+                "required": [
+                    "ref",
+                    "base",
+                    "proteinas",
+                    "carnes",
+                    "peso_g",
+                    "porcao",
+                    "extras",
+                    "sabores",
+                    "pecas",
+                    "volume_ml",
+                    "confianca",
+                ],
                 "additionalProperties": False,
             },
         }
@@ -68,7 +87,7 @@ def build_request(items: Sequence[AiItem], model: str) -> dict[str, Any]:
     """Messages API arguments: name, description and category of each item, and the word lists."""
     payload = {
         "listas": {
-            "bases": [*LANCHE_BASES, *PORCAO_BASES],
+            "bases": list(BASES),
             "proteinas": list(PROTEINS),
             "extras": list(EXTRAS),
             "porcoes": list(PORTIONS),

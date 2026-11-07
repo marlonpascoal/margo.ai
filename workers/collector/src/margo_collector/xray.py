@@ -154,7 +154,7 @@ def build_pairs(
     """M1-03 and M1-04 for every item of the target store against the items of the stores in the set.
     `decisions` maps (own item id, comparable item id) to a founder's (accepted, person id). A decision stays
     even when the rule alone would no longer list that item, as long as it is still in the pool. `food` holds
-    the attributes a learning or the AI read for lanches and porções the rule cannot read (M1-04 Stage 2)."""
+    the attributes a learning or the AI read for non-beverage items the rule cannot read (M1-04 Stage 2)."""
     kept = decisions or {}
     by_id = {i.id: i for i in pool}
     defaults = size_defaults_m1_04([*own_items, *pool], settings)

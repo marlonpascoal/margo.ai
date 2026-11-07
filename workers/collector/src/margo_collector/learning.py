@@ -113,7 +113,7 @@ class FoodRun:
 
 
 def unreadable_items(items: Iterable[Item]) -> list[Item]:
-    """Single lanches and porções whose protein or type the rule cannot read, each once."""
+    """Single non-beverage items whose protein or type the rule cannot read, each once."""
     seen: set[str] = set()
     out = []
     for i in items:

@@ -206,7 +206,7 @@ def pair_step(
     stays as it is until a person runs it again. A re-run replaces the pairs: stores no longer in the set
     leave, a founder's decision on a store still in it stays.
 
-    Stage 2: lanches and porções the rules cannot read take a founder's or a promoted learning, else one AI
+    Stage 2: non-beverage items the rules cannot read take a founder's or a promoted learning, else one AI
     call (`reader`); the answers and the founder's C04 corrections are learned. Without a reader (no
     ANTHROPIC_API_KEY) that step is skipped with a note, nothing is learned, and the result is the rules
     alone."""

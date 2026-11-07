@@ -10,7 +10,7 @@
 The session is read only (the server refuses any write), and only a local database is accepted. The stored mode audits
 `xray_pair` and `xray_item` by working out each pair's attributes again; the dry run gets its pairs and parities from
 `build_pairs` and `calculate`, over the items of the stores in the set, keeping founder decisions, by the rules alone
-(no AI, no learnings). Lanches and porções are checked by their Stage 2 attributes (A6 to A8, B7).
+(no AI, no learnings). Non-beverage items are checked by their Stage 2 attributes (A6 to A8, B7).
 
 `--learnings` lists the M1-04 Stage 2 learnings as counts by status and, for each pattern, its category, the hints and
 the name tokens that are words of the rule lists; any other token (a store's own word) prints as "*".
@@ -240,7 +240,7 @@ def _violations(own: Item, c: Item) -> set[str]:
             out.add("A6")
         if fa.patties != fb.patties:
             out.add("A7")
-        if normalize_m1_03(own).unit != "100g" and (
+        if normalize_m1_03(own).unit not in ("100g", "100ml") and (
             (fa.weight_g is not None and fb.weight_g is not None and fa.weight_g != fb.weight_g)
             or (fa.portion is not None and fb.portion is not None and fa.portion != fb.portion)
         ):
@@ -258,7 +258,7 @@ def _same_food(own: Item, c: Item, threshold: float) -> bool:
     a, b = item_food_attrs_m1_04(own), item_food_attrs_m1_04(c)
     if unreadable_food_m1_04(b, item_category_m1_04(c)) is not None:
         return False
-    by_weight = normalize_m1_03(own).unit == "100g"
+    by_weight = normalize_m1_03(own).unit in ("100g", "100ml")
     return compare_food_m1_04(a, b, by_weight=by_weight) == "identical" and float(similarity_m1_04(own.name, c.name)) >= threshold
 
 
@@ -266,6 +266,45 @@ def _example(e: Entry) -> PairView | None:
     """C04 "Exemplo de par", in the order of xray_item_view."""
     shown = [p for p in e.pairs if p.accepted or not _bev(e.own)]
     return min(shown, key=lambda p: (not p.accepted, -p.similarity, p.item.name, p.item.id), default=None)
+
+
+def readable(i: Item) -> bool:
+    """The rules read the item's attributes: a beverage's type and size, another item's Stage 2 attributes."""
+    if item_category_m1_04(i) is None or item_is_combo_m1_04(i):
+        return False
+    if _bev(i):
+        return item_beverage_attrs_m1_04(i).type is not None and item_beverage_attrs_m1_04(i).size_ml is not None
+    return unreadable_food_m1_04(item_food_attrs_m1_04(i), item_category_m1_04(i)) is None
+
+
+def trustworthy(e: Entry) -> bool:
+    """A parity the scoreboard trusts: computed, and no accepted pair breaks A1 to A8."""
+    return e.parity_cents is not None and not any(_violations(e.own, p.item) for p in e.pairs if p.accepted)
+
+
+def by_category(entries: Sequence[Entry], pool: Sequence[Item]) -> dict[str, dict[str, int]]:
+    """Per category: target items, read by attributes, still on names only (a combo or no category), exclusive,
+    with a trustworthy parity; and the stores' items and how many are read."""
+
+    def cat(i: Item) -> str:
+        return "combo" if item_is_combo_m1_04(i) else item_category_m1_04(i) or "sem_categoria"
+
+    out: dict[str, dict[str, int]] = {}
+    for c in (*CATEGORIES, "combo", "sem_categoria"):
+        own = [e for e in entries if cat(e.own) == c]
+        theirs = [i for i in pool if cat(i) == c]
+        names_only = c in ("combo", "sem_categoria")
+        out[c] = {
+            "alvo": len(own),
+            "alvo_lido": sum(1 for e in own if readable(e.own)),
+            "alvo_so_nome": len(own) if names_only else 0,
+            "alvo_exclusivo": sum(1 for e in own if e.status == "exclusivo"),
+            "alvo_paridade_confiavel": sum(1 for e in own if trustworthy(e)),
+            "lojas": len(theirs),
+            "lojas_lido": sum(1 for i in theirs if readable(i)),
+            "lojas_so_nome": len(theirs) if names_only else 0,
+        }
+    return out
 
 
 def scoreboard(entries: Sequence[Entry], pool: Sequence[Item], settings: Settings) -> dict[str, Any]:
@@ -321,7 +360,7 @@ def scoreboard(entries: Sequence[Entry], pool: Sequence[Item], settings: Setting
         if ex is not None and _bev(e.own) and not ex.by:
             bad_example += compare_beverages(item_beverage_attrs_m1_04(e.own), item_beverage_attrs_m1_04(ex.item)) != "identical"
     def has_like(e: Entry) -> bool:
-        """B2: "poucos pares" needs some store with the same item: a similar name, or for lanches and porções the
+        """B2: "poucos pares" needs some store with the same item: a similar name, or for non-beverage items the
         same attributes (Stage 2)."""
         if is_food_m1_04(e.own):
             return any(_same_food(e.own, p.item, float(settings.attribute_floor)) for p in e.pairs)
@@ -370,6 +409,7 @@ def scoreboard(entries: Sequence[Entry], pool: Sequence[Item], settings: Setting
             for c in ("lanches", "porcoes")
         },
         "presumed_pairs": presumed_pairs,
+        "by_category": by_category(entries, pool),
         "size_resolved": resolved,
         "size_resolved_pool": pool_resolved,
         "derived_sizes": dict(sorted(SIZES.derived.items())),
@@ -419,10 +459,16 @@ def render(b: dict[str, Any], *, mode: str, xray: str, stores: dict[str, int], b
         f"bebidas do alvo: {b['bev_own']}, ilegível: {b['own_unread']}",
         f"bebidas das lojas: {b['bev_pool']}, ilegível: {b['pool_unread']}",
         f"estágio 2: lanches {b['stage2']['lanches']} itens com par, porcoes {b['stage2']['porcoes']} itens com par",
+        *(
+            f"  {c}: alvo {v['alvo']} (atributos lidos {v['alvo_lido']}, só nome {v['alvo_so_nome']},"
+            f" exclusivos {v['alvo_exclusivo']}, paridade confiável {v['alvo_paridade_confiavel']});"
+            f" lojas {v['lojas']} (lidos {v['lojas_lido']}, só nome {v['lojas_so_nome']})"
+            for c, v in b["by_category"].items()
+        ),
         f"{EXCLUSIVE_NOTE}: {b['exclusives']} (com palavra de assinatura: {b['exclusives_hint']},"
         f" pareados por fundador: {b['exclusives_founder']})",
         f"precisam de IA (regra não lê): alvo {dict(sorted(b['unread_own'].items()))};"
-        f" lojas {dict(sorted(b['unread_pool'].items()))} de {b['food_pool']} lanches e porções",
+        f" lojas {dict(sorted(b['unread_pool'].items()))} de {b['food_pool']} itens fora de bebidas",
     ]
     return "\n".join(lines)
 
@@ -512,7 +558,7 @@ def exclusives_by_floor(pool: Sequence[Item], min_pairs: int, threshold: float) 
             continue
         best: dict[str, float] = {}
         for j in blocks[(c, a.proteins, a.patties, q, u)]:
-            if j.store_id != i.store_id and compare_food_m1_04(a, info[j.id][1], by_weight=u == "100g") == "identical":
+            if j.store_id != i.store_id and compare_food_m1_04(a, info[j.id][1], by_weight=u in ("100g", "100ml")) == "identical":
                 best[j.store_id] = max(best.get(j.store_id, -1.0), dice(t, info[j.id][5]))
         top = max(best.values(), default=-1.0)
         for f, row in zip(FLOORS, rows, strict=True):
@@ -534,7 +580,7 @@ def exclusives_report(url: str, xray_id: str) -> str:
             pool = load_stores(conn, x) + load_own(conn, x)
     finally:
         conn.close()
-    lines = [f"M1-04 exclusivos por piso de nome, raio-X {str(x['id'])[:8]}, todos os lanches e porções do conjunto"]
+    lines = [f"M1-04 exclusivos por piso de nome, raio-X {str(x['id'])[:8]}, todos os itens fora de bebidas do conjunto"]
     lines += [
         f"piso {r['floor']}%: pareado {r['auto']}, poucos pares {r['poucos']}, exclusivo {r['exclusivo']}"
         f" (B7 {r['b7']}, palavra de assinatura {r['assinatura']})"

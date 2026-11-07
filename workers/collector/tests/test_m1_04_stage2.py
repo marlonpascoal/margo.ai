@@ -633,3 +633,74 @@ def test_M1_04_a_founder_review_still_wins_over_a_default():
     pool = [drink(f"w{i}", f"s{i}", "Água mineral natural 500ml", 500) for i in range(2)]
     row = build_pairs([own], pool, Settings(), {("o", "w0"): (False, "founder")})[0]
     assert {p.public_menu_item_id: p.accepted for p in row.pairs} == {"w0": False, "w1": True}
+
+
+# Every category: pratos, pizza, sushi, sobremesas, adicionais ------------------------------------------------
+
+
+def prato(iid: str, store: str, name: str, desc: str | None = None, cents: int = 3000) -> Item:
+    return Item(iid, store, name, cents, section="Pratos", description=desc)
+
+
+def doce(iid: str, store: str, name: str, cents: int = 1500) -> Item:
+    return Item(iid, store, name, cents, section="Sobremesas")
+
+
+def extra(iid: str, store: str, name: str, cents: int = 400) -> Item:
+    return Item(iid, store, name, cents, section="Adicionais")
+
+
+def test_M1_04_pizza_flavor_always_and_size_when_both_state_it():
+    a = attrs("Pizza calabresa grande", None, "pratos")
+    assert (a.base, set(a.proteins), a.portion) == ("pizza", {"calabresa"}, "grande")
+    assert compare_food_m1_04(a, attrs("Pizza calabresa com catupiry grande", None, "pratos")) == "conflict"
+    assert compare_food_m1_04(a, attrs("Pizza calabresa broto", None, "pratos")) == "conflict"
+    assert compare_food_m1_04(a, attrs("Pizza de calabresa", None, "pratos")) == "identical"
+    assert attrs("Pizza 4 queijos 35 cm", None, "pratos").portion == "35 cm"
+    assert attrs("Pizza mussarela 8 fatias", None, "pratos").portion == "8 fatias"
+    from margo_collector.food import unreadable_food_m1_04
+
+    assert unreadable_food_m1_04(attrs("Pizza grande", None, "pratos"), "pratos") == "sabor ilegível"
+
+
+def test_M1_04_sushi_pieces_must_match_when_both_state_them():
+    a = attrs("Combinado da vila 20 peças", None, "pratos")
+    assert (a.base, a.pieces) == ("sushi", 20)
+    assert compare_food_m1_04(a, attrs("Combinado salmão 30 peças", None, "pratos")) == "conflict"
+    assert compare_food_m1_04(a, attrs("Combinado sortido 20 peças", None, "pratos")) == "identical"
+
+
+def test_M1_04_pratos_by_base_protein_and_portion():
+    m = attrs("Marmitex média de frango", None, "pratos")
+    assert (m.base, set(m.proteins), m.portion) == ("marmita", {"frango"}, "media")
+    assert compare_food_m1_04(m, attrs("Marmitex grande de frango", None, "pratos")) == "conflict"
+    assert compare_food_m1_04(m, attrs("Marmita de frango média", None, "pratos")) == "identical"
+    assert compare_food_m1_04(attrs("Strogonoff de frango", None, "pratos"), attrs("Strogonoff de carne", None, "pratos")) == "conflict"
+    assert attrs("Executivo da vila", "Arroz, feijão e filé de frango grelhado", "pratos").proteins == frozenset({"frango"})
+
+
+def test_M1_04_sobremesas_by_type_flavor_and_size():
+    s = attrs("Sundae de morango", None, "sobremesas")
+    assert (s.base, set(s.flavors)) == ("sundae", {"morango"})
+    assert compare_food_m1_04(s, attrs("Sundae de chocolate quente", None, "sobremesas")) == "conflict"
+    assert compare_food_m1_04(attrs("Sundae", None, "sobremesas"), s) == "identical", "one side silent"
+    assert compare_food_m1_04(attrs("Açaí 300 ml", None, "sobremesas"), attrs("Açaí 500 ml", None, "sobremesas")) == "conflict"
+    assert compare_food_m1_04(attrs("Brownie da vila", None, "sobremesas"), attrs("Pudim", None, "sobremesas")) == "conflict"
+
+
+def test_M1_04_adicionais_by_what_it_is_and_quantity():
+    assert attrs("Adicional de bacon em cubos", None, "adicionais").base == "bacon"
+    assert compare_food_m1_04(attrs("Molho especial", None, "adicionais"), attrs("Maionese especial", None, "adicionais")) == "conflict"
+    assert compare_food_m1_04(attrs("Ad bacon crocante", None, "adicionais"), attrs("Bacon extra", None, "adicionais")) == "identical"
+    assert compare_food_m1_04(attrs("Pote maionese 30 ml", None, "adicionais"), attrs("Pote maionese 50 ml", None, "adicionais")) == "conflict"
+
+
+def test_M1_04_every_category_pairs_by_attributes_and_can_be_exclusive():
+    own = doce("o", "t", "Sundae de morango")
+    pool = [doce(f"a{i}", f"s{i}", "Sundae com morango") for i in range(5)] + [doce("c", "s9", "Sundae com chocolate")]
+    p = pair_item_m1_04(own, pool, Settings())
+    assert p.status == "auto" and "Sundae com chocolate" not in accepted(p)
+    alone = pair_item_m1_04(prato("o", "t", "Pizza da vila de figo"), [prato("x", "s1", "Pizza calabresa")], Settings())
+    assert alone.status == "revisar" and alone.note == "sabor ilegível", "an unknown flavor is unreadable, not exclusive"
+    piece = pair_item_m1_04(extra("o", "t", "Adicional de catupiry"), [extra("x", "s1", "Adicional de bacon em cubos")], Settings())
+    assert (piece.status, piece.note) == ("exclusivo", EXCLUSIVE_NOTE)

@@ -1,4 +1,4 @@
--- M1-04 Stage 2 (Marlon, 07/nov): what the AI read about lanches and porções the rules cannot read is learned, so the
+-- M1-04 Stage 2 (Marlon, 07/nov): what the AI read about non-beverage items the rules cannot read is learned, so the
 -- rule layer improves. Mirrors the hybrid ingredient rules of M3 (ingredient_rule.auto_confirm and disputed_at).
 --
 --   m1_attr_learning      one pattern: category, normalized name tokens, the words of the fixed lists the
@@ -18,7 +18,7 @@ insert into public.rule_param (key, value, description) values
 
 create table public.m1_attr_learning (
   id uuid primary key default gen_random_uuid(),
-  category text not null check (category in ('lanches', 'porcoes')),
+  category text not null check (category in ('lanches', 'porcoes', 'pratos', 'sobremesas', 'adicionais')),
   tokens text[] not null,
   hints text[] not null default '{}',
   founder_attrs jsonb,
@@ -31,7 +31,7 @@ create table public.m1_attr_learning (
   unique (category, tokens, hints)
 );
 comment on table public.m1_attr_learning is
-  'M1-04 Stage 2: a pattern of lanche or porção the rules cannot read (category, name tokens, description hints) and what was learned about it. founder_attrs wins over the AI; founder_disputed_at marks a pair the AI made that a founder rejected. items_seen counts the items seen with the pattern in runs that asked the AI.';
+  'M1-04 Stage 2: a pattern of a non-beverage item the rules cannot read (category, name tokens, description hints) and what was learned about it. founder_attrs wins over the AI; founder_disputed_at marks a pair the AI made that a founder rejected. items_seen counts the items seen with the pattern in runs that asked the AI.';
 
 create table public.m1_attr_learning_run (
   learning_id uuid not null references public.m1_attr_learning (id) on delete cascade,

@@ -222,3 +222,21 @@ def test_B01_a_capture_without_the_minimum_takes_the_item_out_of_pairing(conn, r
         (sid,),
     ).fetchone()
     assert row == {"minimum_price_cents": None, "comparison_price_cents": 0, "taxonomy_level2": "HAMBURGUERES"}
+
+
+def test_B01_M1_01_taxonomy_from_another_run_is_not_a_discovery(conn, run):
+    xid = conn.execute("select id, target_store_id from public.xray where status = 'delivered' order by created_at desc limit 1").fetchone()
+    target = xid["target_store_id"]
+    other = conn.execute(
+        "select id from public.public_store where id <> %s and lat is not null limit 1", (target,)
+    ).fetchone()["id"]
+    conn.execute(
+        "insert into public.public_menu_item (public_store_id, external_item_id, name, price_cents, taxonomy_level2)"
+        " values (%s, 'outra-execucao', 'Item de outra execucao', 1000, 'HAMBURGUERES')",
+        (other,),
+    )
+    try:
+        found = conn.execute("select public_store_id from public.xray_discovery(%s)", (xid["id"],)).fetchall()
+    finally:
+        conn.execute("delete from public.public_menu_item where external_item_id = 'outra-execucao'")
+    assert other not in [r["public_store_id"] for r in found]

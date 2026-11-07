@@ -102,9 +102,12 @@ def neighborhood_step(
     delivers.update(delivers_to_target or {})
     found = repo.discovery(xray_id)
     own = found.get(x.target_store_id)
+    # M1-01: with a discovery, only what it found; other runs and seed rows nearby are no neighbors.
+    discovered = set(found) - {x.target_store_id}
+    stores = [s for s in repo.public_stores(list(found)) if not discovered or s.id in discovered or s.id == x.target_store_id]
     rows = build_neighborhood(
         repo.store(x.target_store_id),
-        repo.public_stores(list(found)),
+        stores,
         collected_at=x.collected_at,
         settings=x.settings,
         delivers_to_target=delivers,

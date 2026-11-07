@@ -169,3 +169,25 @@ def test_B01_history_a_later_run_keeps_the_first_runs_prices():
     assert set(repo.price_snapshots["y"].values()) == {1200}
 
 
+
+
+def add_near(repo: MemoryXrayRepo, ext: str) -> str:
+    return repo.save_public_store(
+        ParsedStore(ext, f"https://exemplo.test/{ext}", ext, None, "Lanches", Decimal("-23.331"), Decimal("-51.151"), None)
+    )
+
+
+def test_B01_M1_01_with_a_discovery_a_store_it_did_not_find_is_no_neighbor():
+    repo = setup_repo()
+    found, other = add_near(repo, "achada"), add_near(repo, "outra-execucao")
+    repo.discoveries["x"] = {found: Discovered(800, ("Lanches",))}
+    neighborhood_job_step(repo, "x", "sandbox", queue_captures=True)
+    assert [r.public_store_id for r in repo.hood["x"]] == [found]
+    assert ("extract_capture", other) not in repo.queued
+
+
+def test_B01_M1_01_without_a_discovery_the_catalog_by_coordinates_still_counts():
+    repo = setup_repo()
+    near_store = add_near(repo, "seed")
+    neighborhood_step(repo, "x")
+    assert [r.public_store_id for r in repo.hood["x"]] == [near_store]

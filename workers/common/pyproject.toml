@@ -3,7 +3,7 @@ name = "margo-common"
 version = "0.0.0"
 description = "Job runner, Runner interface, Supabase client and signing shared by all workers"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-contracts", "pydantic>=2.8"]
+dependencies = ["margo-contracts", "pydantic>=2.8", "openai>=2", "anthropic>=0.70"]
 
 [project.optional-dependencies]
 # Direct Postgres connection for the LocalRunner and DB-backed tests (local stack only).

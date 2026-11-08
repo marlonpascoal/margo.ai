@@ -268,7 +268,7 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
   - a founder types the prices for the first X-rays
 
 ### Wave 3 lanes: commands only Marlon runs
-- **Anthropic recording:** `ANTHROPIC_API_KEY=... uv run record-anthropic [model-id]` writes `fixtures/anthropic/match-<date>.json`; check it before committing. Env names: `ANTHROPIC_API_KEY` (without it, the AI step is skipped) and `MARGO_MATCH_MODEL` (default `claude-sonnet-5-5`).
+- **AI recording (D70):** `OPENAI_API_KEY=... uv run record-ai [model-id]` writes `fixtures/ai/match-openai-<date>.json`; check it before committing. Env names: `MARGO_AI_PROVIDER` (`openai` default), `OPENAI_API_KEY` (without it, the AI step is skipped) and `MARGO_MATCH_MODEL` (default `gpt-6.1-sol`). C14 lists `OPENAI_API_KEY` below the drawn `ANTHROPIC_API_KEY` row.
 
 ### Wave 3 lanes: decisions to confirm
 - **What the AI prompt sends:** 06 §6 and D14 say supplier name and price; my brief to the agent was stricter, so it sends only the line description, NCM, unit and catalog names. Add supplier and price?

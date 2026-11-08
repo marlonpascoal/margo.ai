@@ -1,11 +1,13 @@
-"""Record one real Claude API answer for the drawn C11 lines (06 §6, D40). Marlon runs it; agents never do.
+"""Record one real AI answer for the drawn C11 lines (06 §6, D40, D70). Marlon runs it; agents never do.
 
-    ANTHROPIC_API_KEY=... uv run record-anthropic            # writes fixtures/anthropic/match-<date>.json
+    OPENAI_API_KEY=... uv run record-ai             # writes fixtures/ai/match-openai-<date>.json
+    OPENAI_API_KEY=... uv run record-ai <model-id>
+    MARGO_AI_PROVIDER=anthropic ANTHROPIC_API_KEY=... uv run record-ai
 
 Sends only synthetic G-SYN line texts (SINTÉTICO), synthetic supplier names and unit prices, and catalog
 names, through the same `build_request` and the same supplier and price helpers the worker uses, and stores
-the request (no key) and the response as returned by the SDK, so the parser can be checked against what the
-API really sends back.
+the provider, the request (no key) and the response as returned by the SDK, so the parser can be checked
+against what the API really sends back.
 """
 
 from __future__ import annotations
@@ -16,10 +18,12 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from .ai import DEFAULT_MODEL, AiLine, ClaudeSuggester, build_request, supplier_for_prompt, unit_price_text
+from margo_common import llm
+
+from .ai import AiLine, AiSuggester, build_call, supplier_for_prompt, unit_price_text
 from .matching import CatalogItem
 
-OUT = Path(__file__).resolve().parents[4] / "fixtures" / "anthropic"
+OUT = Path(__file__).resolve().parents[4] / "fixtures" / "ai"
 
 LINES = [
     AiLine(
@@ -56,15 +60,15 @@ CATALOG = [
 
 
 def main(argv: list[str] | None = None) -> int:
-    model = (argv or sys.argv[1:] or [DEFAULT_MODEL])[0]
-    suggester = ClaudeSuggester(model=model)
-    request = build_request(LINES, CATALOG, model)
-    response = suggester.client.messages.create(**request)
+    args = argv if argv is not None else sys.argv[1:]
+    suggester = AiSuggester(model=args[0] if args else None)
+    ai = suggester.ai
+    request = ai.request(build_call(LINES, CATALOG))
+    response = llm.send(ai.provider, ai.client, request)
     OUT.mkdir(parents=True, exist_ok=True)
-    path = OUT / f"match-{date.today().isoformat()}.json"
-    path.write_text(
-        json.dumps({"request": request, "response": response.to_dict()}, ensure_ascii=False, indent=2) + "\n"
-    )
+    path = OUT / f"match-{ai.provider}-{date.today().isoformat()}.json"
+    record = {"provider": ai.provider, "request": request, "response": llm.response_dict(response)}
+    path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n")
     print(path)
     return 0
 

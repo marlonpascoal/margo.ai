@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 from margo_collector.handlers import local_db_url
-from margo_collector.opportunities import PROMPT_VERSION, ClaudeOpportunityWriter, brl, opportunities_step
+from margo_collector.opportunities import PROMPT_VERSION, AiOpportunityWriter, brl, opportunities_step
 from margo_collector.repo import PostgresXrayRepo
 from margo_collector.steps import calc_step
 
@@ -53,7 +53,7 @@ class Block:
 
 
 class FakeClient:
-    """Says what the test asks; never a recorded model answer."""
+    """Says what the test asks, in the Anthropic shape (the other provider, D70); never a recorded model answer."""
 
     def __init__(self, answer):
         self.answer, self.calls = answer, 0
@@ -85,7 +85,7 @@ def test_B01_opportunities_job_after_calc_skip_without_key_then_stored_once(conn
     assert one(conn, "select target_kind from public.xray where id = %s", (xid,))["target_kind"] == "own"
     assert queued(conn, xid) == 1, "B01: the calculation queues the opportunities of the run"
 
-    # No ANTHROPIC_API_KEY: done, no row.
+    # No AI key: done, no row.
     run_job(conn, "xray_opportunities", xid, lambda: opportunities_step(repo, xid, None))
     assert one(conn, "select public.monitor_opportunities(%s) as o", (xid,))["o"] is None
 
@@ -106,7 +106,7 @@ def test_B01_opportunities_job_after_calc_skip_without_key_then_stored_once(conn
             {"title": "Mais lucro no lanche", "why": "Subir.", "item_ids": [bid], "lever": "subir_preco"},
         ]
     )
-    writer = ClaudeOpportunityWriter(client=client, model="modelo-de-teste")
+    writer = AiOpportunityWriter(client=client, model="modelo-de-teste", provider="anthropic")
     run_job(conn, "xray_opportunities", xid, lambda: opportunities_step(repo, xid, writer))
     o = one(conn, "select public.monitor_opportunities(%s) as o", (xid,))["o"]
     assert o["dropped"] == 2 and o["model"] == "modelo-de-teste" and o["prompt_version"] == PROMPT_VERSION

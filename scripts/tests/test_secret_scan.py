@@ -21,6 +21,7 @@ def kinds(path: str, text: str) -> list[str]:
 
 # Fake values built from parts; none is a real credential.
 ANTHROPIC = "sk-" + "ant-api03-" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4"
+OPENAI = "sk-" + "proj-" + "Q1w2E3r4T5y6U7i8O9p0A1s2D3f4"
 ASAAS = "$" + "aact_" + "YTU5YTE0M2M2N2I4MTZlMGI0OGI2N2Q4"
 JWT = (
     "eyJ"
@@ -44,6 +45,7 @@ ASSIGNED = "client_secret = " + '"Zx81kLmQ92vBn47TrW5pYc3d"'
     "text,kind",
     [
         (f'ANTHROPIC_API_KEY="{ANTHROPIC}"', "anthropic_key"),
+        (f"OPENAI_API_KEY={OPENAI}", "openai_key"),
         (f"key: {ASAAS}", "asaas_key"),
         (f"const k = '{JWT}'", "jwt"),
         (PEM, "private_key"),

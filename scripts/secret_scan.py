@@ -23,6 +23,7 @@ DOCUMENT_ALLOWED = ("fixtures/",)
 KEY_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("private_key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
     ("anthropic_key", re.compile(r"sk-ant-[A-Za-z0-9_-]{20,}")),
+    ("openai_key", re.compile(r"\bsk-(?:proj-|svcacct-|admin-)?(?!ant-)[A-Za-z0-9_-]{20,}")),
     ("asaas_key", re.compile(r"\$aact_[A-Za-z0-9_]{20,}")),
     ("supabase_secret", re.compile(r"sb_secret_[A-Za-z0-9_-]{20,}")),
     ("jwt", re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}")),

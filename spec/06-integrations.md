@@ -45,9 +45,15 @@ Each integration is an adapter behind an interface in `workers/common` or `apps/
 - **Automatic QR read (SP, PR):** flag `m3.nfce_qr_auto`, off; only the public consumer URL, stop on captcha.
 - **No certificate custody**, no SEFAZ Distribuição DF-e client in V1 or V2 (D12).
 
-## 6. Anthropic API (D14)
+## 6. AI API (D14, D70)
 
-- Used only by `worker-match` to suggest an ingredient for an invoice line the rules did not match.
+- **Provider (D70, Marlon 08/nov):** OpenAI (Responses API, strict JSON schema), default model `gpt-6.1-sol`. One
+  module, `margo_common.llm`, knows the provider: `MARGO_AI_PROVIDER=openai|anthropic`, the key by name
+  (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`), the model per use (`MARGO_MATCH_MODEL`, `MARGO_PAIR_MODEL`,
+  `MARGO_OPPORTUNITIES_MODEL`). A benchmark may change the provider later without touching the uses.
+- **Uses:** `worker-match` (below); M1-04 Stage 2 attributes and P23 "Oportunidades" in `worker-collector`. Each use
+  validates every answer; the provider never decides what is stored.
+- `worker-match` suggests an ingredient for an invoice line the rules did not match.
 - Sends supplier name, item description, unit and price. No personal data, no CNPJ of the restaurant.
 - Output is a suggestion with a confidence; it never enters a cost until a founder confirms (C11).
 - Key in Maritime env only.
@@ -64,7 +70,7 @@ Each integration is an adapter behind an interface in `workers/common` or `apps/
 - One Maritime agent per worker type and environment: `worker-import`, `worker-collector`, `worker-match`, `worker-render`, each a container built from `workers/<type>/Dockerfile`.
 - **Wake by webhook:** `POST https://api.maritime.sh/api/webhooks/{agent_id}` with `{job_id, ts, sig}`; the worker verifies the HMAC before reading the job.
 - **Schedules:** Maritime cron triggers (five-field cron) deliver a scheduled message; the worker turns it into jobs (for example, one import job per authorized store at 06:00 São Paulo).
-- **Env:** encrypted environment variables per agent (Supabase service key, iFood credentials for import, Anthropic key for match, signing key).
+- **Env:** encrypted environment variables per agent (Supabase service key, iFood credentials for import, AI key for match and collector, signing key).
 - **Persistence:** none relied on; `/data` is scratch and is wiped after each job.
 - **Timers inside a sleeping agent do not fire**, so no in-process schedulers; only platform triggers.
 - **Health:** each worker exposes a health response to a signed `ping` job; Vercel Cron pings hourly.

@@ -1,4 +1,4 @@
-"""P23 "Oportunidades" (Marlon, 08/nov): after a run is calculated, one Claude API call reads the run's deterministic
+"""P23 "Oportunidades" (Marlon, 08/nov): after a run is calculated, one AI call (D70) reads the run's deterministic
 facts (M1-05 to M1-12, as monitor_result and monitor_positions show them) and writes 3 to 5 prioritized opportunities,
 each with a short "why". The AI only words and orders them; a deterministic check is the guardrail:
 
@@ -7,26 +7,26 @@ each with a short "why". The AI only words and orders them; a deterministic chec
 - no "lucro", "margem", "ganho" or "profit" (no cost data: never money gained), and no long dash;
 - the items cited are items of this run that were sent; the lever is one of LEVERS.
 
-Answers that fail are dropped and counted. Same client pattern as ai_attrs (the M1-04 Stage 2 reader): the key read by
-name, the model a parameter (MARGO_OPPORTUNITIES_MODEL), skipped without ANTHROPIC_API_KEY, a recorder Marlon runs
-(record_opportunities). What goes out: the run's item names, categories, prices and counts. No store name, no person.
+Answers that fail are dropped and counted. Same client as ai_attrs (the M1-04 Stage 2 reader), `margo_common.llm`: the
+key read by name, the model a parameter (MARGO_OPPORTUNITIES_MODEL), skipped without the provider's key, a recorder
+Marlon runs (record_opportunities). What goes out: the run's item names, categories, prices and counts. No store name, no person.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Protocol
 
+from margo_common import llm
 from margo_common.log import log_event
 
-DEFAULT_MODEL = "claude-sonnet-5-5"
-"""Configured default (param `MARGO_OPPORTUNITIES_MODEL` overrides it); not a branch in the logic."""
+MODEL_ENV = "MARGO_OPPORTUNITIES_MODEL"
+"""Overrides the provider's default model (llm.DEFAULT_MODELS)."""
 PROMPT_VERSION = "oportunidades.v1"
 MAX_ITEMS = 80
 """Compared items sent per run, in the result's order (pode_subir first, largest gap first)."""
@@ -292,30 +292,28 @@ def check_all(answers: Sequence[Any], facts: Facts) -> tuple[list[dict[str, Any]
     return kept[:MAX_OPPORTUNITIES], len(answers) - min(len(kept), MAX_OPPORTUNITIES)
 
 
-# Claude API ----------------------------------------------------------------------------------------------------------
+# AI call ---------------------------------------------------------------------------------------------------------------
 
 
-def build_request(facts: Facts, model: str) -> dict[str, Any]:
-    """Messages API arguments: the system rules and the run's facts as JSON."""
-    return {
-        "model": model,
-        "max_tokens": 4000,
-        "system": SYSTEM,
-        "messages": [{"role": "user", "content": json.dumps({"fatos": facts.prompt}, ensure_ascii=False)}],
-        "output_config": {"format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
-    }
+def build_call(facts: Facts) -> llm.Call:
+    """The system rules and the run's facts as JSON."""
+    return llm.Call("oportunidades", SYSTEM, {"fatos": facts.prompt}, OUTPUT_SCHEMA, 4000)
 
 
-def parse_response(response: Any) -> list[Any]:
-    """A Messages API response (SDK object) to the raw opportunities; none on a refusal or a cut answer."""
-    if getattr(response, "stop_reason", None) != "end_turn":
-        return []
-    text = next((b.text for b in response.content if getattr(b, "type", None) == "text"), "")
-    try:
-        ops = json.loads(text).get("oportunidades", [])
-    except (ValueError, AttributeError):
-        return []
+def build_request(facts: Facts, model: str, provider: str = llm.DEFAULT_PROVIDER) -> dict[str, Any]:
+    """The SDK arguments (llm.build_request)."""
+    return llm.build_request(provider, model, build_call(facts))
+
+
+def parse_answer(answer: Mapping[str, Any] | None) -> list[Any]:
+    """The answer object to the raw opportunities; none on a refusal, a cut or a malformed answer."""
+    ops = answer.get("oportunidades") if answer else None
     return ops if isinstance(ops, list) else []
+
+
+def parse_response(response: Any, provider: str = llm.DEFAULT_PROVIDER) -> list[Any]:
+    """An SDK response (or its recorded dict) to the raw opportunities."""
+    return parse_answer(llm.response_json(provider, response))
 
 
 class OpportunityWriter(Protocol):
@@ -324,29 +322,20 @@ class OpportunityWriter(Protocol):
     def write(self, facts: Facts) -> list[Any]: ...
 
 
-class ClaudeOpportunityWriter:
-    """The real writer over the Anthropic SDK client (`anthropic.Anthropic().messages`)."""
+class AiOpportunityWriter:
+    """The real writer over `margo_common.llm` (provider from MARGO_AI_PROVIDER, model from MARGO_OPPORTUNITIES_MODEL)."""
 
-    def __init__(self, client: Any = None, model: str | None = None) -> None:
-        if client is None:
-            import anthropic
-
-            # ANTHROPIC_API_KEY by name only, never logged or stored, passed explicitly (as ai_attrs).
-            key = os.environ.get("ANTHROPIC_API_KEY")
-            if not key:
-                raise RuntimeError("ANTHROPIC_API_KEY is not set")
-            client = anthropic.Anthropic(api_key=key)
-        self.client = client
-        self.model = model or os.environ.get("MARGO_OPPORTUNITIES_MODEL") or DEFAULT_MODEL
+    def __init__(self, client: Any = None, model: str | None = None, provider: str | None = None) -> None:
+        self.ai = llm.StructuredClient(client, model, provider, MODEL_ENV)
+        self.model = self.ai.model
 
     def write(self, facts: Facts) -> list[Any]:
-        response = self.client.messages.create(**build_request(facts, self.model))
-        return parse_response(response)
+        return parse_answer(self.ai.ask(build_call(facts)))
 
 
-def writer_from_env() -> ClaudeOpportunityWriter | None:
-    """The writer when ANTHROPIC_API_KEY is set; None skips the job (local development, tests)."""
-    return ClaudeOpportunityWriter() if os.environ.get("ANTHROPIC_API_KEY") else None
+def writer_from_env() -> AiOpportunityWriter | None:
+    """The writer when the provider's key is set; None skips the job (local development, tests)."""
+    return AiOpportunityWriter() if llm.key_present() else None
 
 
 # Step ----------------------------------------------------------------------------------------------------------------

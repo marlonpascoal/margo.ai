@@ -1,6 +1,6 @@
 """D02 and D14: GTIN, rules, AI suggestions behind a fake Suggester, and confirmation (C11).
 
-No test calls the Claude API or replays an invented answer (06, D40): the AI step is the `Suggester`
+No test calls an AI API or replays an invented answer (06, D40): the AI step is the `Suggester`
 interface and the tests implement it. With MARGO_DB_TESTS=1 the database tests run against the seeded
 local stack inside a transaction that is rolled back.
 """
@@ -14,10 +14,10 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from margo_common import llm
 from margo_match.ai import (
-    DEFAULT_MODEL,
     AiLine,
-    ClaudeSuggester,
+    AiSuggester,
     Suggestion,
     build_request,
     supplier_for_prompt,
@@ -169,10 +169,10 @@ def test_D02_D14_request_carries_supplier_item_unit_price_and_catalog_only() -> 
             )
         ],
         CATALOG,
-        DEFAULT_MODEL,
+        "gpt-6.1-sol",
     )
-    assert req["model"] == "claude-sonnet-5-5"
-    body = json.loads(req["messages"][0]["content"])
+    assert req["model"] == "gpt-6.1-sol"
+    body = llm.request_payload("openai", req)
     assert set(body) == {"catalogo", "itens"}
     assert body["itens"][0] == {
         "ref": "0",
@@ -186,16 +186,13 @@ def test_D02_D14_request_carries_supplier_item_unit_price_and_catalog_only() -> 
     text = json.dumps(req, ensure_ascii=False)
     for forbidden in ("98765432000150", "12345678000100", "Pantanos", "cnpj", "CNPJ", "cpf", "CPF"):
         assert forbidden not in text
-    assert "fornecedor" in req["system"] and "preço" in req["system"]
-    assert req["output_config"]["format"]["type"] == "json_schema"
+    system = req["input"][0]["content"]
+    assert "fornecedor" in system and "preço" in system
+    assert req["text"]["format"]["type"] == "json_schema" and req["text"]["format"]["strict"] is True
 
 
 def test_D02_D14_line_without_supplier_or_price_sends_null() -> None:
-    body = json.loads(
-        build_request([AiLine("0", "LUVA DESCARTAVEL", None, "CX")], CATALOG, DEFAULT_MODEL)["messages"][0][
-            "content"
-        ]
-    )
+    body = llm.request_payload("openai", build_request([AiLine("0", "LUVA DESCARTAVEL", None, "CX")], CATALOG, "m"))
     assert body["itens"][0]["fornecedor"] is None and body["itens"][0]["preco_unitario"] is None
 
 
@@ -224,10 +221,10 @@ def test_D02_D14_unit_price_in_reais_from_centavos() -> None:
 
 
 def test_D02_D14_recorder_builds_the_worker_prompt() -> None:
-    """`uv run record-anthropic` sends the same shape the worker sends (synthetic supplier and price)."""
+    """`uv run record-ai` sends the same shape the worker sends (synthetic supplier and price)."""
     from margo_match import record
 
-    body = json.loads(build_request(record.LINES, record.CATALOG, DEFAULT_MODEL)["messages"][0]["content"])
+    body = llm.request_payload("openai", build_request(record.LINES, record.CATALOG, "m"))
     assert all(
         set(it) == {"ref", "descricao", "ncm", "unidade", "fornecedor", "preco_unitario"}
         for it in body["itens"]
@@ -236,17 +233,49 @@ def test_D02_D14_recorder_builds_the_worker_prompt() -> None:
     assert all("Exemplo" in it["fornecedor"] for it in body["itens"]), "synthetic G-SYN suppliers only"
 
 
-def test_D14_model_is_a_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
-    assert ClaudeSuggester(client=object()).model == DEFAULT_MODEL
+def test_D14_D70_model_is_a_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("MARGO_AI_PROVIDER", raising=False)
+    monkeypatch.delenv("MARGO_MATCH_MODEL", raising=False)
+    assert AiSuggester(client=object()).model == llm.DEFAULT_MODELS["openai"]
     monkeypatch.setenv("MARGO_MATCH_MODEL", "outro-modelo")
-    assert ClaudeSuggester(client=object()).model == "outro-modelo"
-    assert ClaudeSuggester(client=object(), model="m").model == "m"
+    assert AiSuggester(client=object()).model == "outro-modelo"
+    assert AiSuggester(client=object(), model="m").model == "m"
 
 
-def test_D14_real_client_needs_the_key_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
-        ClaudeSuggester()
+def test_D14_D70_real_client_needs_the_key_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("MARGO_AI_PROVIDER", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
+        AiSuggester()
+    from margo_match.ai import suggester_from_env
+
+    assert suggester_from_env() is None
+
+
+class _OpenAiClient:
+    """A fake OpenAI client: `responses.create` returns the recorded-shape dict of a completed answer."""
+
+    def __init__(self, answer: dict[str, Any]) -> None:
+        self.sent: list[dict[str, Any]] = []
+        self.responses = self
+        self.answer = answer
+
+    def create(self, **request: Any) -> dict[str, Any]:
+        self.sent.append(request)
+        text = json.dumps(self.answer, ensure_ascii=False)
+        return {"status": "completed", "output": [{"type": "message", "content": [{"type": "output_text", "text": text}]}]}
+
+
+def test_D14_D70_suggester_reads_an_openai_answer_and_validates_it() -> None:
+    client = _OpenAiClient({"suggestions": [
+        {"ref": "0", "ingredient": "Queijo cheddar fatiado", "confidence": 0.9, "base_units_per_invoice_unit": 2270},
+        {"ref": "9", "ingredient": "Queijo cheddar fatiado", "confidence": 0.9, "base_units_per_invoice_unit": None},
+    ]})
+    out = AiSuggester(client=client, model="m", provider="openai").suggest(
+        [AiLine("0", "QJO PROC CHED FAT 2,27KG 160FT", "04063000", "PC")], CATALOG
+    )
+    assert [(s.ref, s.conversion_factor) for s in out] == [("0", Decimal("2270"))], "ref 9 was never sent"
+    assert client.sent[0]["model"] == "m" and client.sent[0]["text"]["format"]["name"] == "sugestoes_de_insumo"
 
 
 def test_D14_suggestions_are_validated_against_what_was_sent() -> None:

@@ -60,7 +60,7 @@ Run as two Claude Code sessions in two git worktrees (`../margo.ai-m1`, `../marg
 | Task | Spec | Acceptance |
 |---|---|---|
 | Invoice import (zip, key, QR link), C10 | 06 §5 | D01 |
-| worker-match with the Claude API, C11 | 06 §6 | D02 |
+| worker-match with the AI API (D70), C11 | 06 §6 | D02 |
 | Recipes, C12, error bars | 04 §4 | |
 | Contribution, C13, full P06 with "one decision for the month" | 04 §4 | D03 |
 | iFood homologation preparation: app complete, form answered from the test environment | 06 §1 | |

@@ -274,7 +274,6 @@ name = "margo-collector"
 version = "0.0.0"
 source = { editable = "workers/collector" }
 dependencies = [
-    { name = "anthropic" },
     { name = "margo-common" },
     { name = "margo-contracts" },
 ]
@@ -286,7 +285,6 @@ local = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.70" },
     { name = "margo-common", editable = "workers/common" },
     { name = "margo-contracts", editable = "packages/contracts" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'local'", specifier = ">=3.2" },
@@ -298,7 +296,9 @@ name = "margo-common"
 version = "0.0.0"
 source = { editable = "workers/common" }
 dependencies = [
+    { name = "anthropic" },
     { name = "margo-contracts" },
+    { name = "openai" },
     { name = "pydantic" },
 ]
 
@@ -309,7 +309,9 @@ local = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anthropic", specifier = ">=0.70" },
     { name = "margo-contracts", editable = "packages/contracts" },
+    { name = "openai", specifier = ">=2" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'local'", specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.8" },
 ]
@@ -388,7 +390,6 @@ name = "margo-match"
 version = "0.0.0"
 source = { editable = "workers/match" }
 dependencies = [
-    { name = "anthropic" },
     { name = "margo-common" },
     { name = "margo-contracts" },
 ]
@@ -400,7 +401,6 @@ local = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.70" },
     { name = "margo-common", editable = "workers/common" },
     { name = "margo-contracts", editable = "packages/contracts" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'local'", specifier = ">=3.2" },
@@ -478,6 +478,23 @@ dev = [
     { name = "pypdf", specifier = ">=5" },
     { name = "pytest", specifier = ">=8" },
     { name = "ruff", specifier = ">=0.6" },
+]
+
+[[package]]
+name = "openai"
+version = "3.46.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "httpx2" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/34/b6/23cddcb571d6eafe7b4bb58c7e0a068076121b7b001b776179994cca6a03/openai-3.46.0.tar.gz", hash = "sha256:fb34cd8cab6809ad0aa8dc42493fa622aaa87c814fd8e67a6fb3fa1f1e5d952d", size = 2408622, upload-time = "2026-11-05T00:55:55.463Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f4/63/454e6faad68ac903e7669932db8d0a91c95dfca829ec9476e52045b17684/openai-3.46.0-py3-none-any.whl", hash = "sha256:7b650117e9bf539029bf880c2eff94a26f281394f6572284efa5d068d4b1c98e", size = 2438918, upload-time = "2026-11-05T00:55:53.301Z" },
 ]
 
 [[package]]

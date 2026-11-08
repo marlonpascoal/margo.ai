@@ -9,7 +9,8 @@ answer is promoted and applied like a rule, with no AI call. Two different answe
 back to the AI on each run and a founder can settle it. A founder's correction in C04 wins over any AI
 answer. Mirrors the hybrid ingredient rules of M3 (ingredient_rule.auto_confirm and disputed_at).
 
-Without ANTHROPIC_API_KEY nothing is read and nothing is learned: the result is the rules alone."""
+Without the AI key (OPENAI_API_KEY, D70) nothing is read and nothing is learned: the result is
+the rules alone."""
 
 from __future__ import annotations
 

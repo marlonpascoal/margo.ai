@@ -13,6 +13,7 @@ describe("C14 settings", () => {
     expect(byName.SUPABASE_SERVICE_ROLE_KEY.state).toBe("missing");
     // Lives only on Maritime: this app cannot tell, so it says where, not set or missing.
     expect(byName.ANTHROPIC_API_KEY).toEqual({ name: "ANTHROPIC_API_KEY", where: "Maritime", state: "elsewhere" });
+    expect(byName.OPENAI_API_KEY).toEqual({ name: "OPENAI_API_KEY", where: "Maritime", state: "elsewhere" });
     expect(byName["certificado A1 de cliente"]).toEqual({ name: "certificado A1 de cliente", where: "não guardamos", state: "not_kept" });
   });
 

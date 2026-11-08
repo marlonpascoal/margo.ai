@@ -1,6 +1,6 @@
 """B01 P23 "Oportunidades" (Marlon, 08/nov): the run's facts for the AI, and the deterministic check that keeps only
 opportunities whose numbers exist in the facts, with no profit words and no long dash. The writer is a fake: no test
-calls the API or replays an invented answer (D40); recorded answers in fixtures/anthropic are replayed when present.
+calls the API or replays an invented answer (D40); recorded answers in fixtures/ai are replayed when present.
 All items are SINTÉTICO."""
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import pytest
 from margo_collector import opportunities
 from margo_collector.opportunities import (
     PROMPT_VERSION,
-    ClaudeOpportunityWriter,
+    AiOpportunityWriter,
     brl,
     build_facts,
     build_request,
@@ -25,6 +25,7 @@ from margo_collector.opportunities import (
     parse_response,
 )
 from margo_collector.record_opportunities import POSITIONS, RESULT
+from margo_common import llm
 
 ROOT = Path(__file__).resolve().parents[3]
 BURGER = "00000000-0000-4000-8000-000000000001"
@@ -79,12 +80,14 @@ def test_B01_opportunities_facts_per_item_category_and_store(facts):
 
 def test_B01_opportunities_request_sends_the_facts_and_no_store_name(facts):
     req = build_request(facts, "m")
-    body = json.loads(req["messages"][0]["content"])
+    body = llm.request_payload("openai", req)
     assert body == {"fatos": facts.prompt}
     assert "nome_da_loja" not in json.dumps(body) and "store_name" not in json.dumps(body)
-    assert "—" not in req["system"], "no long dash in product text, the prompt included"
+    system = req["input"][0]["content"]
+    assert "—" not in system, "no long dash in product text, the prompt included"
     for word in ("lucro", "margem", "ganho"):
-        assert word in req["system"], "the prompt forbids it by name"
+        assert word in system, "the prompt forbids it by name"
+    assert req["text"]["format"] == {"type": "json_schema", "name": "oportunidades", "schema": opportunities.OUTPUT_SCHEMA, "strict": True}
 
 
 def test_B01_opportunities_facts_hash_is_stable(facts):
@@ -158,45 +161,58 @@ def test_B01_opportunities_keep_order_count_dropped_and_cap_at_five(facts):
 # Response and writer -------------------------------------------------------------------------------------------------
 
 
+def openai_resp(text: str, status: str = "completed", part: str = "output_text") -> dict[str, Any]:
+    key = "refusal" if part == "refusal" else "text"
+    return {"status": status, "output": [{"type": "message", "content": [{"type": part, key: text}]}]}
+
+
 class Block:
     def __init__(self, text: str) -> None:
         self.type, self.text = "text", text
 
 
 class Resp:
+    """An Anthropic Messages response (the other provider, D70)."""
+
     def __init__(self, text: str, stop: str = "end_turn") -> None:
         self.stop_reason, self.content = stop, [Block(text)]
 
 
-def test_B01_opportunities_parse_refusal_or_cut_answer_is_empty():
-    assert parse_response(Resp('{"oportunidades": [{"title": "a"}]}', "max_tokens")) == []
-    assert parse_response(Resp("não é json")) == []
-    assert parse_response(Resp('{"oportunidades": [{"title": "a"}]}')) == [{"title": "a"}]
+def test_B01_D70_opportunities_parse_refusal_or_cut_answer_is_empty():
+    ok = '{"oportunidades": [{"title": "a"}]}'
+    assert parse_response(openai_resp(ok, "incomplete")) == []
+    assert parse_response(openai_resp("não posso", part="refusal")) == []
+    assert parse_response(openai_resp("não é json")) == []
+    assert parse_response(openai_resp(ok)) == [{"title": "a"}]
+    assert parse_response(Resp(ok, "max_tokens"), "anthropic") == []
+    assert parse_response(Resp(ok), "anthropic") == [{"title": "a"}]
 
 
-def test_B01_opportunities_model_is_a_parameter_and_the_key_is_read_by_name(monkeypatch):
-    assert ClaudeOpportunityWriter(client=object()).model == opportunities.DEFAULT_MODEL
+def test_B01_D70_opportunities_model_is_a_parameter_and_the_key_is_read_by_name(monkeypatch):
+    monkeypatch.delenv("MARGO_AI_PROVIDER", raising=False)
+    monkeypatch.delenv("MARGO_OPPORTUNITIES_MODEL", raising=False)
+    assert AiOpportunityWriter(client=object()).model == llm.DEFAULT_MODELS["openai"]
     monkeypatch.setenv("MARGO_OPPORTUNITIES_MODEL", "outro-modelo")
-    assert ClaudeOpportunityWriter(client=object()).model == "outro-modelo"
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
-        ClaudeOpportunityWriter()
+    assert AiOpportunityWriter(client=object()).model == "outro-modelo"
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
+        AiOpportunityWriter()
     assert opportunities.writer_from_env() is None
 
 
 class FakeClient:
-    """Says what the test asks; never a recorded model answer."""
+    """Says what the test asks, in the OpenAI Responses shape; never a recorded model answer."""
 
     def __init__(self, answer: list[dict[str, Any]]) -> None:
         self.answer, self.requests = answer, []
 
     @property
-    def messages(self):
+    def responses(self):
         return self
 
     def create(self, **kw):
         self.requests.append(kw)
-        return Resp(json.dumps({"oportunidades": self.answer}, ensure_ascii=False))
+        return openai_resp(json.dumps({"oportunidades": self.answer}, ensure_ascii=False))
 
 
 class MemoryRepo:
@@ -216,7 +232,7 @@ class MemoryRepo:
 
 def test_B01_opportunities_step_saves_the_valid_ones_once():
     client = FakeClient([op("X-Burger abaixo do meio", "Está 17% abaixo."), op("Mais lucro", "x")])
-    writer = ClaudeOpportunityWriter(client=client, model="modelo-de-teste")
+    writer = AiOpportunityWriter(client=client, model="modelo-de-teste", provider="openai")
     repo = MemoryRepo()
     assert opportunities_step(repo, "x1", writer) == {"kept": 1, "dropped": 1}
     row = repo.rows["x1"]
@@ -228,7 +244,7 @@ def test_B01_opportunities_step_saves_the_valid_ones_once():
 
 def test_B01_opportunities_step_with_none_valid_keeps_an_empty_row():
     repo = MemoryRepo()
-    writer = ClaudeOpportunityWriter(client=FakeClient([op("Suba para R$ 31,00", "x")]), model="m")
+    writer = AiOpportunityWriter(client=FakeClient([op("Suba para R$ 31,00", "x")]), model="m", provider="openai")
     assert opportunities_step(repo, "x1", writer) == {"kept": 0, "dropped": 1}
     assert repo.rows["x1"]["items"] == []
 
@@ -241,23 +257,19 @@ def test_B01_opportunities_step_without_key_logs_and_writes_nothing(capsys):
 
 
 def test_B01_opportunities_step_skips_competitor_and_unready_runs():
-    writer = ClaudeOpportunityWriter(client=FakeClient([]), model="m")
+    writer = AiOpportunityWriter(client=FakeClient([]), model="m", provider="openai")
     for result in (dict(RESULT, target_kind="competitor"), dict(RESULT, status="pairing")):
         repo = MemoryRepo(result)
         assert opportunities_step(repo, "x1", writer) == {"skipped": "not_ready"}
         assert repo.rows == {}
 
 
-@pytest.mark.parametrize("path", sorted((ROOT / "fixtures" / "anthropic").glob("opportunities-*.json")) or [None])
-def test_B01_opportunities_recorded_answers_parse_and_check(path):
-    """Replays every answer Marlon recorded (`uv run record-anthropic-opportunities`); none yet means nothing to replay."""
+@pytest.mark.parametrize("path", sorted((ROOT / "fixtures" / "ai").glob("opportunities-*.json")) or [None])
+def test_B01_D70_opportunities_recorded_answers_parse_and_check(path):
+    """Replays every answer Marlon recorded (`uv run record-ai-opportunities`); none yet means nothing to replay."""
     if path is None:
-        pytest.skip("no opportunities recording yet: fixtures/anthropic/README.md")
+        pytest.skip("no opportunities recording yet: fixtures/ai/README.md")
     rec = json.loads(path.read_text())
-
-    class R:
-        stop_reason = rec["response"]["stop_reason"]
-        content = [Block(b.get("text", "")) for b in rec["response"]["content"] if b.get("type") == "text"]
-
-    kept, dropped = check_all(parse_response(R()), build_facts(RESULT, POSITIONS))
-    assert len(kept) + dropped == len(parse_response(R()))
+    raw = parse_response(rec["response"], rec["provider"])
+    kept, dropped = check_all(raw, build_facts(RESULT, POSITIONS))
+    assert len(kept) + dropped == len(raw)

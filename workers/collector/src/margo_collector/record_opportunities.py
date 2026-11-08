@@ -1,10 +1,11 @@
-"""Record one real Claude API answer for P23 "Oportunidades" (D40). Marlon runs it; agents never do.
+"""Record one real AI answer (D70) for P23 "Oportunidades" (D40). Marlon runs it; agents never do.
 
-    ANTHROPIC_API_KEY=... uv run record-anthropic-opportunities          # fixtures/anthropic/opportunities-<date>.json
-    ANTHROPIC_API_KEY=... uv run record-anthropic-opportunities <model-id>
+    OPENAI_API_KEY=... uv run record-ai-opportunities          # fixtures/ai/opportunities-openai-<date>.json
+    OPENAI_API_KEY=... uv run record-ai-opportunities <model-id>
+    MARGO_AI_PROVIDER=anthropic ANTHROPIC_API_KEY=... uv run record-ai-opportunities
 
 Sends the facts of one SINTÉTICO run (no store name, no person) through the same `build_facts` and `build_request` the
-worker uses, and stores the request (no key) and the response as the SDK returns it, so `parse_response` and the
+worker uses, and stores the provider, the request (no key) and the response as the SDK returns it, so `parse_response` and the
 number check can be tested against what the API really sends back (test_b01_opportunities.py replays it).
 """
 
@@ -16,9 +17,11 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from .opportunities import DEFAULT_MODEL, ClaudeOpportunityWriter, build_facts, build_request
+from margo_common import llm
 
-OUT = Path(__file__).resolve().parents[4] / "fixtures" / "anthropic"
+from .opportunities import AiOpportunityWriter, build_call, build_facts
+
+OUT = Path(__file__).resolve().parents[4] / "fixtures" / "ai"
 
 
 def _item(n: int, name: str, group: str, own: int, parity: int, low: int, high: int, reading: str, stores: int) -> dict[str, Any]:
@@ -76,15 +79,14 @@ POSITIONS: dict[str, Any] = {
 
 
 def main(argv: list[str] | None = None) -> int:
-    model = (argv or sys.argv[1:] or [DEFAULT_MODEL])[0]
-    writer = ClaudeOpportunityWriter(model=model)
-    request = build_request(build_facts(RESULT, POSITIONS), model)
-    response = writer.client.messages.create(**request)
+    args = argv if argv is not None else sys.argv[1:]
+    ai = AiOpportunityWriter(model=args[0] if args else None).ai
+    request = ai.request(build_call(build_facts(RESULT, POSITIONS)))
+    response = llm.send(ai.provider, ai.client, request)
     OUT.mkdir(parents=True, exist_ok=True)
-    path = OUT / f"opportunities-{date.today().isoformat()}.json"
-    path.write_text(
-        json.dumps({"request": request, "response": response.to_dict()}, ensure_ascii=False, indent=2) + "\n"
-    )
+    path = OUT / f"opportunities-{ai.provider}-{date.today().isoformat()}.json"
+    record = {"provider": ai.provider, "request": request, "response": llm.response_dict(response)}
+    path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n")
     print(path)
     return 0
 

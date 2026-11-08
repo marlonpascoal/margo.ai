@@ -212,8 +212,8 @@ def pair_step(
     leave, a founder's decision on a store still in it stays.
 
     Stage 2: non-beverage items the rules cannot read take a founder's or a promoted learning, else one AI
-    call (`reader`); the answers and the founder's C04 corrections are learned. Without a reader (no
-    ANTHROPIC_API_KEY) that step is skipped with a note, nothing is learned, and the result is the rules
+    call (`reader`); the answers and the founder's C04 corrections are learned. Without a reader (no AI
+    key, D70) that step is skipped with a note, nothing is learned, and the result is the rules
     alone."""
     if repo.pair_blocker(xray_id) is not None:
         raise LoadPending()
@@ -250,7 +250,7 @@ def learn_food_step(
     what was learned. Nothing at all without a reader."""
     items = [*own, *pool]
     if reader is None:
-        note = "ANTHROPIC_API_KEY ausente: só regras, nada aprendido"
+        note = "chave de IA ausente: só regras, nada aprendido"
         log_event("m1_attr_ai_skipped", xray_id=xray_id, note=note)
         return read_food_m1_04(items, {}, None)
     learnings = repo.attr_learnings()

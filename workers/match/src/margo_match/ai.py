@@ -1,4 +1,4 @@
-"""D14 step 3: ingredient suggestions from the Claude API (06 §6), behind the `Suggester` interface.
+"""D14 step 3: ingredient suggestions from the AI provider (06 §6, D70), behind the `Suggester` interface.
 
 What goes out (06 §6, D14; Marlon, 31/out): the supplier name, the item description, NCM and unit, and the
 unit price, plus the catalog names. The supplier name only when the issuer is a company (14-digit CNPJ) and
@@ -7,24 +7,24 @@ name. Never the restaurant, any CNPJ or CPF, or a person. The answer is a sugges
 stored as `suggested` and counts in no cost until a founder confirms it in C11 (D02).
 
 Tests use a fake `Suggester`; no test calls the API or replays invented responses (06, D40). The real client
-reads ANTHROPIC_API_KEY from the environment by name (Maritime env, D44). `fixtures/anthropic/README.md`
-has the recording command Marlon runs.
+is `margo_common.llm` (provider and key by name, Maritime env, D44). `fixtures/ai/README.md` has the recording
+command Marlon runs.
 """
 
 from __future__ import annotations
 
-import json
-import os
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Any, Protocol
 
+from margo_common import llm
+
 from .matching import CatalogItem
 
-DEFAULT_MODEL = "claude-sonnet-5-5"
-"""Configured default (param `MARGO_MATCH_MODEL` overrides it); not a branch in the logic."""
+MODEL_ENV = "MARGO_MATCH_MODEL"
+"""Overrides the provider's default model (llm.DEFAULT_MODELS)."""
 BATCH_SIZE = 25
 
 SYSTEM = (
@@ -112,8 +112,8 @@ class Suggester(Protocol):
     def suggest(self, lines: Sequence[AiLine], catalog: Sequence[CatalogItem]) -> list[Suggestion]: ...
 
 
-def build_request(lines: Sequence[AiLine], catalog: Sequence[CatalogItem], model: str) -> dict[str, Any]:
-    """Messages API arguments: supplier name, line text, NCM, unit, unit price and catalog names (06 §6)."""
+def build_call(lines: Sequence[AiLine], catalog: Sequence[CatalogItem]) -> llm.Call:
+    """Supplier name, line text, NCM, unit, unit price and catalog names (06 §6)."""
     payload = {
         "catalogo": [{"nome": c.name, "categoria": c.category, "unidade_base": c.base_unit} for c in catalog],
         "itens": [
@@ -128,13 +128,14 @@ def build_request(lines: Sequence[AiLine], catalog: Sequence[CatalogItem], model
             for li in lines
         ],
     }
-    return {
-        "model": model,
-        "max_tokens": 16000,
-        "system": SYSTEM,
-        "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
-        "output_config": {"format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
-    }
+    return llm.Call("sugestoes_de_insumo", SYSTEM, payload, OUTPUT_SCHEMA, 16000)
+
+
+def build_request(
+    lines: Sequence[AiLine], catalog: Sequence[CatalogItem], model: str, provider: str = llm.DEFAULT_PROVIDER
+) -> dict[str, Any]:
+    """The SDK arguments for one batch (llm.build_request)."""
+    return llm.build_request(provider, model, build_call(lines, catalog))
 
 
 def validate(
@@ -159,33 +160,25 @@ def validate(
     return list(out.values())
 
 
-class ClaudeSuggester:
-    """The real Suggester over the Anthropic SDK client (`anthropic.Anthropic().messages`)."""
+class AiSuggester:
+    """The real Suggester over `margo_common.llm` (provider: MARGO_AI_PROVIDER, model: MARGO_MATCH_MODEL)."""
 
-    def __init__(self, client: Any = None, model: str | None = None) -> None:
-        if client is None:
-            import anthropic
-
-            # ANTHROPIC_API_KEY by name only, never logged or stored. Passed explicitly so a local
-            # `ant auth login` profile is never picked up by accident (no live calls outside Maritime).
-            key = os.environ.get("ANTHROPIC_API_KEY")
-            if not key:
-                raise RuntimeError("ANTHROPIC_API_KEY is not set")
-            client = anthropic.Anthropic(api_key=key)
-        self.client = client
-        self.model = model or os.environ.get("MARGO_MATCH_MODEL") or DEFAULT_MODEL
+    def __init__(self, client: Any = None, model: str | None = None, provider: str | None = None) -> None:
+        self.ai = llm.StructuredClient(client, model, provider, MODEL_ENV)
+        self.model = self.ai.model
 
     def suggest(self, lines: Sequence[AiLine], catalog: Sequence[CatalogItem]) -> list[Suggestion]:
         out: list[Suggestion] = []
         for i in range(0, len(lines), BATCH_SIZE):
             batch = list(lines[i : i + BATCH_SIZE])
-            response = self.client.messages.create(**build_request(batch, catalog, self.model))
-            if response.stop_reason != "end_turn":
-                continue  # refusal or cut off: no suggestion; the lines stay without a pair
-            text = next((b.text for b in response.content if b.type == "text"), "")
-            try:
-                items = json.loads(text).get("suggestions", [])
-            except (ValueError, AttributeError):
-                continue
+            answer = self.ai.ask(build_call(batch, catalog))
+            items = answer.get("suggestions") if answer else None
+            if not isinstance(items, list):
+                continue  # refusal, cut off or malformed: no suggestion; the lines stay without a pair
             out.extend(validate(items, {li.ref for li in batch}, catalog))
         return out
+
+
+def suggester_from_env() -> AiSuggester | None:
+    """The suggester when the provider's key is set; None skips the AI step (local development, tests)."""
+    return AiSuggester() if llm.key_present() else None

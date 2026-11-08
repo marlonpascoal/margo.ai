@@ -15,12 +15,12 @@ Decisions: D41 (hosting), D42 (Maritime), D43 (stack), D44 (secrets), D34 (flags
                      [ Supabase (São Paulo) ]      [ Maritime agents (US or DE) ]
                        Postgres + RLS                worker-import
                        Auth (codes)                  worker-collector (M1)
-                       Storage (files, PDFs)         worker-match (Claude API)
+                       Storage (files, PDFs)         worker-match (AI API) 
                        job queue table               worker-render (PDF, xlsx)
                                  ^                          |
                                  +---- read job / write ----+
                                           results
-   External: iFood Merchant API (test env first), Asaas, e-mail provider, Anthropic API
+   External: iFood Merchant API (test env first), Asaas, e-mail provider, OpenAI API (D70; Anthropic as an option)
 ```
 
 | Piece | Runs | Responsibility |
@@ -46,7 +46,7 @@ margoai/
     common/             job runner, Runner interface, Supabase client, signing
     import/             ifood_api, ifood_file, food99_file, column-mapping
     collector/          M1 rules and X-ray steps; pages are read by an external extractor (06 §10)
-    match/              de-para suggestions (Claude API)
+    match/              de-para suggestions (AI API, D70)
     render/             PDF (weasyprint) and xlsx (openpyxl)
   supabase/
     migrations/         SQL, the contract
@@ -97,7 +97,7 @@ The `Runner` interface in `workers/common` hides Maritime: `Runner.enqueue(job)`
 | `SUPABASE_SERVICE_ROLE_KEY` (per env) | Vercel env, Maritime env | Platforms only |
 | `IFOOD_CLIENT_ID`, `IFOOD_CLIENT_SECRET` (test app, later prod app) | Vercel env, Maritime env | Platforms only |
 | `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` | Vercel env | Platforms only |
-| `ANTHROPIC_API_KEY` | Maritime env (worker-match) | Platforms only |
+| `OPENAI_API_KEY` (D70), or `ANTHROPIC_API_KEY` with `MARGO_AI_PROVIDER=anthropic` | Maritime env (worker-match, worker-collector) | Platforms only |
 | `MARITIME_WEBHOOK_SIGNING_KEY` | Vercel env, Maritime env | Platforms only |
 | `EMAIL_PROVIDER_KEY` | Vercel env | Platforms only |
 | `MARGO_EXTRACT_TOKEN` | Vercel env; the extractor's own configuration (D47b) | Platforms and the extractor |

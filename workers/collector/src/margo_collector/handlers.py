@@ -55,7 +55,7 @@ def xray_neighborhood(run: JobRun[NeighborhoodPayload]) -> dict[str, int]:
 
 
 def xray_pair(run: JobRun[XrayPayload]) -> dict[str, int | str | bool | None]:
-    """C03 "Confirmar N lojas": M1-03 and M1-04. Without ANTHROPIC_API_KEY the attribute AI step is skipped.
+    """C03 "Confirmar N lojas": M1-03 and M1-04. Without the AI key the attribute AI step is skipped.
     """
     repo = PostgresXrayRepo(local_db_url())
     try:
@@ -74,7 +74,7 @@ def xray_calc(run: JobRun[XrayPayload]) -> dict[str, int]:
 
 
 def xray_opportunities(run: JobRun[XrayPayload]) -> dict[str, Any]:
-    """P23 "Oportunidades" after the calculation (opportunities.py). No ANTHROPIC_API_KEY: done, no row."""
+    """P23 "Oportunidades" after the calculation (opportunities.py). No AI key: done, no row."""
     repo = PostgresXrayRepo(local_db_url())
     try:
         return opportunities_step(repo, str(run.payload.xray_id), writer_from_env())

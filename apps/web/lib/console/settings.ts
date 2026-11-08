@@ -12,12 +12,14 @@ interface SecretDef {
   where: Platform[];
 }
 
-/** 02 §6 table. */
+/** 02 §6 table. OPENAI_API_KEY is the AI provider's key since D70 (Marlon, 08/nov); ANTHROPIC_API_KEY, as drawn,
+ *  stays for MARGO_AI_PROVIDER=anthropic. */
 export const SECRETS: SecretDef[] = [
   { name: "SUPABASE_SERVICE_ROLE_KEY", where: ["Vercel", "Maritime"] },
   { name: "IFOOD_CLIENT_ID", where: ["Vercel", "Maritime"] },
   { name: "IFOOD_CLIENT_SECRET", where: ["Vercel", "Maritime"] },
   { name: "ANTHROPIC_API_KEY", where: ["Maritime"] },
+  { name: "OPENAI_API_KEY", where: ["Maritime"] },
   { name: "ASAAS_API_KEY", where: ["Vercel"] },
   { name: "ASAAS_WEBHOOK_TOKEN", where: ["Vercel"] },
   { name: "MARITIME_WEBHOOK_SIGNING_KEY", where: ["Vercel", "Maritime"] },

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 from margo_collector import ai_attrs
-from margo_collector.ai_attrs import ClaudeAttrReader, build_request, parse_response, validate
+from margo_collector.ai_attrs import AiAttrReader, build_request, parse_response, validate
 from margo_collector.food import (
     EXCLUSIVE_NOTE,
     FoodAttrs,
@@ -35,6 +35,7 @@ from margo_collector.repo import MemoryXrayRepo
 from margo_collector.rules import Item, Settings, pair_item_m1_04
 from margo_collector.steps import XrayRun, pair_step
 from margo_collector.xray import CalcInput, build_pairs, calculate
+from margo_common import llm
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -266,10 +267,12 @@ def test_M1_04_B7_exclusive_stays_out_of_parity_and_the_pareto_and_a_founder_can
 
 def test_M1_04_ai_request_sends_business_data_only():
     req = build_request([AiItem("0", "Lanche da vila", "Pão e bacon", "lanches")], "m")
-    body = json.loads(req["messages"][0]["content"])
+    body = llm.request_payload("openai", req)
     assert set(body["itens"][0]) == {"ref", "nome", "descricao", "categoria"}
-    assert req["output_config"]["format"]["type"] == "json_schema"
+    assert req["text"]["format"]["type"] == "json_schema" and req["text"]["format"]["strict"] is True
     assert req["model"] == "m"
+    anthropic = build_request([AiItem("0", "Lanche da vila", "Pão e bacon", "lanches")], "m", "anthropic")
+    assert llm.request_payload("anthropic", anthropic) == body, "D70: the same payload for either provider"
 
 
 def test_M1_04_ai_answers_are_validated_against_what_was_sent():
@@ -328,49 +331,45 @@ def test_M1_04_ai_answers_are_validated_against_what_was_sent():
     )
 
 
-def test_M1_04_ai_refusal_or_cut_answer_reads_nothing():
+def test_M1_04_D70_ai_refusal_or_cut_answer_reads_nothing():
     class R:
         stop_reason = "max_tokens"
         content = []
 
-    assert parse_response(R(), {"0"}) == {}
+    assert parse_response(R(), {"0"}, "anthropic") == {}
+    assert parse_response({"status": "incomplete", "output": []}, {"0"}) == {}
+    refusal = {"type": "message", "content": [{"type": "refusal", "refusal": "não"}]}
+    assert parse_response({"status": "completed", "output": [refusal]}, {"0"}) == {}
 
 
-def test_M1_04_ai_model_is_a_parameter_and_the_key_is_read_by_name(monkeypatch):
-    assert ClaudeAttrReader(client=object()).model == ai_attrs.DEFAULT_MODEL
+def test_M1_04_D70_ai_model_is_a_parameter_and_the_key_is_read_by_name(monkeypatch):
+    monkeypatch.delenv("MARGO_AI_PROVIDER", raising=False)
+    monkeypatch.delenv("MARGO_PAIR_MODEL", raising=False)
+    assert AiAttrReader(client=object()).model == llm.DEFAULT_MODELS["openai"]
     monkeypatch.setenv("MARGO_PAIR_MODEL", "outro-modelo")
-    assert ClaudeAttrReader(client=object()).model == "outro-modelo"
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
-        ClaudeAttrReader()
+    assert AiAttrReader(client=object()).model == "outro-modelo"
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
+        AiAttrReader()
     assert ai_attrs.reader_from_env() is None
 
 
 def test_M1_04_recorder_sends_synthetic_items_in_the_worker_shape():
     from margo_collector import record_pairing
 
-    body = json.loads(build_request(record_pairing.ITEMS, "m")["messages"][0]["content"])
+    body = llm.request_payload("openai", build_request(record_pairing.ITEMS, "m"))
     assert len(body["itens"]) == len(record_pairing.ITEMS)
     assert all(set(i) == {"ref", "nome", "descricao", "categoria"} for i in body["itens"])
 
 
-@pytest.mark.parametrize("path", sorted((ROOT / "fixtures" / "anthropic").glob("pairing-*.json")) or [None])
-def test_M1_04_recorded_answers_parse(path):
-    """Replays every answer Marlon recorded (`uv run record-anthropic-pairing`); none yet means nothing to replay."""
+@pytest.mark.parametrize("path", sorted((ROOT / "fixtures" / "ai").glob("pairing-*.json")) or [None])
+def test_M1_04_D70_recorded_answers_parse(path):
+    """Replays every answer Marlon recorded (`uv run record-ai-pairing`); none yet means nothing to replay."""
     if path is None:
-        pytest.skip("no pairing recording yet: fixtures/anthropic/README.md")
+        pytest.skip("no pairing recording yet: fixtures/ai/README.md")
     rec = json.loads(path.read_text())
-    sent = {i["ref"] for i in json.loads(rec["request"]["messages"][0]["content"])["itens"]}
-
-    class Block:
-        def __init__(self, d):
-            self.type, self.text = d.get("type"), d.get("text", "")
-
-    class Resp:
-        stop_reason = rec["response"]["stop_reason"]
-        content = [Block(b) for b in rec["response"]["content"]]
-
-    out = parse_response(Resp(), sent)
+    sent = {i["ref"] for i in llm.request_payload(rec["provider"], rec["request"])["itens"]}
+    out = parse_response(rec["response"], sent, rec["provider"])
     assert set(out) <= sent
 
 

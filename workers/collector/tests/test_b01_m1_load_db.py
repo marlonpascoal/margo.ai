@@ -274,6 +274,41 @@ def test_B01_M1_04_rerun_cleans_stale_pairs_and_keeps_manual_decisions(conn, rep
     assert after["reviewed_at"] is not None
 
 
+
+def test_B01_D47d_only_this_runs_captured_stores_are_compared(conn, repo):
+    """Marlon, 08/nov: a run compares only with the stores it read (its capture slots), not with every included store
+    whose menu another X-ray left in the catalog; the counts on screen follow."""
+    h = Hood(conn, 3, rules={"min_pairs": 1})
+    slot_a, slot_b, outside = h.stores
+    conn.execute(
+        "update public.xray_store set capture_slot = (public_store_id <> %s) where xray_id = %s", (outside, h.xid)
+    )
+    own = h.item(h.target, "own", "Hambúrguer sintético duplo", 2000)
+    h.item(slot_a, "a", "Hambúrguer sintético duplo", 2200)
+    h.item(slot_b, "b", "Hambúrguer sintético duplo", 2400)
+    h.item(outside, "c", "Hambúrguer sintético duplo", 9900)
+    pair_step(repo, h.xid)
+
+    item = conn.execute("select id from public.xray_item where xray_id = %s and public_menu_item_id = %s", (h.xid, own)).fetchone()["id"]
+    stores = {
+        str(r["s"])
+        for r in conn.execute(
+            "select m.public_store_id as s from public.xray_pair p join public.public_menu_item m on m.id = p.public_menu_item_id"
+            " where p.xray_item_id = %s",
+            (item,),
+        ).fetchall()
+    }
+    assert stores == {slot_a, slot_b}
+    compared = conn.execute("select count(*) as n from app.xray_compared_store_ids(%s)", (h.xid,)).fetchone()["n"]
+    assert compared == 2
+
+
+def test_B01_D47d_a_run_without_capture_slots_compares_every_included_store(conn, repo):
+    h = Hood(conn, 2, rules={"min_pairs": 1})
+    assert conn.execute("select count(*) as n from app.xray_compared_store_ids(%s)", (h.xid,)).fetchone()["n"] == 2
+
+
+
 # Capture cap ----------------------------------------------------------------------------------------
 
 

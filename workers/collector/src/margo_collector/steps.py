@@ -101,6 +101,10 @@ class XrayRepo(Protocol):
 
     def included_store_ids(self, xray_id: str) -> list[str]: ...
 
+    def compared_store_ids(self, xray_id: str) -> list[str]:
+        """The stores a run compares with: its capture slots, or every included store without slots (Marlon, 08/nov)."""
+        ...
+
     def pair_blocker(self, xray_id: str) -> str | None:
         """What pairing waits for: "captures", "neighborhood", "target" or None (xray_pair_blocker)."""
         ...
@@ -215,7 +219,7 @@ def pair_step(
     x = repo.load_xray(xray_id)
     own = repo.items_of_stores([x.target_store_id])
     left_out = repo.unfinished_captures(xray_id)
-    pool = repo.items_of_stores([s for s in repo.included_store_ids(xray_id) if s not in set(left_out)])
+    pool = repo.items_of_stores([s for s in repo.compared_store_ids(xray_id) if s not in set(left_out)])
     decisions = repo.pair_decisions(xray_id)
     food = learn_food_step(repo, xray_id, own, pool, decisions, reader)
     rows = build_pairs(own, pool, x.settings, decisions, food.overrides)

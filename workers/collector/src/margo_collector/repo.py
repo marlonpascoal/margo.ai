@@ -115,6 +115,10 @@ class MemoryXrayRepo:
     def included_store_ids(self, xray_id: str) -> list[str]:
         return [r.public_store_id for r in self.hood.get(xray_id, []) if r.included]
 
+    def compared_store_ids(self, xray_id: str) -> list[str]:
+        """No capture slots in memory: every included store, as app.xray_compared_store_ids for a run without slots."""
+        return self.included_store_ids(xray_id)
+
     def pair_blocker(self, xray_id: str) -> str | None:
         return self.blockers.get(xray_id)
 
@@ -384,6 +388,12 @@ class PostgresXrayRepo:
                 "select public_store_id from public.xray_store where xray_id = %s and included order by public_store_id",
                 (xray_id,),
             )
+        ]
+
+    def compared_store_ids(self, xray_id: str) -> list[str]:
+        return [
+            str(r["s"])
+            for r in self._all("select s from app.xray_compared_store_ids(%s) s order by s", (xray_id,))
         ]
 
     # pairing

@@ -309,3 +309,21 @@ Collected during the build (Waves 0 to 3) for one review at the end. Nothing her
 - **C12:** "custo recalculando", "sem preço", "Editar ficha", "Embalagem extra por canal", validation, empty states, "cupom de dd/mmm", error-bar explanation variants.
 - **C13:** "pode inverter" and its notes, the empty month text, the DLV-01 second sentence (also on W01).
 - **P06:** "menos da metade dos", "contra os", "Vale rever o preço?", the xlsx sheet "Sobra por pedido".
+
+## Raio-X no portal: P19 to P24 / W10 to W15 (07/nov, branch nov/portal-xray)
+
+**The screens follow the prototype pending drawings.** No `design/` file exists for P19 to P24 or W10 to W15 yet; the pages follow the prototype `m1-owner-journey.html` (session scratchpad) and `docs/m1-owner-journey-draft.md`, including its §10 provisional choices. When the drawings arrive, the pages are redrawn to them and `scripts/check_screens.py` starts checking them. Styles are the prototype's, in `apps/web/app/app/raio-x/raio-x.css`, tokens only. Strings not in the prototype are in `docs/copy-review.md` ("P19 to P24").
+
+- **Routes**, behind `m1.portal`, menu item "Raio-X" between Início and Lojas (W10): `/app/raio-x` (P19/W10), `/app/raio-x/novo` (P20/W11, Dono only, 404 for others), `/app/raio-x/[monitor]/lendo` (P21/W12), `/app/raio-x/[monitor]/revisar` (P22/W13), `/app/raio-x/[monitor]` and `/app/raio-x/[monitor]/[xray]` (P23/W14), `/app/raio-x/[monitor]/historico` (P24/W15).
+- **Score:** Marlon has not picked between "% de itens alinhados" and no score. Every score on these screens is drawn by `apps/web/app/app/raio-x/_components/PriceScore.tsx`, labeled "Score de preço", from `loadResult().positions` and `loadHistory()`; `SHOW_SCORE = false` there removes it everywhere.
+- **PDF = the result page printed** (Marlon, 07/nov). "Compartilhar" offers "Baixar PDF" only. The route `/api/raio-x/[monitor]/pdf` checks the person, then serves the copy printed for the result `version` or queues `render_xray` in print mode. worker-render mints a one-time token (sha256 stored, 5 minutes, used once, `xray_print_token`), opens `/imprimir/raio-x/[xray]?t=` and prints it to A4 with Playwright; the file is cached per version in `xray_print`. The console's P01 (C05/C06) is unchanged.
+  - **Needs Marlon:** Playwright is not a Python worker dependency. The worker calls Node Playwright from `apps/web` (`scripts/print_pdf.mjs`), so the render worker's container needs Node and Chromium, or the Python `playwright` package is added. It also needs `MARGO_APP_URL`, the web app it prints from.
+- **Differences from the prototype:**
+  - P20 for Financeiro and Gerente is 404 (05 convention), not the "Só o Dono pode..." banner. "Perto de qual cozinha?" lists kitchens without distances.
+  - P21 has no "Tirar da comparação" (no backend for an owner's exclusion yet, draft §8).
+  - P22 "Não é o mesmo" on a system-confirmed item opens its stores to unmark; the prototype only hinted at it.
+  - P23 competitor view: the head-to-head comes from the newest own run whose neighborhood holds the competitor (new `monitor_head_to_head`), hidden when none does. Items do not repeat "Você cobra X neste item". "Ver as lojas" is left out of the PDF.
+  - P24 product chart has no competitor line (the history loader has none). Charts use ink tones, no series colors (no token), and SVG titles instead of hover tooltips. The runs table shows "Itens comparados" instead of "Espaço para subir".
+  - No dark theme (`tokens.css` is light only). The notices screen (`#avisos`) is not part of this work.
+- **Exclusivo (pairing Stage 2, merged from main):** an `exclusivo` item is listed in "Itens só seus" ("ninguém por perto vende algo igual") and never as a doubt; doubts stay `revisar` only (migration `20261231000001`).
+- **Backend fixes found by the screens:** `createMonitor` and `confirmSuggestions` omitted `p_kitchen` and `p_items` when null, and PostgREST could not find the functions. Both now send null (unit test pins it).

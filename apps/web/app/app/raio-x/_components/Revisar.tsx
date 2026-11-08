@@ -29,7 +29,7 @@ export default function Revisar({ monitorId, xrayId, doubts, lists, canAnswer }:
   const act = (fn: () => Promise<ActionResult<void>>, ok: string, clear: string[] = []) =>
     start(async () => {
       setError(null);
-      const r = await fn();
+      const r = await fn().catch((): ActionResult<void> => ({ ok: false, error: "Não salvou. Tente de novo." }));
       if (r.ok) {
         setToast(ok);
         setSel((s) => new Set([...s].filter((id) => !clear.includes(id))));

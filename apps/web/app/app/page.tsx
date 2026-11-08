@@ -72,11 +72,13 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
   const now = new Date();
   const sp = await searchParams;
 
-  const [contest, people, extension, cost] = await Promise.all([
+  const [contest, people, extension, cost, raioX] = await Promise.all([
     isEnabled("m2.contestacao", m.account.id),
     isEnabled("conta.pessoas", m.account.id),
     isEnabled("m2.extensao_chrome", m.account.id),
     isEnabled("m3.custo", m.account.id),
+    // P19 on the phone: MenuDono shows no entries there, so P08 lists the Raio-X journey (m1.portal, see_xray).
+    canPortal(m.role, "see_xray") ? isEnabled("m1.portal", m.account.id) : Promise.resolve(false),
   ]);
   const [kitchens, periods, reports, trial, counts] = await Promise.all([
     scopeKitchens(db, m),
@@ -130,6 +132,12 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
           </div>
         )}
         <nav aria-label="Conta" className="flex flex-col rounded-xl border border-border bg-surface [&>*+*]:border-t [&>*+*]:border-border-subtle">
+          {raioX && (
+            <Link href="/app/raio-x" className={listLink}>
+              <span>Raio-X</span>
+              <span className={sub}>lojas que você acompanha</span>
+            </Link>
+          )}
           {xrayReport && (
             <a href={xrayReport.href} className={listLink}>
               <span>Raio-X de preço</span>

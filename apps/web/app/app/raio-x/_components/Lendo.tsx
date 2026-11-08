@@ -217,10 +217,10 @@ export default function Lendo({ monitorId, own, storeName, radiusKm, initial, pa
                 <div className="small muted">Seus itens que já aparecem nas lojas lidas, pelo nome igual:</div>
                 <div className="cov">
                   {cov.map((g) => (
-                    <div key={g.group} style={{ display: "contents" }}>
+                    <div key={g.group} className="stack" style={{ gap: 6 }}>
                       <span className="covh">{g.label}</span>
                       {g.rows.map((r) => (
-                        <div key={r.own_item_id}>
+                        <div key={r.own_item_id} className="covrow">
                           <span>{r.name}</span>
                           <span className="bar">
                             <i style={{ width: `${Math.min(100, Math.round((r.stores / Math.max(1, partial.stores_read.length)) * 100))}%` }} />

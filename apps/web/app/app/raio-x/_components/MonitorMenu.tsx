@@ -33,7 +33,7 @@ export default function MonitorMenu({ monitorId, name, status, everyDays, minEve
 
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, okText: string) =>
     start(async () => {
-      const r = await fn();
+      const r = await fn().catch(() => ({ ok: false, error: "Não salvou. Tente de novo." }));
       setDialog(null);
       setOpen(false);
       setToast(r.ok ? okText : (r.error ?? "Não salvou. Tente de novo."));

@@ -56,11 +56,10 @@ export default function NovoForm(p: Props) {
     start(async () => {
       setError(null);
       const common = { everyDays: days, radiusKm: radius, categories, rules };
-      const r = comp
-        ? found?.state === "own"
-          ? await createMonitorAction({ url, kitchenId: null, ...common })
-          : await createMonitorAction({ url, kitchenId: kitchen || null, ...common })
-        : await createOwnMonitorAction({ channelStoreId: store, ...common });
+      const call = comp
+        ? createMonitorAction({ url, kitchenId: found?.state === "own" ? null : kitchen || null, ...common })
+        : createOwnMonitorAction({ channelStoreId: store, ...common });
+      const r = await call.catch(() => ({ ok: false as const, error: "Não salvou. Tente de novo." }));
       if (r.ok && r.value) router.push(`/app/raio-x/${r.value.monitorId}/lendo`);
       else if (!r.ok) setError(r.error);
     });

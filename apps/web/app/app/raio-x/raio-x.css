@@ -118,7 +118,7 @@
 .rx .slist > div { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; padding: 8px 0; border-top: 1px solid var(--color-border-subtle); font-size: var(--text-md); align-items: center; }
 .rx .slist > div:first-child { border-top: 0; }
 .rx .cov { display: grid; gap: 6px; }
-.rx .cov > div { display: grid; grid-template-columns: minmax(0, 1fr) 90px 36px; gap: 10px; align-items: center; font-size: var(--text-md); }
+.rx .cov .covrow { display: grid; grid-template-columns: minmax(0, 1fr) 90px 36px; gap: 10px; align-items: center; font-size: var(--text-md); }
 .rx .cov .bar { height: 8px; background: var(--color-muted-bg); border-radius: 4px; overflow: hidden; }
 .rx .cov .bar i { display: block; height: 100%; background: var(--color-ink-faint); border-radius: 4px; }
 .rx .covh { font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--color-ink-muted); margin-top: 4px; }

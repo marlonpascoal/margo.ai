@@ -584,6 +584,12 @@ class PostgresXrayRepo:
                 " unnest(categories || %s::text[]) t), rules = rules || %s where id = %s",
                 (list(shares), Jsonb({"menu_term_shares": shares}), xray_id),
             )
+            # The monitoring keeps the same settings, or its next run would look changed and discover again.
+            c.execute(
+                "update public.xray_monitor m set categories = x.categories, rules = x.rules"
+                " from public.xray x where x.id = %s and m.id = x.monitor_id",
+                (xray_id,),
+            )
 
     def item_families(self) -> dict[str, Family]:
         rows = self._all("select pattern, family, protein, size_class from public.m1_item_family")

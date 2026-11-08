@@ -9,6 +9,7 @@ import { printVersion } from "@/lib/monitor/print";
 import { GROUP_LABEL, type Group } from "@/lib/monitor/rules";
 import { brl, dayMon, gapWords, headline, longWeekdayDayMon, ordinal, paretoSentence, positionChange, positionWords, readingGroups, storeListWithOwn, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
 import NavSelect from "@/components/NavSelect";
+import NeighborMap from "./NeighborMap";
 import { CategoryScore, ScoreCard, ScoreMethod } from "./PriceScore";
 import NextSteps from "./NextSteps";
 import Opportunities from "./Opportunities";
@@ -150,13 +151,14 @@ const storesRead = (r: ResultPage["result"]) => (r.stores_read > 0 ? r.stores_re
 
 /** P23 "Como fizemos este raio-X" (Marlon, 08/nov: more didactic): the method in three steps with this run's numbers
  *  (M1-01 neighborhood and capture slots, M1-04 pairing, M1-05 parity) and the three M1-07 readings with what each asks. */
-function MethodSteps({ r, comp, compared }: { r: ResultPage["result"]; comp: boolean; compared: number }) {
+function MethodSteps({ r, comp, compared, map }: { r: ResultPage["result"]; comp: boolean; compared: number; map: ResultPage["map"] }) {
   const his = comp ? "dele" : "seus";
   return (
-    <section className="card mhow" aria-labelledby="stepsh">
+    <section className={`card mhow${map ? " withmap" : ""}`} aria-labelledby="stepsh">
       <p className="eyebrow" id="stepsh">
         Como fizemos este raio-X
       </p>
+      {map ? <NeighborMap map={map} comp={comp} /> : null}
       <ol className="mhow3">
         <li>
           <b>Lemos {storesRead(r)} lojas vizinhas</b>
@@ -378,7 +380,7 @@ export default function ResultView(p: ResultViewProps) {
           </span>
         </div>
       ) : null}
-      <MethodSteps r={r} comp={comp} compared={compared} />
+      <MethodSteps r={r} comp={comp} compared={compared} map={p.page.map} />
       {print ? null : (
         <details className="card how">
           <summary>

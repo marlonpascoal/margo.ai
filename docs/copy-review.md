@@ -907,3 +907,7 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | Oportunidades sugeridas por IA no resultado do raio-X | `supabase/migrations/20261231000007_m1_opportunities.sql:13` | C20 description of the flag m1.oportunidades_ia | |
 | {título e porquê de cada oportunidade} | `workers/collector/src/margo_collector/opportunities.py` (SYSTEM) | P23 opportunity text, written by the AI from the run's numbers; kept only when every number exists in the facts, without "lucro", "margem", "ganho" or long dash | |
 
+| No centro, a sua loja. Cada ponto é uma loja lida. | `apps/web/app/app/raio-x/_components/NeighborMap.tsx` | P23 radius map caption, own store (Marlon, 08/nov) | |
+| No centro, a loja dele. Cada ponto é uma loja lida. | `apps/web/app/app/raio-x/_components/NeighborMap.tsx` | P23 radius map caption, competitor | |
+| {N} km | `apps/web/app/app/raio-x/_components/NeighborMap.tsx` | P23 radius map, label on the circle | |
+| Mapa do raio de {N} km: a sua loja no centro e {N} lojas lidas em volta. | `apps/web/app/app/raio-x/_components/NeighborMap.tsx` | Accessible name of the radius map | |

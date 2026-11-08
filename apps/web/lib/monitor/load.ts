@@ -452,24 +452,34 @@ export interface HeadToHead {
   items: { item_id: string; name: string; own_cents: number; their_cents: number; group: Group }[];
 }
 
+/** P23 radius map (migration 20261231000009): the run's compared stores as km offsets from the target, no names. */
+export interface NeighborMap {
+  radius_km: number;
+  stores: { x_km: number; y_km: number }[];
+}
+
 export interface ResultPage {
   result: Result;
   stores: ResultStores;
   headToHead: HeadToHead | null;
+  /** Null when the target store has no coordinates. */
+  map: NeighborMap | null;
 }
 
 async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultPage | null> {
-  const [result, positions, stores, h2h] = await Promise.all([
+  const [result, positions, stores, h2h, map] = await Promise.all([
     rpc("monitor_result", { p_xray: xrayId }) as Promise<Omit<Result, "positions"> | null>,
     rpc("monitor_positions", { p_xray: xrayId }) as Promise<Result["positions"]>,
     rpc("monitor_result_stores", { p_xray: xrayId }) as Promise<{ item_id: string; stores: { name: string; price_cents: number }[] }[]>,
     rpc("monitor_head_to_head", { p_xray: xrayId }) as Promise<HeadToHead | null>,
+    rpc("monitor_map", { p_xray: xrayId }) as Promise<NeighborMap | null>,
   ]);
   if (!result || !["ready", "delivered"].includes(result.status)) return null;
   return {
     result: { ...result, positions },
     stores: Object.fromEntries((stores ?? []).map((s) => [s.item_id, s.stores])),
     headToHead: h2h && h2h.items?.length ? h2h : null,
+    map: map ?? null,
   };
 }
 

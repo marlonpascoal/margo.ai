@@ -2645,6 +2645,9 @@ isOneToOne: false
 "monitor_limits":
 { Args: { "p_account": string,"p_env"?: Database["public"]['Enums']["flag_env"] }; Returns: Json
                            },
+"monitor_map":
+{ Args: { "p_xray": string }; Returns: Json
+                           },
 "monitor_opportunities":
 { Args: { "p_xray": string }; Returns: Json
                            },

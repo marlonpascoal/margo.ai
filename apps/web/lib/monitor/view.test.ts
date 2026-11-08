@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { History, MonitorSummary, ResultItem, TestItem, TestPoint } from "./load";
 import {
   byGroup,
+  mapDots,
   dayMon,
   gapWords,
   headline,
@@ -315,5 +316,14 @@ describe("B01 P23 continuity: timeline, tests and next steps", () => {
     expect(testCountLine(0, 3)).toBe("Nenhum item em teste.");
     expect(testCountLine(1, 3)).toBe("1 de 3 itens em teste.");
     expect(testCountLine(3, 3)).toBe("3 de 3 itens em teste.");
+  });
+});
+
+describe("P23 radius map", () => {
+  it("B01_P23_map_dots_scale_to_the_radius_north_up_and_stay_inside", () => {
+    const dots = mapDots({ radius_km: 3, stores: [{ x_km: 1.5, y_km: 0 }, { x_km: 0, y_km: 3 }, { x_km: 0, y_km: -6 }] }, 90);
+    expect(dots[0]).toEqual({ x: 45, y: -0 });
+    expect(dots[1]).toEqual({ x: 0, y: -90 });
+    expect(dots[2]).toEqual({ x: 0, y: 90 });
   });
 });

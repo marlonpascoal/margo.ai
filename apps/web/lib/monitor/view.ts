@@ -224,6 +224,22 @@ export function paretoSentence(count: number, compared: number): string | null {
   return count > 0 ? `${count} de ${compared} itens concentram 80% da diferença de preço abaixo do meio.` : null;
 }
 
+/**
+ * P23 radius map: the dots of the run's compared stores in an SVG whose circle of radius `radiusPx` is the run's
+ * radius. North is up (SVG y grows down). A store just past the radius (distance is measured by the collector, the
+ * offsets here by latitude and longitude) is drawn on the edge, never outside the circle.
+ */
+export function mapDots(map: { radius_km: number; stores: { x_km: number; y_km: number }[] }, radiusPx: number) {
+  const scale = map.radius_km > 0 ? radiusPx / map.radius_km : 0;
+  return map.stores.map((s) => {
+    const x = s.x_km * scale;
+    const y = -s.y_km * scale;
+    const d = Math.hypot(x, y);
+    const k = d > radiusPx ? radiusPx / d : 1;
+    return { x: Math.round(x * k * 10) / 10, y: Math.round(y * k * 10) / 10 };
+  });
+}
+
 /** M1-05 strip geometry: positions in percent of the lowest, highest, middle and own price on one track. */
 export function stripGeometry(i: Pick<ResultItem, "own_cents" | "parity_cents" | "low_cents" | "high_cents">) {
   const lo = Math.min(i.low_cents ?? i.parity_cents, i.own_cents, i.parity_cents);

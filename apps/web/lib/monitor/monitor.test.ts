@@ -3,7 +3,7 @@
 // workers/collector/tests/test_b01_monitor_db.py.
 import { describe, expect, it } from "vitest";
 import type { ReadDb } from "@/lib/supabase/reader";
-import { answerDoubt, createMonitor, undoAnswer, type MonitorDeps } from "./commands";
+import { answerDoubt, confirmSuggestions, createMonitor, undoAnswer, type MonitorDeps } from "./commands";
 import { loadDoubts, loadResult, paceInput, type Progress } from "./load";
 import { canAnswerDoubts, canManageMonitors, doubtReason, etaRange, etaText, isSlow, monitorRefusal, periodOptions, refusalText, roundUpMinutes, type PaceInput } from "./rules";
 
@@ -189,5 +189,31 @@ describe("A02 loaders read the monitoring with RLS first", () => {
   it("B01_result_is_null_until_the_run_is_calculated", async () => {
     const deps = { db: fakeDb({ xray_monitor: [monitorRow], xray: [{ id: RUN }] }), env: "sandbox" as const, rpc: async () => ({ status: "collecting" }) };
     expect(await loadResult(deps, MON)).toBeNull();
+  });
+});
+
+describe("B01 P22 reasons after pairing Stage 2", () => {
+  it("B01_P22_stage2_reasons_in_owner_words", () => {
+    expect(doubtReason("proteína ilegível", 2)).toBe("Não deu para ler a proteína no nome");
+    expect(doubtReason("tamanho presumido 500 ml", 2)).toBe("Não deu para ler o tamanho no nome; supomos 500 ml");
+  });
+});
+
+describe("B01 commands send every SQL parameter that has no default", () => {
+  it("B01_P20_P22_null_kitchen_and_null_items_are_sent_not_omitted", async () => {
+    const calls: Record<string, unknown>[] = [];
+    const deps: MonitorDeps = {
+      env: "sandbox",
+      rpc: async (fn, args) => {
+        calls.push({ fn, ...args });
+        return fn === "monitor_create" ? { monitor_id: "m", xray_id: "x", target_kind: "own" } : null;
+      },
+      wake: async () => {},
+    };
+    const actor = { personId: "p", ip: null, userAgent: null };
+    await createMonitor(deps, actor, { accountId: "a", externalId: "e", url: "u", kitchenId: null, everyDays: 7, radiusKm: 3, categories: [], rules: {} });
+    await confirmSuggestions(deps, actor, "x", null);
+    expect("p_kitchen" in calls[0] && calls[0].p_kitchen === null).toBe(true);
+    expect("p_items" in calls[1] && calls[1].p_items === null).toBe(true);
   });
 });

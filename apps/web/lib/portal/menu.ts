@@ -3,6 +3,8 @@ import { portalScreenAllowed, type MemberRole } from "@/lib/permissions";
 
 const ITEMS: [code: string, label: string, href: string][] = [
   ["W01", "Início", "/app"],
+  // M1 owner journey (P19 / W10), behind m1.portal; not drawn yet (prototype m1-owner-journey.html), between Início and Lojas.
+  ["W10", "Raio-X", "/app/raio-x"],
   ["W02", "Lojas", "/app/lojas"],
   ["W03", "Contestações", "/app/contestacoes"],
   ["W04", "Pessoas", "/app/pessoas"],
@@ -17,8 +19,8 @@ export interface OwnerMenuItem {
   href: string;
 }
 
-export function ownerMenu(role: MemberRole): OwnerMenuItem[] {
-  return ITEMS.filter(([code]) => portalScreenAllowed(role, code)).map(([code, label, href]) => ({ code, label, href }));
+export function ownerMenu(role: MemberRole, flags: { raioX?: boolean } = {}): OwnerMenuItem[] {
+  return ITEMS.filter(([code]) => portalScreenAllowed(role, code) && (code !== "W10" || !!flags.raioX)).map(([code, label, href]) => ({ code, label, href }));
 }
 
 /** Role line at the right of the menu. "Dono do grupo" is drawn; the others use the 04 §5 profile names. */

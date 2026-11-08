@@ -118,11 +118,15 @@ export function doubtReason(pairNote: string | null, stores: number): string {
       return "Não deu para ler a marca no nome";
     case "sabor ilegível":
       return "Não deu para ler o sabor no nome";
+    case "proteína ilegível":
+      return "Não deu para ler a proteína no nome";
     case "poucos pares":
       return stores === 1 ? "Só 1 loja vende algo parecido" : `Só ${stores} lojas vendem algo parecido`;
     case "nenhuma loja com os mesmos atributos":
       return "Nenhuma loja vende exatamente o mesmo";
     default:
+      // M1-04 Stage 2: "tamanho presumido 500 ml" when a pair rests on a default size.
+      if (pairNote?.startsWith("tamanho presumido ")) return `Não deu para ler o tamanho no nome; supomos ${pairNote.slice("tamanho presumido ".length)}`;
       return "Parecido, mas não temos certeza";
   }
 }

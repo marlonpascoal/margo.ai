@@ -1440,6 +1440,27 @@ class XrayPair(Row):
     xray_item_id: UUID
 
 
+class XrayPrint(Row):
+    bytes: int
+    created_at: datetime
+    id: UUID
+    pages: int
+    path: str
+    updated_at: datetime
+    version: str
+    xray_id: UUID
+
+
+class XrayPrintToken(Row):
+    created_at: datetime
+    expires_at: datetime
+    id: UUID
+    token_hash: str
+    updated_at: datetime
+    used_at: datetime | None
+    xray_id: UUID
+
+
 class XrayStore(Row):
     capture_rank: int | None
     capture_score: Decimal | None

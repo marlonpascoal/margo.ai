@@ -96,3 +96,37 @@ export async function undoAnswerAction(itemId: string): Promise<ActionResult<voi
   const m = await requirePortal({ action: "answer_doubts", flags: FLAGS });
   return done(await undoAnswer(monitorDeps(), await actor(m.personId), itemId));
 }
+
+/** P20 "Uma loja minha": the account's own iFood store, by its channel_store row (read as this person, RLS). */
+export async function createOwnMonitorAction(input: {
+  channelStoreId: string;
+  everyDays: number;
+  radiusKm: 2 | 3 | 5;
+  categories: string[];
+  rules: { exclude_closed?: boolean; exclude_national_chains?: boolean; same_neighborhood_only?: boolean };
+}): Promise<ActionResult<{ monitorId: string; xrayId: string; targetKind: "own" | "competitor" }>> {
+  const m = await requirePortal({ action: "manage_monitors", flags: FLAGS });
+  const { data: store } = await m.db.from("channel_store").select("external_id, public_url").eq("id", input.channelStoreId).eq("channel", "ifood").maybeSingle();
+  if (!store) return { ok: false, error: refusalText({ code: "bad_store" }) };
+  // The catalog may already know the store's public link (an earlier X-ray); otherwise the channel_store's.
+  const known = (await monitorDeps().rpc("monitor_store_lookup", { p_external_id: store.external_id })) as { url: string | null } | null;
+  const url = known?.url || store.public_url;
+  if (!url || !storeIdFromUrl(url)) return { ok: false, error: OWN_NEEDS_LINK };
+  return createMonitorAction({ url, kitchenId: null, everyDays: input.everyDays, radiusKm: input.radiusKm, categories: input.categories, rules: input.rules });
+}
+
+/** P20 "Uma loja minha" without a known link: the owner pastes it once. */
+const OWN_NEEDS_LINK = "Ainda não temos o link desta loja no iFood. Escolha \"Um concorrente\" e cole o link dela: reconhecemos que é sua.";
+
+export type StoreLookup = { state: "invalid" } | { state: "unknown" } | { state: "found"; name: string; area: string | null; category: string | null } | { state: "own"; name: string };
+
+/** P20 after a paste: "Loja encontrada: ..." from the public catalog, or "Esta loja é sua". */
+export async function lookupStoreAction(url: string): Promise<StoreLookup> {
+  const m = await requirePortal({ action: "manage_monitors", flags: FLAGS });
+  const id = storeIdFromUrl(url);
+  if (!id) return { state: "invalid" };
+  const { data: own } = await m.db.from("channel_store").select("name").eq("channel", "ifood").eq("external_id", id).maybeSingle();
+  if (own) return { state: "own", name: own.name };
+  const s = (await monitorDeps().rpc("monitor_store_lookup", { p_external_id: id })) as { name: string | null; area: string | null; category: string | null; url: string | null } | null;
+  return s?.name ? { state: "found", name: s.name, area: s.area, category: s.category } : { state: "unknown" };
+}

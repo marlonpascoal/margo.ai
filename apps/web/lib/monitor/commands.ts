@@ -48,7 +48,8 @@ export async function createMonitor(deps: MonitorDeps, actor: Actor, m: NewMonit
       p_account: m.accountId,
       p_external_id: m.externalId,
       p_url: m.url,
-      p_kitchen: m.kitchenId ?? undefined,
+      // No default in SQL: an own store (or a competitor without a kitchen) sends null, never omits it.
+      p_kitchen: m.kitchenId,
       p_every_days: m.everyDays,
       p_radius_km: m.radiusKm,
       p_categories: m.categories,
@@ -97,7 +98,7 @@ export async function answerMany(deps: MonitorDeps, actor: Actor, xrayId: string
 /** P22 "Confirmar todas as sugestões" (itemIds null) or "Confirmar sugestões dos selecionados". */
 export async function confirmSuggestions(deps: MonitorDeps, actor: Actor, xrayId: string, itemIds: string[] | null) {
   return attempt(async () => {
-    await calcQueued(deps, await deps.rpc("monitor_confirm_suggestions", { p_xray: xrayId, p_items: itemIds ?? undefined, ...who(actor) }));
+    await calcQueued(deps, await deps.rpc("monitor_confirm_suggestions", { p_xray: xrayId, p_items: itemIds, ...who(actor) }));
   });
 }
 

@@ -1,0 +1,491 @@
+{
+ "_label": "SINTÉTICO: cardápios inventados para o e2e do raio-X no portal (apps/web/e2e/raio-x.e2e.ts)",
+ "target": [
+  {
+   "external_item_id": "t-1",
+   "name": "X-Burger sintético",
+   "taxonomy_level2": "HAMBURGUERES",
+   "price_cents": 2000,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-2",
+   "name": "X-Salada sintético",
+   "taxonomy_level2": "HAMBURGUERES",
+   "price_cents": 2400,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-3",
+   "name": "X-Bacon sintético",
+   "taxonomy_level2": "HAMBURGUERES",
+   "price_cents": 3690,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-4",
+   "name": "Batata frita média",
+   "taxonomy_level2": "PORCOES",
+   "price_cents": 1490,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-5",
+   "name": "Onion rings",
+   "taxonomy_level2": "PORCOES",
+   "price_cents": 2290,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-6",
+   "name": "Refrigerante cola lata 350 ml",
+   "taxonomy_level2": "BEBIDAS",
+   "price_cents": 600,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-7",
+   "name": "Refrigerante cola 2 litros",
+   "taxonomy_level2": "BEBIDAS",
+   "price_cents": 1290,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-8",
+   "name": "Milkshake de chocolate 400 ml",
+   "taxonomy_level2": "SOBREMESAS",
+   "price_cents": 1690,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-9",
+   "name": "Brownie de chocolate",
+   "taxonomy_level2": "SOBREMESAS",
+   "price_cents": 1290,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-10",
+   "name": "Suco de laranja 500 ml",
+   "taxonomy_level2": "BEBIDAS",
+   "price_cents": 1090,
+   "unit": "un"
+  },
+  {
+   "external_item_id": "t-11",
+   "name": "Lanche especial da casa sintética",
+   "taxonomy_level2": "HAMBURGUERES",
+   "price_cents": 4290,
+   "unit": "un"
+  }
+ ],
+ "neighbors": [
+  {
+   "name": "Vizinha Sintética 1",
+   "distance_m": 300,
+   "items": [
+    {
+     "external_item_id": "n1-1",
+     "name": "X-Burger sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2600,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-2",
+     "name": "X-Salada sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2500,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-3",
+     "name": "X-Bacon sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3100,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-4",
+     "name": "Batata frita média",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 1840,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-5",
+     "name": "Onion rings",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 2190,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-6",
+     "name": "Refrigerante cola lata 350 ml",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 600,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-7",
+     "name": "Refrigerante cola 2 litros",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 1590,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-8",
+     "name": "Milkshake de chocolate 400 ml",
+     "taxonomy_level2": "SOBREMESAS",
+     "price_cents": 1990,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-9",
+     "name": "Brownie de chocolate",
+     "taxonomy_level2": "SOBREMESAS",
+     "price_cents": 1390,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-10",
+     "name": "Suco de laranja 500 ml",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 990,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n1-x",
+     "name": "Combo sintético da vizinha 1",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3990,
+     "unit": "un"
+    }
+   ]
+  },
+  {
+   "name": "Vizinha Sintética 2",
+   "distance_m": 550,
+   "items": [
+    {
+     "external_item_id": "n2-1",
+     "name": "X-Burger sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2500,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n2-2",
+     "name": "X-Salada sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2450,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n2-3",
+     "name": "X-Bacon sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3200,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n2-4",
+     "name": "Batata frita média",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 1790,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n2-5",
+     "name": "Onion rings",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 2290,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n2-6",
+     "name": "Refrigerante cola lata 350 ml",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 650,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n2-7",
+     "name": "Refrigerante cola 2 litros",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 1550,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n2-8",
+     "name": "Milkshake de chocolate 400 ml",
+     "taxonomy_level2": "SOBREMESAS",
+     "price_cents": 1890,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n2-x",
+     "name": "Combo sintético da vizinha 2",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3990,
+     "unit": "un"
+    }
+   ]
+  },
+  {
+   "name": "Vizinha Sintética 3",
+   "distance_m": 800,
+   "items": [
+    {
+     "external_item_id": "n3-1",
+     "name": "X-Burger sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2700,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n3-2",
+     "name": "X-Salada sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2400,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n3-3",
+     "name": "X-Bacon sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3000,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n3-4",
+     "name": "Batata frita média",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 1900,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n3-5",
+     "name": "Onion rings",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 2090,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n3-6",
+     "name": "Refrigerante cola lata 350 ml",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 600,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n3-7",
+     "name": "Refrigerante cola 2 litros",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 1650,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n3-10",
+     "name": "Suco de laranja 500 ml",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 1190,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n3-x",
+     "name": "Combo sintético da vizinha 3",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3990,
+     "unit": "un"
+    }
+   ]
+  },
+  {
+   "name": "Vizinha Sintética 4",
+   "distance_m": 1050,
+   "items": [
+    {
+     "external_item_id": "n4-1",
+     "name": "X-Burger sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2400,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n4-2",
+     "name": "X-Salada sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2550,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n4-3",
+     "name": "X-Bacon sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3150,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n4-4",
+     "name": "Batata frita média",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 1850,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n4-5",
+     "name": "Onion rings",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 2190,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n4-6",
+     "name": "Refrigerante cola lata 350 ml",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 550,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n4-7",
+     "name": "Refrigerante cola 2 litros",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 1590,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n4-x",
+     "name": "Combo sintético da vizinha 4",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3990,
+     "unit": "un"
+    }
+   ]
+  },
+  {
+   "name": "Vizinha Sintética 5",
+   "distance_m": 1300,
+   "items": [
+    {
+     "external_item_id": "n5-1",
+     "name": "X-Burger sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2800,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n5-2",
+     "name": "X-Salada sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2350,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n5-3",
+     "name": "X-Bacon sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3050,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n5-4",
+     "name": "Batata frita média",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 1800,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n5-5",
+     "name": "Onion rings",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 2390,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n5-6",
+     "name": "Refrigerante cola lata 350 ml",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 600,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n5-7",
+     "name": "Refrigerante cola 2 litros",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 1490,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n5-x",
+     "name": "Combo sintético da vizinha 5",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3990,
+     "unit": "un"
+    }
+   ]
+  },
+  {
+   "name": "Vizinha Sintética 6",
+   "distance_m": 1550,
+   "items": [
+    {
+     "external_item_id": "n6-1",
+     "name": "X-Burger sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2550,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n6-2",
+     "name": "X-Salada sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 2500,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n6-3",
+     "name": "X-Bacon sintético",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3100,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n6-4",
+     "name": "Batata frita média",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 1990,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n6-5",
+     "name": "Onion rings",
+     "taxonomy_level2": "PORCOES",
+     "price_cents": 2150,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n6-6",
+     "name": "Refrigerante cola lata 350 ml",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 650,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n6-7",
+     "name": "Refrigerante cola 2 litros",
+     "taxonomy_level2": "BEBIDAS",
+     "price_cents": 1690,
+     "unit": "un"
+    },
+    {
+     "external_item_id": "n6-x",
+     "name": "Combo sintético da vizinha 6",
+     "taxonomy_level2": "HAMBURGUERES",
+     "price_cents": 3990,
+     "unit": "un"
+    }
+   ]
+  }
+ ]
+}

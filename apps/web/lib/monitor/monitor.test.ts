@@ -3,8 +3,8 @@
 // workers/collector/tests/test_b01_monitor_db.py.
 import { describe, expect, it } from "vitest";
 import type { ReadDb } from "@/lib/supabase/reader";
-import { answerDoubt, confirmSuggestions, createMonitor, undoAnswer, type MonitorDeps } from "./commands";
-import { loadDoubts, loadResult, paceInput, type Progress } from "./load";
+import { answerDoubt, confirmSuggestions, createMonitor, markTest, undoAnswer, unmarkTest, type MonitorDeps } from "./commands";
+import { loadDoubts, loadResult, loadTestPlan, paceInput, type Progress } from "./load";
 import { canAnswerDoubts, canManageMonitors, doubtReason, etaRange, etaText, isSlow, monitorRefusal, periodOptions, refusalText, roundUpMinutes, type PaceInput } from "./rules";
 
 const NOW = new Date("2026-11-07T14:00:00-03:00");
@@ -196,6 +196,36 @@ describe("B01 P22 reasons after pairing Stage 2", () => {
   it("B01_P22_stage2_reasons_in_owner_words", () => {
     expect(doubtReason("proteína ilegível", 2)).toBe("Não deu para ler a proteína no nome");
     expect(doubtReason("tamanho presumido 500 ml", 2)).toBe("Não deu para ler o tamanho no nome; supomos 500 ml");
+  });
+});
+
+describe("B01 P23 Vou testar", () => {
+  it("B01_test_plan_refusals_in_owner_words", () => {
+    expect(monitorRefusal("monitor_test_limit:3")).toEqual({ code: "test_limit", limit: 3 });
+    expect(monitorRefusal("monitor_test_own_only")).toEqual({ code: "test_own_only" });
+    expect(monitorRefusal("monitor_test_bad_item")).toEqual({ code: "test_bad_item" });
+    expect(refusalText({ code: "test_limit", limit: 3 })).toBe("Você já está testando 3 itens. Desfaça um para escolher outro.");
+  });
+
+  it("B01_test_plan_commands_send_the_actor_and_map_the_limit", async () => {
+    const f = fakeDeps({ monitor_test_mark: "t1", monitor_test_unmark: "t1" });
+    expect(await markTest(f.deps, actor, MON, "o1", RUN)).toEqual({ ok: true, value: undefined });
+    expect(await unmarkTest(f.deps, actor, MON, "o1")).toEqual({ ok: true, value: undefined });
+    expect(f.calls).toEqual([
+      ["monitor_test_mark", { p_monitor: MON, p_item: "o1", p_xray: RUN, p_actor: "p1", p_ip: undefined, p_user_agent: undefined }],
+      ["monitor_test_unmark", { p_monitor: MON, p_item: "o1", p_actor: "p1", p_ip: undefined, p_user_agent: undefined }],
+    ]);
+    expect(await markTest(fakeDeps({}, "monitor_test_limit:3").deps, actor, MON, "o2", RUN)).toEqual({ ok: false, refusal: { code: "test_limit", limit: 3 } });
+  });
+
+  it("A02_test_plan_loader_reads_the_run_with_rls_first", async () => {
+    const calls: [string, Record<string, unknown>][] = [];
+    const hidden = { db: fakeDb({}), env: "sandbox" as const, rpc: async (fn: string, a: Record<string, unknown>) => (calls.push([fn, a]), {}) };
+    expect(await loadTestPlan(hidden, MON, RUN)).toBeNull();
+    expect(calls).toEqual([]);
+    const seen = { db: fakeDb({ xray_monitor: [monitorRow], xray: [{ id: RUN }] }), env: "sandbox" as const, rpc: async (fn: string, a: Record<string, unknown>) => (calls.push([fn, a]), { active: 1 }) };
+    expect(await loadTestPlan(seen, MON, RUN)).toEqual({ active: 1 });
+    expect(calls).toEqual([["monitor_test_plan", { p_xray: RUN }]]);
   });
 });
 

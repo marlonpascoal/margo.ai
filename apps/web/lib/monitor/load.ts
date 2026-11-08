@@ -385,6 +385,60 @@ export async function loadItemHistory(deps: LoadDeps, monitorId: string, ownItem
   return (await deps.rpc("monitor_item_history", { p_monitor: monitorId, p_item: ownItemId })) as ItemHistoryPoint[];
 }
 
+// P23 "Seus testes" (migration 20261231000008) -----------------------------------------------------------------------
+
+/** One own item on one run: own price, M1-05 middle, M1-06 gap, M1-07 reading (null when left out), M1-10 position. */
+export interface TestPoint {
+  xray_id: string;
+  /** São Paulo day of the run. */
+  on: string | null;
+  /** The xray_item of that run. */
+  item_id: string;
+  own_cents: number | null;
+  parity_cents: number | null;
+  gap_pct: number | null;
+  reading: ResultItem["reading"] | null;
+  rank: number | null;
+  stores: number | null;
+}
+
+export interface TestItem {
+  test_id: string;
+  /** public_menu_item id, stable across runs: what markTestAction and unmarkTestAction take. */
+  own_item_id: string;
+  name: string | null;
+  marked_at: string;
+  /** São Paulo day of the click. */
+  marked_on: string;
+  marked_by: string | null;
+  from_xray_id: string;
+  /** Marked on the run shown: nothing changed yet. */
+  same_run: boolean;
+  /** The run where it was marked. */
+  then: TestPoint | null;
+  /** The run shown; null when the item is not in it. */
+  now: TestPoint | null;
+}
+
+export interface TestPlan {
+  xray_id: string;
+  monitor_id: string;
+  target_kind: "own" | "competitor";
+  /** m1.test_max_items. */
+  max_items: number;
+  active: number;
+  /** xray_item id of this run to its own item id, for the "Vou testar" buttons of ResultItem rows. */
+  own_item_ids: Record<string, string>;
+  /** Active tests, oldest first. */
+  items: TestItem[];
+}
+
+/** P23 "Seus testes" of a run of a visible monitoring (RLS read first). */
+export async function loadTestPlan(deps: LoadDeps, monitorId: string, xrayId: string): Promise<TestPlan | null> {
+  const run = await visibleRun(deps, monitorId, xrayId);
+  return run ? ((await deps.rpc("monitor_test_plan", { p_xray: run.xrayId })) as TestPlan | null) : null;
+}
+
 // P23 extras (migration 20261231000001) ------------------------------------------------------------------------------
 
 /** "Ver as lojas": per analyzed item, the accepted stores, cheapest first, named as the owner may see them (Q7). */

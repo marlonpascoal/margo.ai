@@ -1,6 +1,6 @@
 // B01 owner journey screens, pure parts (lib/monitor/view.ts): the words and numbers the prototype draws.
 import { describe, expect, it } from "vitest";
-import type { MonitorSummary, ResultItem } from "./load";
+import type { History, MonitorSummary, ResultItem, TestItem, TestPoint } from "./load";
 import {
   byGroup,
   dayMon,
@@ -8,6 +8,7 @@ import {
   headline,
   linePaths,
   monitorPill,
+  nextRunText,
   periodLabel,
   planLine,
   positionChange,
@@ -17,11 +18,17 @@ import {
   rankDelta,
   readSoFar,
   readingGroups,
+  runLabel,
+  runNumber,
   scoreChangeSince,
   scoreDelta,
   stepTexts,
   storeListWithOwn,
   stripGeometry,
+  testChangeSentence,
+  testCountLine,
+  testPositionChange,
+  timelineWindow,
   weekdayDayMon,
 } from "./view";
 
@@ -202,5 +209,111 @@ describe("B01 P24 history", () => {
   it("B01_P24_a_missing_run_breaks_the_line", () => {
     const p = linePaths([1, 2, null, 4], { width: 100, height: 50, left: 0, right: 0, top: 0, bottom: 0, lo: 0, hi: 4 });
     expect(p.segments).toHaveLength(2);
+  });
+});
+
+describe("B01 P23 continuity: timeline, tests and next steps", () => {
+  const run = (id: string, on: string, over: Partial<History["runs"][number]> = {}): History["runs"][number] => ({
+    xray_id: id,
+    created_at: `${on}T10:00:00-03:00`,
+    on,
+    status: "ready",
+    stores_read: 9,
+    items_compared: 20,
+    rank: 4,
+    stores_ranked: 9,
+    price_index: 1,
+    score: 60,
+    score_version: "v3",
+    delta: null,
+    delta_items: null,
+    by_category: [],
+    ...over,
+  });
+  const runs = [run("a", "2026-10-26"), run("b", "2026-11-02", { status: "collecting", on: null }), run("c", "2026-11-02"), run("d", "2026-11-09")];
+
+  it("B01_P23_run_number_counts_only_calculated_runs", () => {
+    expect(runNumber(runs, "a")).toBe(1);
+    expect(runNumber(runs, "c")).toBe(2);
+    expect(runNumber(runs, "d")).toBe(3);
+    expect(runNumber(runs, "b")).toBeNull();
+    expect(runLabel(runs, "d")).toBe("Raio-X 3 desta loja");
+  });
+
+  it("B01_P23_next_run_words", () => {
+    expect(nextRunText("2026-11-16T09:00:00-03:00", "active")).toBe("Próximo em seg 16/nov");
+    expect(nextRunText("2026-11-16T09:00:00-03:00", "paused_by_person")).toBe("Acompanhamento pausado");
+    expect(nextRunText(null, "paused_by_plan")).toBe("Acompanhamento pausado");
+    expect(nextRunText(null, "removed")).toBe("Acompanhamento encerrado");
+    expect(nextRunText(null, "active")).toBeNull();
+  });
+
+  it("B01_P23_timeline_window_of_8_with_this_run_highlighted_and_the_next_dotted", () => {
+    const many = Array.from({ length: 10 }, (_, i) => run(`r${i}`, `2026-09-${String(i + 1).padStart(2, "0")}`, { score: 50 + i, rank: 10 - i }));
+    const w = timelineWindow(many, "r9", { nextRunAt: "2026-09-17T10:00:00-03:00", status: "active" });
+    expect(w.points.map((p) => p.xray_id)).toEqual(["r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9"]);
+    expect(w.points.filter((p) => p.current).map((p) => p.xray_id)).toEqual(["r9"]);
+    expect(w.next).toEqual({ label: "17/set" });
+    const old = timelineWindow(many, "r0", { nextRunAt: "2026-09-17T10:00:00-03:00", status: "active" });
+    expect(old.points.map((p) => p.xray_id)).toEqual(["r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"]);
+    expect(old.next).toBeNull();
+    const paused = timelineWindow(many, "r9", { nextRunAt: "2026-09-17T10:00:00-03:00", status: "paused_by_person" });
+    expect(paused.next).toBeNull();
+  });
+
+  it("B01_P23_timeline_with_a_single_run_keeps_the_point_and_the_next", () => {
+    const w = timelineWindow([run("a", "2026-11-09")], "a", { nextRunAt: "2026-11-16T09:00:00-03:00", status: "active" });
+    expect(w.points).toHaveLength(1);
+    expect(w.points[0]).toMatchObject({ current: true, score: 60, rank: 4, stores_ranked: 9, label: "09/nov" });
+    expect(w.next?.label).toBe("16/nov");
+    expect(w.single).toBe(true);
+  });
+
+  const point = (over: Partial<TestPoint> = {}): TestPoint => ({
+    xray_id: "x1",
+    on: "2026-11-02",
+    item_id: "i1",
+    own_cents: 2000,
+    parity_cents: 2500,
+    gap_pct: -0.2,
+    reading: "pode_subir",
+    rank: 5,
+    stores: 9,
+    ...over,
+  });
+  const test = (over: Partial<TestItem> = {}): TestItem => ({
+    test_id: "t",
+    own_item_id: "o",
+    name: "X-Burger",
+    marked_at: "2026-11-02T15:00:00-03:00",
+    marked_on: "2026-11-02",
+    marked_by: "Pessoa",
+    from_xray_id: "x1",
+    same_run: false,
+    then: point(),
+    now: point({ xray_id: "x2", on: "2026-11-09", own_cents: 2400, parity_cents: 2450, gap_pct: -0.02, reading: "na_media", rank: 3 }),
+    ...over,
+  });
+
+  it("B01_P23_test_change_sentence", () => {
+    expect(testChangeSentence(test())).toBe("Marcado em 02/nov: você R$ 20,00, meio R$ 25,00. Agora: você R$ 24,00, meio R$ 24,50, na média.");
+    expect(testChangeSentence(test({ same_run: true, now: point() }))).toBe("Marcado em 02/nov: você R$ 20,00, meio R$ 25,00. O próximo raio-X mostra o que mudou.");
+    expect(testChangeSentence(test({ now: null }))).toBe("Marcado em 02/nov: você R$ 20,00, meio R$ 25,00. Agora: o item não apareceu neste raio-X.");
+    expect(testChangeSentence(test({ now: point({ reading: "nao_mexer", own_cents: 3000 }) }))).toBe(
+      "Marcado em 02/nov: você R$ 20,00, meio R$ 25,00. Agora: você R$ 30,00, meio R$ 25,00, não mexa sem saber o custo.",
+    );
+    expect(testChangeSentence(test({ then: point({ parity_cents: null, reading: null }) }))).toBe("Marcado em 02/nov: você R$ 20,00. Agora: você R$ 24,00, meio R$ 24,50, na média.");
+  });
+
+  it("B01_P23_test_position_change_M1_10", () => {
+    expect(testPositionChange(test())).toBe("Entre as lojas que vendem: era 5ª de 9, agora 3ª de 9.");
+    expect(testPositionChange(test({ same_run: true }))).toBeNull();
+    expect(testPositionChange(test({ now: point({ rank: null }) }))).toBeNull();
+  });
+
+  it("B01_P23_next_steps_test_line", () => {
+    expect(testCountLine(0, 3)).toBe("Nenhum item em teste.");
+    expect(testCountLine(1, 3)).toBe("1 de 3 itens em teste.");
+    expect(testCountLine(3, 3)).toBe("3 de 3 itens em teste.");
   });
 });

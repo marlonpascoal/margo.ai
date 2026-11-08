@@ -870,4 +870,31 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | raio-X desde | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:69` | P24 lead "{loja} · N raio-X desde dd/mmm." (prototype: "N raio-X semanais") | |
 | Não conseguimos carregar agora. Seus acompanhamentos continuam rodando. | `apps/web/app/app/raio-x/error.tsx:7` | P19 to P24 read error (prototype P19 state), with "Tentar de novo" | |
 | Raio-X · lojas que você acompanha | `apps/web/app/app/page.tsx:138` | P08 (phone) list entry to P19 while m1.portal is on (MenuDono shows no entries on the phone) | |
+| Raio-X {n} desta loja | `apps/web/lib/monitor/view.ts:323` | P23 timeline title: n = this run among the monitoring's calculated runs (Marlon, 08/nov) | |
+| Próximo em {seg 16/nov} | `apps/web/lib/monitor/view.ts:330` | P23 timeline and "Até o próximo raio-X": date of the next run of an active monitoring | |
+| Acompanhamento pausado | `apps/web/lib/monitor/view.ts:329` | P23 timeline and "Até o próximo raio-X" when the monitoring is paused (by the person or the plan) | |
+| Acompanhamento encerrado | `apps/web/lib/monitor/view.ts:328` | P23 timeline and "Até o próximo raio-X" when the monitoring was removed | |
+| Posição | `apps/web/app/app/raio-x/_components/Timeline.tsx:85` | P23 timeline: second line of the chart, M1-10 position with "{4ª} de {9}" | |
+| 1ª = mais barata. | `apps/web/app/app/raio-x/_components/Timeline.tsx:122` | P23 timeline under the chart, and after the item position line in "Seus testes" | |
+| O histórico começa aqui. A cada raio-X somamos um ponto. | `apps/web/app/app/raio-x/_components/Timeline.tsx:123` | P23 timeline with a single calculated run | |
+| Ver histórico | `apps/web/app/app/raio-x/_components/Timeline.tsx:126` | P23 timeline link and "Até o próximo raio-X" button, to P24 (screen only) | |
+| Vou testar | `apps/web/app/app/raio-x/_components/TestButton.tsx:45` | P23 item button of an own-store run: marks the item to test until the next run | |
+| Testando · Desfazer | `apps/web/app/app/raio-x/_components/TestButton.tsx:45` | P23 item button of a marked item, and in "Seus testes" | |
+| Só quem responde as dúvidas desta loja escolhe os testes. | `apps/web/app/app/raio-x/_components/TestButton.tsx:30` | P23 "Vou testar" hint, disabled for Financeiro (and a Gerente of another kitchen) | |
+| Você já está testando {3} itens. | `apps/web/app/app/raio-x/_components/TestButton.tsx:30` | P23 "Vou testar" hint, disabled when m1.test_max_items are marked | |
+| Você já está testando {3} itens. Desfaça um para escolher outro. | `apps/web/lib/monitor/rules.ts:110` | P23 refusal monitor_test_limit:3 from the server | |
+| Só dá para testar itens de uma loja sua. | `apps/web/lib/monitor/rules.ts:112` | P23 refusal monitor_test_own_only (competitor monitoring) | |
+| Este item não está neste raio-X. | `apps/web/lib/monitor/rules.ts:114` | P23 refusal monitor_test_bad_item | |
+| Seus testes | `apps/web/app/app/raio-x/_components/TestPlan.tsx:22` | P23 section of an own-store run with the items marked "Vou testar" | |
+| Escolha até {3} itens para testar até o próximo raio-X. Mude o preço de um deles no iFood e veja aqui o que aconteceu. | `apps/web/app/app/raio-x/_components/TestPlan.tsx:41` | P23 "Seus testes" when nothing is marked (screen only) | |
+| Marcado em {02/nov}: você {R$ 20,00}, meio {R$ 25,00}. | `apps/web/lib/monitor/view.ts:381` | P23 "Seus testes": own price and middle (M1-05) on the run where the item was marked | |
+| Agora: você {R$ 24,00}, meio {R$ 24,50}, {na média} | `apps/web/lib/monitor/view.ts:385` | P23 "Seus testes": the run shown, with the M1-07 reading in words | |
+| com espaço para subir / na média / não mexa sem saber o custo | `apps/web/lib/monitor/view.ts:369` | P23 "Seus testes": M1-07 reading words after "Agora:" | |
+| O próximo raio-X mostra o que mudou. | `apps/web/lib/monitor/view.ts:382` | P23 "Seus testes": an item marked on the run shown | |
+| Agora: o item não apareceu neste raio-X. | `apps/web/lib/monitor/view.ts:383` | P23 "Seus testes": the item is not in the run shown | |
+| sem comparação neste raio-X | `apps/web/lib/monitor/view.ts:385` | P23 "Seus testes": the item is in the run shown without a price or middle | |
+| Entre as lojas que vendem: era {5ª} de {9}, agora {3ª} de {9}. | `apps/web/lib/monitor/view.ts:391` | P23 "Seus testes": M1-10 position of the item, then and now | |
+| Até o próximo raio-X | `apps/web/app/app/raio-x/_components/NextSteps.tsx:27` | P23 end of page, replacing the end point (prints) | |
+| Nenhum item em teste. / {1} de {3} itens em teste. | `apps/web/lib/monitor/view.ts:396` | P23 "Até o próximo raio-X" (own-store runs), before the next run date | |
+| Acompanhar um concorrente | `apps/web/app/app/raio-x/_components/NextSteps.tsx:33` | P23 "Até o próximo raio-X" button to P20, when the plan allows competitors (screen only) | |
 

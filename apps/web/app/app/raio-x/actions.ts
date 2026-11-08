@@ -1,5 +1,5 @@
 "use server";
-// P19 to P22 writes of the M1 owner journey (docs/m1-owner-journey-draft.md), behind m1.portal and m1.raio_x. Each
+// P19 to P23 writes of the M1 owner journey (docs/m1-owner-journey-draft.md), behind m1.portal and m1.raio_x. Each
 // action checks the 04 §5 row here (404 otherwise, 05 convention) and calls the audited SQL function, which checks the
 // person, the kitchen scope and the plan limits again on the server and writes audit_log (A04). Pages come with the
 // screens; these return a result for useActionState instead of redirecting.
@@ -10,9 +10,11 @@ import {
   answerMany,
   confirmSuggestions,
   createMonitor,
+  markTest,
   setMonitorPeriod,
   setMonitorStatus,
   undoAnswer,
+  unmarkTest,
   type Actor,
 } from "@/lib/monitor/commands";
 import { monitorDeps } from "@/lib/monitor/deps";
@@ -97,6 +99,19 @@ export async function confirmSuggestionsAction(xrayId: string, itemIds: string[]
 export async function undoAnswerAction(itemId: string): Promise<ActionResult<void>> {
   const m = await requirePortal({ action: "answer_doubts", flags: FLAGS });
   return done(await undoAnswer(monitorDeps(), await actor(m.personId), itemId));
+}
+
+/** P23 "Vou testar": the own item (TestPlan.own_item_ids of the run) of run xrayId. Same people as answering doubts;
+ * monitor_test_mark checks the person and the kitchen again and refuses a fourth item (monitor_test_limit:3). */
+export async function markTestAction(monitorId: string, xrayId: string, ownItemId: string): Promise<ActionResult<void>> {
+  const m = await requirePortal({ action: "answer_doubts", flags: FLAGS });
+  return done(await markTest(monitorDeps(), await actor(m.personId), monitorId, ownItemId, xrayId));
+}
+
+/** P23 "Testando · Desfazer". */
+export async function unmarkTestAction(monitorId: string, ownItemId: string): Promise<ActionResult<void>> {
+  const m = await requirePortal({ action: "answer_doubts", flags: FLAGS });
+  return done(await unmarkTest(monitorDeps(), await actor(m.personId), monitorId, ownItemId));
 }
 
 export type StoreLookup = { state: "invalid" } | { state: "unknown" } | { state: "found"; name: string; area: string | null; category: string | null } | { state: "own"; name: string };

@@ -4,7 +4,7 @@
 // "diferença de preço por venda", never profit (Marlon, M1-12 decision row).
 import { money } from "@/lib/xray/format";
 import { GROUP_LABEL, type Group } from "./rules";
-import type { CaptureState, MonitorSummary, Progress, Result, ResultItem } from "./load";
+import type { CaptureState, History, MonitorStatus, MonitorSummary, Progress, Result, ResultItem, TestItem } from "./load";
 
 const TZ = "America/Sao_Paulo";
 const MON = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
@@ -304,4 +304,94 @@ export function linePaths(values: (number | null)[], opts: { width: number; heig
   });
   if (cur.length) segments.push(cur.join(" "));
   return { segments, x, y };
+}
+
+// P23 continuity (Marlon, 08/nov): the run as one point of the monitoring, the items under test, the next run ----------
+
+type HistoryRun = History["runs"][number];
+const calculated = (runs: HistoryRun[]) => runs.filter((r) => (r.status === "ready" || r.status === "delivered") && r.on);
+
+/** Index of the run among the monitoring's calculated runs, oldest = 1; null for a run not calculated. */
+export function runNumber(runs: HistoryRun[], xrayId: string): number | null {
+  const i = calculated(runs).findIndex((r) => r.xray_id === xrayId);
+  return i < 0 ? null : i + 1;
+}
+
+/** "Raio-X 3 desta loja". */
+export function runLabel(runs: HistoryRun[], xrayId: string): string | null {
+  const n = runNumber(runs, xrayId);
+  return n === null ? null : `Raio-X ${n} desta loja`;
+}
+
+/** "Próximo em seg 16/nov", "Acompanhamento pausado", "Acompanhamento encerrado"; null with no date yet. */
+export function nextRunText(nextRunAt: string | null, status: MonitorStatus): string | null {
+  if (status === "removed") return "Acompanhamento encerrado";
+  if (status !== "active") return "Acompanhamento pausado";
+  return nextRunAt ? `Próximo em ${weekdayDayMon(nextRunAt)}` : null;
+}
+
+export interface TimelinePoint {
+  xray_id: string;
+  label: string;
+  /** M1-12 v3 "Itens alinhados", 0 to 100. */
+  score: number | null;
+  /** M1-10 position, 1 = cheapest. */
+  rank: number | null;
+  stores_ranked: number | null;
+  current: boolean;
+}
+
+/**
+ * P23 timeline: up to `max` calculated runs ending at the newest (or at the run shown, when it is older than that window),
+ * the run shown marked current, and the next run as an empty point only when the window ends at the newest run and the
+ * monitoring is active with a date. Numbers: M1-12 v3 score and M1-10 rank of each run, never interpolated.
+ */
+export function timelineWindow(runs: HistoryRun[], xrayId: string, o: { nextRunAt: string | null; status: MonitorStatus; max?: number }) {
+  const max = o.max ?? 8;
+  const all = calculated(runs);
+  const at = all.findIndex((r) => r.xray_id === xrayId);
+  const end = at < 0 || at >= all.length - max ? all.length : at + max;
+  const win = all.slice(Math.max(0, end - max), end);
+  const points: TimelinePoint[] = win.map((r) => ({
+    xray_id: r.xray_id,
+    label: dayMon(r.on!),
+    score: r.score,
+    rank: r.rank,
+    stores_ranked: r.stores_ranked,
+    current: r.xray_id === xrayId,
+  }));
+  const next = end === all.length && o.status === "active" && o.nextRunAt ? { label: dayMon(o.nextRunAt) } : null;
+  return { points, next, single: all.length === 1 };
+}
+
+/** M1-07 reading in the owner's words, for "Seus testes". */
+export function readingWords(reading: ResultItem["reading"]): string {
+  return reading === "pode_subir" ? "com espaço para subir" : reading === "na_media" ? "na média" : "não mexa sem saber o custo";
+}
+
+const priceAndMiddle = (own: number | null, parity: number | null) =>
+  [own !== null ? `você ${brl(own)}` : null, parity !== null ? `meio ${brl(parity)}` : null].filter(Boolean).join(", ");
+
+/**
+ * "Seus testes" line of one item: own price and M1-05 middle when it was marked, then on the run shown with its M1-07
+ * reading. "Marcado em 02/nov: você R$ 20,00, meio R$ 25,00. Agora: você R$ 24,00, meio R$ 24,50, na média."
+ */
+export function testChangeSentence(t: TestItem): string {
+  const then = t.then ? priceAndMiddle(t.then.own_cents, t.then.parity_cents) : "";
+  const head = `Marcado em ${dayMon(t.marked_on)}${then ? `: ${then}` : ""}.`;
+  if (t.same_run) return `${head} O próximo raio-X mostra o que mudou.`;
+  if (!t.now) return `${head} Agora: o item não apareceu neste raio-X.`;
+  const now = [priceAndMiddle(t.now.own_cents, t.now.parity_cents), t.now.reading ? readingWords(t.now.reading) : null].filter(Boolean).join(", ");
+  return `${head} Agora: ${now || "sem comparação neste raio-X"}.`;
+}
+
+/** M1-10 position of the item among the stores selling it, then and now: "Entre as lojas que vendem: era 5ª de 9, agora 3ª de 9." */
+export function testPositionChange(t: TestItem): string | null {
+  if (t.same_run || !t.then || !t.now || t.then.rank === null || t.now.rank === null || t.then.stores === null || t.now.stores === null) return null;
+  return `Entre as lojas que vendem: era ${ordinal(t.then.rank)} de ${t.then.stores}, agora ${ordinal(t.now.rank)} de ${t.now.stores}.`;
+}
+
+/** "Até o próximo raio-X" count of the test plan (m1.test_max_items). */
+export function testCountLine(active: number, max: number): string {
+  return active === 0 ? "Nenhum item em teste." : `${active} de ${max} itens em teste.`;
 }

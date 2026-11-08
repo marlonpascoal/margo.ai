@@ -3,6 +3,8 @@
 // Pages re-check their own 04 §5 row (canPortal) and flags themselves; this layout is not their check.
 import type { ReactNode } from "react";
 import MenuDono from "@/components/MenuDono";
+import { isEnabled } from "@/lib/flags";
+import { canPortal } from "@/lib/permissions";
 import { requireMember } from "@/lib/portal/session";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +12,11 @@ export const dynamic = "force-dynamic";
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const m = await requireMember();
   const { count } = await m.db.from("kitchen").select("id", { count: "exact", head: true }).eq("account_id", m.account.id).eq("in_analysis", true);
+  // P19 / W10 menu entry: m1.portal on for the account and see_xray (the pages check both again).
+  const raioX = canPortal(m.role, "see_xray") && (await isEnabled("m1.portal", m.account.id));
   return (
     <div className="min-h-screen bg-bg font-sans text-ink">
-      <MenuDono accountName={m.account.name} kitchensInAnalysis={count ?? 0} role={m.role} />
+      <MenuDono accountName={m.account.name} kitchensInAnalysis={count ?? 0} role={m.role} raioX={raioX} />
       {children}
     </div>
   );

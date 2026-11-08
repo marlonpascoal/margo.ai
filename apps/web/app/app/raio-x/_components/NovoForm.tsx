@@ -28,7 +28,7 @@ export default function NovoForm(p: Props) {
   const firstFree = p.stores.find((s) => !s.followed) ?? p.stores[0];
   const [store, setStore] = useState(firstFree?.id ?? "");
   const [url, setUrl] = useState("");
-  const [found, setFound] = useState<StoreLookup | null>(null);
+  const [looked, setLooked] = useState<{ url: string; r: StoreLookup } | null>(null);
   const [kitchen, setKitchen] = useState(p.kitchens[0]?.id ?? "");
   const [days, setDays] = useState(p.periods[0]?.days ?? 7);
   const [radius, setRadius] = useState<2 | 3 | 5>(3);
@@ -40,20 +40,14 @@ export default function NovoForm(p: Props) {
   const comp = kind === "comp";
   const validUrl = storeIdFromUrl(url) !== null;
   useEffect(() => {
+    if (!comp || !validUrl) return;
     let live = true;
-    if (!comp || !url) {
-      setFound(null);
-      return;
-    }
-    if (!validUrl) {
-      setFound({ state: "invalid" });
-      return;
-    }
-    lookupStoreAction(url).then((s) => live && setFound(s));
+    lookupStoreAction(url).then((r) => live && setLooked({ url, r }));
     return () => {
       live = false;
     };
   }, [url, comp, validUrl]);
+  const found: StoreLookup | null = !comp || !url ? null : !validUrl ? { state: "invalid" } : looked?.url === url ? looked.r : null;
 
   const blocked = comp ? p.competitorFull || !p.competitorAllowed || !validUrl : p.ownFull || !store;
   const categories = [...(CATEGORY_OPTIONS.find((c) => c.value === cats)?.categories ?? [])];

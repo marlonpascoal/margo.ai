@@ -8,7 +8,7 @@ import io
 import os
 import urllib.request
 from fractions import Fraction
-from typing import Protocol
+from typing import Literal, Protocol
 from uuid import UUID
 
 from margo_common.runner import JobRun
@@ -22,6 +22,9 @@ SAO_PAULO = "America/Sao_Paulo"
 
 class XrayPayload(BaseModel):
     xray_id: UUID
+    # "p01": C05 "Preparar entrega" (reportlab P01). "print": P23 "Baixar PDF", the result screen printed (print_xray.py).
+    mode: Literal["p01", "print"] = "p01"
+    version: str | None = None
 
 
 class PdfStore(Protocol):
@@ -118,7 +121,7 @@ def render_and_store(conn, store: PdfStore, xray_id: str) -> dict[str, int]:
     return {"bytes": len(pdf), "pages": pdf_pages(pdf)}
 
 
-def render_xray(run: JobRun[XrayPayload]) -> dict[str, int]:
+def render_xray(run: JobRun[XrayPayload]) -> dict[str, object]:
     import psycopg
     from psycopg.rows import dict_row
 
@@ -126,6 +129,10 @@ def render_xray(run: JobRun[XrayPayload]) -> dict[str, int]:
     url = os.environ.get("SUPABASE_URL") or os.environ["NEXT_PUBLIC_SUPABASE_URL"]
     store = SupabaseStorage(url, os.environ["SUPABASE_SERVICE_ROLE_KEY"])
     with psycopg.connect(db, autocommit=True, row_factory=dict_row) as conn:
+        if run.payload.mode == "print":
+            from .print_xray import PlaywrightPrinter, app_url, print_and_store
+
+            return print_and_store(conn, store, PlaywrightPrinter(), str(run.payload.xray_id), app_url())
         return render_and_store(conn, store, str(run.payload.xray_id))
 
 

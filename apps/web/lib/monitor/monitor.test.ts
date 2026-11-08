@@ -191,3 +191,10 @@ describe("A02 loaders read the monitoring with RLS first", () => {
     expect(await loadResult(deps, MON)).toBeNull();
   });
 });
+
+describe("B01 P22 reasons after pairing Stage 2", () => {
+  it("B01_P22_stage2_reasons_in_owner_words", () => {
+    expect(doubtReason("proteína ilegível", 2)).toBe("Não deu para ler a proteína no nome");
+    expect(doubtReason("tamanho presumido 500 ml", 2)).toBe("Não deu para ler o tamanho no nome; supomos 500 ml");
+  });
+});

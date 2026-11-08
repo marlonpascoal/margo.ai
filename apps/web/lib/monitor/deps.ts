@@ -56,3 +56,9 @@ export async function printedPdf(path: string): Promise<Blob | null> {
 }
 
 export { rpc as serviceRpc };
+
+/** A rule_param read without a person (the print page): m1.score_min_items and the like. */
+export async function serviceRuleParam(key: string, fallback: number): Promise<number> {
+  const { data } = await adminClient().from("rule_param").select("value").eq("key", key).maybeSingle();
+  return data ? Number(data.value) : fallback;
+}

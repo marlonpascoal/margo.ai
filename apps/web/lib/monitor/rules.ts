@@ -56,6 +56,8 @@ export type Refusal =
   | { code: "own_limit"; limit: number }
   | { code: "paused_by_plan" }
   | { code: "already_answered" }
+  | { code: "test_limit"; limit: number }
+  | { code: "test_own_only" | "test_bad_item" }
   | { code: "not_active" | "not_paused" | "removed" };
 
 /** The refusal a monitor_* function raised, or null for anything else (which is rethrown). */
@@ -74,6 +76,9 @@ export function monitorRefusal(message: string): Refusal | null {
   if (message.includes("monitor_own_limit:")) return { code: "own_limit", limit: num(/monitor_own_limit:(\d+)/) };
   if (message.includes("monitor_paused_by_plan")) return { code: "paused_by_plan" };
   if (message.includes("monitor_already_answered")) return { code: "already_answered" };
+  if (message.includes("monitor_test_limit:")) return { code: "test_limit", limit: num(/monitor_test_limit:(\d+)/) };
+  if (message.includes("monitor_test_own_only")) return { code: "test_own_only" };
+  if (message.includes("monitor_test_bad_item")) return { code: "test_bad_item" };
   if (message.includes("monitor_not_active")) return { code: "not_active" };
   if (message.includes("monitor_not_paused")) return { code: "not_paused" };
   if (message.includes("monitor_removed")) return { code: "removed" };
@@ -101,6 +106,12 @@ export function refusalText(r: Refusal): string {
       return "Pausado pelo plano. Volta quando você assinar o Lucro.";
     case "already_answered":
       return "Outra pessoa já respondeu este item.";
+    case "test_limit":
+      return `Você já está testando ${r.limit} itens. Desfaça um para escolher outro.`;
+    case "test_own_only":
+      return "Só dá para testar itens de uma loja sua.";
+    case "test_bad_item":
+      return "Este item não está neste raio-X.";
     default:
       return "Não salvou. Tente de novo.";
   }

@@ -105,6 +105,21 @@ export async function confirmSuggestions(deps: MonitorDeps, actor: Actor, xrayId
   });
 }
 
+/** P23 "Vou testar" (migration 20261231000008): the own item (public_menu_item id) seen on run xrayId; at most
+ * m1.test_max_items per monitoring (refusal test_limit). */
+export async function markTest(deps: MonitorDeps, actor: Actor, monitorId: string, ownItemId: string, xrayId: string) {
+  return attempt(async () => {
+    await deps.rpc("monitor_test_mark", { p_monitor: monitorId, p_item: ownItemId, p_xray: xrayId, ...who(actor) });
+  });
+}
+
+/** P23 "Testando · Desfazer". */
+export async function unmarkTest(deps: MonitorDeps, actor: Actor, monitorId: string, ownItemId: string) {
+  return attempt(async () => {
+    await deps.rpc("monitor_test_unmark", { p_monitor: monitorId, p_item: ownItemId, ...who(actor) });
+  });
+}
+
 /** Undo an answer: forgotten by the monitoring, the run pairs the item again by the rules and recalculates. */
 export async function undoAnswer(deps: MonitorDeps, actor: Actor, itemId: string) {
   return attempt(async () => {

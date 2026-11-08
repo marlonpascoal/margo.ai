@@ -31,8 +31,9 @@ from .learning import (
     read_food_m1_04,
     unreadable_items,
 )
+from .pair_review import PairReviewer, ReviewRun, review_pairing_m1_12
 from .rules import Item, RankWeights, Settings, Store
-from .xray import CalcInput, CalcResult, ItemRow, StoreRow, build_neighborhood, build_pairs, calculate
+from .xray import CalcInput, CalcResult, ItemRow, StoreRow, build_neighborhood, calculate
 
 
 @dataclass(frozen=True)
@@ -124,6 +125,18 @@ class XrayRepo(Protocol):
 
     def save_pairs(self, xray_id: str, rows: list[ItemRow]) -> None: ...
 
+    def pair_review_learnings(self) -> dict[str, dict[str, bool]]:
+        """M1-12: each pair pattern's verdict by X-ray (public.m1_pair_review_answer)."""
+        ...
+
+    def pair_review_params(self) -> tuple[float, int, int]:
+        """M1-12: target share, rounds, runs for a learning (rule_param)."""
+        ...
+
+    def save_pair_review(self, xray_id: str, review: ReviewRun) -> None:
+        """M1-12: the run's review and its verdicts; a re-run replaces both."""
+        ...
+
     def attr_learnings(self) -> dict[Pattern, Learning]:
         """M1-04 Stage 2: every learning with its answers by X-ray (public.m1_attr_learning and _run)."""
         ...
@@ -204,8 +217,8 @@ def neighborhood_job_step(
 
 
 def pair_step(
-    repo: XrayRepo, xray_id: str, reader: AttrReader | None = None
-) -> dict[str, int | str | bool | None]:
+    repo: XrayRepo, xray_id: str, reader: AttrReader | None = None, reviewer: PairReviewer | None = None
+) -> dict[str, int | str | bool | float | None]:
     """M1-03 and M1-04: the target's items against the items of the stores in the set, once enough captures
     finished. A store whose capture is still running is left out and marked; when it finishes the pairing
     stays as it is until a person runs it again. A re-run replaces the pairs: stores no longer in the set
@@ -214,7 +227,10 @@ def pair_step(
     Stage 2: non-beverage items the rules cannot read take a founder's or a promoted learning, else one AI
     call (`reader`); the answers and the founder's C04 corrections are learned. Without a reader (no AI
     key, D70) that step is skipped with a note, nothing is learned, and the result is the rules
-    alone."""
+    alone.
+
+    M1-12: before the pairs are saved, the AI reviews them against the checklist and the rules run again without
+    what it rejected (`reviewer`, pair_review.py). Without one the rules stand and the review says so."""
     if repo.pair_blocker(xray_id) is not None:
         raise LoadPending()
     x = repo.load_xray(xray_id)
@@ -223,8 +239,23 @@ def pair_step(
     pool = repo.items_of_stores([s for s in repo.compared_store_ids(xray_id) if s not in set(left_out)])
     decisions = repo.pair_decisions(xray_id)
     food = learn_food_step(repo, xray_id, own, pool, decisions, reader)
-    rows = build_pairs(own, pool, x.settings, decisions, food.overrides)
+    target, max_rounds, min_runs = repo.pair_review_params()
+    review = review_pairing_m1_12(
+        own,
+        pool,
+        x.settings,
+        decisions,
+        food.overrides,
+        reviewer,
+        repo.pair_review_learnings() if reviewer else {},
+        target=target,
+        max_rounds=max_rounds,
+        min_runs=min_runs,
+        xray_id=xray_id,
+    )
+    rows = review.rows
     repo.save_pairs(xray_id, rows)
+    repo.save_pair_review(xray_id, review)
     repo.mark_left_out(xray_id, left_out)
     return {
         "items": len(rows),
@@ -235,6 +266,10 @@ def pair_step(
         "ai_items": food.ai_items,
         "ai_model": reader.model if reader else None,
         "ai_skipped": reader is None,
+        "review_status": review.status,
+        "review_score": review.score,
+        "review_rounds": review.rounds,
+        "review_rejected": review.rejected,
     }
 
 

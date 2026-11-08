@@ -13,6 +13,8 @@ collector = "margo_collector.cli:main"
 record-ai-pairing = "margo_collector.record_pairing:main"
 record-ai-opportunities = "margo_collector.record_opportunities:main"
 score-ai-opportunities = "margo_collector.opportunity_eval:main"
+record-ai-pair-review = "margo_collector.record_pair_review:main"
+score-ai-pair-review = "margo_collector.pair_review_eval:main"
 
 [project.entry-points."margo.jobs"]
 collect = "margo_collector.handlers:collect"

@@ -1265,6 +1265,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"m1_pair_review_answer": {
+                  Row: {
+                    "approved": boolean,"created_at": string,"model": string,"pattern": string,"updated_at": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "approved": boolean,"created_at"?: string,"model": string,"pattern": string,"updated_at"?: string,"xray_id": string
+                  }
+                  Update: {
+                    "approved"?: boolean,"created_at"?: string,"model"?: string,"pattern"?: string,"updated_at"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "m1_pair_review_answer_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"membership": {
                   Row: {
                     "account_id": string,"all_kitchens": boolean,"created_at": string,"id": string,"person_id": string,"role": Database["public"]['Enums']["member_role"],"updated_at": string
@@ -2320,6 +2340,26 @@ isOneToOne: false
       columns: ["xray_item_id"]
 isOneToOne: false
       referencedRelation: "xray_item_view"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"xray_pair_review": {
+                  Row: {
+                    "approved": number,"created_at": string,"detail": NonNullable<Json>,"first_round_score": number | null,"from_learnings": number,"judged": number,"model": string | null,"prompt_version": string | null,"rejected": number,"rounds": number,"score": number | null,"sent_to_doubts": number,"status": string,"updated_at": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "approved"?: number,"created_at"?: string,"detail"?: NonNullable<Json>,"first_round_score"?: number | null,"from_learnings"?: number,"judged"?: number,"model"?: string | null,"prompt_version"?: string | null,"rejected"?: number,"rounds"?: number,"score"?: number | null,"sent_to_doubts"?: number,"status": string,"updated_at"?: string,"xray_id": string
+                  }
+                  Update: {
+                    "approved"?: number,"created_at"?: string,"detail"?: NonNullable<Json>,"first_round_score"?: number | null,"from_learnings"?: number,"judged"?: number,"model"?: string | null,"prompt_version"?: string | null,"rejected"?: number,"rounds"?: number,"score"?: number | null,"sent_to_doubts"?: number,"status"?: string,"updated_at"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_pair_review_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: true
+      referencedRelation: "xray"
       referencedColumns: ["id"]
     }
                   ]

@@ -10,7 +10,7 @@ as the SDK returned it, and is named `<use>-<provider>-<date>.json`. Check each 
 - `MARGO_AI_PROVIDER`: `openai` (default) or `anthropic`.
 - `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`: the provider's key, read by name; never logged or stored. Without it,
   each AI step is skipped with a note and the rules alone decide.
-- Model per use, optional: `MARGO_MATCH_MODEL`, `MARGO_PAIR_MODEL`, `MARGO_OPPORTUNITIES_MODEL`. Defaults:
+- Model per use, optional: `MARGO_MATCH_MODEL`, `MARGO_PAIR_MODEL`, `MARGO_REVIEW_MODEL`, `MARGO_OPPORTUNITIES_MODEL`. Defaults:
   `gpt-6.1-sol` (OpenAI), `claude-sonnet-5-5` (Anthropic).
 
 ## Record
@@ -48,3 +48,15 @@ What each one sends, through the same request builder the worker uses:
 - **P23 "Oportunidades" (`xray_opportunities`):** 3 to 5 opportunities, once per own run, flag `m1.oportunidades_ia`.
   A deterministic check keeps only those whose numbers all exist in the run's facts, with no "lucro", "margem",
   "ganho" or long dash. Without a key the job finishes done with `skipped_no_key` and no row.
+
+## Pair review (M1-12, D73)
+
+Marlon records the labeled SINTÉTICO pairs; agents never do. The score runs offline.
+
+```bash
+OPENAI_API_KEY=... uv run record-ai-pair-review
+```
+
+```bash
+uv run score-ai-pair-review
+```

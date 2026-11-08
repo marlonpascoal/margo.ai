@@ -23,6 +23,8 @@ from .learning import (
     apply_answers,
     apply_founders,
 )
+from .pair_review import DEFAULT_MAX_ROUNDS, DEFAULT_TARGET, ReviewRun
+from .pair_review import DEFAULT_MIN_RUNS as DEFAULT_REVIEW_MIN_RUNS
 from .rules import Item, RankWeights, Store, to_numeric
 from .steps import Discovered, XrayRun
 from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual, presumed_m1_04
@@ -33,6 +35,8 @@ from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual, presumed_
 @dataclass
 class MemoryXrayRepo:
     xrays: dict[str, XrayRun] = field(default_factory=dict)
+    pair_reviews: dict[str, ReviewRun] = field(default_factory=dict)
+    pair_review_answers: dict[str, dict[str, bool]] = field(default_factory=dict)
     stores: dict[str, Store] = field(default_factory=dict)
     store_by_external: dict[str, str] = field(default_factory=dict)
     items: dict[str, Item] = field(default_factory=dict)
@@ -158,6 +162,17 @@ class MemoryXrayRepo:
 
     def save_founder_learnings(self, taught) -> None:
         apply_founders(self.learnings, taught)
+
+    def pair_review_learnings(self) -> dict[str, dict[str, bool]]:
+        return {k: dict(v) for k, v in self.pair_review_answers.items()}
+
+    def pair_review_params(self) -> tuple[float, int, int]:
+        return DEFAULT_TARGET, DEFAULT_MAX_ROUNDS, DEFAULT_REVIEW_MIN_RUNS
+
+    def save_pair_review(self, xray_id: str, review: ReviewRun) -> None:
+        self.pair_reviews[xray_id] = review
+        for pattern, approved in review.answers.items():
+            self.pair_review_answers.setdefault(pattern, {})[xray_id] = approved
 
     def calc_inputs(self, xray_id: str) -> list[CalcInput]:
         out = []
@@ -503,6 +518,49 @@ class PostgresXrayRepo:
                         " where id = %s and founder_attrs is null",
                         (lid,),
                     )
+
+    # M1-12 review of the automatic pairs
+    def pair_review_learnings(self) -> dict[str, dict[str, bool]]:
+        out: dict[str, dict[str, bool]] = {}
+        for r in self._all("select pattern, xray_id::text as xray_id, approved from public.m1_pair_review_answer"):
+            out.setdefault(r["pattern"], {})[r["xray_id"]] = r["approved"]
+        return out
+
+    def pair_review_params(self) -> tuple[float, int, int]:
+        rows = self._all("select key, value from public.rule_param where key like 'm1.pair_review_%'")
+        v = {r["key"]: r["value"] for r in rows}
+        return (
+            float(v.get("m1.pair_review_target", DEFAULT_TARGET)),
+            int(v.get("m1.pair_review_max_rounds", DEFAULT_MAX_ROUNDS)),
+            int(v.get("m1.pair_review_learning_min_runs", DEFAULT_REVIEW_MIN_RUNS)),
+        )
+
+    def save_pair_review(self, xray_id: str, review: ReviewRun) -> None:
+        from psycopg.types.json import Jsonb
+
+        with self._tx() as c:
+            c.execute(
+                "insert into public.xray_pair_review (xray_id, status, score, first_round_score, rounds, judged, approved,"
+                " rejected, from_learnings, sent_to_doubts, model, prompt_version, detail)"
+                " values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                " on conflict (xray_id) do update set status = excluded.status, score = excluded.score,"
+                " first_round_score = excluded.first_round_score, rounds = excluded.rounds, judged = excluded.judged,"
+                " approved = excluded.approved, rejected = excluded.rejected, from_learnings = excluded.from_learnings,"
+                " sent_to_doubts = excluded.sent_to_doubts, model = excluded.model,"
+                " prompt_version = excluded.prompt_version, detail = excluded.detail",
+                (
+                    xray_id, review.status, review.score, review.first_round_score, review.rounds, review.judged,
+                    review.approved, review.rejected, review.from_learnings, review.sent_to_doubts, review.model,
+                    review.prompt_version, Jsonb(review.detail),
+                ),
+            )
+            for pattern, approved in review.answers.items():
+                c.execute(
+                    "insert into public.m1_pair_review_answer (pattern, xray_id, approved, model)"
+                    " values (%s, %s, %s, %s) on conflict (pattern, xray_id) do update set approved = excluded.approved,"
+                    " model = excluded.model",
+                    (pattern, xray_id, approved, review.model),
+                )
 
     def save_pairs(self, xray_id: str, rows: list[ItemRow]) -> None:
         with self._tx() as c:

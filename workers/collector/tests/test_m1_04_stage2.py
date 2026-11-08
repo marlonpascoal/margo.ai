@@ -780,3 +780,24 @@ def test_M1_04_a_lanche_with_no_base_on_one_side_keeps_pairing():
     b = food_attrs_m1_04("Burger de frango", None, "lanches")
     assert a.base is None
     assert compare_food_m1_04(a, b) == "identical"
+
+
+# A count on one side only is a different scale; porções follow the same base rule (Marlon, 08/nov, D72). SINTÉTICO.
+
+
+def test_M1_03_an_item_with_a_count_never_pairs_with_one_without():
+    own = Item(id="own", store_id="T", name="Sashimi de peixe (15 unid.)", price_cents=4290, unit_qty=15, section="Porções")
+    whole = [Item(id=f"s{i}", store_id=f"S{i}", name="Sashimi de peixe", price_cents=6000, section="Porções") for i in range(5)]
+    assert pair_item_m1_04(own, whole, Settings()).status == "exclusivo"
+    counted = [
+        Item(id=f"c{i}", store_id=f"C{i}", name="Sashimi de peixe (10 unid.)", price_cents=4000, unit_qty=10, section="Porções")
+        for i in range(5)
+    ]
+    assert pair_item_m1_04(own, counted, Settings()).status == "normalizado"
+
+
+def test_M1_04_porcao_with_a_base_never_pairs_with_one_without():
+    own = Item(id="own", store_id="T", name="Sashimi de peixe", price_cents=4290, section="Porções")
+    iscas = [Item(id=f"s{i}", store_id=f"S{i}", name="Isca de peixe", price_cents=3000, section="Porções") for i in range(5)]
+    assert pair_item_m1_04(own, iscas, Settings()).status == "exclusivo"
+

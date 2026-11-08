@@ -9,7 +9,7 @@ founder accepted or rejected keeps that decision, and items keep their review, s
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
 from decimal import Decimal
@@ -150,17 +150,21 @@ def build_pairs(
     settings: Settings,
     decisions: Mapping[tuple[str, str], tuple[bool, str]] | None = None,
     food: FoodOverrides | None = None,
+    rejected: Collection[tuple[str, str]] = (),
 ) -> list[ItemRow]:
     """M1-03 and M1-04 for every item of the target store against the items of the stores in the set.
     `decisions` maps (own item id, comparable item id) to a founder's (accepted, person id). A decision stays
     even when the rule alone would no longer list that item, as long as it is still in the pool. `food` holds
-    the attributes a learning or the AI read for non-beverage items the rule cannot read (M1-04 Stage 2)."""
+    the attributes a learning or the AI read for non-beverage items the rule cannot read (M1-04 Stage 2).
+    `rejected` holds the (own item id, comparable item id) pairs the M1-12 review took out: the rules run again
+    without them, so a store's next best item can take the place."""
     kept = decisions or {}
     by_id = {i.id: i for i in pool}
     defaults = size_defaults_m1_04([*own_items, *pool], settings)
     out: list[ItemRow] = []
     for own in own_items:
-        p = pair_item_m1_04(own, pool, settings, food, defaults)
+        allowed = [i for i in pool if (own.id, i.id) not in rejected] if rejected else pool
+        p = pair_item_m1_04(own, allowed, settings, food, defaults)
         pairs = []
         listed = set()
         for c in p.candidates:

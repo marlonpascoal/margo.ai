@@ -563,8 +563,8 @@ def compare_food_m1_04(
     """M1-04 Stage 2: `identical` when proteins and patty count are equal, and base, weight and portion size
     are equal where both sides state them, and the extras rule lets it through. Weight and portion size do
     not count for an item normalized by weight (M1-03 already compares per 100 g). With `base_required`
-    (pratos, D72) one side with a base and the other without is `unreadable`: the same protein is not the same
-    dish."""
+    (pratos and porções, D72) one side with a base and the other without is `unreadable`: the same protein is
+    not the same dish."""
     if a.proteins != b.proteins or a.patties != b.patties:
         return "conflict"
     if a.base is not None and b.base is not None and a.base != b.base:

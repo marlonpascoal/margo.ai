@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from .ai_attrs import reader_from_env
 from .opportunities import opportunities_step, writer_from_env
+from .pair_review import reviewer_from_env
 from .repo import PostgresXrayRepo
 from .steps import calc_step, collect_step, neighborhood_job_step, pair_step
 
@@ -54,12 +55,11 @@ def xray_neighborhood(run: JobRun[NeighborhoodPayload]) -> dict[str, int]:
         repo.close()
 
 
-def xray_pair(run: JobRun[XrayPayload]) -> dict[str, int | str | bool | None]:
-    """C03 "Confirmar N lojas": M1-03 and M1-04. Without the AI key the attribute AI step is skipped.
-    """
+def xray_pair(run: JobRun[XrayPayload]) -> dict[str, int | str | bool | float | None]:
+    """C03 "Confirmar N lojas": M1-03, M1-04 and the M1-12 review. Without the AI key they are skipped."""
     repo = PostgresXrayRepo(local_db_url())
     try:
-        return pair_step(repo, str(run.payload.xray_id), reader_from_env())
+        return pair_step(repo, str(run.payload.xray_id), reader_from_env(), reviewer_from_env())
     finally:
         repo.close()
 

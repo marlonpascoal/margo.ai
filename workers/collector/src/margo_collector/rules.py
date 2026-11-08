@@ -600,6 +600,7 @@ def _pair_food(
     attrs = item_food_attrs_m1_04(own, food)
     reason = unreadable_food_m1_04(attrs, category)
     by_weight = norm.unit in ("100g", "100ml")
+    needs_base = category in ("pratos", "porcoes")
     matched: dict[str, list[Candidate]] = {}
     listed: list[Candidate] = []
     for c in pool:
@@ -607,7 +608,11 @@ def _pair_food(
             continue
         if quantity_m1_04(c.name) != quantity_m1_04(own.name):
             continue
-        if not same_taxonomy_m1_04(own, c) or normalize_m1_03(c).unit != norm.unit:
+        other_norm = normalize_m1_03(c)
+        if not same_taxonomy_m1_04(own, c) or other_norm.unit != norm.unit:
+            continue
+        # M1-03 (D72): "15 unid." is a price per piece; a whole portion with no count is not on that scale.
+        if norm.unit == "un" and norm.by_weight_or_pack != other_norm.by_weight_or_pack:
             continue
         sim = similarity_m1_04(own.name, c.name)
         other = item_food_attrs_m1_04(c, food)
@@ -615,10 +620,10 @@ def _pair_food(
             reason is None
             and unreadable_food_m1_04(other, category) is None
             and sim >= settings.attribute_floor
-            and compare_food_m1_04(attrs, other, by_weight=by_weight, base_required=category == "pratos")
+            and compare_food_m1_04(attrs, other, by_weight=by_weight, base_required=needs_base)
             == "identical"
-            # D72: two pratos with no base at all share only a protein, unless their names are close.
-            and (category != "pratos" or attrs.base or other.base or sim >= settings.similarity_threshold)
+            # D72: two items with no base at all share only a protein, unless their names are close.
+            and (not needs_base or attrs.base or other.base or sim >= settings.similarity_threshold)
         ):
             matched.setdefault(c.store_id, []).append(Candidate(c, sim, True))
         elif sim >= settings.candidate_floor:

@@ -102,7 +102,8 @@ class XrayRepo(Protocol):
     def included_store_ids(self, xray_id: str) -> list[str]: ...
 
     def compared_store_ids(self, xray_id: str) -> list[str]:
-        """The stores a run compares with: its capture slots, or every included store without slots (Marlon, 08/nov)."""
+        """The stores a run compares with: its capture slots, or every included store when it has none
+        (Marlon, 08/nov)."""
         ...
 
     def pair_blocker(self, xray_id: str) -> str | None:

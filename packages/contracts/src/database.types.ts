@@ -1219,6 +1219,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"m1_ai_cache": {
+                  Row: {
+                    "answer": NonNullable<Json>,"created_at": string,"key": string,"model": string,"updated_at": string,"use_name": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answer": NonNullable<Json>,"created_at"?: string,"key": string,"model": string,"updated_at"?: string,"use_name": string
+                  }
+                  Update: {
+                    "answer"?: NonNullable<Json>,"created_at"?: string,"key"?: string,"model"?: string,"updated_at"?: string,"use_name"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"m1_attr_learning": {
                   Row: {
                     "category": string,"created_at": string,"founder_at": string | null,"founder_attrs": Json | null,"founder_by": string | null,"founder_disputed_at": string | null,"hints": (string)[],"id": string,"items_seen": number,"tokens": (string)[],"updated_at": string

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -25,6 +26,10 @@ PROVIDERS = ("openai", "anthropic")
 DEFAULT_PROVIDER = "openai"
 DEFAULT_MODELS = {"openai": "gpt-6.1-sol", "anthropic": "claude-sonnet-5-5"}
 """Configured defaults, not branches in the logic; each use's env var overrides the model."""
+USE_DEFAULTS: dict[str, dict[str, str]] = {
+    "openai": {"MARGO_FAMILY_MODEL": "gpt-6-luna", "MARGO_PAIR_MODEL": "gpt-6-luna"}
+}
+"""D78: simple high-volume reading runs on the provider's low-cost model; judgment stays on the default."""
 KEY_ENV = {"openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
 
 
@@ -42,8 +47,9 @@ def key_present(provider: str | None = None) -> bool:
 
 
 def model_for(provider: str, model_env: str | None = None) -> str:
-    """The use's env override (`MARGO_MATCH_MODEL`, ...) or the provider's default model."""
-    return (os.environ.get(model_env) if model_env else None) or DEFAULT_MODELS[provider]
+    """The use's env override (`MARGO_MATCH_MODEL`, ...), its low-cost default, or the provider's default."""
+    use_default = USE_DEFAULTS.get(provider, {}).get(model_env or "")
+    return (os.environ.get(model_env) if model_env else None) or use_default or DEFAULT_MODELS[provider]
 
 
 def make_client(provider: str) -> Any:
@@ -140,6 +146,30 @@ def response_dict(response: Any) -> Any:
     return response.to_dict() if hasattr(response, "to_dict") else response
 
 
+_usage: dict[str, dict[str, int]] = {}
+_usage_lock = threading.Lock()
+
+
+def _record_usage(name: str, model: str, response: Any) -> None:
+    """D78: the tokens of each call, by use and model, so a run's cost can be known."""
+    usage = _get(response, "usage")
+    input_tokens = int(_get(usage, "input_tokens") or 0) if usage is not None else 0
+    output_tokens = int(_get(usage, "output_tokens") or 0) if usage is not None else 0
+    with _usage_lock:
+        row = _usage.setdefault(f"{name}:{model}", {"calls": 0, "input_tokens": 0, "output_tokens": 0})
+        row["calls"] += 1
+        row["input_tokens"] += input_tokens
+        row["output_tokens"] += output_tokens
+
+
+def take_usage() -> dict[str, dict[str, int]]:
+    """The tokens used since the last take. One worker process runs one job at a time."""
+    with _usage_lock:
+        out = {k: dict(v) for k, v in _usage.items()}
+        _usage.clear()
+    return out
+
+
 class StructuredClient:
     """The provider, model and SDK client of one AI use. `client` is injected in tests (a fake)."""
 
@@ -161,4 +191,6 @@ class StructuredClient:
 
     def ask(self, call: Call) -> dict[str, Any] | None:
         """One call; the answer object or None. The caller validates every field."""
-        return response_json(self.provider, send(self.provider, self.client, self.request(call)))
+        response = send(self.provider, self.client, self.request(call))
+        _record_usage(call.name, self.model, response)
+        return response_json(self.provider, response)

@@ -37,6 +37,7 @@ from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual, presumed_
 class MemoryXrayRepo:
     xrays: dict[str, XrayRun] = field(default_factory=dict)
     two_tiers_on: bool = False
+    ai_cache: dict[tuple[str, str], Any] = field(default_factory=dict)
     cap: int = 30
     menu_first: dict[str, str] = field(default_factory=dict)
     families: dict[str, Family] = field(default_factory=dict)
@@ -179,6 +180,13 @@ class MemoryXrayRepo:
 
     def capture_cap(self) -> int:
         return self.cap
+
+    def ai_cache_get(self, use: str, keys) -> dict[str, Any]:
+        return {k: self.ai_cache[(use, k)] for k in keys if (use, k) in self.ai_cache}
+
+    def ai_cache_put(self, use: str, answers: dict[str, Any], model: str) -> None:
+        for key, answer in answers.items():
+            self.ai_cache[(use, key)] = answer
 
     def menu_first_state(self, xray_id: str) -> str | None:
         return self.menu_first.get(xray_id)
@@ -556,6 +564,23 @@ class PostgresXrayRepo:
             (xray_id,),
         )
         return bool(rows and rows[0]["on"])
+
+    def ai_cache_get(self, use: str, keys) -> dict[str, Any]:
+        rows = self._all(
+            "select key, answer from public.m1_ai_cache where use_name = %s and key = any(%s)", (use, list(keys))
+        )
+        return {r["key"]: r["answer"] for r in rows}
+
+    def ai_cache_put(self, use: str, answers: dict[str, Any], model: str) -> None:
+        from psycopg.types.json import Jsonb
+
+        with self._tx() as c:
+            for key, answer in answers.items():
+                c.execute(
+                    "insert into public.m1_ai_cache (use_name, key, answer, model) values (%s, %s, %s, %s)"
+                    " on conflict (use_name, key) do update set answer = excluded.answer, model = excluded.model",
+                    (use, key, Jsonb(answer), model),
+                )
 
     def capture_cap(self) -> int:
         rows = self._all("select value from public.rule_param where key = 'm1.extract_max_captures_per_xray'")

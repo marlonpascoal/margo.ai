@@ -17,6 +17,7 @@ from typing import Any, Protocol
 
 from margo_common.log import log_event
 
+from .ai_cache import CachedAttrReader, CachedPairReviewer
 from .family import (
     Family,
     FamilyClassifier,
@@ -138,6 +139,14 @@ class XrayRepo(Protocol):
 
     def capture_cap(self) -> int:
         """Param m1.extract_max_captures_per_xray."""
+        ...
+
+    def ai_cache_get(self, use: str, keys: Sequence[str]) -> dict[str, Any]:
+        """D78: the answers already known, by key."""
+        ...
+
+    def ai_cache_put(self, use: str, answers: dict[str, Any], model: str) -> None:
+        """D78: keeps new answers."""
         ...
 
     def menu_first_state(self, xray_id: str) -> str | None:
@@ -295,6 +304,8 @@ def pair_step(
     so."""
     if repo.pair_blocker(xray_id) is not None:
         raise LoadPending()
+    reader = CachedAttrReader(reader, repo) if reader is not None else None
+    reviewer = CachedPairReviewer(reviewer, repo) if reviewer is not None else None
     x = repo.load_xray(xray_id)
     own = repo.items_of_stores([x.target_store_id])
     left_out = repo.unfinished_captures(xray_id)

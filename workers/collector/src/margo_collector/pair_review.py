@@ -138,7 +138,7 @@ def _size(item: Item) -> str | None:
     return f"{int(n.own_base_qty)} {word}"
 
 
-def _side(item: Item) -> dict[str, Any]:
+def side_of(item: Item) -> dict[str, Any]:
     return {
         "nome": item.name,
         "descricao": item.description,
@@ -166,7 +166,7 @@ def build_call(pairs: Sequence[ReviewPair], cuisine: str | None = None) -> llm.C
     """Business menu data only: `ref` is a local index, and an Item's store never goes out."""
     payload = {
         "pares": [
-            {"ref": p.ref, "categoria": p.category, "item": _side(p.own), "vizinho": _side(p.candidate)}
+            {"ref": p.ref, "categoria": p.category, "item": side_of(p.own), "vizinho": side_of(p.candidate)}
             for p in pairs
         ]
     }

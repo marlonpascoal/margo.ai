@@ -910,6 +910,15 @@ class LedgerEntry(Row):
     updated_at: datetime
 
 
+class M1AiCache(Row):
+    answer: JsonValue
+    created_at: datetime
+    key: str
+    model: str
+    updated_at: datetime
+    use_name: str
+
+
 class M1AttrLearning(Row):
     category: str
     created_at: datetime

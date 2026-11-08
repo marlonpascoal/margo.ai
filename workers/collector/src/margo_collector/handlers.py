@@ -10,6 +10,7 @@ import os
 from typing import Any
 from uuid import UUID
 
+from margo_common import llm
 from margo_common.flags import flag_env
 from margo_common.runner import JobRun
 from pydantic import BaseModel
@@ -40,7 +41,8 @@ def collect(run: JobRun[XrayPayload]) -> dict[str, int]:
     """C02 "Buscar vizinhança": queues the discovery of the target (docs/extract-api.md)."""
     repo = PostgresXrayRepo(local_db_url())
     try:
-        return collect_step(repo, str(run.payload.xray_id), flag_env(), classifier_from_env())
+        out = collect_step(repo, str(run.payload.xray_id), flag_env(), classifier_from_env())
+        return {**out, "ai_usage": llm.take_usage()}
     finally:
         repo.close()
 
@@ -60,9 +62,10 @@ def xray_pair(run: JobRun[XrayPayload]) -> dict[str, int | str | bool | float | 
     """C03 "Confirmar N lojas": M1-03, M1-04 and the M1-12 review. Without the AI key they are skipped."""
     repo = PostgresXrayRepo(local_db_url())
     try:
-        return pair_step(
+        out = pair_step(
             repo, str(run.payload.xray_id), reader_from_env(), reviewer_from_env(), classifier_from_env()
         )
+        return {**out, "ai_usage": llm.take_usage()}
     finally:
         repo.close()
 
@@ -80,7 +83,8 @@ def xray_opportunities(run: JobRun[XrayPayload]) -> dict[str, Any]:
     """P23 "Oportunidades" after the calculation (opportunities.py). No AI key: done, no row."""
     repo = PostgresXrayRepo(local_db_url())
     try:
-        return opportunities_step(repo, str(run.payload.xray_id), writer_from_env())
+        out = opportunities_step(repo, str(run.payload.xray_id), writer_from_env())
+        return {**out, "ai_usage": llm.take_usage()}
     finally:
         repo.close()
 

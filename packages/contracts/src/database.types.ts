@@ -2265,6 +2265,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"xray_opportunity": {
+                  Row: {
+                    "created_at": string,"dropped": number,"facts_hash": string,"id": string,"items": NonNullable<Json>,"model": string,"prompt_version": string,"updated_at": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"dropped"?: number,"facts_hash": string,"id"?: string,"items"?: NonNullable<Json>,"model": string,"prompt_version": string,"updated_at"?: string,"xray_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"dropped"?: number,"facts_hash"?: string,"id"?: string,"items"?: NonNullable<Json>,"model"?: string,"prompt_version"?: string,"updated_at"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_opportunity_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: true
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"xray_pair": {
                   Row: {
                     "accepted": boolean,"by": string | null,"created_at": string,"id": string,"public_menu_item_id": string,"similarity": number,"size_presumed_ml": number | null,"updated_at": string,"xray_item_id": string
@@ -2624,6 +2644,9 @@ isOneToOne: false
                            },
 "monitor_limits":
 { Args: { "p_account": string,"p_env"?: Database["public"]['Enums']["flag_env"] }; Returns: Json
+                           },
+"monitor_opportunities":
+{ Args: { "p_xray": string }; Returns: Json
                            },
 "monitor_partial":
 { Args: { "p_xray": string }; Returns: Json

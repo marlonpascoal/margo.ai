@@ -1442,6 +1442,18 @@ class XrayMonitor(Row):
     updated_by: UUID | None
 
 
+class XrayOpportunity(Row):
+    created_at: datetime
+    dropped: int
+    facts_hash: str
+    id: UUID
+    items: JsonValue
+    model: str
+    prompt_version: str
+    updated_at: datetime
+    xray_id: UUID
+
+
 class XrayPair(Row):
     accepted: bool
     by: UUID | None

@@ -633,6 +633,32 @@ class PostgresXrayRepo:
                 (xray_id,),
             )
 
+    # P23 "Oportunidades" (opportunities.py, migration 20261231000007)
+    def has_opportunities(self, xray_id: str) -> bool:
+        return bool(self._all("select 1 from public.xray_opportunity where xray_id = %s", (xray_id,)))
+
+    def opportunity_inputs(self, xray_id: str) -> tuple[dict[str, Any], dict[str, Any] | None] | None:
+        """The run as P23 shows it: monitor_result and monitor_positions, plus its target kind."""
+        rows = self._all(
+            "select public.monitor_result(%s) || jsonb_build_object('target_kind', x.target_kind) as r,"
+            " public.monitor_positions(%s) as p from public.xray x where x.id = %s",
+            (xray_id, xray_id, xray_id),
+        )
+        if not rows or rows[0]["r"] is None:
+            return None
+        return rows[0]["r"], rows[0]["p"]
+
+    def save_opportunities(
+        self, xray_id: str, items: list[dict[str, Any]], facts_hash: str, model: str, prompt_version: str, dropped: int
+    ) -> None:
+        from psycopg.types.json import Jsonb
+
+        self._conn.execute(
+            "insert into public.xray_opportunity (xray_id, items, facts_hash, model, prompt_version, dropped)"
+            " values (%s, %s, %s, %s, %s, %s) on conflict (xray_id) do nothing",
+            (xray_id, Jsonb(items), facts_hash, model, prompt_version, dropped),
+        )
+
 
 class PostgresPageCache:
     """D47 raw page cache in public.collector_page_cache (service role only)."""

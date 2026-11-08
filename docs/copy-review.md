@@ -897,4 +897,13 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | Até o próximo raio-X | `apps/web/app/app/raio-x/_components/NextSteps.tsx:27` | P23 end of page, replacing the end point (prints) | |
 | Nenhum item em teste. / {1} de {3} itens em teste. | `apps/web/lib/monitor/view.ts:396` | P23 "Até o próximo raio-X" (own-store runs), before the next run date | |
 | Acompanhar um concorrente | `apps/web/app/app/raio-x/_components/NextSteps.tsx:33` | P23 "Até o próximo raio-X" button to P20, when the plan allows competitors (screen only) | |
+| Oportunidades | `apps/web/app/app/raio-x/_components/Opportunities.tsx:25` | P23 eyebrow of the AI opportunities block (own run, m1.oportunidades_ia; Marlon 08/nov) | |
+| Sugestão gerada por IA a partir dos números deste raio-X. Confira antes de mudar preços. | `apps/web/app/app/raio-x/_components/Opportunities.tsx:27` | P23 line under "Oportunidades" | |
+| Subir preço | `apps/web/app/app/raio-x/_components/Opportunities.tsx:8` | P23 opportunity tag, lever subir_preco | |
+| Manter | `apps/web/app/app/raio-x/_components/Opportunities.tsx:9` | P23 opportunity tag, lever manter | |
+| Rever custo | `apps/web/app/app/raio-x/_components/Opportunities.tsx:10` | P23 opportunity tag, lever rever_custo | |
+| Acompanhar | `apps/web/app/app/raio-x/_components/Opportunities.tsx:11` | P23 opportunity tag, lever acompanhar | |
+| Itens | `apps/web/app/app/raio-x/_components/Opportunities.tsx:42` | Accessible name of the item names under an opportunity | |
+| Oportunidades sugeridas por IA no resultado do raio-X | `supabase/migrations/20261231000007_m1_opportunities.sql:13` | C20 description of the flag m1.oportunidades_ia | |
+| {título e porquê de cada oportunidade} | `workers/collector/src/margo_collector/opportunities.py` (SYSTEM) | P23 opportunity text, written by the AI from the run's numbers; kept only when every number exists in the facts, without "lucro", "margem", "ganho" or long dash | |
 

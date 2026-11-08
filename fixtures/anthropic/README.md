@@ -37,3 +37,21 @@ committing it.
 - `MARGO_PAIR_MODEL`: optional, overrides the default model `claude-sonnet-5-5` in worker-collector.
 - Without `ANTHROPIC_API_KEY` the step is skipped with a note (`m1_attr_ai_skipped`), nothing is learned, and the
   pairing is the rules alone. Each call logs `m1_attr_ai_call` with the item count and the model.
+
+## P23 "Oportunidades" (worker-collector)
+
+`xray_opportunities` runs once per own run after its calculation (flag `m1.oportunidades_ia`) and asks the Claude
+API, in one structured-output call, for 3 to 5 opportunities over the run's facts (`margo_collector.opportunities`).
+A deterministic check keeps only those whose numbers all exist in the facts, with no "lucro", "margem", "ganho" or
+long dash. Tests use a fake client and replay every `opportunities-*.json` recorded here; none is invented. To record
+one real answer, from the repository root:
+
+    ANTHROPIC_API_KEY=... uv run record-anthropic-opportunities                # default model claude-sonnet-5-5
+    ANTHROPIC_API_KEY=... uv run record-anthropic-opportunities <model-id>     # another model
+
+It sends the facts of one SINTÉTICO run (item names, categories, prices in reais and counts; no store name, no person)
+through the same `build_facts` and `build_request` the worker uses and writes `opportunities-<date>.json` with the
+request and the SDK's response. Check the file before committing it.
+
+- `MARGO_OPPORTUNITIES_MODEL`: optional, overrides the default model `claude-sonnet-5-5`.
+- Without `ANTHROPIC_API_KEY` the job finishes done with the log event `skipped_no_key` and no row.

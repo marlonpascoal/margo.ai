@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import type { ReadDb } from "@/lib/supabase/reader";
 import { answerDoubt, confirmSuggestions, createMonitor, markTest, undoAnswer, unmarkTest, type MonitorDeps } from "./commands";
-import { loadDoubts, loadResult, loadTestPlan, paceInput, type Progress } from "./load";
+import { loadDoubts, loadOpportunities, loadResult, loadTestPlan, paceInput, type Progress } from "./load";
 import { canAnswerDoubts, canManageMonitors, doubtReason, etaRange, etaText, isSlow, monitorRefusal, periodOptions, refusalText, roundUpMinutes, type PaceInput } from "./rules";
 
 const NOW = new Date("2026-11-07T14:00:00-03:00");
@@ -184,6 +184,16 @@ describe("A02 loaders read the monitoring with RLS first", () => {
     const deps = { db: fakeDb({ xray_monitor: [monitorRow], xray: [{ id: RUN }] }), env: "sandbox" as const, rpc: async (fn: string, a: Record<string, unknown>) => (calls.push([fn, a]), { open: 1 }) };
     expect(await loadDoubts(deps, MON)).toEqual({ open: 1 });
     expect(calls).toEqual([["monitor_doubts", { p_xray: RUN }]]);
+  });
+
+  it("B01_opportunities_of_a_visible_run_after_the_rls_read", async () => {
+    const calls: [string, Record<string, unknown>][] = [];
+    const deps = { db: fakeDb({ xray_monitor: [monitorRow], xray: [{ id: RUN }] }), env: "sandbox" as const, rpc: async (fn: string, a: Record<string, unknown>) => (calls.push([fn, a]), null) };
+    expect(await loadOpportunities(deps, MON, RUN)).toBeNull();
+    expect(calls).toEqual([["monitor_opportunities", { p_xray: RUN }]]);
+    const hidden = { db: fakeDb({}), env: "sandbox" as const, rpc: async (fn: string) => (calls.push([fn, {}]), {}) };
+    expect(await loadOpportunities(hidden, MON, RUN)).toBeNull();
+    expect(calls).toHaveLength(1);
   });
 
   it("B01_result_is_null_until_the_run_is_calculated", async () => {

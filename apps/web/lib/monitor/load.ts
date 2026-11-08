@@ -489,6 +489,33 @@ export async function loadResultPageForPrint(rpc: LoadDeps["rpc"], xrayId: strin
   return UUID.test(xrayId) ? resultPage(rpc, xrayId) : null;
 }
 
+// P23 "Oportunidades" (migration 20261231000007) ---------------------------------------------------------------------
+
+export type OpportunityLever = "subir_preco" | "manter" | "rever_custo" | "acompanhar";
+
+/** AI opportunities of a run, already checked by worker-collector (every number exists in the run's facts). */
+export interface Opportunities {
+  xray_id: string;
+  created_at: string;
+  model: string;
+  prompt_version: string;
+  /** Answers the check rejected; never shown. */
+  dropped: number;
+  /** Priority order, 1 first; empty when every answer failed the check. */
+  items: { rank: number; title: string; why: string; lever: OpportunityLever; items: { item_id: string; name: string }[] }[];
+}
+
+/** P23: the opportunities of a run of a visible monitoring; null when none was generated (flag off, no key, not yet). */
+export async function loadOpportunities(deps: LoadDeps, monitorId: string, xrayId: string): Promise<Opportunities | null> {
+  const run = await visibleRun(deps, monitorId, xrayId);
+  return run ? ((await deps.rpc("monitor_opportunities", { p_xray: run.xrayId })) as Opportunities | null) : null;
+}
+
+/** The printed copy: the caller has checked worker-render's one-time token, as for loadResultPageForPrint. */
+export async function loadOpportunitiesForPrint(rpc: LoadDeps["rpc"], xrayId: string): Promise<Opportunities | null> {
+  return UUID.test(xrayId) ? ((await rpc("monitor_opportunities", { p_xray: xrayId })) as Opportunities | null) : null;
+}
+
 /** m1.score_min_items (M1-12): a category under it shows "poucos itens". rule_param is readable by members. */
 export async function scoreMinItems(db: ReadDb): Promise<number> {
   const { data } = await db.from("rule_param").select("value").eq("key", "m1.score_min_items").maybeSingle();

@@ -7,6 +7,7 @@ exception's class name only (margo_common.runner); C03 turns that name into the 
 from __future__ import annotations
 
 import os
+from typing import Any
 from uuid import UUID
 
 from margo_common.flags import flag_env
@@ -14,6 +15,7 @@ from margo_common.runner import JobRun
 from pydantic import BaseModel
 
 from .ai_attrs import reader_from_env
+from .opportunities import opportunities_step, writer_from_env
 from .repo import PostgresXrayRepo
 from .steps import calc_step, collect_step, neighborhood_job_step, pair_step
 
@@ -71,7 +73,17 @@ def xray_calc(run: JobRun[XrayPayload]) -> dict[str, int]:
         repo.close()
 
 
+def xray_opportunities(run: JobRun[XrayPayload]) -> dict[str, Any]:
+    """P23 "Oportunidades" after the calculation (opportunities.py). No ANTHROPIC_API_KEY: done, no row."""
+    repo = PostgresXrayRepo(local_db_url())
+    try:
+        return opportunities_step(repo, str(run.payload.xray_id), writer_from_env())
+    finally:
+        repo.close()
+
+
 collect.payload_model = XrayPayload  # type: ignore[attr-defined]
+xray_opportunities.payload_model = XrayPayload  # type: ignore[attr-defined]
 xray_neighborhood.payload_model = NeighborhoodPayload  # type: ignore[attr-defined]
 xray_pair.payload_model = XrayPayload  # type: ignore[attr-defined]
 xray_calc.payload_model = XrayPayload  # type: ignore[attr-defined]

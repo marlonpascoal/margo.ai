@@ -52,6 +52,7 @@ def test_A05_job_flags_map_the_job_types_the_spec_names() -> None:
         "extract_capture": "m1.extracao",
         "xray_pair": "m1.raio_x",
         "xray_calc": "m1.raio_x",
+        "xray_opportunities": "m1.oportunidades_ia",
         "render_xray": "m1.raio_x",
         "import_ifood_api": "m2.ifood_api",
         "import_ifood_file": "m2.arquivo_ifood",

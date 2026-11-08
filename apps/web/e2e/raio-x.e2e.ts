@@ -265,6 +265,7 @@ test("B01_P23_result_is_the_delivery_money_free_with_position_categories_and_sto
   await page.goto(`/app/raio-x/${monitorId}`);
   await expect(page.getByRole("heading", { name: "Raio-X de preço", exact: true })).toBeVisible();
   await expect(page.getByText("Como ler este raio-X").first()).toBeVisible();
+  await expect(page.getByText("Como fizemos este raio-X")).toBeVisible();
   await expect(page.getByText("Itens alinhados", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/Você cobra menos que \d+ das \d+ lojas vizinhas/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Por categoria" })).toBeVisible();

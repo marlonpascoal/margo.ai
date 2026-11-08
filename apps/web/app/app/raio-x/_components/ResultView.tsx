@@ -118,6 +118,55 @@ function ItemRow({ it, comp, who, ownLabel, stores, print }: { it: ResultItem; c
   );
 }
 
+/** Stores whose menus this run read (capture slots that finished); a run without captures (seed, before D47d) counts
+ *  the stores it compares with. */
+const storesRead = (r: ResultPage["result"]) => (r.stores_read > 0 ? r.stores_read : r.stores_compared);
+
+/** P23 "Como fizemos este raio-X" (Marlon, 08/nov: more didactic): the method in three steps with this run's numbers
+ *  (M1-01 neighborhood and capture slots, M1-04 pairing, M1-05 parity) and the three M1-07 readings with what each asks. */
+function MethodSteps({ r, comp, compared }: { r: ResultPage["result"]; comp: boolean; compared: number }) {
+  const his = comp ? "dele" : "seus";
+  return (
+    <section className="card mhow" aria-labelledby="stepsh">
+      <p className="eyebrow" id="stepsh">
+        Como fizemos este raio-X
+      </p>
+      <ol className="mhow3">
+        <li>
+          <b>Lemos {storesRead(r)} lojas vizinhas</b>
+          <span>
+            Num raio de {r.radius_km} km, só o que está público no iFood em {dayMon(r.on)}.
+          </span>
+        </li>
+        <li>
+          <b>
+            Achamos {compared} {compared === 1 ? "produto igual" : "produtos iguais"} aos {his}
+          </b>
+          <span>Mesmo produto, tamanho e sabor. {comp ? "Os itens só dele" : "Os itens só seus"} ficam à parte.</span>
+        </li>
+        <li>
+          <b>Olhamos o preço do meio</b>
+          <span>Para cada produto, metade das lojas cobra menos que o meio e metade cobra mais.</span>
+        </li>
+      </ol>
+      <dl className="mhowl">
+        <div>
+          <dt className="up">{comp ? "Mais barato" : "Espaço para subir"}</dt>
+          <dd>{comp ? "10% ou mais abaixo do meio." : "10% ou mais abaixo do meio. Teste subir um item por vez e acompanhe no próximo raio-X."}</dd>
+        </div>
+        <div>
+          <dt className="mid">Na média</dt>
+          <dd>{comp ? "Menos de 10% de diferença do meio." : "Menos de 10% de diferença do meio. Nada a fazer agora."}</dd>
+        </div>
+        <div>
+          <dt className="hold">{comp ? "Mais caro" : "Não mexa sem saber o custo"}</dt>
+          <dd>{comp ? "10% ou mais acima do meio." : "10% ou mais acima do meio. Antes de baixar, confira quanto custa fazer o item."}</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
 function HeadToHeadBlock({ h, name }: { h: HeadToHead; name: string }) {
   const less = h.items.filter((i) => i.their_cents < i.own_cents).length;
   const more = h.items.filter((i) => i.their_cents > i.own_cents).length;
@@ -283,13 +332,16 @@ export default function ResultView(p: ResultViewProps) {
           </span>
         </div>
       ) : null}
-      <details className="card how" open={print}>
-        <summary>
-          <b>Como ler este raio-X</b>
-          <span className="small muted">Preço público, sem custo nem volume de vendas.</span>
-        </summary>
-        {howList}
-      </details>
+      <MethodSteps r={r} comp={comp} compared={compared} />
+      {print ? null : (
+        <details className="card how">
+          <summary>
+            <b>Antes de mudar preços</b>
+            <span className="small muted">Preço público, sem custo nem volume de vendas.</span>
+          </summary>
+          {howList}
+        </details>
+      )}
       <ScoreCard result={r} previousOn={prevOn} competitor={comp} />
       <div className="lead2">
         {!comp ? (
@@ -383,7 +435,7 @@ export default function ResultView(p: ResultViewProps) {
       </section>
       <section className="card method" aria-label="Como calculamos">
         <p>
-          <b>Como calculamos.</b> {comp ? "As" : "Comparamos com as"} {r.stores_compared} lojas vizinhas num raio de {r.radius_km} km, só com o que está público no iFood em {dayMon(r.on)}. O meio da vizinhança é o preço do meio dos itens iguais ao{" "}
+          <b>Como calculamos.</b> {comp ? "As" : "Comparamos com as"} {storesRead(r)} lojas vizinhas num raio de {r.radius_km} km, só com o que está público no iFood em {dayMon(r.on)}. O meio da vizinhança é o preço do meio dos itens iguais ao{" "}
           {comp ? "dele" : "seu"} (mesmo produto, tamanho e sabor), só quando lojas suficientes vendem o item. Quando os vizinhos estão em promoção, também olhamos o preço cheio deles.
         </p>
         <p>

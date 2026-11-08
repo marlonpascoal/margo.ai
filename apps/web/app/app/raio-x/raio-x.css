@@ -244,6 +244,18 @@
 .rx .howl { display: grid; gap: 4px; font-size: var(--text-md); color: var(--color-ink-2); }
 .rx .method .howl { padding: 0 0 0 18px; margin: 0; font-size: var(--text-sm); color: var(--color-ink-muted); }
 
+/* Como fizemos este raio-X (P23, didactic method) */
+.rx .mhow { display: grid; gap: 14px; padding: 16px 20px; }
+.rx .mhow3 { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: st; }
+.rx .mhow3 li { counter-increment: st; display: grid; gap: 4px; padding-left: 34px; position: relative; font-size: var(--text-sm); color: var(--color-ink-2); }
+.rx .mhow3 li::before { content: counter(st); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--color-sunken); color: var(--color-ink); font-family: var(--font-mono); font-weight: 600; display: grid; place-items: center; font-size: var(--text-xs); }
+.rx .mhow3 li b { color: var(--color-ink); font-size: var(--text-md); }
+.rx .mhowl { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-top: 1px solid var(--color-border-subtle); padding-top: 12px; }
+.rx .mhowl div { display: grid; gap: 2px; }
+.rx .mhowl dt { font-weight: 600; font-size: var(--text-sm); }
+.rx .mhowl dd { margin: 0; font-size: var(--text-xs); color: var(--color-ink-2); }
+.rx .mhowl .up { color: var(--color-ok); }
+.rx .mhowl .hold { color: var(--color-danger); }
 /* Itens alinhados, M1-12 v3 (PriceScore.tsx, isolated) */
 .rx .scorec { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 28px; align-items: center; padding: 16px 20px; }
 .rx .scn { display: grid; gap: 2px; }
@@ -307,6 +319,7 @@
   .rx .it { grid-template-columns: 1fr; gap: 6px; }
   .rx .share ul { left: 0; right: auto; }
   .rx .scorec { grid-template-columns: 1fr; padding: 16px; }
+  .rx .mhow3, .rx .mhowl { grid-template-columns: 1fr; }
   .rx .h3row { grid-template-columns: 1fr; }
   .rx .catc > summary { grid-template-columns: minmax(0, 1fr) auto; }
   .rx .catc > summary .csum { grid-column: 1 / -1; grid-row: 2; }

@@ -87,7 +87,7 @@ export function ScoreMethod({ competitor, minItems }: { competitor: boolean; min
   if (!SHOW_SCORE) return null;
   return (
     <p>
-      <b>Itens alinhados.</b> Contamos quantos itens comparados {competitor ? "ele vende" : "você vende"} na faixa de preço da vizinhança, até 10% acima ou abaixo do preço do meio. Itens abaixo e acima da faixa aparecem à parte. Não é uma medida de lucro: não sabemos custo nem volume de vendas. Categorias com menos de {minItems} itens comparados ficam sem número. A mudança desde o raio-X anterior compara os mesmos itens.
+      <b>Itens alinhados.</b> Contamos quantos itens comparados {competitor ? "ele vende" : "você vende"} na faixa de preço da vizinhança, até 10% acima ou abaixo do preço do meio. Itens abaixo e acima da faixa aparecem à parte. Não leva em conta custo nem volume de vendas. Categorias com menos de {minItems} itens comparados ficam sem número. A mudança desde o raio-X anterior compara os mesmos itens.
     </p>
   );
 }

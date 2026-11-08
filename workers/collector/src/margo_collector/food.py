@@ -450,9 +450,12 @@ def _strip_breads(desc: str) -> str:
     return _DESC_OTHER_PATTY.sub(" ", _DESC_PAT_BREAD.sub(" ", desc))
 
 
-def food_attrs_m1_04(name: str | None, description: str | None, category: str | None) -> FoodAttrs:
+def food_attrs_m1_04(
+    name: str | None, description: str | None, category: str | None, *, section: str | None = None
+) -> FoodAttrs:
     """M1-04 Stage 2: the attributes of a non-beverage item, by rule. The name decides; the description fills
-    what the name leaves out. A burger's beef and a dog's sausage are implied when no other patty is named."""
+    what the name leaves out, then, for a prato, the menu section (D72). A burger's beef and a dog's sausage
+    are implied when no other patty is named."""
     n, d = plain(name), plain(description)
     lanche = category == "lanches"
     bases = _BASES_BY_CATEGORY.get(category or "", _PORCAO_BASES)
@@ -466,6 +469,12 @@ def food_attrs_m1_04(name: str | None, description: str | None, category: str | 
             base = "dog" if dog else ("burguer" if _DESC_BURGUER.search(d) else None)
     if base is None and category in ("porcoes", "pratos"):
         base = _first(bases, d) if not _found(_PATTY + _TOPPING, n) else None
+    if category == "pratos":
+        # D72: "Frango" under "Espetos" is a skewer. A cut ("Medalhão de frango") names the meat, not how it
+        # is served, so a skewer section wins over it too.
+        from_section = _first(bases, plain(section))
+        if base is None or (base == "grelhado" and from_section == "espeto"):
+            base = from_section or base
     patty = _found(_PATTY, n)
     topping = _found(_TOPPING, n)
     if not patty and not topping and category in ("lanches", "porcoes", "pratos"):
@@ -548,10 +557,14 @@ def unreadable_food_m1_04(a: FoodAttrs, category: str | None) -> str | None:
     return None
 
 
-def compare_food_m1_04(a: FoodAttrs, b: FoodAttrs, *, by_weight: bool = False) -> FoodMatch:
+def compare_food_m1_04(
+    a: FoodAttrs, b: FoodAttrs, *, by_weight: bool = False, base_required: bool = False
+) -> FoodMatch:
     """M1-04 Stage 2: `identical` when proteins and patty count are equal, and base, weight and portion size
     are equal where both sides state them, and the extras rule lets it through. Weight and portion size do
-    not count for an item normalized by weight (M1-03 already compares per 100 g)."""
+    not count for an item normalized by weight (M1-03 already compares per 100 g). With `base_required`
+    (pratos, D72) one side with a base and the other without is `unreadable`: the same protein is not the same
+    dish."""
     if a.proteins != b.proteins or a.patties != b.patties:
         return "conflict"
     if a.base is not None and b.base is not None and a.base != b.base:
@@ -571,6 +584,8 @@ def compare_food_m1_04(a: FoodAttrs, b: FoodAttrs, *, by_weight: bool = False) -
             return "conflict"
     if extras_differ_m1_04(a, b):
         return "conflict"
+    if base_required and (a.base is None) != (b.base is None):
+        return "unreadable"
     if not a.proteins and (a.base is None or b.base is None):
         return "unreadable"
     return "identical"

@@ -576,7 +576,7 @@ def item_food_attrs_m1_04(item: Item, food: FoodOverrides | None = None) -> Food
     """M1-04 Stage 2: the attributes of a lanche or a porção, by rule; a learning or the AI only for an item
     the rule cannot read (`food`)."""
     category = item_category_m1_04(item)
-    attrs = food_attrs_m1_04(item.name, item.description, category)
+    attrs = food_attrs_m1_04(item.name, item.description, category, section=item.section)
     if food and item.id in food and unreadable_food_m1_04(attrs, category) is not None:
         return food[item.id]
     return attrs
@@ -615,7 +615,10 @@ def _pair_food(
             reason is None
             and unreadable_food_m1_04(other, category) is None
             and sim >= settings.attribute_floor
-            and compare_food_m1_04(attrs, other, by_weight=by_weight) == "identical"
+            and compare_food_m1_04(attrs, other, by_weight=by_weight, base_required=category == "pratos")
+            == "identical"
+            # D72: two pratos with no base at all share only a protein, unless their names are close.
+            and (category != "pratos" or attrs.base or other.base or sim >= settings.similarity_threshold)
         ):
             matched.setdefault(c.store_id, []).append(Candidate(c, sim, True))
         elif sim >= settings.candidate_floor:

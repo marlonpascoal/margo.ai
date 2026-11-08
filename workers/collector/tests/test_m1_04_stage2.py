@@ -703,3 +703,80 @@ def test_M1_04_every_category_pairs_by_attributes_and_can_be_exclusive():
     assert alone.status == "revisar" and alone.note == "sabor ilegível", "an unknown flavor is unreadable, not exclusive"
     piece = pair_item_m1_04(extra("o", "t", "Adicional de catupiry"), [extra("x", "s1", "Adicional de bacon em cubos")], Settings())
     assert (piece.status, piece.note) == ("exclusivo", EXCLUSIVE_NOTE)
+
+
+# A prato's base: the section, and both sides must say it (Marlon, 08/nov, D72). All names are SINTÉTICO. -------------
+
+
+def _prato(item_id: str, store: str, name: str, cents: int, section: str | None = None) -> Item:
+    return Item(id=item_id, store_id=store, name=name, price_cents=cents, section=section)
+
+
+def test_M1_04_prato_base_comes_from_the_section_when_the_name_says_none():
+    a = food_attrs_m1_04("Frango", None, "pratos", section="Espetos")
+    assert a.base == "espeto"
+    assert a.proteins == frozenset({"frango"})
+
+
+def test_M1_04_prato_a_cut_in_a_skewer_section_is_a_skewer():
+    assert food_attrs_m1_04("Medalhão de frango", None, "pratos", section="Espetos").base == "espeto"
+
+
+def test_M1_04_prato_the_name_still_decides_over_the_section():
+    assert food_attrs_m1_04("Strogonoff de frango", None, "pratos", section="Espetos").base == "strogonoff"
+    assert food_attrs_m1_04("Filé de frango", None, "pratos", section="Pratos do dia").base == "grelhado"
+
+
+def test_M1_04_only_pratos_read_the_section_for_the_base():
+    assert food_attrs_m1_04("Frango", None, "porcoes", section="Espetos").base is None
+
+
+def test_M1_04_prato_with_no_base_on_one_side_does_not_pair():
+    a = food_attrs_m1_04("Frango", None, "pratos", section="Espetos")
+    b = food_attrs_m1_04("Bowl frango xadrez", None, "pratos")
+    assert b.base is None
+    assert compare_food_m1_04(a, b, base_required=True) == "unreadable"
+    assert compare_food_m1_04(a, a, base_required=True) == "identical"
+
+
+def test_M1_04_prato_skewer_is_not_compared_with_full_plates():
+    own = _prato("own", "T", "Frango", 1590, "Espetos")
+    pool = [
+        _prato(f"s{i}", f"S{i}", name, 5000 + i, section)
+        for i, (name, section) in enumerate(
+            [
+                ("Strogonoff de frango", "Pratos"),
+                ("Yakisoba de frango", "Pratos"),
+                ("Bowl frango xadrez", "Delícias"),
+                ("Frango à cubana", "Novidades"),
+                ("Filé de frango", "Pratos"),
+                ("Fricassé de frango", "Pratos com frango"),
+            ]
+        )
+    ]
+    paired = pair_item_m1_04(own, pool, Settings())
+    assert paired.status == "exclusivo"
+    assert not [c for c in paired.candidates if c.accepted]
+
+
+def test_M1_04_pratos_with_no_base_pair_only_with_close_names():
+    own = _prato("own", "T", "Frango ao molho", 1590, "Pratos")
+    other = [_prato(f"s{i}", f"S{i}", "Bowl frango xadrez", 4000, "Pratos") for i in range(5)]
+    assert pair_item_m1_04(own, other, Settings()).status == "exclusivo"
+    same = [_prato(f"s{i}", f"S{i}", "Frango ao molho", 2000, "Pratos") for i in range(5)]
+    assert pair_item_m1_04(own, same, Settings()).status == "auto"
+
+
+def test_M1_04_prato_skewers_still_pair_with_skewers():
+    own = _prato("own", "T", "Frango", 1590, "Espetos")
+    pool = [_prato(f"s{i}", f"S{i}", "Espeto de frango", 1600 + i, "Pratos") for i in range(5)]
+    paired = pair_item_m1_04(own, pool, Settings())
+    assert paired.status == "auto"
+    assert len([c for c in paired.candidates if c.accepted]) == 5
+
+
+def test_M1_04_a_lanche_with_no_base_on_one_side_keeps_pairing():
+    a = food_attrs_m1_04("Especial da vila de frango", None, "lanches")
+    b = food_attrs_m1_04("Burger de frango", None, "lanches")
+    assert a.base is None
+    assert compare_food_m1_04(a, b) == "identical"

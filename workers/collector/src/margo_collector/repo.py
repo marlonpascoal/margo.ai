@@ -37,6 +37,8 @@ from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual, presumed_
 class MemoryXrayRepo:
     xrays: dict[str, XrayRun] = field(default_factory=dict)
     two_tiers_on: bool = False
+    cap: int = 30
+    menu_first: dict[str, str] = field(default_factory=dict)
     families: dict[str, Family] = field(default_factory=dict)
     pair_reviews: dict[str, ReviewRun] = field(default_factory=dict)
     pair_review_answers: dict[str, dict[str, bool]] = field(default_factory=dict)
@@ -174,6 +176,21 @@ class MemoryXrayRepo:
 
     def two_tiers(self, xray_id: str) -> bool:
         return self.two_tiers_on
+
+    def capture_cap(self) -> int:
+        return self.cap
+
+    def menu_first_state(self, xray_id: str) -> str | None:
+        return self.menu_first.get(xray_id)
+
+    def queue_menu_first(self, xray_id: str, env: str) -> str | None:
+        self.menu_first[xray_id] = "waiting"
+        return "job"
+
+    def save_menu_terms(self, xray_id: str, shares: dict[str, float]) -> None:
+        x = self.xrays[xray_id]
+        categories = [*x.categories, *(t for t in shares if t not in x.categories)]
+        self.xrays[xray_id] = replace(x, categories=categories, rules={**x.rules, "menu_term_shares": shares})
 
     def item_families(self) -> dict[str, Family]:
         return dict(self.families)
@@ -539,6 +556,34 @@ class PostgresXrayRepo:
             (xray_id,),
         )
         return bool(rows and rows[0]["on"])
+
+    def capture_cap(self) -> int:
+        rows = self._all("select value from public.rule_param where key = 'm1.extract_max_captures_per_xray'")
+        return int(rows[0]["value"]) if rows else 30
+
+    def menu_first_state(self, xray_id: str) -> str | None:
+        rows = self._all(
+            "select status from public.job where type = 'extract_capture' and payload ->> 'menu_first_xray' = %s"
+            " order by created_at desc limit 1",
+            (xray_id,),
+        )
+        if not rows:
+            return None
+        return "waiting" if rows[0]["status"] in ("queued", "running") else "finished"
+
+    def queue_menu_first(self, xray_id: str, env: str) -> str | None:
+        rows = self._all("select public.xray_queue_menu_first(%s, %s) as id", (xray_id, env))
+        return _s(rows[0]["id"]) if rows else None
+
+    def save_menu_terms(self, xray_id: str, shares: dict[str, float]) -> None:
+        from psycopg.types.json import Jsonb
+
+        with self._tx() as c:
+            c.execute(
+                "update public.xray set categories = (select array_agg(distinct t) from"
+                " unnest(categories || %s::text[]) t), rules = rules || %s where id = %s",
+                (list(shares), Jsonb({"menu_term_shares": shares}), xray_id),
+            )
 
     def item_families(self) -> dict[str, Family]:
         rows = self._all("select pattern, family, protein, size_class from public.m1_item_family")

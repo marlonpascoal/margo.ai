@@ -244,6 +244,61 @@ def classify_step_m1_13(
     return {keys[int(ref)]: fam for ref, fam in found.items()}
 
 
+FAMILY_TERM: dict[str, str] = {
+    "hamburguer": "Hambúrguer",
+    "cachorro_quente": "Lanches",
+    "sanduiche": "Lanches",
+    "pastel": "Pastel",
+    "salgado": "Salgados",
+    "esfiha": "Árabe",
+    "pizza": "Pizza",
+    "espeto": "Carnes",
+    "churrasco": "Carnes",
+    "frango_assado": "Frangos",
+    "prato_feito": "Marmita",
+    "strogonoff": "Brasileira",
+    "parmegiana": "Brasileira",
+    "feijoada": "Brasileira",
+    "massa": "Italiana",
+    "lasanha": "Italiana",
+    "risoto": "Italiana",
+    "temaki": "Japonesa",
+    "sashimi": "Japonesa",
+    "uramaki": "Japonesa",
+    "hossomaki": "Japonesa",
+    "niguiri": "Japonesa",
+    "hot_roll": "Japonesa",
+    "combinado": "Japonesa",
+    "carpaccio": "Japonesa",
+    "ceviche": "Japonesa",
+    "poke": "Japonesa",
+    "harumaki": "Japonesa",
+    "guioza": "Japonesa",
+    "tempura": "Japonesa",
+    "yakisoba": "Chinesa",
+    "salada": "Saudável",
+    "acai": "Sorvetes",
+    "sorvete": "Sorvetes",
+    "bolo_torta": "Doces & Bolos",
+    "doce": "Doces & Bolos",
+}
+"""M1-02 (D76): the iFood search term of each family, from the categories iFood shows on stores."""
+MIN_MENU_SHARE = 0.15
+
+
+def menu_term_shares_m1_02(items: Iterable[Item], families: Mapping[str, Family]) -> dict[str, float]:
+    """M1-02 (D76): the search terms a store's own menu asks for, each with its share of the food items. A
+    term under `MIN_MENU_SHARE` is noise; a family with no term (a side dish) counts in no term."""
+    known = [families[k] for k in (family_key(i) for i in items if is_food_m1_04(i)) if k in families]
+    counts: dict[str, int] = {}
+    for fam in known:
+        term = FAMILY_TERM.get(fam.family)
+        if term:
+            counts[term] = counts.get(term, 0) + 1
+    shares = {term: n / len(known) for term, n in counts.items()}
+    return {term: share for term, share in shares.items() if share >= MIN_MENU_SHARE}
+
+
 def _size_group(size: str) -> str:
     """Individual and normal are the portions most stores never tell apart."""
     return "normal" if size in ("individual", "normal") else size
@@ -259,12 +314,13 @@ def basis_words(fam: Family, *, with_protein: bool) -> str:
     return " ".join(words)
 
 
-def _store_prices(rows: Sequence[tuple[Item, Family]], norm: Normalized) -> list[int]:
-    """One middle price per store, on the own item's size when it has one."""
+def _store_prices(rows: Sequence[tuple[Item, Family]], norm: Normalized | None) -> list[int]:
+    """One middle price per store, on the own item's size when compared by size (`norm`), else as sold."""
     by_store: dict[str, list[Fraction]] = {}
     for item, _ in rows:
         n = normalize_m1_03(item)
-        value = n.per_base * norm.own_base_qty if norm.by_weight_or_pack else Fraction(item.price_cents)
+        sized = norm is not None and norm.by_weight_or_pack
+        value = n.per_base * norm.own_base_qty if sized else Fraction(item.price_cents)
         by_store.setdefault(item.store_id, []).append(value)
     return [round(sorted(v)[(len(v) - 1) // 2]) for v in by_store.values()]
 
@@ -301,6 +357,14 @@ def family_ranges_m1_13(
         specific = _store_prices(protein_rows, norm)
         with_protein = fam.protein != "sem_proteina" and len(specific) >= min_stores
         chosen = specific if with_protein else _store_prices(same_basis, norm)
+        if len(chosen) < min_stores and norm.by_weight_or_pack:
+            # D75: too few stores state a size. The whole-portion price is still a reference; the screen says
+            # size is unknown.
+            everyone = peers.get((fam.family, _size_group(fam.size)), [])
+            others = [(p, f) for p, f in everyone if p.store_id != item.store_id]
+            same_protein = _store_prices([(p, f) for p, f in others if f.protein == fam.protein], None)
+            with_protein = fam.protein != "sem_proteina" and len(same_protein) >= min_stores
+            chosen = same_protein if with_protein else _store_prices(others, None)
         if len(chosen) >= min_stores:
             out[key] = FamilyRange(
                 range_m1_13(item.price_cents, chosen),

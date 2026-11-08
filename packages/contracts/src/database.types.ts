@@ -2837,6 +2837,9 @@ isOneToOne: false
 "xray_print_token_use":
 { Args: { "p_hash": string,"p_xray": string }; Returns: boolean
                            },
+"xray_queue_menu_first":
+{ Args: { "p_env"?: Database["public"]['Enums']["flag_env"],"p_xray": string }; Returns: string
+                           },
 "xray_store_set_included":
 { Args: { "p_actor": string,"p_included": boolean,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray_store": string }; Returns: undefined
                            }

@@ -17,7 +17,13 @@ from typing import Any, Protocol
 
 from margo_common.log import log_event
 
-from .family import Family, FamilyClassifier, classify_step_m1_13, family_ranges_m1_13
+from .family import (
+    Family,
+    FamilyClassifier,
+    classify_step_m1_13,
+    family_ranges_m1_13,
+    menu_term_shares_m1_02,
+)
 from .ifood_public import ParsedStore
 from .learning import (
     Answer,
@@ -130,6 +136,22 @@ class XrayRepo(Protocol):
         """M1-13: flag m1.comparacao_faixa for this monitored run."""
         ...
 
+    def capture_cap(self) -> int:
+        """Param m1.extract_max_captures_per_xray."""
+        ...
+
+    def menu_first_state(self, xray_id: str) -> str | None:
+        """D76: the capture asked before the discovery: "waiting", "finished", or None when never asked."""
+        ...
+
+    def queue_menu_first(self, xray_id: str, env: str) -> str | None:
+        """D76: queues the target's capture; None when it cannot."""
+        ...
+
+    def save_menu_terms(self, xray_id: str, shares: dict[str, float]) -> None:
+        """D76: adds the menu's terms to the X-ray's categories and keeps their shares in its rules."""
+        ...
+
     def item_families(self) -> dict[str, Family]:
         """M1-13: every classified pattern (public.m1_item_family)."""
         ...
@@ -206,14 +228,36 @@ def neighborhood_step(
         target_terms=[*x.categories, *(own.terms if own else ())],
         store_terms={sid: d.terms for sid, d in found.items()},
         rank_weights=repo.rank_weights(),
+        term_shares=x.rules.get("menu_term_shares"),
+        capture_cap=repo.capture_cap(),
     )
     repo.save_neighborhood(xray_id, rows, keep_rank=keep_rank)
     return {"stores": len(rows), "in_set": sum(1 for r in rows if r.included)}
 
 
-def collect_step(repo: XrayRepo, xray_id: str, env: str) -> dict[str, int]:
+def collect_step(
+    repo: XrayRepo, xray_id: str, env: str, classifier: FamilyClassifier | None = None
+) -> dict[str, int]:
     """C02: queues the discovery of the target for an extractor (docs/extract-api.md). The result comes back
-    through /api/extract/result, which applies the copies and queues `xray_neighborhood`."""
+    through /api/extract/result, which applies the copies and queues `xray_neighborhood`.
+
+    D76: with m1.comparacao_faixa the discovery searches for what the store sells. With no menu yet its
+    capture comes first and this job runs again when it ends; if that capture fails, the categories chosen
+    stand."""
+    if classifier is not None and repo.two_tiers(xray_id):
+        target = repo.load_xray(xray_id).target_store_id
+        menu = repo.items_of_stores([target])
+        if not menu:
+            state = repo.menu_first_state(xray_id)
+            if state == "waiting" or (state is None and repo.queue_menu_first(xray_id, env) is not None):
+                return {"menu_first": 1}
+        else:
+            known = repo.item_families()
+            found = classify_step_m1_13(menu, known, classifier, xray_id)
+            repo.save_item_families(found, classifier.model)
+            shares = menu_term_shares_m1_02(menu, {**known, **found})
+            if shares:
+                repo.save_menu_terms(xray_id, shares)
     if repo.queue_discover(xray_id, env) is None:
         raise ExtractionOff()
     return {"queued": 1}

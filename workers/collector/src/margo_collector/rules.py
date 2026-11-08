@@ -749,6 +749,27 @@ class FamilyRange:
     """What it compares with, in words: "temaki de salmão"."""
 
 
+def balance_rank_m1_11(
+    ranked: Sequence[Ranked],
+    store_terms: Mapping[str, Iterable[str]],
+    shares: Mapping[str, float],
+    cap: int,
+) -> list[Ranked]:
+    """M1-11 (D76): the capture places follow the store's own menu. Each term gets its share of the `cap`
+    places, best rank first, so a store that is mostly skewers is not read against burger shops only because
+    they have more ratings. The other stores follow in rank order."""
+    by_rank = sorted(ranked, key=lambda r: r.rank)
+    chosen: dict[str, Ranked] = {}
+    for term, share in sorted(shares.items(), key=lambda kv: -kv[1]):
+        wanted, quota = _term(term), math.ceil(share * cap)
+        matching = [r for r in by_rank if wanted in {_term(t) for t in store_terms.get(r.store_id, ())}]
+        for r in matching[:quota]:
+            chosen.setdefault(r.store_id, r)
+    first = sorted(chosen.values(), key=lambda r: r.rank)
+    rest = [r for r in by_rank if r.store_id not in chosen]
+    return [replace(r, rank=n) for n, r in enumerate([*first, *rest], start=1)]
+
+
 def comparison_tier_m1_13(item: Item) -> Literal["exata", "faixa"]:
     """M1-13: food with no size written compares by range only; everything else exactly."""
     if item_category_m1_04(item) in FOOD_CATEGORIES and not item_is_combo_m1_04(item):

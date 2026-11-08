@@ -26,6 +26,7 @@ from .rules import (
     Reading,
     Settings,
     Store,
+    balance_rank_m1_11,
     candidate_m1_02,
     comparison_tier_m1_13,
     exclusion_m1_02,
@@ -83,9 +84,12 @@ def build_neighborhood(
     target_terms: Iterable[str] = (),
     store_terms: Mapping[str, Iterable[str]] | None = None,
     rank_weights: RankWeights = RankWeights(),  # noqa: B008 (frozen)
+    term_shares: Mapping[str, float] | None = None,
+    capture_cap: int = 30,
 ) -> list[StoreRow]:
     """M1-01, M1-02, then M1-11 over the stores those filters kept; `manual` holds the founder's C03 choices.
-    A manual choice wins over the filters and changes no rank."""
+    A manual choice wins over the filters and changes no rank. `term_shares` (D76) divides the capture places
+    by what the store's own menu sells."""
     terms = store_terms or {}
     wanted = list(target_terms)
     delivers = delivers_to_target or {}
@@ -109,7 +113,10 @@ def build_neighborhood(
             rows.append(StoreRow(store.id, distance, d, included, manual_reason))
         else:
             rows.append(StoreRow(store.id, distance, d, reason is None, reason))
-    ranked = {r.store_id: r for r in rank_m1_11(candidates, wanted, settings.radius_km, rank_weights)}
+    order = rank_m1_11(candidates, wanted, settings.radius_km, rank_weights)
+    if term_shares:
+        order = balance_rank_m1_11(order, terms, term_shares, capture_cap)
+    ranked = {r.store_id: r for r in order}
     return [
         replace(r, capture_score=ranked[r.public_store_id].score, capture_rank=ranked[r.public_store_id].rank)
         if r.public_store_id in ranked

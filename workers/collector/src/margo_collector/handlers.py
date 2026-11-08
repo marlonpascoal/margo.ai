@@ -40,7 +40,7 @@ def collect(run: JobRun[XrayPayload]) -> dict[str, int]:
     """C02 "Buscar vizinhança": queues the discovery of the target (docs/extract-api.md)."""
     repo = PostgresXrayRepo(local_db_url())
     try:
-        return collect_step(repo, str(run.payload.xray_id), flag_env())
+        return collect_step(repo, str(run.payload.xray_id), flag_env(), classifier_from_env())
     finally:
         repo.close()
 

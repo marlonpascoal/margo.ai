@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from fractions import Fraction
 
 from margo_collector.attributes import category_m1_04
 from margo_collector.family import (
@@ -12,11 +13,12 @@ from margo_collector.family import (
     classify_step_m1_13,
     family_key,
     family_ranges_m1_13,
+    menu_term_shares_m1_02,
     parse_answer,
 )
 from margo_collector.repo import MemoryXrayRepo
-from margo_collector.rules import Item
-from margo_collector.steps import XrayRun, calc_step, pair_step
+from margo_collector.rules import Item, Ranked, balance_rank_m1_11
+from margo_collector.steps import XrayRun, calc_step, collect_step, pair_step
 from margo_collector.xray import CalcInput, StoreRow, calculate
 
 
@@ -156,3 +158,70 @@ def test_M1_13_with_the_flag_off_nothing_is_classified():
     fake = Fake()
     pair_step(repo, "x", None, None, fake)
     assert fake.asked == []
+
+
+# Neighbors by the store's own menu (D76) ------------------------------------------------------------------------
+
+
+def test_M1_13_with_few_sized_peers_the_whole_portion_price_is_the_reference():
+    own = item("own", "T", "Temaki 10 unid", 3000, qty=10)
+    r = family_ranges_m1_13([("k", own)], NEAR, fam(own, *NEAR), 5)["k"]
+    assert (r.range.low_cents, r.stores) == (3500, 5)
+
+
+def _menu(*names: str) -> list[Item]:
+    return [item(f"m{n}", "T", name, 1000, "Espetos") for n, name in enumerate(names)]
+
+
+def test_D76_terms_follow_the_menu_and_drop_noise():
+    menu = _menu(*[f"Espeto {n}" for n in range(8)], "Burger 1", "Burger 2", "Pudim")
+    families = {
+        **{family_key(i): Family("espeto", "bovino", "normal") for i in menu[:8]},
+        **{family_key(i): Family("hamburguer", "bovino", "normal") for i in menu[8:10]},
+        family_key(menu[10]): Family("doce", "sem_proteina", "normal"),
+    }
+    shares = menu_term_shares_m1_02(menu, families)
+    assert set(shares) == {"Carnes", "Hambúrguer"}
+    assert round(shares["Carnes"], 2) == 0.73
+
+
+def _ranked(n: int) -> list[Ranked]:
+    return [Ranked(f"s{i}", Fraction(100 - i), i + 1) for i in range(n)]
+
+
+def test_D76_capture_places_follow_the_menu_share():
+    terms = {f"s{i}": ["Hambúrguer"] for i in range(30)} | {f"s{i}": ["Carnes"] for i in range(30, 40)}
+    order = balance_rank_m1_11(_ranked(40), terms, {"Carnes": 0.7, "Hambúrguer": 0.3}, 30)
+    first = {r.store_id for r in order if r.rank <= 30}
+    assert sum(1 for s in first if terms[s] == ["Carnes"]) == 10
+    assert sum(1 for s in first if terms[s] == ["Hambúrguer"]) == 20
+    assert sorted(r.rank for r in order) == list(range(1, 41))
+
+
+def test_D76_no_menu_captures_it_first_and_does_not_discover():
+    repo = _repo(True)
+    repo.items = {}
+    assert collect_step(repo, "x", "sandbox", Fake()) == {"menu_first": 1}
+    assert repo.queued == []
+    assert collect_step(repo, "x", "sandbox", Fake()) == {"menu_first": 1}
+
+
+def test_D76_a_failed_menu_capture_still_discovers():
+    repo = _repo(True)
+    repo.items = {}
+    repo.menu_first["x"] = "finished"
+    assert collect_step(repo, "x", "sandbox", Fake()) == {"queued": 1}
+
+
+def test_D76_with_a_menu_the_terms_join_the_categories():
+    repo = _repo(True)
+    collect_step(repo, "x", "sandbox", Fake())
+    assert "Japonesa" in repo.xrays["x"].categories
+    assert repo.xrays["x"].rules["menu_term_shares"] == {"Japonesa": 1.0}
+    assert repo.queued
+
+
+def test_D76_with_the_flag_off_the_flow_is_as_before():
+    repo = _repo(False)
+    assert collect_step(repo, "x", "sandbox", Fake()) == {"queued": 1}
+    assert repo.xrays["x"].categories == []

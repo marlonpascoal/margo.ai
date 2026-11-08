@@ -156,8 +156,8 @@ def build_pairs(
     `decisions` maps (own item id, comparable item id) to a founder's (accepted, person id). A decision stays
     even when the rule alone would no longer list that item, as long as it is still in the pool. `food` holds
     the attributes a learning or the AI read for non-beverage items the rule cannot read (M1-04 Stage 2).
-    `rejected` holds the (own item id, comparable item id) pairs the M1-12 review took out: the rules run again
-    without them, so a store's next best item can take the place."""
+    `rejected` holds the (own item id, comparable item id) pairs the M1-12 review took out: the rules run
+    again without them, so a store's next best item can take the place."""
     kept = decisions or {}
     by_id = {i.id: i for i in pool}
     defaults = size_defaults_m1_04([*own_items, *pool], settings)

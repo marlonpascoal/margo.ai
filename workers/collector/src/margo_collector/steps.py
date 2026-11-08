@@ -229,8 +229,9 @@ def pair_step(
     key, D70) that step is skipped with a note, nothing is learned, and the result is the rules
     alone.
 
-    M1-12: before the pairs are saved, the AI reviews them against the checklist and the rules run again without
-    what it rejected (`reviewer`, pair_review.py). Without one the rules stand and the review says so."""
+    M1-12: before the pairs are saved, the AI reviews them against the checklist and the rules run again
+    without what it rejected (`reviewer`, pair_review.py). Without one the rules stand and the review says
+    so."""
     if repo.pair_blocker(xray_id) is not None:
         raise LoadPending()
     x = repo.load_xray(xray_id)

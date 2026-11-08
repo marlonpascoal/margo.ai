@@ -934,6 +934,15 @@ class M1AttrLearningRun(Row):
     xray_id: UUID
 
 
+class M1PairReviewAnswer(Row):
+    approved: bool
+    created_at: datetime
+    model: str
+    pattern: str
+    updated_at: datetime
+    xray_id: UUID
+
+
 class Membership(Row):
     account_id: UUID
     all_kitchens: bool
@@ -1464,6 +1473,24 @@ class XrayPair(Row):
     size_presumed_ml: Decimal | None
     updated_at: datetime
     xray_item_id: UUID
+
+
+class XrayPairReview(Row):
+    approved: int
+    created_at: datetime
+    detail: JsonValue
+    first_round_score: Decimal | None
+    from_learnings: int
+    judged: int
+    model: str | None
+    prompt_version: str | None
+    rejected: int
+    rounds: int
+    score: Decimal | None
+    sent_to_doubts: int
+    status: str
+    updated_at: datetime
+    xray_id: UUID
 
 
 class XrayPrint(Row):

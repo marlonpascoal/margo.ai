@@ -2,7 +2,8 @@
 // one). Nothing calculated yet: to P21. Not visible to this person: 404 (A02, A03).
 import { notFound, redirect } from "next/navigation";
 import { loadDeps } from "@/lib/monitor/deps";
-import { loadHistory, loadItemLists, loadMonitorSummary, loadResultPage, scoreMinItems, visibleMonitor } from "@/lib/monitor/load";
+import { canAnswerDoubts } from "@/lib/monitor/rules";
+import { loadHistory, loadItemLists, loadMonitorSummary, loadResultPage, loadTestPlan, scoreMinItems, visibleMonitor, type Limits } from "@/lib/monitor/load";
 import { requirePortal } from "@/lib/portal/session";
 import ResultView from "./ResultView";
 
@@ -16,12 +17,15 @@ export default async function ResultPageServer({ monitorId, xrayId }: { monitorI
     if (xrayId) notFound();
     redirect(`/app/raio-x/${monitorId}/lendo`);
   }
-  const [summary, lists, history, minItems] = await Promise.all([
+  const [summary, lists, history, minItems, plan, limits] = await Promise.all([
     loadMonitorSummary(deps, monitorId),
     loadItemLists(deps, monitorId, page.result.xray_id),
     loadHistory(deps, monitorId),
     scoreMinItems(m.db),
+    loadTestPlan(deps, monitorId, page.result.xray_id),
+    deps.rpc("monitor_limits", { p_account: m.account.id, p_env: deps.env }) as Promise<Limits>,
   ]);
+  const canEdit = canAnswerDoubts(m.role, { gerenteAnswers: limits.gerente_answers, monitorKitchenId: row.kitchenId, kitchenIds: m.kitchenIds, allKitchens: m.allKitchens });
   const runs = (history?.runs ?? []).filter((r) => ["ready", "delivered"].includes(r.status) && r.on).map((r) => ({ xray_id: r.xray_id, on: r.on as string }));
   return (
     <ResultView
@@ -34,6 +38,14 @@ export default async function ResultPageServer({ monitorId, xrayId }: { monitorI
       synthetic={m.account.isSynthetic}
       minItems={minItems}
       mode="screen"
+      continuity={{
+        history: history?.runs ?? [],
+        nextRunAt: summary?.next_run_at ?? null,
+        status: summary?.status ?? "active",
+        plan,
+        canEdit,
+        competitorAllowed: limits.competitor_allowed,
+      }}
     />
   );
 }

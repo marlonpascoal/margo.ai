@@ -4,13 +4,17 @@
 // Money-free wording: a price gap is "diferença de preço por venda", never profit.
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { HeadToHead, ItemLists, ResultItem, ResultPage } from "@/lib/monitor/load";
+import type { HeadToHead, History, ItemLists, MonitorStatus, ResultItem, ResultPage, TestPlan as TestPlanData } from "@/lib/monitor/load";
 import { printVersion } from "@/lib/monitor/print";
 import { GROUP_LABEL, type Group } from "@/lib/monitor/rules";
 import { brl, dayMon, gapWords, headline, longWeekdayDayMon, ordinal, paretoSentence, positionChange, positionWords, readingGroups, storeListWithOwn, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
 import NavSelect from "@/components/NavSelect";
 import { CategoryScore, ScoreCard, ScoreMethod } from "./PriceScore";
+import NextSteps from "./NextSteps";
 import ShareMenu from "./ShareMenu";
+import TestButton from "./TestButton";
+import TestPlan from "./TestPlan";
+import Timeline from "./Timeline";
 import PrintOpen from "./PrintOpen";
 import { Crumb, Fict } from "./ui";
 
@@ -24,6 +28,15 @@ export interface ResultViewProps {
   synthetic: boolean;
   minItems: number;
   mode: "screen" | "print";
+  /** Continuity (Marlon, 08/nov: a result is a point of the monitoring, not an end): timeline, test plan, next steps. */
+  continuity?: {
+    history: History["runs"];
+    nextRunAt: string | null;
+    status: MonitorStatus;
+    plan: TestPlanData | null;
+    canEdit: boolean;
+    competitorAllowed: boolean;
+  };
 }
 
 const RCLS: Record<ReadingKey, string> = { pode_subir: "up", na_media: "mid", nao_mexer: "hold" };
@@ -67,7 +80,7 @@ function Strip({ it, who }: { it: ResultItem; who: string }) {
   );
 }
 
-function ItemRow({ it, comp, who, ownLabel, stores, print }: { it: ResultItem; comp: boolean; who: string; ownLabel: string; stores: { name: string; price_cents: number }[]; print: boolean }) {
+function ItemRow({ it, comp, who, ownLabel, stores, print, test }: { it: ResultItem; comp: boolean; who: string; ownLabel: string; stores: { name: string; price_cents: number }[]; print: boolean; test?: ReactNode }) {
   let next: ReactNode = null;
   if (!comp && it.reading === "pode_subir")
     next = (
@@ -93,6 +106,7 @@ function ItemRow({ it, comp, who, ownLabel, stores, print }: { it: ResultItem; c
           {GROUP_LABEL[it.group]} · {it.stores ?? stores.length} {(it.stores ?? stores.length) === 1 ? "loja vizinha vende" : "lojas vizinhas vendem"}
         </span>
         {next}
+        {test}
       </div>
       <Strip it={it} who={who} />
       {stores.length && !print ? (
@@ -217,6 +231,25 @@ export default function ResultView(p: ResultViewProps) {
   const position = r.position;
   const words = position ? positionWords(position.rank, position.stores_ranked, comp ? `O ${name}` : "você") : null;
   const change = position ? positionChange(position, r.previous_position, prevOn, p.everyDays) : null;
+  const cont = p.continuity;
+  const plan = cont?.plan ?? null;
+  // "Vou testar" on own-store runs, on the screen (the test plan prints as its own section).
+  const testFor = (it: ResultItem) => {
+    if (!cont || !plan || comp || print) return undefined;
+    const ownItemId = plan.own_item_ids[it.item_id];
+    if (!ownItemId) return undefined;
+    return (
+      <TestButton
+        monitorId={p.monitorId}
+        xrayId={r.xray_id}
+        ownItemId={ownItemId}
+        marked={plan.items.some((t) => t.own_item_id === ownItemId)}
+        canEdit={cont.canEdit}
+        full={plan.active >= plan.max_items}
+        maxItems={plan.max_items}
+      />
+    );
+  };
 
   const howList = (
     <ul className="howl">
@@ -269,7 +302,7 @@ export default function ResultView(p: ResultViewProps) {
             </div>
             {g.reading === "nao_mexer" && !comp ? <p className="gwhy">Sem saber quanto custa fazer cada item, baixar o preço pode deixar a venda no prejuízo. Antes de mexer, confira o custo.</p> : null}
             {g.items.map((it) => (
-              <ItemRow key={it.item_id} it={it} comp={comp} who={who} ownLabel={comp ? `${name} (esta loja)` : "Você"} stores={stores[it.item_id] ?? []} print={print} />
+              <ItemRow key={it.item_id} it={it} comp={comp} who={who} ownLabel={comp ? `${name} (esta loja)` : "Você"} stores={stores[it.item_id] ?? []} print={print} test={testFor(it)} />
             ))}
           </div>
         ))}
@@ -315,6 +348,7 @@ export default function ResultView(p: ResultViewProps) {
           {pend ? <Link href={`/app/raio-x/${p.monitorId}/revisar`}>Itens em dúvida ({pend})</Link> : null}
         </div>
       )}
+      {cont ? <Timeline monitorId={p.monitorId} xrayId={r.xray_id} runs={cont.history} nextRunAt={cont.nextRunAt} status={cont.status} mode={p.mode} /> : null}
       {pend ? (
         <div className="banner">
           <span>Calculado sem {pend} itens em dúvida. Responda para completar.</span>
@@ -407,6 +441,7 @@ export default function ResultView(p: ResultViewProps) {
           </section>
         ) : null}
       </div>
+      {cont ? <TestPlan plan={plan} monitorId={p.monitorId} canEdit={cont.canEdit} mode={p.mode} /> : null}
       <section className="stack" aria-labelledby="allh" style={{ gap: 10 }}>
         <div className="row-flex between">
           <h2 id="allh">Por categoria</h2>
@@ -433,6 +468,18 @@ export default function ResultView(p: ResultViewProps) {
           </details>
         ) : null}
       </section>
+      {cont ? (
+        <NextSteps
+          monitorId={p.monitorId}
+          targetKind={r.target_kind}
+          testCount={plan?.active ?? 0}
+          maxItems={plan?.max_items ?? 3}
+          nextRunAt={cont.nextRunAt}
+          status={cont.status}
+          competitorAllowed={cont.competitorAllowed}
+          mode={p.mode}
+        />
+      ) : null}
       <section className="card method" aria-label="Como calculamos">
         <p>
           <b>Como calculamos.</b> {comp ? "As" : "Comparamos com as"} {storesRead(r)} lojas vizinhas num raio de {r.radius_km} km, só com o que está público no iFood em {dayMon(r.on)}. O meio da vizinhança é o preço do meio dos itens iguais ao{" "}

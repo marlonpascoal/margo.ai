@@ -527,7 +527,8 @@ class PostgresXrayRepo:
         return out
 
     def pair_review_params(self) -> tuple[float, int, int]:
-        rows = self._all("select key, value from public.rule_param where key like 'm1.pair_review_%'")
+        keys = ["m1.pair_review_target", "m1.pair_review_max_rounds", "m1.pair_review_learning_min_runs"]
+        rows = self._all("select key, value from public.rule_param where key = any(%s)", (keys,))
         v = {r["key"]: r["value"] for r in rows}
         return (
             float(v.get("m1.pair_review_target", DEFAULT_TARGET)),

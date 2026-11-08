@@ -978,6 +978,20 @@ class MonitorPairDecision(Row):
     xray_id: UUID | None
 
 
+class MonitorTestItem(Row):
+    account_id: UUID
+    created_at: datetime
+    from_xray_id: UUID
+    id: UUID
+    marked_at: datetime
+    marked_by: UUID | None
+    monitor_id: UUID
+    public_menu_item_id: UUID
+    removed_at: datetime | None
+    removed_by: UUID | None
+    updated_at: datetime
+
+
 class NoticePref(Row):
     account_id: UUID
     created_at: datetime

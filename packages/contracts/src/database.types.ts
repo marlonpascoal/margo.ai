@@ -1393,6 +1393,56 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"monitor_test_item": {
+                  Row: {
+                    "account_id": string,"created_at": string,"from_xray_id": string,"id": string,"marked_at": string,"marked_by": string | null,"monitor_id": string,"public_menu_item_id": string,"removed_at": string | null,"removed_by": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"created_at"?: string,"from_xray_id": string,"id"?: string,"marked_at"?: string,"marked_by"?: string | null,"monitor_id": string,"public_menu_item_id": string,"removed_at"?: string | null,"removed_by"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"created_at"?: string,"from_xray_id"?: string,"id"?: string,"marked_at"?: string,"marked_by"?: string | null,"monitor_id"?: string,"public_menu_item_id"?: string,"removed_at"?: string | null,"removed_by"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "monitor_test_item_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "account"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "monitor_test_item_account_id_monitor_id_fkey"
+      columns: ["account_id","monitor_id"]
+isOneToOne: false
+      referencedRelation: "xray_monitor"
+      referencedColumns: ["account_id","id"]
+    },{
+      foreignKeyName: "monitor_test_item_from_xray_id_fkey"
+      columns: ["from_xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "monitor_test_item_marked_by_fkey"
+      columns: ["marked_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "monitor_test_item_public_menu_item_id_fkey"
+      columns: ["public_menu_item_id"]
+isOneToOne: false
+      referencedRelation: "public_menu_item"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "monitor_test_item_removed_by_fkey"
+      columns: ["removed_by"]
+isOneToOne: false
+      referencedRelation: "person"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"notice_pref": {
                   Row: {
                     "account_id": string,"created_at": string,"email": boolean,"id": string,"notice_code": string,"person_id": string,"updated_at": string,"whatsapp": boolean
@@ -2604,6 +2654,15 @@ isOneToOne: false
                            },
 "monitor_summaries":
 { Args: { "p_monitors": (string)[] }; Returns: Json
+                           },
+"monitor_test_mark":
+{ Args: { "p_actor": string,"p_ip"?: unknown,"p_item": string,"p_monitor": string,"p_user_agent"?: string,"p_xray": string }; Returns: string
+                           },
+"monitor_test_plan":
+{ Args: { "p_xray": string }; Returns: Json
+                           },
+"monitor_test_unmark":
+{ Args: { "p_actor": string,"p_ip"?: unknown,"p_item": string,"p_monitor": string,"p_user_agent"?: string }; Returns: string
                            },
 "monitor_undo":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_item": string,"p_user_agent"?: string }; Returns: string

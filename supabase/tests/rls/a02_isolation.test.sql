@@ -75,6 +75,9 @@ begin
     values (tests.id(a || ':mon'), acc, tests.id(a || ':pub'), 'competitor', tests.id(a || ':k1'), 7);
   insert into public.monitor_pair_decision (monitor_id, account_id, own_item_id, candidate_item_id, accepted, decided_by)
     values (tests.id(a || ':mon'), acc, tests.id(a || ':pmi'), tests.id(a || ':pmi'), true, dono);
+  -- P23 "Vou testar" (20261231000008).
+  insert into public.monitor_test_item (monitor_id, account_id, public_menu_item_id, from_xray_id, marked_by)
+    values (tests.id(a || ':mon'), acc, tests.id(a || ':pmi'), tests.id(a || ':xray'), dono);
   -- M2 (03 §3): one fact, close and contestation per store of kitchen 1 and kitchen 2.
   insert into public.import_source (account_id, channel, kind) values (acc, 'ifood', 'upload');
   insert into public.import_run (id, account_id, trigger, channel) values (tests.id(a || ':run'), acc, 'upload', 'ifood');

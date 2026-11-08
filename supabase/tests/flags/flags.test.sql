@@ -131,7 +131,7 @@ select results_eq($$
 $$, $$ values (false, false, true) $$, 'C20: only the chosen plan and env change');
 select results_eq($$
   select default_lucro from public.feature_flag where key = 'm2.contestacao' and env = 'production'
-$$, $$ values (true) $$, 'C20: production keeps its own default');
+$$, $$ values (false) $$, 'C20: production keeps its own default (off since the X-ray-only launch, 20261231000005)');
 select results_eq($$
   select flag_key, env::text, account_id, old, new, by from public.feature_flag_log where by::text like 'e0000000-%'
 $$, $$ values ('m2.contestacao', 'sandbox', null::uuid, true, false, 'e0000000-0000-0000-0000-000000000001'::uuid) $$,

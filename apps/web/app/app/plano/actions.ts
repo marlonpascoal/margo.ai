@@ -12,7 +12,7 @@ export type PlanActionState = { message: string | null };
 
 /** "Assinar pelo Asaas" / "Continuar para o pagamento": to the Asaas hosted checkout (P10). */
 export async function checkoutAction(_prev: PlanActionState, _form: FormData): Promise<PlanActionState> {
-  const owner = await requirePortal({ action: "billing" });
+  const owner = await requirePortal({ action: "billing", flags: ["conta.plano"] });
   const result = await startCheckout(billingDeps(), { personId: owner.personId, ...(await requestMeta()) }, owner.account.id, await appOrigin());
   if (!result.ok) return { message: result.message };
   redirect(result.url);
@@ -20,6 +20,6 @@ export async function checkoutAction(_prev: PlanActionState, _form: FormData): P
 
 /** "Falar com a gente": an alert for the founders (04 §7). */
 export async function redeAction(_prev: PlanActionState, _form: FormData): Promise<PlanActionState> {
-  const owner = await requirePortal({ action: "billing" });
+  const owner = await requirePortal({ action: "billing", flags: ["conta.plano"] });
   return requestRede(billingDeps(), { personId: owner.personId, ...(await requestMeta()) }, owner.account.id);
 }

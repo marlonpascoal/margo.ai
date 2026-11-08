@@ -1,7 +1,8 @@
 // Feature flag keys and the server setting that picks their environment (04 §6, D34).
 import type { Database } from "@margoai/contracts";
 
-/** The 18 keys of 04 §6 plus m1.portal (PROVISIONAL, docs/m1-owner-journey-draft.md, 20261230000001_m1_monitor.sql), as seeded in supabase/migrations/20261031000003_reference_data.sql,
+/** The 18 keys of 04 §6 plus m1.portal (PROVISIONAL, docs/m1-owner-journey-draft.md, 20261230000001_m1_monitor.sql) and the
+ * X-ray-only launch screen flags portal.inicio, portal.lojas, conta.plano (20261231000005), as seeded in supabase/migrations/20261031000003_reference_data.sql,
  * 20261211000001_m3_custo_flag.sql (m3.custo), 20261212000001_competitor_xray_limit.sql (m1.concorrente) and
  * 20261220000001_extract_schema.sql (m1.extracao). */
 export const FLAG_KEYS = [
@@ -24,6 +25,9 @@ export const FLAG_KEYS = [
   "l.painel_dono",
   "l.aprovacao_cupom",
   "auth.whatsapp_code",
+  "portal.inicio",
+  "portal.lojas",
+  "conta.plano",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

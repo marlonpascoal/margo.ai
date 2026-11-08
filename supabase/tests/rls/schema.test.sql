@@ -68,11 +68,11 @@ select results_eq($$ select code from public.plan order by code $$,
   array['lucro', 'raio_x', 'rede'], 'three plans');
 select results_eq($$ select trial_days from public.plan where code = 'lucro' $$,
   array[14], 'trial placeholder of 14 days (D40)');
-select is((select count(*)::int from public.feature_flag), 38, '19 flags in sandbox and production (m3.custo: 20261211000001, m1.concorrente: 20261212000001, m1.extracao: 20261220000001, m1.portal: 20261230000001)');
+select is((select count(*)::int from public.feature_flag), 44, '22 flags in sandbox and production (m3.custo: 20261211000001, m1.concorrente: 20261212000001, m1.extracao: 20261220000001, m1.portal: 20261230000001, portal.inicio, portal.lojas, conta.plano: 20261231000005)');
 select results_eq($$
   select default_raio_x, default_lucro, default_rede from public.feature_flag
-  where key = 'm2.ifood_api' and env = 'production'
-$$, $$ values (false, true, true) $$, 'flag defaults per plan follow 04 §6');
+  where key = 'm2.ifood_api' and env = 'sandbox'
+$$, $$ values (false, true, true) $$, 'flag defaults per plan follow 04 §6 (sandbox; production is off at the X-ray-only launch)');
 select is((select count(*)::int from public.notice_type), 12, 'ten notices of 04 §9 plus xray_ready and xray_needs_answer (20261230000001, provisional)');
 select results_eq($$ select code from public.notice_type where email_locked order by code $$,
   array['billing_result', 'security_event', 'trial_ending'], 'billing and security notices are e-mail locked');

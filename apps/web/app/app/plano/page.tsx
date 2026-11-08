@@ -8,7 +8,7 @@ export const metadata = { title: "Plano e cobrança · MargoAI" };
 export const dynamic = "force-dynamic";
 
 export default async function PlanPage({ searchParams }: { searchParams: Promise<{ status?: string | string[] }> }) {
-  const owner = await requirePortal({ action: "billing" });
+  const owner = await requirePortal({ action: "billing", flags: ["conta.plano"] });
   const status = (await searchParams).status;
   const view = await loadPlanView(owner.db, owner.account.id, typeof status === "string" ? status : null, new Date());
   return <PlanScreen view={view} />;

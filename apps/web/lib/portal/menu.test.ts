@@ -25,6 +25,12 @@ describe("owner top menu (design/MenuDono.dc.html)", () => {
     expect(ownerMenu("dono").map((i) => i.code)).not.toContain("W10");
   });
 
+  it("launch_xray_only_menu_hides_entries_whose_flag_is_off", () => {
+    const on = { "portal.inicio": false, "portal.lojas": false, "m2.contestacao": false, "conta.pessoas": false, "conta.plano": false } as const;
+    expect(ownerMenu("dono", { raioX: true, on }).map((i) => i.label)).toEqual(["Raio-X", "Notificações", "Segurança"]);
+    expect(ownerMenu("dono", { raioX: true, on: { ...on, "portal.lojas": true } }).map((i) => i.label)).toContain("Lojas");
+  });
+
   it("MenuDono_account_chip", () => {
     expect(accountChip("Grupo Exemplo", 2)).toBe("Grupo Exemplo · 2 cozinhas");
     expect(accountChip("Pantanos Burguer", 1)).toBe("Pantanos Burguer · 1 cozinha");

@@ -15,7 +15,7 @@ export const metadata = { title: "Lojas · MargoAI" };
 const PILL: Record<string, string> = { ifood: "bg-danger-bg", food99: "bg-warn-bg", keeta: "bg-sunken", rappi: "bg-sunken" };
 
 export default async function LojasPage({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
-  const m = await requirePortal();
+  const m = await requirePortal({ flags: ["portal.lojas"] });
   const q = await searchParams;
   const v = await loadLojas(m.db, m.account.id, m);
   const dono = canPortal(m.role, "choose_kitchens");

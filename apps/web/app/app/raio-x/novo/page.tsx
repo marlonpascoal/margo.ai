@@ -12,12 +12,10 @@ export const metadata = { title: "Acompanhar uma loja · MargoAI" };
 
 export default async function NewMonitorPage() {
   const m = await requirePortal({ action: "manage_monitors", flags: ["m1.portal"] });
-  const [{ monitors, limits }, { data: stores }, { data: kitchens }] = await Promise.all([
+  const [{ limits }, { data: kitchens }] = await Promise.all([
     loadMonitorList(loadDeps(m.db), m.account.id),
-    m.db.from("channel_store").select("id, name, kitchen_id").eq("account_id", m.account.id).eq("channel", "ifood").order("name"),
     m.db.from("kitchen").select("id, name").eq("account_id", m.account.id).order("name"),
   ]);
-  const followed = new Set(monitors.map((x) => x.store_name));
   const ownFull = limits.own_max !== null && limits.own_active >= limits.own_max;
   const compFull = limits.competitor_active >= limits.competitor_max || (limits.count_month_starts && limits.competitor_started_month >= limits.competitor_max);
   return (
@@ -27,7 +25,6 @@ export default async function NewMonitorPage() {
         <Fict synthetic={m.account.isSynthetic} />
       </Head>
       <NovoForm
-        stores={(stores ?? []).map((s) => ({ id: s.id, name: s.name, followed: followed.has(s.name) }))}
         kitchens={(kitchens ?? []).map((k) => ({ id: k.id, name: k.name.replace(/^Cozinha\s+/i, "") }))}
         periods={periodOptions(limits.min_every_days).map((p) => ({ days: p.days, label: p.label }))}
         competitorAllowed={limits.competitor_allowed}

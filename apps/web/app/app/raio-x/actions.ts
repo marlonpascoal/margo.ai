@@ -35,9 +35,10 @@ function done<T>(r: { ok: true; value?: T } | { ok: false; refusal: Parameters<t
   return r.ok ? { ok: true, value: r.value } : { ok: false, error: refusalText(r.refusal) };
 }
 
-/** P20 "Começar a acompanhar". */
+/** P20 "Começar a acompanhar": "Uma loja minha" (kind own) or "Um concorrente", both by the iFood link (Marlon, 08/nov). */
 export async function createMonitorAction(input: {
   url: string;
+  kind: "own" | "competitor";
   kitchenId: string | null;
   everyDays: number;
   radiusKm: 2 | 3 | 5;
@@ -52,7 +53,8 @@ export async function createMonitorAction(input: {
       accountId: m.account.id,
       externalId,
       url: canonicalStoreUrl(input.url),
-      kitchenId: input.kitchenId,
+      kitchenId: input.kind === "own" ? null : input.kitchenId,
+      kind: input.kind,
       everyDays: input.everyDays,
       radiusKm: input.radiusKm,
       categories: input.categories,
@@ -96,27 +98,6 @@ export async function undoAnswerAction(itemId: string): Promise<ActionResult<voi
   const m = await requirePortal({ action: "answer_doubts", flags: FLAGS });
   return done(await undoAnswer(monitorDeps(), await actor(m.personId), itemId));
 }
-
-/** P20 "Uma loja minha": the account's own iFood store, by its channel_store row (read as this person, RLS). */
-export async function createOwnMonitorAction(input: {
-  channelStoreId: string;
-  everyDays: number;
-  radiusKm: 2 | 3 | 5;
-  categories: string[];
-  rules: { exclude_closed?: boolean; exclude_national_chains?: boolean; same_neighborhood_only?: boolean };
-}): Promise<ActionResult<{ monitorId: string; xrayId: string; targetKind: "own" | "competitor" }>> {
-  const m = await requirePortal({ action: "manage_monitors", flags: FLAGS });
-  const { data: store } = await m.db.from("channel_store").select("external_id, public_url").eq("id", input.channelStoreId).eq("channel", "ifood").maybeSingle();
-  if (!store) return { ok: false, error: refusalText({ code: "bad_store" }) };
-  // The catalog may already know the store's public link (an earlier X-ray); otherwise the channel_store's.
-  const known = (await monitorDeps().rpc("monitor_store_lookup", { p_external_id: store.external_id })) as { url: string | null } | null;
-  const url = known?.url || store.public_url;
-  if (!url || !storeIdFromUrl(url)) return { ok: false, error: OWN_NEEDS_LINK };
-  return createMonitorAction({ url, kitchenId: null, everyDays: input.everyDays, radiusKm: input.radiusKm, categories: input.categories, rules: input.rules });
-}
-
-/** P20 "Uma loja minha" without a known link: the owner pastes it once. */
-const OWN_NEEDS_LINK = "Ainda não temos o link desta loja no iFood. Escolha \"Um concorrente\" e cole o link dela: reconhecemos que é sua.";
 
 export type StoreLookup = { state: "invalid" } | { state: "unknown" } | { state: "found"; name: string; area: string | null; category: string | null } | { state: "own"; name: string };
 

@@ -1,4 +1,5 @@
 // Owner top menu entries (design/MenuDono.dc.html, 05 shared components). Labels verbatim from the drawing.
+import type { FlagKey } from "@/lib/flags/keys";
 import { portalScreenAllowed, type MemberRole } from "@/lib/permissions";
 
 const ITEMS: [code: string, label: string, href: string][] = [
@@ -19,8 +20,22 @@ export interface OwnerMenuItem {
   href: string;
 }
 
-export function ownerMenu(role: MemberRole, flags: { raioX?: boolean } = {}): OwnerMenuItem[] {
-  return ITEMS.filter(([code]) => portalScreenAllowed(role, code) && (code !== "W10" || !!flags.raioX)).map(([code, label, href]) => ({ code, label, href }));
+/** The flag each entry needs (X-ray-only launch, 20261231000005; the pages check it again). Others always show. */
+export const MENU_FLAGS: Partial<Record<string, FlagKey>> = {
+  W01: "portal.inicio",
+  W02: "portal.lojas",
+  W03: "m2.contestacao",
+  W04: "conta.pessoas",
+  W05: "conta.plano",
+};
+
+/** `flags.on`: the account's flags; without it the flagged entries show (the drawing's menu). */
+export function ownerMenu(role: MemberRole, flags: { raioX?: boolean; on?: Partial<Record<FlagKey, boolean>> } = {}): OwnerMenuItem[] {
+  const flagOk = (code: string) => {
+    const k = MENU_FLAGS[code];
+    return !k || !flags.on || !!flags.on[k];
+  };
+  return ITEMS.filter(([code]) => portalScreenAllowed(role, code) && (code !== "W10" || !!flags.raioX) && flagOk(code)).map(([code, label, href]) => ({ code, label, href }));
 }
 
 /** Role line at the right of the menu. "Dono do grupo" is drawn; the others use the 04 §5 profile names. */

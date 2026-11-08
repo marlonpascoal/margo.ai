@@ -830,7 +830,6 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | lojas suas | `apps/web/app/app/raio-x/_components/NovoForm.tsx:92` | P20 own-store limit reached: "Seu plano acompanha {uma loja sua | N lojas suas}." | |
 | Esta loja é sua | `apps/web/app/app/raio-x/_components/NovoForm.tsx:123` | P20 pasted link of an own store: "Esta loja é sua: {loja}." | |
 | Restam N novos este mês | `apps/web/app/app/raio-x/_components/NovoForm.tsx:70` | P20 cost line: "Conta como 1 dos {n} concorrentes do seu plano. {Resta 1 novo | Restam N novos} este mês." | |
-| Ainda não temos o link | `apps/web/app/app/raio-x/actions.ts:119` | P20 own store with no known iFood link: "Ainda não temos o link desta loja no iFood. Escolha \"Um concorrente\" e cole o link dela: reconhecemos que é sua." | |
 | estimativa pelo ritmo dos últimos | `apps/web/app/app/raio-x/_components/Lendo.tsx:128` | P21 under the range: "estimativa pelo ritmo dos últimos {15} minutos" (prototype: "da última meia hora"; the window is 15 minutes) | |
 | cardápios lidos, contando o | `apps/web/app/app/raio-x/_components/Lendo.tsx:122` | P21 big count: "... contando o {seu | dela}" ("dela" for a competitor) | |
 | : lida | `apps/web/app/app/raio-x/_components/Lendo.tsx:168` | P21 pill for a competitor run: "{loja}: lida, N itens" / "{loja}: ainda não lida" | |
@@ -857,6 +856,8 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | somamos um ponto | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:80` | P24 one run only (prototype: "Toda semana somamos um ponto") | |
 | Itens comparados | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:245` | P24 runs table column, instead of the prototype's "Espaço para subir" (not in the history loader) | |
 | sem número | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:139` | P24 table, a run before M1-12 v3 (or scored by an older formula) | |
+| Cole o link da sua loja no iFood. | `apps/web/app/app/raio-x/_components/NovoForm.tsx` | P20 "Uma loja minha" option hint (D67; replaces "Escolha entre as suas lojas no iFood.") | |
+| Link da sua loja no iFood | `apps/web/app/app/raio-x/_components/NovoForm.tsx` | P20 link field label when "Uma loja minha" is chosen (competitor keeps "Link da loja no iFood") | |
 | Itens alinhados | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | M1-12 v3 label (Marlon, 07/nov) on P19 row, P23 card, P24 chart and tables; "{62}%"; P23 category chip "{62}% alinhados" | |
 | estão na faixa de preço da vizinhança | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | P23 card: "{n} de {m} itens comparados estão na faixa de preço da vizinhança, até 10% acima ou abaixo do meio." | |
 | do meio, | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | P23 card fact: "{n} {item abaixo | itens abaixo} do meio, {R$ x} de diferença por venda" | |

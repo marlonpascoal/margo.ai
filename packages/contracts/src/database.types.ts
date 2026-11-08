@@ -2552,7 +2552,7 @@ isOneToOne: false
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_items": (string)[],"p_user_agent"?: string,"p_xray": string }; Returns: string
                            },
 "monitor_create":
-{ Args: { "p_account": string,"p_actor": string,"p_categories": (string)[],"p_env"?: Database["public"]['Enums']["flag_env"],"p_every_days": number,"p_external_id": string,"p_ip"?: unknown,"p_kitchen": string,"p_radius_km": number,"p_rules": Json,"p_url": string,"p_user_agent"?: string }; Returns: Json
+{ Args: { "p_account": string,"p_actor": string,"p_categories": (string)[],"p_env"?: Database["public"]['Enums']["flag_env"],"p_every_days": number,"p_external_id": string,"p_ip"?: unknown,"p_kind"?: string,"p_kitchen": string,"p_radius_km": number,"p_rules": Json,"p_url": string,"p_user_agent"?: string }; Returns: Json
                            },
 "monitor_doubts":
 { Args: { "p_xray": string }; Returns: Json

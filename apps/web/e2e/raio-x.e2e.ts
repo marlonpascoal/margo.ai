@@ -143,10 +143,12 @@ test("B01_P19_P20_P21_dono_starts_monitoring_an_own_store_and_waits", async ({ p
     await shots(page, "P19-W10-vazio");
   });
 
-  await test.step("P20: an own store, weekly, 3 km; the plan line and limits come from the server", async () => {
+  await test.step("P20: an own store by its iFood link, weekly, 3 km; the plan line and limits come from the server", async () => {
     await page.goto("/app/raio-x/novo");
     await expect(page.getByRole("heading", { name: "Acompanhar uma loja" })).toBeVisible();
-    await page.getByLabel("Sua loja").selectOption({ label: `${OWN_STORE} · iFood` });
+    await expect(page.getByRole("button", { name: "Começar a acompanhar" })).toBeDisabled();
+    await page.getByRole("textbox", { name: "Link da sua loja no iFood" }).fill(`https://www.ifood.com.br/delivery/cidade-sintetica-sp/burger-do-bairro/${OWN_EXT}`);
+    await expect(page.locator("#url-help .found")).toBeVisible();
     await expect(page.getByLabel("Com que frequência?")).toHaveValue("7");
     await expect(page.getByText("Suas lojas estão incluídas no plano Lucro.")).toBeVisible();
     await page.getByText("Um concorrente").click();
@@ -156,6 +158,7 @@ test("B01_P19_P20_P21_dono_starts_monitoring_an_own_store_and_waits", async ({ p
     await shots(page, "P20-W11-concorrente");
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByText("Uma loja minha").click();
+    await page.getByRole("textbox", { name: "Link da sua loja no iFood" }).fill(`https://www.ifood.com.br/delivery/cidade-sintetica-sp/burger-do-bairro/${OWN_EXT}`);
     await shots(page, "P20-W11");
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByRole("button", { name: "Começar a acompanhar" }).click();

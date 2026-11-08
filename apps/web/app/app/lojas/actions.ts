@@ -13,7 +13,7 @@ const back = (aviso?: string): never => redirect(aviso ? `${PATH}?aviso=${encode
 
 /** W02 "Na análise" checkbox. Blocked during the person's own security_lock, like plan changes (04 §8). */
 export async function setInAnalysisAction(form: FormData): Promise<void> {
-  const m = await requirePortal({ action: "choose_kitchens" });
+  const m = await requirePortal({ action: "choose_kitchens", flags: ["portal.lojas"] });
   const db = adminClient();
   const kitchenId = String(form.get("cozinha") ?? "");
   const on = form.get("ligar") === "true";
@@ -34,7 +34,7 @@ export async function setInAnalysisAction(form: FormData): Promise<void> {
 
 /** W02 "Em qual cozinha ela fica?": a store without kitchen joins a kitchen of the account (D29). */
 export async function linkNewStoreAction(form: FormData): Promise<void> {
-  const m = await requirePortal({ action: "choose_kitchens" });
+  const m = await requirePortal({ action: "choose_kitchens", flags: ["portal.lojas"] });
   const db = adminClient();
   const storeId = String(form.get("loja") ?? "");
   const kitchenId = String(form.get("cozinha") ?? "");

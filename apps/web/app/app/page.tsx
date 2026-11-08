@@ -4,7 +4,7 @@
 // dishes sold, "falta custo" while unknown). DLV-01 ("Uma decisão para ...") is the whole-account close's
 // decision, shown only to people who see every kitchen (A03), like the closing PDF.
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import NavSelect from "@/components/NavSelect";
 import { FictitiousLabel } from "@/components/console";
 import { isEnabled } from "@/lib/flags";
@@ -67,6 +67,10 @@ async function loadCounts(db: ReadDb, m: Member, flags: { contest: boolean; peop
 
 export default async function InicioPage({ searchParams }: { searchParams: Promise<{ mes?: string; cozinha?: string }> }) {
   const m = await requireMember();
+  // X-ray-only launch (20261231000005): with Início off the portal opens on the Raio-X.
+  if (!(await isEnabled("portal.inicio", m.account.id))) {
+    redirect(canPortal(m.role, "see_xray") && (await isEnabled("m1.portal", m.account.id)) ? "/app/raio-x" : "/app/seguranca");
+  }
   if (!canPortal(m.role, "see_close")) notFound();
   const db = m.db;
   const now = new Date();

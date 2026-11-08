@@ -35,6 +35,8 @@ export interface NewMonitor {
   url: string;
   /** Competitor: "Perto de qual cozinha?". Own stores take their kitchen on the server. */
   kitchenId: string | null;
+  /** P20 choice: "Uma loja minha" sends own (by its link, no channel_store needed), "Um concorrente" competitor. */
+  kind?: "own" | "competitor";
   everyDays: number;
   radiusKm: 2 | 3 | 5;
   categories: string[];
@@ -56,6 +58,7 @@ export async function createMonitor(deps: MonitorDeps, actor: Actor, m: NewMonit
       p_rules: m.rules,
       p_env: deps.env,
       ...who(actor),
+      p_kind: m.kind ?? null,
     })) as { monitor_id: string; xray_id: string; target_kind: "own" | "competitor" };
     return { monitorId: out.monitor_id, xrayId: out.xray_id, targetKind: out.target_kind };
   });

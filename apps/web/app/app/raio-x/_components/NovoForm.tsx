@@ -1,5 +1,6 @@
 "use client";
-// P20 form: own store or competitor link (D29), kitchen, period (only values at or above the plan minimum), radius
+// P20 form: own store or competitor, both by the iFood link (D29; Marlon 08/nov: only iFood for now), kitchen for a
+// competitor when the account has more than one, period (only values at or above the plan minimum), radius
 // (M1-01), comparison settings (M1-02, C02 defaults). "Começar a acompanhar" creates the monitoring and its first run,
 // then opens P21.
 import Link from "next/link";
@@ -7,10 +8,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { storeIdFromUrl } from "@/lib/xray/ifood-url";
 import { CATEGORY_OPTIONS, RADIUS_OPTIONS } from "@/lib/xray/labels";
-import { createMonitorAction, createOwnMonitorAction, lookupStoreAction, type StoreLookup } from "../actions";
+import { createMonitorAction, lookupStoreAction, type StoreLookup } from "../actions";
 
 interface Props {
-  stores: { id: string; name: string; followed: boolean }[];
   kitchens: { id: string; name: string }[];
   periods: { days: number; label: string }[];
   competitorAllowed: boolean;
@@ -25,8 +25,6 @@ interface Props {
 export default function NovoForm(p: Props) {
   const router = useRouter();
   const [kind, setKind] = useState<"own" | "comp">("own");
-  const firstFree = p.stores.find((s) => !s.followed) ?? p.stores[0];
-  const [store, setStore] = useState(firstFree?.id ?? "");
   const [url, setUrl] = useState("");
   const [looked, setLooked] = useState<{ url: string; r: StoreLookup } | null>(null);
   const [kitchen, setKitchen] = useState(p.kitchens[0]?.id ?? "");
@@ -40,25 +38,24 @@ export default function NovoForm(p: Props) {
   const comp = kind === "comp";
   const validUrl = storeIdFromUrl(url) !== null;
   useEffect(() => {
-    if (!comp || !validUrl) return;
+    if (!validUrl) return;
     let live = true;
     lookupStoreAction(url).then((r) => live && setLooked({ url, r }));
     return () => {
       live = false;
     };
-  }, [url, comp, validUrl]);
-  const found: StoreLookup | null = !comp || !url ? null : !validUrl ? { state: "invalid" } : looked?.url === url ? looked.r : null;
+  }, [url, validUrl]);
+  const found: StoreLookup | null = !url ? null : !validUrl ? { state: "invalid" } : looked?.url === url ? looked.r : null;
+  const full = comp ? p.competitorFull : p.ownFull;
 
-  const blocked = comp ? p.competitorFull || !p.competitorAllowed || !validUrl : p.ownFull || !store;
+  const blocked = (comp ? p.competitorFull || !p.competitorAllowed : p.ownFull) || !validUrl;
   const categories = [...(CATEGORY_OPTIONS.find((c) => c.value === cats)?.categories ?? [])];
 
   const submit = () =>
     start(async () => {
       setError(null);
       const common = { everyDays: days, radiusKm: radius, categories, rules };
-      const call = comp
-        ? createMonitorAction({ url, kitchenId: found?.state === "own" ? null : kitchen || null, ...common })
-        : createOwnMonitorAction({ channelStoreId: store, ...common });
+      const call = createMonitorAction({ url, kind: comp ? "competitor" : "own", kitchenId: comp && found?.state !== "own" ? kitchen || null : null, ...common });
       const r = await call.catch(() => ({ ok: false as const, error: "Não salvou. Tente de novo." }));
       if (r.ok && r.value) router.push(`/app/raio-x/${r.value.monitorId}/lendo`);
       else if (!r.ok) setError(r.error);
@@ -89,7 +86,7 @@ export default function NovoForm(p: Props) {
           <label>
             <input type="radio" name="k" value="own" checked={!comp} onChange={() => setKind("own")} />
             <b>Uma loja minha</b>
-            <span>{p.ownFull ? `Seu plano acompanha ${p.ownMax === 1 ? "uma loja sua" : `${p.ownMax} lojas suas`}.` : "Escolha entre as suas lojas no iFood."}</span>
+            <span>{p.ownFull ? `Seu plano acompanha ${p.ownMax === 1 ? "uma loja sua" : `${p.ownMax} lojas suas`}.` : "Cole o link da sua loja no iFood."}</span>
           </label>
           <label>
             <input type="radio" name="k" value="comp" checked={comp} disabled={!p.competitorAllowed} onChange={() => setKind("comp")} />
@@ -99,56 +96,41 @@ export default function NovoForm(p: Props) {
         </div>
       </fieldset>
 
-      {comp ? (
-        <>
-          {p.competitorFull ? (
-            <div className="banner">
-              <span>Seu plano permite {p.competitorMax} concorrentes ao mesmo tempo. Pause ou remova um, ou veja os planos.</span>
-              <Link className="btn sm" href="/app/raio-x">
-                Ver meus concorrentes
-              </Link>
-            </div>
-          ) : null}
-          <div className="field">
-            <label htmlFor="url">Link da loja no iFood</label>
-            <input id="url" className="input url" type="url" value={url} disabled={p.competitorFull} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.ifood.com.br/delivery/..." aria-describedby="url-help" />
-            <span id="url-help" aria-live="polite">
-              {found?.state === "invalid" ? (
-                <span className="errtxt" role="alert">
-                  Este link não é de uma loja do iFood. Abra a loja no iFood e copie o endereço.
-                </span>
-              ) : found?.state === "found" ? (
-                <span className="found">Loja encontrada: {[found.name, found.area, found.category].filter(Boolean).join(" · ")}</span>
-              ) : found?.state === "own" ? (
-                <span className="found">Esta loja é sua: {found.name}.</span>
-              ) : null}
+      {comp && p.competitorFull ? (
+        <div className="banner">
+          <span>Seu plano permite {p.competitorMax} concorrentes ao mesmo tempo. Pause ou remova um, ou veja os planos.</span>
+          <Link className="btn sm" href="/app/raio-x">
+            Ver meus concorrentes
+          </Link>
+        </div>
+      ) : null}
+      <div className="field">
+        <label htmlFor="url">{comp ? "Link da loja no iFood" : "Link da sua loja no iFood"}</label>
+        <input id="url" className="input url" type="url" value={url} disabled={full} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.ifood.com.br/delivery/..." aria-describedby="url-help" />
+        <span id="url-help" aria-live="polite">
+          {found?.state === "invalid" ? (
+            <span className="errtxt" role="alert">
+              Este link não é de uma loja do iFood. Abra a loja no iFood e copie o endereço.
             </span>
-          </div>
-          {found?.state !== "own" ? (
-            <div className="field">
-              <label htmlFor="coz">Perto de qual cozinha?</label>
-              <select id="coz" className="input" value={kitchen} disabled={p.competitorFull} onChange={(e) => setKitchen(e.target.value)}>
-                {p.kitchens.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          ) : found?.state === "found" ? (
+            <span className="found">Loja encontrada: {[found.name, found.area, found.category].filter(Boolean).join(" · ")}</span>
+          ) : found?.state === "own" ? (
+            <span className="found">Esta loja é sua: {found.name}.</span>
           ) : null}
-        </>
-      ) : (
+        </span>
+      </div>
+      {comp && found?.state !== "own" && p.kitchens.length > 1 ? (
         <div className="field">
-          <label htmlFor="loja">Sua loja</label>
-          <select id="loja" className="input" value={store} onChange={(e) => setStore(e.target.value)}>
-            {p.stores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} · iFood{s.followed ? " (já acompanhada)" : ""}
+          <label htmlFor="coz">Perto de qual cozinha?</label>
+          <select id="coz" className="input" value={kitchen} disabled={p.competitorFull} onChange={(e) => setKitchen(e.target.value)}>
+            {p.kitchens.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.name}
               </option>
             ))}
           </select>
         </div>
-      )}
+      ) : null}
 
       <div className="grid2">
         <div className="field">

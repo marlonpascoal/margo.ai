@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { storeIdFromUrl } from "@/lib/xray/ifood-url";
-import { CATEGORY_OPTIONS, RADIUS_OPTIONS } from "@/lib/xray/labels";
+import { categoryOptionFor, CATEGORY_OPTIONS, RADIUS_OPTIONS } from "@/lib/xray/labels";
 import { createMonitorAction, lookupStoreAction, type StoreLookup } from "../actions";
 
 interface Props {
@@ -30,7 +30,8 @@ export default function NovoForm(p: Props) {
   const [kitchen, setKitchen] = useState(p.kitchens[0]?.id ?? "");
   const [days, setDays] = useState(p.periods[0]?.days ?? 7);
   const [radius, setRadius] = useState<2 | 3 | 5>(3);
-  const [cats, setCats] = useState<string>(CATEGORY_OPTIONS[0].value);
+  const [chosenCats, setChosenCats] = useState<string | null>(null);
+  const [adjustOpen, setAdjustOpen] = useState(false);
   const [rules, setRules] = useState({ exclude_closed: true, exclude_national_chains: true, same_neighborhood_only: false });
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -48,7 +49,11 @@ export default function NovoForm(p: Props) {
   const found: StoreLookup | null = !url ? null : !validUrl ? { state: "invalid" } : looked?.url === url ? looked.r : null;
   const full = comp ? p.competitorFull : p.ownFull;
 
-  const blocked = (comp ? p.competitorFull || !p.competitorAllowed : p.ownFull) || !validUrl;
+  // D71: the store's own cuisine when the catalog knows it; otherwise the person chooses, never a silent burger default.
+  const cats = chosenCats ?? (found?.state === "found" || found?.state === "own" ? categoryOptionFor(found.category) : null) ?? "";
+  const needsCats = found !== null && found.state !== "invalid" && !cats;
+
+  const blocked = (comp ? p.competitorFull || !p.competitorAllowed : p.ownFull) || !validUrl || !cats;
   const categories = [...(CATEGORY_OPTIONS.find((c) => c.value === cats)?.categories ?? [])];
 
   const submit = () =>
@@ -106,7 +111,7 @@ export default function NovoForm(p: Props) {
       ) : null}
       <div className="field">
         <label htmlFor="url">{comp ? "Link da loja no iFood" : "Link da sua loja no iFood"}</label>
-        <input id="url" className="input url" type="url" value={url} disabled={full} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.ifood.com.br/delivery/..." aria-describedby="url-help" />
+        <input id="url" className="input url" type="url" value={url} disabled={full} onChange={(e) => { setUrl(e.target.value); setChosenCats(null); }} placeholder="https://www.ifood.com.br/delivery/..." aria-describedby="url-help" />
         <span id="url-help" aria-live="polite">
           {found?.state === "invalid" ? (
             <span className="errtxt" role="alert">
@@ -155,18 +160,24 @@ export default function NovoForm(p: Props) {
         </div>
       </div>
 
-      <details>
+      <details open={adjustOpen || needsCats} onToggle={(e) => setAdjustOpen(e.currentTarget.open)}>
         <summary>Ajustes da comparação</summary>
         <div className="stack" style={{ marginTop: 12 }}>
           <div className="field">
             <label htmlFor="cat">Categorias que contam como concorrente</label>
-            <select id="cat" className="input" value={cats} onChange={(e) => setCats(e.target.value)}>
+            <select id="cat" className="input" value={cats} onChange={(e) => setChosenCats(e.target.value)} aria-describedby="cat-help">
+              {!cats ? (
+                <option value="" disabled>
+                  Escolha a cozinha
+                </option>
+              ) : null}
               {CATEGORY_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
                 </option>
               ))}
             </select>
+            {needsCats ? <span id="cat-help">Escolha a cozinha da loja: ela define quem conta como concorrente.</span> : null}
           </div>
           <label className="chk">
             <input type="checkbox" checked={rules.exclude_closed} onChange={(e) => setRules({ ...rules, exclude_closed: e.target.checked })} /> Deixar de fora lojas fechadas há mais de 30 dias

@@ -114,7 +114,7 @@ export async function unmarkTestAction(monitorId: string, ownItemId: string): Pr
   return done(await unmarkTest(monitorDeps(), await actor(m.personId), monitorId, ownItemId));
 }
 
-export type StoreLookup = { state: "invalid" } | { state: "unknown" } | { state: "found"; name: string; area: string | null; category: string | null } | { state: "own"; name: string };
+export type StoreLookup = { state: "invalid" } | { state: "unknown" } | { state: "found"; name: string; area: string | null; category: string | null } | { state: "own"; name: string; category: string | null };
 
 /** P20 after a paste: "Loja encontrada: ..." from the public catalog, or "Esta loja é sua". */
 export async function lookupStoreAction(url: string): Promise<StoreLookup> {
@@ -122,7 +122,7 @@ export async function lookupStoreAction(url: string): Promise<StoreLookup> {
   const id = storeIdFromUrl(url);
   if (!id) return { state: "invalid" };
   const { data: own } = await m.db.from("channel_store").select("name").eq("channel", "ifood").eq("external_id", id).maybeSingle();
-  if (own) return { state: "own", name: own.name };
   const s = (await monitorDeps().rpc("monitor_store_lookup", { p_external_id: id })) as { name: string | null; area: string | null; category: string | null; url: string | null } | null;
+  if (own) return { state: "own", name: own.name, category: s?.category ?? null };
   return s?.name ? { state: "found", name: s.name, area: s.area, category: s.category } : { state: "unknown" };
 }

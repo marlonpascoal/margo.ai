@@ -30,11 +30,32 @@ export function pairStatusLabel(status: PairStatus, note: string | null): string
 /** M1-04 Stage 2: an item no store sells with the same attributes. Not drawn. */
 export const EXCLUSIVE_LABEL = "exclusivo, sem comparação";
 
-/** C02 category choices, as drawn, and the iFood categories each one searches (M1-02). */
+/** C02 and P20 category choices and the iFood categories each one searches (M1-02). The first two are as drawn; the
+ * cuisines after them are not drawn (D71, Marlon 08/nov), their terms are the categories iFood shows on stores. */
 export const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches, hambúrguer, porções", categories: ["Lanches", "Hambúrguer", "Porções"] },
   { value: "hamburguer", label: "Só hambúrguer", categories: ["Hambúrguer"] },
+  { value: "japonesa", label: "Japonesa", categories: ["Japonesa"] },
+  { value: "asiatica", label: "Chinesa e asiática", categories: ["Chinesa", "Asiática", "Coreana"] },
+  { value: "pizza", label: "Pizza", categories: ["Pizza"] },
+  { value: "italiana", label: "Italiana", categories: ["Italiana"] },
+  { value: "brasileira", label: "Brasileira e marmita", categories: ["Brasileira", "Comida Brasileira", "Marmita"] },
+  { value: "carnes", label: "Carnes e frango", categories: ["Carnes", "Frangos"] },
+  { value: "arabe", label: "Árabe", categories: ["Árabe"] },
+  { value: "pastel", label: "Pastel e salgados", categories: ["Pastel", "Salgados"] },
+  { value: "saudavel", label: "Saudável e vegana", categories: ["Saudável", "Vegana"] },
+  { value: "doces", label: "Doces e sorvetes", categories: ["Doces & Bolos", "Sorvetes"] },
+  { value: "padaria", label: "Padaria e café", categories: ["Padaria", "Cafeteria"] },
 ] as const;
+
+const plainTerm = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+
+/** The option holding a store's iFood category, ignoring case and accents like M1-02; null when no option does. */
+export function categoryOptionFor(category: string | null | undefined): string | null {
+  if (!category) return null;
+  const term = plainTerm(category);
+  return CATEGORY_OPTIONS.find((c) => (c.categories as readonly string[]).some((x) => plainTerm(x) === term))?.value ?? null;
+}
 
 /** C02 radius choices (M1-01), as drawn. */
 export const RADIUS_OPTIONS = [

@@ -37,7 +37,7 @@ Every screen shows the label `dados fictícios` only when rendering the seed; re
 
 ### C02. Novo raio-X (M1 step 1 of 4)
 - **Route** `/console/raio-x/novo` · **Who** staff · **Flag** `m1.raio_x`.
-- **Shows** iFood store link field; store found (name, area, category) after paste; radius options 3 (default), 2, 5 km; categories; the three competitive-set toggles.
+- **Shows** iFood store link field; store found (name, area, category) after paste; radius options 3 (default), 2, 5 km; categories, one option per cuisine (D71), the store's own cuisine preselected when the catalog knows it; the three competitive-set toggles.
 - **Actions** "Buscar vizinhança" creates `xray` and a `collect` job (worker-collector, D47), then opens C03 in `collecting` state with progress; "Cancelar".
 - **Rules** M1-01, M1-02. URL parsing extracts the iFood uuid at the end of the URL (D29).
 - **Done when** an invalid or non-iFood URL is rejected inline; the job respects the 3-second rate and stops on a block, showing the reason.

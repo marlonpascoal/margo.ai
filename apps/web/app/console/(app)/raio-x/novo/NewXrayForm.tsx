@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { primaryButton, secondaryButton } from "@/components/xray";
 import { storeIdFromUrl } from "@/lib/xray/ifood-url";
-import { CATEGORY_OPTIONS, RADIUS_OPTIONS, XRAY_MESSAGES } from "@/lib/xray/labels";
+import { categoryOptionFor, CATEGORY_OPTIONS, RADIUS_OPTIONS, XRAY_MESSAGES } from "@/lib/xray/labels";
 import { createXrayAction, lookupStoreAction, type CreateState, type StoreLookup } from "../actions";
 
 const field = "box-border min-h-11 rounded-md border border-border-strong bg-surface px-3 text-base text-ink";
@@ -15,9 +15,11 @@ const check = "flex items-center gap-2.5 text-md";
 export default function NewXrayForm({ initialUrl, account }: { initialUrl: string; account: { code: string; name: string } | null }) {
   const [url, setUrl] = useState(initialUrl);
   const [store, setStore] = useState<StoreLookup | null>(null);
+  const [chosenCats, setChosenCats] = useState<string | null>(null);
   const [state, action, pending] = useActionState<CreateState, FormData>(createXrayAction, { message: null });
   const valid = storeIdFromUrl(url) !== null;
   const invalid = url.trim() !== "" && !valid;
+  const cats = chosenCats ?? (valid && store?.state === "found" ? categoryOptionFor(store.category) : null) ?? "lanches";
 
   useEffect(() => {
     let live = true;
@@ -44,7 +46,10 @@ export default function NewXrayForm({ initialUrl, account }: { initialUrl: strin
           name="url"
           type="url"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setChosenCats(null);
+          }}
           aria-invalid={invalid}
           aria-describedby="url-help"
           className={`${field} min-w-0 font-mono text-sm`}
@@ -80,7 +85,7 @@ export default function NewXrayForm({ initialUrl, account }: { initialUrl: strin
           <label htmlFor="cat" className={label}>
             Categorias que contam como concorrente
           </label>
-          <select id="cat" name="categorias" className={field} defaultValue="lanches">
+          <select id="cat" name="categorias" className={field} value={cats} onChange={(e) => setChosenCats(e.target.value)}>
             {CATEGORY_OPTIONS.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}

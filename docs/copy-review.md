@@ -911,3 +911,16 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | No centro, a loja dele. Cada ponto é uma loja lida. | `apps/web/app/app/raio-x/_components/NeighborMap.tsx` | P23 radius map caption, competitor | |
 | {N} km | `apps/web/app/app/raio-x/_components/NeighborMap.tsx` | P23 radius map, label on the circle | |
 | Mapa do raio de {N} km: a sua loja no centro e {N} lojas lidas em volta. | `apps/web/app/app/raio-x/_components/NeighborMap.tsx` | Accessible name of the radius map | |
+| Japonesa | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Chinesa e asiática | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Pizza | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Italiana | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Brasileira e marmita | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Carnes e frango | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Árabe | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Pastel e salgados | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Saudável e vegana | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Doces e sorvetes | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Padaria e café | `apps/web/lib/xray/labels.ts` | P20 and C02, cuisine option, D71 | |
+| Escolha a cozinha | `apps/web/app/app/raio-x/_components/NovoForm.tsx` | P20 category field, empty option, D71 | |
+| Escolha a cozinha da loja: ela define quem conta como concorrente. | `apps/web/app/app/raio-x/_components/NovoForm.tsx` | P20 hint when the catalog does not know the store, D71 | |

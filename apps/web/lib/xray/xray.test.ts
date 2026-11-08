@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { calculate, confirmStores, createXray, markDelivered, prepareDelivery, reviewItem, saveMinutes, setStoreIncluded, type XrayDeps } from "./commands";
 import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./format";
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
-import { confirmWaitLabel, exclusiveLabel, leftOutLabel, captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, retryLabel, targetCaptureRetry, XRAY_MESSAGES, withoutParityLabel } from "./labels";
+import { categoryOptionFor, CATEGORY_OPTIONS, confirmWaitLabel, exclusiveLabel, leftOutLabel, captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, retryLabel, targetCaptureRetry, XRAY_MESSAGES, withoutParityLabel } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
 import { captureCounts, examplePair, exclusives, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow, withoutParity } from "./view";
 
@@ -29,6 +29,29 @@ describe("C02 link (D29)", () => {
     expect(storeIdFromUrl("https://www.rappi.com.br/delivery/a/b/91a9c35d-0000-4000-8000-000000000000")).toBeNull();
     expect(storeIdFromUrl("não é link")).toBeNull();
     expect(canonicalStoreUrl("ifood.com.br/delivery/a/b/c/?x=1")).toBe("https://www.ifood.com.br/delivery/a/b/c");
+  });
+});
+
+describe("C02 and P20 categories by cuisine (M1-02, D71)", () => {
+  it("keeps the two drawn options first, the broad one as the default", () => {
+    expect(CATEGORY_OPTIONS.slice(0, 2).map((c) => c.label)).toEqual(["Lanches, hambúrguer, porções", "Só hambúrguer"]);
+  });
+  it("offers one option per cuisine, with unique values", () => {
+    const values = CATEGORY_OPTIONS.map((c) => c.value);
+    expect(new Set(values).size).toBe(values.length);
+    expect(CATEGORY_OPTIONS.find((c) => c.value === "japonesa")?.categories).toEqual(["Japonesa"]);
+  });
+  it("finds the option of a store's iFood category, ignoring case and accents, as M1-02 does", () => {
+    expect(categoryOptionFor("Japonesa")).toBe("japonesa");
+    expect(categoryOptionFor("JAPONESA")).toBe("japonesa");
+    expect(categoryOptionFor("arabe")).toBe("arabe");
+    expect(categoryOptionFor("Comida Brasileira")).toBe("brasileira");
+    expect(categoryOptionFor("Hambúrguer")).toBe("lanches");
+  });
+  it("has no option for a category outside the list or a store with none: the person chooses", () => {
+    expect(categoryOptionFor("Variada")).toBeNull();
+    expect(categoryOptionFor(null)).toBeNull();
+    expect(categoryOptionFor(undefined)).toBeNull();
   });
 });
 

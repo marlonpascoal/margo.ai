@@ -51,7 +51,7 @@ async function neighborhood(xrayId: string) {
   const db = adminDb();
   await db.from("job").delete().eq("type", "extract_discover").eq("payload->>xray_id", xrayId);
   // A discovery reports the target's public name and area too.
-  await db.from("public_store").update({ name: OWN_STORE, area: "Centro" }).eq("channel", "ifood").eq("external_id", OWN_EXT);
+  await db.from("public_store").update({ name: OWN_STORE, area: "Centro", category: "Lanches" }).eq("channel", "ifood").eq("external_id", OWN_EXT);
   for (const [i, n] of MENUS.neighbors.entries()) {
     const ext = neighborExt(i + 1);
     const { data: s, error } = await db

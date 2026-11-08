@@ -856,104 +856,14 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | Itens só dele | `apps/web/app/app/raio-x/_components/ResultView.tsx:366` | P23 competitor view (prototype has it; listed for the wording "sem comparação") | |
 | somamos um ponto | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:80` | P24 one run only (prototype: "Toda semana somamos um ponto") | |
 | Itens comparados | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:245` | P24 runs table column, instead of the prototype's "Espaço para subir" (not in the history loader) | |
-| sem score | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:139` | P24 table, a run before the score existed | |
-| Cada ponto compara os mesmos itens do raio-X anterior | `apps/web/app/app/raio-x/_components/PriceScore.tsx:117` | P24 under the score chart (prototype: "da semana anterior") | |
+| sem número | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:139` | P24 table, a run before M1-12 v3 (or scored by an older formula) | |
+| Itens alinhados | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | M1-12 v3 label (Marlon, 07/nov) on P19 row, P23 card, P24 chart and tables; "{62}%"; P23 category chip "{62}% alinhados" | |
+| estão na faixa de preço da vizinhança | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | P23 card: "{n} de {m} itens comparados estão na faixa de preço da vizinhança, até 10% acima ou abaixo do meio." | |
+| do meio, | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | P23 card fact: "{n} {item abaixo | itens abaixo} do meio, {R$ x} de diferença por venda" | |
+| Contamos quantos itens comparados | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | P23 method: "Itens alinhados. Contamos quantos itens comparados {você vende | ele vende} na faixa de preço da vizinhança, até 10% acima ou abaixo do preço do meio. Itens abaixo e acima da faixa aparecem à parte. Não é uma medida de lucro: não sabemos custo nem volume de vendas. Categorias com menos de {5} itens comparados ficam sem número. A mudança desde o raio-X anterior compara os mesmos itens." | |
+| Parte dos itens comparados na faixa | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | P24 under the chart: "Parte dos itens comparados na faixa de preço da vizinhança, em cada raio-X. A mudança compara os mesmos itens do raio-X anterior." | |
+| a categoria fica sem número | `apps/web/app/app/raio-x/_components/PriceScore.tsx` | P24 category: "Poucos itens: com menos de {5} itens comparados, a categoria fica sem número." | |
 | raio-X desde | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:69` | P24 lead "{loja} · N raio-X desde dd/mmm." (prototype: "N raio-X semanais") | |
 | Não conseguimos carregar agora. Seus acompanhamentos continuam rodando. | `apps/web/app/app/raio-x/error.tsx:7` | P19 to P24 read error (prototype P19 state), with "Tentar de novo" | |
 | Raio-X · lojas que você acompanha | `apps/web/app/app/page.tsx:138` | P08 (phone) list entry to P19 while m1.portal is on (MenuDono shows no entries on the phone) | |
 
-## P19 to P24 / W10 to W15 Raio-X no portal (no drawing; prototype m1-owner-journey.html)
-
-Strings the prototype does not have. The rest of these screens is the prototype's copy verbatim.
-
-| Texto atual | Onde (path:line) | Quando aparece | Nova versão |
-|---|---|---|---|
-| primeiro raio-X a caminho | `apps/web/lib/monitor/view.ts:75` | P19 pill: a monitoring with no calculated run yet | |
-| buscando a vizinhança | `apps/web/lib/monitor/view.ts:71` | P19 pill while the first run discovers | |
-| leitura automática desligada | `apps/web/lib/monitor/view.ts:67` | P19 pill when m1.extracao is off (draft §2.3) | |
-| Volta quando você assinar o Lucro. | `apps/web/app/app/raio-x/page.tsx:54` | P19 row paused by the plan | |
-| Mudar frequência | `apps/web/app/app/raio-x/_components/MonitorMenu.tsx:2` | P19 row menu; opens a dialog "Com que frequência?" with Salvar / Cancelar | |
-| Frequência salva. | `apps/web/app/app/raio-x/_components/MonitorMenu.tsx:102` | P19 after changing the period | |
-| retomado. | `apps/web/app/app/raio-x/_components/MonitorMenu.tsx:52` | P19 toast "{loja}: retomado." (prototype adds the next reading date) | |
-| O histórico continua guardado. | `apps/web/app/app/raio-x/_components/MonitorMenu.tsx:80` | P19 remove dialog: "Paramos de ler {loja}. O histórico continua guardado." (prototype adds "e aparece no seu raio-X") | |
-| lojas suas | `apps/web/app/app/raio-x/_components/NovoForm.tsx:92` | P20 own-store limit reached: "Seu plano acompanha {uma loja sua | N lojas suas}." | |
-| Esta loja é sua | `apps/web/app/app/raio-x/_components/NovoForm.tsx:123` | P20 pasted link of an own store: "Esta loja é sua: {loja}." | |
-| novos este mês | `apps/web/app/app/raio-x/_components/NovoForm.tsx:?` | P20 cost line: "Conta como 1 dos {n} concorrentes do seu plano. {Resta 1 novo | Restam N novos} este mês." | |
-| Ainda não temos o link | `apps/web/app/app/raio-x/actions.ts:119` | P20 own store with no known iFood link: "Ainda não temos o link desta loja no iFood. Escolha \"Um concorrente\" e cole o link dela: reconhecemos que é sua." | |
-| estimativa pelo ritmo dos últimos | `apps/web/app/app/raio-x/_components/Lendo.tsx:128` | P21 under the range: "estimativa pelo ritmo dos últimos {15} minutos" (prototype: "da última meia hora"; the window is 15 minutes) | |
-| cardápios lidos, contando o | `apps/web/app/app/raio-x/_components/Lendo.tsx:122` | P21 big count: "... contando o {seu | dela}" ("dela" for a competitor) | |
-| : lida | `apps/web/app/app/raio-x/_components/Lendo.tsx:168` | P21 pill for a competitor run: "{loja}: lida, N itens" / "{loja}: ainda não lida" | |
-| o raio-X segue sem elas | `apps/web/app/app/raio-x/_components/Lendo.tsx:78` | P21 comparing: "Já dá para comparar com X de Y lojas. Não deu para ler N lojas; o raio-X segue sem elas. As que ainda estão sendo lidas entram no próximo raio-X." | |
-| Não conseguimos ler o cardápio | `apps/web/app/app/raio-x/_components/Lendo.tsx:72` | P21 target failed, competitor variant "de {loja}" | |
-| Itens conferidos. | `apps/web/lib/monitor/view.ts:131` | P21 step 3 once done | |
-| Marcado por você | `apps/web/app/app/raio-x/_components/Revisar.tsx:94` | P22 when the owner changed the pre-marked suggestion | |
-| use Desfazer | `apps/web/app/app/raio-x/_components/Revisar.tsx:170` | P22 all answered: "Dá para mudar a qualquer momento: use Desfazer." (prototype points to "Confirmados") | |
-| não perguntamos as dúvidas | `apps/web/app/app/raio-x/_components/Revisar.tsx:176` | P22 competitor run while m1.portal_competitor_doubts_asked is 0 | |
-| Revisar mesmo assim | `apps/web/app/app/raio-x/_components/Revisar.tsx:181` | P22 competitor run, collapsed doubts (draft Q4) | |
-| Resposta desfeita. Recalculando o raio-X. | `apps/web/app/app/raio-x/_components/Revisar.tsx:62` | P22 toast after Desfazer | |
-| : confirmado. | `apps/web/app/app/raio-x/_components/Revisar.tsx:97` | P22 toasts "{item}: confirmado." / "{item}: nenhum é o mesmo." / "{item}: salvo. Recalculando o raio-X." | |
-| Desmarque as lojas | `apps/web/app/app/raio-x/_components/Revisar.tsx:309` | P22 "Não é o mesmo" on a system-confirmed item, with Salvar | |
-| Não deu para ler a proteína no nome | `apps/web/lib/monitor/rules.ts:122` | P22 reason (M1-04 Stage 2 "proteína ilegível") | |
-| supomos | `apps/web/lib/monitor/rules.ts:129` | P22 reason for "tamanho presumido {n} ml": "Não deu para ler o tamanho no nome; supomos {n} ml" | |
-| Nenhum item está 10% ou mais abaixo | `apps/web/app/app/raio-x/_components/ResultView.tsx:319` | P23 headline when no item can go up | |
-| Nenhuma cobra menos que | `apps/web/lib/monitor/view.ts:207` | P23 position when the store is the cheapest | |
-| No raio-X anterior | `apps/web/lib/monitor/view.ts:216` | P23 change for periods other than weekly; also "Igual ao raio-X anterior." | |
-| Comparado com | `apps/web/app/app/raio-x/_components/ResultView.tsx:281` | P23 banner when some stores were not read (draft §2.7) | |
-| Preparando o PDF | `apps/web/app/app/raio-x/_components/ShareMenu.tsx:64` | P23 while worker-render prints: "Preparando o PDF. Leva até 1 minuto." | |
-| Não conseguimos preparar o PDF | `apps/web/app/app/raio-x/_components/ShareMenu.tsx:64` | P23 when the print fails or takes over 3 minutes | |
-| MargoAI · Raio-X de preço | `apps/web/app/app/raio-x/_components/ResultView.tsx:235` | PDF header (printed page only), with "SINTÉTICO" on synthetic accounts | |
-| Itens só dele | `apps/web/app/app/raio-x/_components/ResultView.tsx:366` | P23 competitor view (prototype has it; listed for the wording "sem comparação") | |
-| somamos um ponto | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:80` | P24 one run only (prototype: "Toda semana somamos um ponto") | |
-| Itens comparados | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:245` | P24 runs table column, instead of the prototype's "Espaço para subir" (not in the history loader) | |
-| sem score | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:139` | P24 table, a run before the score existed | |
-| Cada ponto compara os mesmos itens do raio-X anterior | `apps/web/app/app/raio-x/_components/PriceScore.tsx:117` | P24 under the score chart (prototype: "da semana anterior") | |
-| raio-X desde | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:69` | P24 lead "{loja} · N raio-X desde dd/mmm." (prototype: "N raio-X semanais") | |
-| Não conseguimos carregar agora. Seus acompanhamentos continuam rodando. | `apps/web/app/app/raio-x/error.tsx:7` | P19 to P24 read error (prototype P19 state), with "Tentar de novo" | |
-
-## P19 to P24 / W10 to W15 Raio-X no portal (no drawing; prototype m1-owner-journey.html)
-
-Strings the prototype does not have. The rest of these screens is the prototype's copy verbatim.
-
-| Texto atual | Onde (path:line) | Quando aparece | Nova versão |
-|---|---|---|---|
-| primeiro raio-X a caminho | `apps/web/lib/monitor/view.ts:75` | P19 pill: a monitoring with no calculated run yet | |
-| buscando a vizinhança | `apps/web/lib/monitor/view.ts:71` | P19 pill while the first run discovers | |
-| leitura automática desligada | `apps/web/lib/monitor/view.ts:67` | P19 pill when m1.extracao is off (draft §2.3) | |
-| Volta quando você assinar o Lucro. | `apps/web/app/app/raio-x/page.tsx:54` | P19 row paused by the plan | |
-| Mudar frequência | `apps/web/app/app/raio-x/_components/MonitorMenu.tsx:2` | P19 row menu; opens a dialog "Com que frequência?" with Salvar / Cancelar | |
-| Frequência salva. | `apps/web/app/app/raio-x/_components/MonitorMenu.tsx:102` | P19 after changing the period | |
-| retomado. | `apps/web/app/app/raio-x/_components/MonitorMenu.tsx:52` | P19 toast "{loja}: retomado." (prototype adds the next reading date) | |
-| O histórico continua guardado. | `apps/web/app/app/raio-x/_components/MonitorMenu.tsx:80` | P19 remove dialog: "Paramos de ler {loja}. O histórico continua guardado." (prototype adds "e aparece no seu raio-X") | |
-| lojas suas | `apps/web/app/app/raio-x/_components/NovoForm.tsx:92` | P20 own-store limit reached: "Seu plano acompanha {uma loja sua | N lojas suas}." | |
-| Esta loja é sua | `apps/web/app/app/raio-x/_components/NovoForm.tsx:123` | P20 pasted link of an own store: "Esta loja é sua: {loja}." | |
-| novos este mês | `apps/web/app/app/raio-x/_components/NovoForm.tsx:?` | P20 cost line: "Conta como 1 dos {n} concorrentes do seu plano. {Resta 1 novo | Restam N novos} este mês." | |
-| Ainda não temos o link | `apps/web/app/app/raio-x/actions.ts:119` | P20 own store with no known iFood link: "Ainda não temos o link desta loja no iFood. Escolha \"Um concorrente\" e cole o link dela: reconhecemos que é sua." | |
-| estimativa pelo ritmo dos últimos | `apps/web/app/app/raio-x/_components/Lendo.tsx:128` | P21 under the range: "estimativa pelo ritmo dos últimos {15} minutos" (prototype: "da última meia hora"; the window is 15 minutes) | |
-| cardápios lidos, contando o | `apps/web/app/app/raio-x/_components/Lendo.tsx:122` | P21 big count: "... contando o {seu | dela}" ("dela" for a competitor) | |
-| : lida | `apps/web/app/app/raio-x/_components/Lendo.tsx:168` | P21 pill for a competitor run: "{loja}: lida, N itens" / "{loja}: ainda não lida" | |
-| o raio-X segue sem elas | `apps/web/app/app/raio-x/_components/Lendo.tsx:78` | P21 comparing: "Já dá para comparar com X de Y lojas. Não deu para ler N lojas; o raio-X segue sem elas. As que ainda estão sendo lidas entram no próximo raio-X." | |
-| Não conseguimos ler o cardápio | `apps/web/app/app/raio-x/_components/Lendo.tsx:72` | P21 target failed, competitor variant "de {loja}" | |
-| Itens conferidos. | `apps/web/lib/monitor/view.ts:131` | P21 step 3 once done | |
-| Marcado por você | `apps/web/app/app/raio-x/_components/Revisar.tsx:94` | P22 when the owner changed the pre-marked suggestion | |
-| use Desfazer | `apps/web/app/app/raio-x/_components/Revisar.tsx:170` | P22 all answered: "Dá para mudar a qualquer momento: use Desfazer." (prototype points to "Confirmados") | |
-| não perguntamos as dúvidas | `apps/web/app/app/raio-x/_components/Revisar.tsx:176` | P22 competitor run while m1.portal_competitor_doubts_asked is 0 | |
-| Revisar mesmo assim | `apps/web/app/app/raio-x/_components/Revisar.tsx:181` | P22 competitor run, collapsed doubts (draft Q4) | |
-| Resposta desfeita. Recalculando o raio-X. | `apps/web/app/app/raio-x/_components/Revisar.tsx:62` | P22 toast after Desfazer | |
-| : confirmado. | `apps/web/app/app/raio-x/_components/Revisar.tsx:97` | P22 toasts "{item}: confirmado." / "{item}: nenhum é o mesmo." / "{item}: salvo. Recalculando o raio-X." | |
-| Desmarque as lojas | `apps/web/app/app/raio-x/_components/Revisar.tsx:309` | P22 "Não é o mesmo" on a system-confirmed item, with Salvar | |
-| Não deu para ler a proteína no nome | `apps/web/lib/monitor/rules.ts:122` | P22 reason (M1-04 Stage 2 "proteína ilegível") | |
-| supomos | `apps/web/lib/monitor/rules.ts:129` | P22 reason for "tamanho presumido {n} ml": "Não deu para ler o tamanho no nome; supomos {n} ml" | |
-| Nenhum item está 10% ou mais abaixo | `apps/web/app/app/raio-x/_components/ResultView.tsx:319` | P23 headline when no item can go up | |
-| Nenhuma cobra menos que | `apps/web/lib/monitor/view.ts:207` | P23 position when the store is the cheapest | |
-| No raio-X anterior | `apps/web/lib/monitor/view.ts:216` | P23 change for periods other than weekly; also "Igual ao raio-X anterior." | |
-| Comparado com | `apps/web/app/app/raio-x/_components/ResultView.tsx:281` | P23 banner when some stores were not read (draft §2.7) | |
-| Preparando o PDF | `apps/web/app/app/raio-x/_components/ShareMenu.tsx:64` | P23 while worker-render prints: "Preparando o PDF. Leva até 1 minuto." | |
-| Não conseguimos preparar o PDF | `apps/web/app/app/raio-x/_components/ShareMenu.tsx:64` | P23 when the print fails or takes over 3 minutes | |
-| MargoAI · Raio-X de preço | `apps/web/app/app/raio-x/_components/ResultView.tsx:235` | PDF header (printed page only), with "SINTÉTICO" on synthetic accounts | |
-| Itens só dele | `apps/web/app/app/raio-x/_components/ResultView.tsx:366` | P23 competitor view (prototype has it; listed for the wording "sem comparação") | |
-| somamos um ponto | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:80` | P24 one run only (prototype: "Toda semana somamos um ponto") | |
-| Itens comparados | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:245` | P24 runs table column, instead of the prototype's "Espaço para subir" (not in the history loader) | |
-| sem score | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:139` | P24 table, a run before the score existed | |
-| Cada ponto compara os mesmos itens do raio-X anterior | `apps/web/app/app/raio-x/_components/PriceScore.tsx:117` | P24 under the score chart (prototype: "da semana anterior") | |
-| raio-X desde | `apps/web/app/app/raio-x/[monitor]/historico/page.tsx:69` | P24 lead "{loja} · N raio-X desde dd/mmm." (prototype: "N raio-X semanais") | |
-| Não conseguimos carregar agora. Seus acompanhamentos continuam rodando. | `apps/web/app/app/raio-x/error.tsx:7` | P19 to P24 read error (prototype P19 state), with "Tentar de novo" | |

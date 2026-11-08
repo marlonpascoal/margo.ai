@@ -77,7 +77,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
         {head}
         <div className="card pad stack" style={{ justifyItems: "start" }}>
           <b>O histórico aparece a partir do segundo raio-X{summary.next_run_at ? `, em ${dayMon(summary.next_run_at)}` : ""}.</b>
-          <span className="small muted">A cada raio-X somamos um ponto: score de preço, posição de preço, cada categoria e o preço de cada item.</span>
+          <span className="small muted">A cada raio-X somamos um ponto: itens alinhados, posição de preço, cada categoria e o preço de cada item.</span>
           {runs.length ? (
             <Link className="btn sm" href={`/app/raio-x/${monitor}`}>
               Ver o raio-X de {dayMon(runs[0].on!)}
@@ -136,7 +136,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
             </div>
           </div>
         }
-        table={<Table head={["Raio-X", ...(SHOW_SCORE ? [SCORE_LABEL] : []), "Posição", "Lojas"]} rows={runs.map((r, i) => [labels[i], ...(SHOW_SCORE ? [r.score ?? "sem score"] : []), r.rank ? ordinal(r.rank) : "", r.stores_ranked ?? ""])} />}
+        table={<Table head={["Raio-X", ...(SHOW_SCORE ? [SCORE_LABEL] : []), "Posição", "Lojas"]} rows={runs.map((r, i) => [labels[i], ...(SHOW_SCORE ? [r.score !== null ? `${r.score}%` : "sem número"] : []), r.rank ? ordinal(r.rank) : "", r.stores_ranked ?? ""])} />}
       />
 
       {cat ? (
@@ -174,7 +174,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
           table={
             <Table
               head={["Raio-X", ...(SHOW_SCORE ? [`Score ${catLabel}`] : []), `Posição ${catLabel}`]}
-              rows={runs.map((_, i) => [labels[i], ...(SHOW_SCORE ? [catRuns[i]?.score ?? "poucos itens"] : []), catRuns[i]?.rank ? `${ordinal(catRuns[i]!.rank!)} de ${catRuns[i]!.stores_ranked}` : ""])}
+              rows={runs.map((_, i) => [labels[i], ...(SHOW_SCORE ? [typeof catRuns[i]?.score === "number" ? `${catRuns[i]!.score}%` : "poucos itens"] : []), catRuns[i]?.rank ? `${ordinal(catRuns[i]!.rank!)} de ${catRuns[i]!.stores_ranked}` : ""])}
             />
           }
         />
@@ -242,11 +242,11 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
           <h2>Raio-X anteriores</h2>
         </div>
         <Table
-          head={["Data", "Lojas lidas", ...(SHOW_SCORE ? ["Score"] : []), "Posição", "Itens comparados", ""]}
+          head={["Data", "Lojas lidas", ...(SHOW_SCORE ? [SCORE_LABEL] : []), "Posição", "Itens comparados", ""]}
           rows={[...runs].reverse().map((r, i) => [
             dayMon(r.on!),
             r.stores_read,
-            ...(SHOW_SCORE ? [r.score ?? ""] : []),
+            ...(SHOW_SCORE ? [r.score !== null ? `${r.score}%` : ""] : []),
             r.rank && r.stores_ranked ? `${ordinal(r.rank)} de ${r.stores_ranked}` : "",
             r.items_compared,
             <Link key="v" className="small" href={i === 0 ? `/app/raio-x/${monitor}` : `/app/raio-x/${monitor}/${r.xray_id}`}>

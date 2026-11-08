@@ -260,7 +260,7 @@ export interface ResultItem {
   group: Group;
 }
 
-/** M1-12 (proposed) "score de preço": share of the neighborhood price the store charges. No cost, no volume: never money. */
+/** M1-12 v3 "% de itens alinhados": share of the compared items in the neighborhood band (na_media). No cost, no volume: never money. */
 export interface Score {
   /** 0 to 100; null for a category under m1.score_min_items items. */
   score: number | null;

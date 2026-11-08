@@ -1,13 +1,13 @@
-// M1-12 "score de preço" (proposed in spec/04, PROVISIONAL). Marlon has not picked between "% de itens alinhados" and
-// no score at all: every place a score shows on P19 to P24 renders one of these components, reading only
-// loadResult().positions and loadHistory(). To change or drop the score, change this file: SHOW_SCORE false hides it
-// everywhere, and the method paragraph goes with it.
+// M1-12 v3 "% de itens alinhados" (Marlon, 07/nov): the share of the compared items whose price sits in the
+// neighborhood band (M1-07 na_media, up to 10% above or below the middle). Not a profit measure: no cost, no volume.
+// Every place it shows on P19 to P24 renders one of these components, reading only loadResult().positions and
+// loadHistory(). SHOW_SCORE false hides it everywhere, and the method paragraph goes with it.
 import type { History, Result, Score } from "@/lib/monitor/load";
 import { brl, scoreChangeSince, scoreDelta } from "@/lib/monitor/view";
 import { HistoryChart } from "./Chart";
 
 export const SHOW_SCORE = true;
-export const SCORE_LABEL = "Score de preço";
+export const SCORE_LABEL = "Itens alinhados";
 
 /** The score row of a monitoring in P19: the newest run of loadHistory. */
 export function scoreOfHistory(h: History | null): { score: number; delta: number | null } | null {
@@ -15,19 +15,19 @@ export function scoreOfHistory(h: History | null): { score: number; delta: numbe
   return last && last.score !== null ? { score: last.score, delta: last.delta } : null;
 }
 
-/** P19 row: "Score de preço 98 (+1)". */
+/** P19 row: "Itens alinhados 62% (+3)". */
 export function ScoreInline({ score }: { score: { score: number; delta: number | null } | null }) {
   if (!SHOW_SCORE || !score) return null;
   const d = scoreDelta(score.delta);
   return (
     <>
       <br />
-      {SCORE_LABEL} <b>{score.score}</b> {d ? <span className="muted">({d})</span> : null}
+      {SCORE_LABEL} <b>{score.score}%</b> {d ? <span className="muted">({d})</span> : null}
     </>
   );
 }
 
-/** P23 card near the top (M1-12 over the run's compared items). */
+/** P23 card near the top (M1-12 v3 over the run's compared items). */
 export function ScoreCard({ result, previousOn, competitor }: { result: Result; previousOn: string | null; competitor: boolean }) {
   const s = result.positions.score;
   if (!SHOW_SCORE || !s || s.score === null) return null;
@@ -39,22 +39,21 @@ export function ScoreCard({ result, previousOn, competitor }: { result: Result; 
           {SCORE_LABEL}
         </span>
         <span className="scv">
-          <b className="mono">{s.score}</b>
-          <span className="muted">/100</span>
+          <b className="mono">{s.score}%</b>
         </span>
         {change ? <span className="chg">{`${change}, mesmos ${s.delta_items ?? s.items} itens`}</span> : null}
       </div>
       <div className="scx">
         <p className="posline" style={{ fontSize: 15 }}>
-          Quanto do preço praticado pela vizinhança {competitor ? "ele cobra" : "você cobra"}. Itens abaixo do meio baixam o score; itens acima não entram nele e aparecem à parte.
+          {s.in_band} de {s.items} itens comparados estão na faixa de preço da vizinhança, até 10% acima ou abaixo do meio.
         </p>
-        <div className="meter" role="img" aria-label={`Score ${s.score} de 100`}>
+        <div className="meter" role="img" aria-label={`${s.score}% dos itens alinhados`}>
           <i style={{ width: `${s.score}%` }} />
         </div>
         <div className="scfacts">
           {s.below > 0 ? (
             <span className="up">
-              <b className="mono">{brl(s.price_gap_per_sale_cents)}</b> de diferença por venda para o meio, em {s.below} {s.below === 1 ? "item abaixo" : "itens abaixo"}
+              {s.below} {s.below === 1 ? "item abaixo" : "itens abaixo"} do meio, <b className="mono">{brl(s.price_gap_per_sale_cents)}</b> de diferença por venda
             </span>
           ) : null}
           {s.risk > 0 ? (
@@ -63,14 +62,13 @@ export function ScoreCard({ result, previousOn, competitor }: { result: Result; 
               {competitor ? " do meio" : ": não mexa sem saber o custo"}
             </span>
           ) : null}
-          <span className="muted">{s.in_band} itens na faixa</span>
         </div>
       </div>
     </section>
   );
 }
 
-/** P23 category summary chip: "score 96", or "poucos itens" under m1.score_min_items. */
+/** P23 category summary chip: "62% alinhados", or "poucos itens" under m1.score_min_items. */
 export function CategoryScore({ score, minItems }: { score: Score | null | undefined; minItems: number }) {
   if (!SHOW_SCORE || !score) return null;
   return score.score === null ? (
@@ -78,8 +76,8 @@ export function CategoryScore({ score, minItems }: { score: Score | null | undef
       poucos itens
     </span>
   ) : (
-    <span className="cscore" title="Score de preço nesta categoria">
-      score <b>{score.score}</b>
+    <span className="cscore" title="Itens alinhados nesta categoria">
+      <b>{score.score}%</b> alinhados
     </span>
   );
 }
@@ -89,32 +87,30 @@ export function ScoreMethod({ competitor, minItems }: { competitor: boolean; min
   if (!SHOW_SCORE) return null;
   return (
     <p>
-      <b>Score de preço.</b> Somamos o preço do meio de cada item comparado. Itens abaixo do meio entram pelo preço {competitor ? "dele" : "seu"}; os outros, pelo preço do meio. O score é quanto dessa soma{" "}
-      {competitor ? "ele cobra" : "você cobra"}. Itens acima do meio não mudam o score: aparecem à parte. Categorias com menos de {minItems} itens comparados ficam sem score. A mudança desde o raio-X anterior compara os mesmos itens.
+      <b>Itens alinhados.</b> Contamos quantos itens comparados {competitor ? "ele vende" : "você vende"} na faixa de preço da vizinhança, até 10% acima ou abaixo do preço do meio. Itens abaixo e acima da faixa aparecem à parte. Não é uma medida de lucro: não sabemos custo nem volume de vendas. Categorias com menos de {minItems} itens comparados ficam sem número. A mudança desde o raio-X anterior compara os mesmos itens.
     </p>
   );
 }
 
-const scoreOpts = (label: string) => ({ lo: 80, hi: 100, ticks: [80, 90, 100], fmt: (v: number) => String(Math.round(v)), label });
+const scoreOpts = (label: string) => ({ lo: 0, hi: 100, ticks: [0, 50, 100], fmt: (v: number) => `${Math.round(v)}%`, label });
 
-/** P24 restaurant level: the score line (scale 80 to 100, runs before series_from carry nulls). */
+/** P24 restaurant level: the share line (scale 0 to 100%, runs before series_from or of an older formula carry nulls). */
 export function ScoreHistory({ runs, labels, prevOn, id }: { runs: { score: number | null; delta: number | null }[]; labels: string[]; prevOn: string | null; id: string }) {
   if (!SHOW_SCORE) return null;
   const values = runs.map((r) => r.score);
   const last = runs.at(-1);
   if (!values.some((v) => v !== null)) return null;
   const change = scoreChangeSince(last?.delta ?? null, prevOn);
-  const lo = Math.min(80, ...values.filter((v): v is number => v !== null).map((v) => Math.floor(v / 10) * 10));
   return (
     <div className="stack" style={{ gap: 6 }}>
       <h3>
         {SCORE_LABEL}{" "}
         <span className="small muted" style={{ fontWeight: 400 }}>
-          {[last?.score ?? null, change].filter((x) => x !== null).join(" · ")}
+          {[last && last.score !== null ? `${last.score}%` : null, change].filter((x) => x !== null).join(" · ")}
         </span>
       </h3>
-      <HistoryChart id={id} labels={labels} series={[{ name: "Score", values, tone: "main" }]} {...scoreOpts(`${SCORE_LABEL} por raio-X`)} lo={lo} ticks={[lo, (lo + 100) / 2, 100]} />
-      <span className="xs muted">Escala de {lo} a 100. 100: nenhum item abaixo do preço do meio da vizinhança. Cada ponto compara os mesmos itens do raio-X anterior.</span>
+      <HistoryChart id={id} labels={labels} series={[{ name: "Itens alinhados", values, tone: "main" }]} {...scoreOpts(`${SCORE_LABEL} por raio-X`)} />
+      <span className="xs muted">Parte dos itens comparados na faixa de preço da vizinhança, em cada raio-X. A mudança compara os mesmos itens do raio-X anterior.</span>
     </div>
   );
 }
@@ -125,24 +121,23 @@ export function CategoryScoreHistory({ label, values, delta, prevOn, minItems, i
   if (!values.some((v) => v !== null))
     return (
       <div className="stack" style={{ gap: 6 }}>
-        <h3>Score em {label}</h3>
+        <h3>Itens alinhados em {label}</h3>
         <p className="small muted" style={{ margin: 0 }}>
-          Poucos itens: com menos de {minItems} itens comparados, a categoria fica sem score.
+          Poucos itens: com menos de {minItems} itens comparados, a categoria fica sem número.
         </p>
       </div>
     );
   const last = [...values].reverse().find((v) => v !== null) ?? null;
   const change = scoreChangeSince(delta, prevOn);
-  const lo = Math.min(80, ...values.filter((v): v is number => v !== null).map((v) => Math.floor(v / 10) * 10));
   return (
     <div className="stack" style={{ gap: 6 }}>
       <h3>
-        Score em {label}{" "}
+        Itens alinhados em {label}{" "}
         <span className="small muted" style={{ fontWeight: 400 }}>
-          {[last, change].filter((x) => x !== null).join(" · ")}
+          {[last !== null ? `${last}%` : null, change].filter((x) => x !== null).join(" · ")}
         </span>
       </h3>
-      <HistoryChart id={id} labels={labels} series={[{ name: "Score", values, tone: "main" }]} {...scoreOpts(`Score de ${label} por raio-X`)} lo={lo} ticks={[lo, (lo + 100) / 2, 100]} />
+      <HistoryChart id={id} labels={labels} series={[{ name: "Itens alinhados", values, tone: "main" }]} {...scoreOpts(`Itens alinhados em ${label} por raio-X`)} />
     </div>
   );
 }

@@ -252,7 +252,7 @@ test("B01_P23_result_is_the_delivery_money_free_with_position_categories_and_sto
   await page.goto(`/app/raio-x/${monitorId}`);
   await expect(page.getByRole("heading", { name: "Raio-X de preço", exact: true })).toBeVisible();
   await expect(page.getByText("Como ler este raio-X").first()).toBeVisible();
-  await expect(page.getByText("Score de preço", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Itens alinhados", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/Você cobra menos que \d+ das \d+ lojas vizinhas/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Por categoria" })).toBeVisible();
   await expect(page.locator(".catc[open]").first()).toBeVisible();
@@ -310,7 +310,7 @@ test("B01_P24_history_after_a_second_run_three_levels_with_tables", async ({ pag
   await page.goto("/app/raio-x");
   const row = page.locator(`[data-monitor="${monitorId}"]`);
   await expect(row).toContainText(/\dª mais barata de \d+/);
-  await expect(row).toContainText("Score de preço");
+  await expect(row).toContainText("Itens alinhados");
   await shots(page, "P19-W10");
 });
 

@@ -4,7 +4,7 @@
 // by category. Every answer goes through an audited server action (monitor_answer*, monitor_undo) and recalculates.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { Doubt, Doubts, ItemLists } from "@/lib/monitor/load";
 import { doubtReason } from "@/lib/monitor/rules";
 import { brl, byGroup, selectedLabel } from "@/lib/monitor/view";
@@ -121,15 +121,27 @@ export default function Revisar({ monitorId, xrayId, doubts, lists, canAnswer }:
         </label>
         <span className="small muted">{open.length} em dúvida</span>
       </div>
-      {byGroup(doubts.items).map((g) => (
+      {byGroup(doubts.items).map((g) => {
+        const ids = g.rows.filter((d) => !d.answered).map((d) => d.item_id);
+        return (
         <div key={g.group}>
           <div className="catgh">
-            <span>{g.label}</span>
-            <span>{g.rows.filter((d) => !d.answered).length} em dúvida</span>
+            <label className="chk">
+              <GroupCheck
+                ids={ids}
+                sel={sel}
+                disabled={ro || ids.length === 0}
+                label={`Selecionar todos em ${g.label}`}
+                onChange={(on) => setSel((s) => (on ? new Set([...s, ...ids]) : new Set([...s].filter((x) => !ids.includes(x)))))}
+              />{" "}
+              {g.label}
+            </label>
+            <span>{ids.length} em dúvida</span>
           </div>
           {g.rows.map(doubtRow)}
         </div>
-      ))}
+        );
+      })}
     </section>
   );
 
@@ -315,4 +327,14 @@ function ConfirmedRow({ r, ro, pending, onSave }: { r: ItemLists["confirmed"][nu
       ) : null}
     </div>
   );
+}
+
+/** P22 category header: selects every open doubt of the group; indeterminate when only some are selected. */
+function GroupCheck({ ids, sel, disabled, label, onChange }: { ids: string[]; sel: Set<string>; disabled: boolean; label: string; onChange: (on: boolean) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const n = ids.filter((id) => sel.has(id)).length;
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = n > 0 && n < ids.length;
+  }, [n, ids.length]);
+  return <input ref={ref} type="checkbox" aria-label={label} disabled={disabled} checked={ids.length > 0 && n === ids.length} onChange={(e) => onChange(e.target.checked)} />;
 }

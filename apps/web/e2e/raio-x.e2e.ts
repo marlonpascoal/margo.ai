@@ -220,6 +220,16 @@ test("B01_P22_dono_reviews_in_bulk_answers_undoes_and_confirms_all", async ({ pa
   await shots(page, "P22-W13");
   await page.setViewportSize({ width: 1280, height: 900 });
 
+  // A category header selects every open doubt of its group, and clears them again.
+  const groupBox = page.locator(".catgh input[type=checkbox]").first();
+  await expect(groupBox).toHaveAttribute("aria-label", /^Selecionar todos em /);
+  await groupBox.check();
+  const inGroup = await page.locator(".catgh").first().locator("..").locator('input[aria-label^="Selecionar "]:not([aria-label^="Selecionar todos"]):checked').count();
+  expect(inGroup).toBeGreaterThan(0);
+  await expect(page.getByRole("region", { name: "Ações nos selecionados" })).toContainText(inGroup === 1 ? "1 item selecionado" : `${inGroup} itens selecionados`);
+  await groupBox.uncheck();
+  await expect(page.getByRole("region", { name: "Ações nos selecionados" })).toHaveCount(0);
+
   const [a, b] = doubts.items;
   await page.getByLabel(`Selecionar ${a.name}`).check();
   await page.getByLabel(`Selecionar ${b.name}`).check();

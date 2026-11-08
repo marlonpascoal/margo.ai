@@ -328,7 +328,7 @@
   .rx .card { break-inside: avoid; }
   .rx .catc, .rx .rg { break-inside: auto; }
   .rx .it { break-inside: avoid; }
-  .rx .catc > summary::after, .rx .how > summary::after { content: none; }
+  .rx .catc > summary::after, .rx .catc[open] > summary::after, .rx .how > summary::after, .rx .how[open] > summary::after { content: none; }
   .rx .lead2 { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
   .rx .it { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
   .rx .sl { max-height: none; overflow: visible; }

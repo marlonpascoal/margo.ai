@@ -17,14 +17,21 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import subprocess
+import tempfile
 import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-PROVIDERS = ("openai", "anthropic")
+PROVIDERS = ("openai", "anthropic", "claude_cli")
 DEFAULT_PROVIDER = "openai"
-DEFAULT_MODELS = {"openai": "gpt-6.1-sol", "anthropic": "claude-sonnet-5-5"}
+DEFAULT_MODELS = {
+    "openai": "gpt-6.1-sol",
+    "anthropic": "claude-sonnet-5-5",
+    "claude_cli": "claude-sonnet-5-5",
+}
 """Configured defaults, not branches in the logic; each use's env var overrides the model."""
 USE_DEFAULTS: dict[str, dict[str, str]] = {
     "openai": {"MARGO_FAMILY_MODEL": "gpt-6-luna", "MARGO_PAIR_MODEL": "gpt-6-luna"}
@@ -43,7 +50,10 @@ def provider_from_env() -> str:
 
 def key_present(provider: str | None = None) -> bool:
     """Whether the key of the provider in use is set (the AI steps run only then)."""
-    return bool(os.environ.get(KEY_ENV[provider or provider_from_env()]))
+    name = provider or provider_from_env()
+    if name == "claude_cli":
+        return shutil.which("claude") is not None
+    return bool(os.environ.get(KEY_ENV[name]))
 
 
 def model_for(provider: str, model_env: str | None = None) -> str:
@@ -52,7 +62,37 @@ def model_for(provider: str, model_env: str | None = None) -> str:
     return (os.environ.get(model_env) if model_env else None) or use_default or DEFAULT_MODELS[provider]
 
 
+class ClaudeCli:
+    """D79: the logged-in Claude Code, for local experiments only (`MARGO_AI_PROVIDER=claude_cli`). It uses
+    the developer's plan and its limits. Never in production: no key, no service level, one person's login."""
+
+    @staticmethod
+    def command(
+        request: Mapping[str, Any], environ: Mapping[str, str]
+    ) -> tuple[list[str], dict[str, str]]:
+        """No tools, no project settings, no saved session; API keys are removed, so the login is used."""
+        env = {k: v for k, v in environ.items() if k not in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY")}
+        cmd = [
+            "claude", "-p", "--output-format", "json", "--model", request["model"],
+            "--system-prompt", request["system"], "--json-schema", json.dumps(request["schema"]),
+            "--tools", "", "--no-session-persistence", "--setting-sources", "", "--strict-mcp-config",
+        ]  # fmt: skip
+        return cmd, env
+
+    def run(self, request: Mapping[str, Any]) -> dict[str, Any]:
+        cmd, env = self.command(request, os.environ)
+        done = subprocess.run(  # noqa: S603 (fixed binary, no shell)
+            cmd, input=request["user"], capture_output=True, text=True, timeout=600, env=env,
+            cwd=tempfile.gettempdir(), check=False,
+        )  # fmt: skip
+        if done.returncode != 0 and not done.stdout:
+            raise RuntimeError(f"claude CLI failed: {done.stderr[:300]}")
+        return json.loads(done.stdout)
+
+
 def make_client(provider: str) -> Any:
+    if provider == "claude_cli":
+        return ClaudeCli()
     key = os.environ.get(KEY_ENV[provider])
     if not key:
         raise RuntimeError(f"{KEY_ENV[provider]} is not set")
@@ -79,13 +119,20 @@ class Call:
 def build_request(provider: str, model: str, call: Call) -> dict[str, Any]:
     """The SDK arguments: OpenAI Responses API with a strict json_schema, or the Anthropic Messages API."""
     user = json.dumps(call.payload, ensure_ascii=False)
+    if provider == "claude_cli":
+        return {"model": model, "system": call.system, "user": user, "schema": call.schema}
     if provider == "openai":
         return {
             "model": model,
             "max_output_tokens": call.max_tokens,
             "input": [{"role": "system", "content": call.system}, {"role": "user", "content": user}],
             "text": {
-                "format": {"type": "json_schema", "name": call.name, "schema": call.schema, "strict": True}
+                "format": {
+                    "type": "json_schema",
+                    "name": call.name,
+                    "schema": call.schema,
+                    "strict": True,
+                }
             },
         }
     return {
@@ -105,6 +152,8 @@ def request_payload(provider: str, request: Mapping[str, Any]) -> Any:
 
 
 def send(provider: str, client: Any, request: Mapping[str, Any]) -> Any:
+    if provider == "claude_cli":
+        return client.run(request)
     if provider == "openai":
         return client.responses.create(**request)
     return client.messages.create(**request)
@@ -116,17 +165,26 @@ def _get(obj: Any, key: str) -> Any:
 
 def response_text(provider: str, response: Any) -> str | None:
     """The answer's JSON text from an SDK response or its recorded dict; None on a refusal or a cut answer."""
+    if provider == "claude_cli":
+        output = None if _get(response, "is_error") else _get(response, "structured_output")
+        return json.dumps(output, ensure_ascii=False) if output is not None else None
     if provider == "openai":
         if _get(response, "status") != "completed":
             return None
-        parts = [p for item in _get(response, "output") or [] if _get(item, "type") == "message"
-                 for p in _get(item, "content") or []]
+        parts = [
+            p
+            for item in _get(response, "output") or []
+            if _get(item, "type") == "message"
+            for p in _get(item, "content") or []
+        ]
         if any(_get(p, "type") == "refusal" for p in parts):
             return None
         return next((_get(p, "text") for p in parts if _get(p, "type") == "output_text"), None)
     if _get(response, "stop_reason") != "end_turn":
         return None
-    return next((_get(b, "text") for b in _get(response, "content") or [] if _get(b, "type") == "text"), None)
+    return next(
+        (_get(b, "text") for b in _get(response, "content") or [] if _get(b, "type") == "text"), None
+    )
 
 
 def response_json(provider: str, response: Any) -> dict[str, Any] | None:

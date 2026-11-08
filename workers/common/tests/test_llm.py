@@ -85,3 +85,51 @@ def test_D70_ask_sends_one_request_through_the_providers_endpoint():
     ai = llm.StructuredClient(client=fake, model="m", provider="openai")
     assert ai.ask(CALL) == {"a": "b"}
     assert len(fake.sent) == 1 and fake.sent[0]["model"] == "m"
+
+
+# The logged-in Claude, for local experiments only (D79) ----------------------------------------------------------
+
+
+class _Cli:
+    def __init__(self, reply):
+        self.reply, self.requests = reply, []
+
+    def run(self, request):
+        self.requests.append(request)
+        return self.reply
+
+
+CLI_CALL = llm.Call("uso", "regras", {"a": 1}, {"type": "object"}, 10)
+
+
+def test_D79_the_cli_request_carries_rules_schema_and_payload():
+    r = llm.build_request("claude_cli", "m", CLI_CALL)
+    assert (r["model"], r["system"], r["schema"]) == ("m", "regras", {"type": "object"})
+    assert r["user"] == '{"a": 1}'
+
+
+def test_D79_the_structured_answer_is_read_and_tokens_reported():
+    llm.take_usage()
+    reply = {"is_error": False, "structured_output": {"ok": 1}, "usage": {"input_tokens": 5, "output_tokens": 2}}
+    ai = llm.StructuredClient(_Cli(reply), "m", "claude_cli")
+    assert ai.ask(CLI_CALL) == {"ok": 1}
+    assert llm.take_usage() == {"uso:m": {"calls": 1, "input_tokens": 5, "output_tokens": 2}}
+
+
+def test_D79_an_error_or_a_missing_answer_reads_as_none():
+    assert llm.StructuredClient(_Cli({"is_error": True}), "m", "claude_cli").ask(CLI_CALL) is None
+    assert llm.StructuredClient(_Cli({"is_error": False}), "m", "claude_cli").ask(CLI_CALL) is None
+
+
+def test_D79_the_command_never_passes_an_api_key_and_runs_no_tools():
+    cmd, env = llm.ClaudeCli.command({"model": "m", "system": "s", "schema": {}}, {"ANTHROPIC_API_KEY": "x", "A": "1"})
+    assert "ANTHROPIC_API_KEY" not in env and env["A"] == "1"
+    assert cmd[cmd.index("--tools") + 1] == ""
+    assert "--no-session-persistence" in cmd
+
+
+def test_D79_the_provider_is_ready_when_the_cli_exists(monkeypatch):
+    monkeypatch.setattr(llm.shutil, "which", lambda _: "/bin/claude")
+    assert llm.key_present("claude_cli") is True
+    monkeypatch.setattr(llm.shutil, "which", lambda _: None)
+    assert llm.key_present("claude_cli") is False

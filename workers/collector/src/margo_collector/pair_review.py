@@ -32,7 +32,7 @@ from .learning import pattern_m1_04
 from .rules import FoodOverrides, Item, Settings, item_category_m1_04, normalize_m1_03
 from .xray import ItemRow, PairRow, build_pairs
 
-PROMPT_VERSION = "pareamento.v2"
+PROMPT_VERSION = "pareamento.v3"
 MODEL_ENV = "MARGO_REVIEW_MODEL"
 """Overrides the provider's default model (llm.DEFAULT_MODELS)."""
 BATCH = 100
@@ -53,11 +53,12 @@ SYSTEM = (
     "pergunta, usando só nome, descrição, seção, categoria, tamanho e preço. mesmo_tipo: são o mesmo "
     "tipo de produto? Um sashimi e uma isca não são; dois temakis são. mesma_proteina_ou_sabor: têm a "
     "mesma proteína principal, ou o mesmo sabor numa sobremesa ou bebida? mesmo_servico: são servidos "
-    "do mesmo jeito? Um espeto não é um prato feito; um item mini não é o tamanho normal. "
-    "porcao_compativel: a porção é parecida? Se nenhum dos dois disser o tamanho, responda sim. "
-    "preco_plausivel: a diferença de preço cabe no mesmo produto? Responda não só quando um custar "
-    "várias vezes o outro. Na dúvida sobre o que não está escrito, responda sim: reprove só o que os "
-    "dados mostram ser diferente."
+    "do mesmo jeito, sem ser outra versão do produto? Uma versão zero ou sem açúcar, um item hot ou "
+    "empanado contra um cru, ou um item com coberturas que o outro não cita são outros produtos. Um "
+    "espeto não é um prato feito; um item mini não é o tamanho normal. porcao_compativel: a porção é "
+    "parecida? Se um dos dois não disser o tamanho, responda sim. preco_plausivel: a diferença de preço"
+    " cabe no mesmo produto? Responda não só quando um custar várias vezes o outro. Na dúvida sobre o "
+    "que não está escrito, responda sim: reprove só o que os dados mostram ser diferente."
 )
 
 OUTPUT_SCHEMA: dict[str, Any] = {

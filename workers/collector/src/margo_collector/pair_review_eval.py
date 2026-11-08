@@ -48,6 +48,18 @@ _CASES: tuple[tuple[str, tuple[str, str, int], tuple[str, str, int], bool], ...]
     ("sobremesas", ("Brownie de chocolate", "Doces", 1800), ("Sorvete de chocolate", "Doces", 1500), False),
     ("bebidas", ("Refrigerante cola 350ml", "Bebidas", 800), ("Cola lata 350ml", "Bebidas", 750), True),
     ("bebidas", ("Refrigerante cola 350ml", "Bebidas", 800), ("Suco laranja 300ml", "Bebidas", 1200), False),
+    ("bebidas", ("Água 500ml", "Bebidas", 590), ("Água mineral", "Bebidas", 800), True),
+    ("bebidas", ("Água 500ml", "Bebidas", 590), ("Água sem gás", "Bebidas", 700), True),
+    ("bebidas", ("Cerveja 330ml", "Bebidas", 1200), ("Cerveja zero 330ml", "Bebidas", 1300), False),
+    ("pratos", ("Temaki filadélfia", "Temakis", 3000), ("Temaki salmão cream cheese", "Temaki", 3400), True),
+    ("pratos", ("Temaki de salmão", "Temakis", 3000), ("Temaki de atum", "Temakis", 3200), False),
+    ("pratos", ("Temaki de salmão", "Temakis", 3000), ("Temaki hot salmão", "Temaki", 3500), False),
+    ("pratos", ("Espeto de carne", "Espetos", 1500), ("Espeto de morango", "Doces", 2000), False),
+    ("pratos", ("Espeto de carne", "Espetos", 1500), ("Prato de espetinho serve 2", "Pratos", 16000), False),
+    ("pratos", ("Espeto de carne", "Espetos", 1500), ("Espetinho de alcatra", "Churrasco", 1800), True),
+    ("lanches", ("X-bacon", "Lanches", 3900), ("Cheese bacon", "Burgers", 4300), True),
+    ("lanches", ("X-bacon", "Lanches", 3900), ("Burger de cordeiro com bacon", "Burgers", 4800), False),
+    ("porcoes", ("Batata frita", "Porções", 2500), ("Batata com cheddar e bacon", "Porções", 3400), False),
 )
 LABELED: tuple[tuple[ReviewPair, bool], ...] = tuple(
     (_pair(n, cat, own, other), ok) for n, (cat, own, other, ok) in enumerate(_CASES)

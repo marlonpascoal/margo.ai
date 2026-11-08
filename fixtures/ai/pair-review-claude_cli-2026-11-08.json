@@ -1,0 +1,432 @@
+{
+  "provider": "claude_cli",
+  "prompt_version": "pareamento.v3",
+  "request": {
+    "model": "claude-sonnet-5-5",
+    "system": "Você confere pares de itens de cardápio de restaurantes vizinhos. Cada par foi proposto por regras como o mesmo produto, e o preço de um será usado para comparar com o do outro. Julgue como um cliente que escolhe entre os dois no aplicativo. Responda sim (true) ou não (false) a cada pergunta, usando só nome, descrição, seção, categoria, tamanho e preço. mesmo_tipo: são o mesmo tipo de produto? Um sashimi e uma isca não são; dois temakis são. mesma_proteina_ou_sabor: têm a mesma proteína principal, ou o mesmo sabor numa sobremesa ou bebida? mesmo_servico: são servidos do mesmo jeito, sem ser outra versão do produto? Uma versão zero ou sem açúcar, um item hot ou empanado contra um cru, ou um item com coberturas que o outro não cita são outros produtos. Um espeto não é um prato feito; um item mini não é o tamanho normal. porcao_compativel: a porção é parecida? Se um dos dois não disser o tamanho, responda sim. preco_plausivel: a diferença de preço cabe no mesmo produto? Responda não só quando um custar várias vezes o outro. Na dúvida sobre o que não está escrito, responda sim: reprove só o que os dados mostram ser diferente.",
+    "user": "{\"pares\": [{\"ref\": \"0\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Frango\", \"descricao\": null, \"secao\": \"Espetos\", \"preco_centavos\": 1590, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Espeto de frango\", \"descricao\": null, \"secao\": \"Churrasco\", \"preco_centavos\": 1700, \"tamanho\": null}}, {\"ref\": \"1\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Frango\", \"descricao\": null, \"secao\": \"Espetos\", \"preco_centavos\": 1590, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Estrogonofe de frango\", \"descricao\": null, \"secao\": \"Pratos\", \"preco_centavos\": 4990, \"tamanho\": null}}, {\"ref\": \"2\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Frango\", \"descricao\": null, \"secao\": \"Espetos\", \"preco_centavos\": 1590, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Bowl de frango xadrez\", \"descricao\": null, \"secao\": \"Delícias\", \"preco_centavos\": 3990, \"tamanho\": null}}, {\"ref\": \"3\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Temaki de salmão\", \"descricao\": null, \"secao\": \"Temakis\", \"preco_centavos\": 3200, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Temaki salmão completo\", \"descricao\": null, \"secao\": \"Temaki\", \"preco_centavos\": 3500, \"tamanho\": null}}, {\"ref\": \"4\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Temaki mini de salmão\", \"descricao\": null, \"secao\": \"Temaki Mini\", \"preco_centavos\": 2790, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Temaki de salmão\", \"descricao\": null, \"secao\": \"Temakis\", \"preco_centavos\": 4000, \"tamanho\": null}}, {\"ref\": \"5\", \"categoria\": \"porcoes\", \"item\": {\"nome\": \"Sashimi de peixe\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 4290, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Sashimi de peixe branco\", \"descricao\": null, \"secao\": \"Entradas\", \"preco_centavos\": 4800, \"tamanho\": null}}, {\"ref\": \"6\", \"categoria\": \"porcoes\", \"item\": {\"nome\": \"Sashimi de peixe\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 4290, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Isca de peixe\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 3300, \"tamanho\": null}}, {\"ref\": \"7\", \"categoria\": \"porcoes\", \"item\": {\"nome\": \"Sashimi de peixe\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 4290, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Peixe à milanesa\", \"descricao\": null, \"secao\": \"Pratos\", \"preco_centavos\": 8590, \"tamanho\": null}}, {\"ref\": \"8\", \"categoria\": \"porcoes\", \"item\": {\"nome\": \"Carpaccio de salmão\", \"descricao\": null, \"secao\": \"Entradas\", \"preco_centavos\": 4090, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Carpaccio de salmão\", \"descricao\": null, \"secao\": \"Opções\", \"preco_centavos\": 4700, \"tamanho\": null}}, {\"ref\": \"9\", \"categoria\": \"porcoes\", \"item\": {\"nome\": \"Carpaccio de salmão\", \"descricao\": null, \"secao\": \"Entradas\", \"preco_centavos\": 4090, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Bolinho de salmão\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 3200, \"tamanho\": null}}, {\"ref\": \"10\", \"categoria\": \"porcoes\", \"item\": {\"nome\": \"Batata frita média\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 2500, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Batata frita\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 2700, \"tamanho\": null}}, {\"ref\": \"11\", \"categoria\": \"lanches\", \"item\": {\"nome\": \"X-bacon\", \"descricao\": null, \"secao\": \"Lanches\", \"preco_centavos\": 3900, \"tamanho\": null}, \"vizinho\": {\"nome\": \"X-bacon artesanal\", \"descricao\": null, \"secao\": \"Burgers\", \"preco_centavos\": 4200, \"tamanho\": null}}, {\"ref\": \"12\", \"categoria\": \"lanches\", \"item\": {\"nome\": \"X-bacon\", \"descricao\": null, \"secao\": \"Lanches\", \"preco_centavos\": 3900, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Dog com bacon\", \"descricao\": null, \"secao\": \"Dogs\", \"preco_centavos\": 2800, \"tamanho\": null}}, {\"ref\": \"13\", \"categoria\": \"sobremesas\", \"item\": {\"nome\": \"Brownie de chocolate\", \"descricao\": null, \"secao\": \"Doces\", \"preco_centavos\": 1800, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Brownie chocolate\", \"descricao\": null, \"secao\": \"Sobremesas\", \"preco_centavos\": 1900, \"tamanho\": null}}, {\"ref\": \"14\", \"categoria\": \"sobremesas\", \"item\": {\"nome\": \"Brownie de chocolate\", \"descricao\": null, \"secao\": \"Doces\", \"preco_centavos\": 1800, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Sorvete de chocolate\", \"descricao\": null, \"secao\": \"Doces\", \"preco_centavos\": 1500, \"tamanho\": null}}, {\"ref\": \"15\", \"categoria\": \"bebidas\", \"item\": {\"nome\": \"Refrigerante cola 350ml\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 800, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Cola lata 350ml\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 750, \"tamanho\": null}}, {\"ref\": \"16\", \"categoria\": \"bebidas\", \"item\": {\"nome\": \"Refrigerante cola 350ml\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 800, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Suco laranja 300ml\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 1200, \"tamanho\": null}}, {\"ref\": \"17\", \"categoria\": \"bebidas\", \"item\": {\"nome\": \"Água 500ml\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 590, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Água mineral\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 800, \"tamanho\": null}}, {\"ref\": \"18\", \"categoria\": \"bebidas\", \"item\": {\"nome\": \"Água 500ml\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 590, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Água sem gás\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 700, \"tamanho\": null}}, {\"ref\": \"19\", \"categoria\": \"bebidas\", \"item\": {\"nome\": \"Cerveja 330ml\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 1200, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Cerveja zero 330ml\", \"descricao\": null, \"secao\": \"Bebidas\", \"preco_centavos\": 1300, \"tamanho\": null}}, {\"ref\": \"20\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Temaki filadélfia\", \"descricao\": null, \"secao\": \"Temakis\", \"preco_centavos\": 3000, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Temaki salmão e cream cheese\", \"descricao\": null, \"secao\": \"Temaki\", \"preco_centavos\": 3400, \"tamanho\": null}}, {\"ref\": \"21\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Temaki de salmão\", \"descricao\": null, \"secao\": \"Temakis\", \"preco_centavos\": 3000, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Temaki de atum\", \"descricao\": null, \"secao\": \"Temakis\", \"preco_centavos\": 3200, \"tamanho\": null}}, {\"ref\": \"22\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Temaki de salmão\", \"descricao\": null, \"secao\": \"Temakis\", \"preco_centavos\": 3000, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Temaki hot de salmão\", \"descricao\": null, \"secao\": \"Temaki\", \"preco_centavos\": 3500, \"tamanho\": null}}, {\"ref\": \"23\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Espeto de carne\", \"descricao\": null, \"secao\": \"Espetos\", \"preco_centavos\": 1500, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Espeto de morango\", \"descricao\": null, \"secao\": \"Doces\", \"preco_centavos\": 2000, \"tamanho\": null}}, {\"ref\": \"24\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Espeto de carne\", \"descricao\": null, \"secao\": \"Espetos\", \"preco_centavos\": 1500, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Prato de espetinho serve 2\", \"descricao\": null, \"secao\": \"Pratos\", \"preco_centavos\": 16000, \"tamanho\": null}}, {\"ref\": \"25\", \"categoria\": \"pratos\", \"item\": {\"nome\": \"Espeto de carne\", \"descricao\": null, \"secao\": \"Espetos\", \"preco_centavos\": 1500, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Espetinho de alcatra\", \"descricao\": null, \"secao\": \"Churrasco\", \"preco_centavos\": 1800, \"tamanho\": null}}, {\"ref\": \"26\", \"categoria\": \"lanches\", \"item\": {\"nome\": \"X-bacon\", \"descricao\": null, \"secao\": \"Lanches\", \"preco_centavos\": 3900, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Cheese bacon\", \"descricao\": null, \"secao\": \"Burgers\", \"preco_centavos\": 4300, \"tamanho\": null}}, {\"ref\": \"27\", \"categoria\": \"lanches\", \"item\": {\"nome\": \"X-bacon\", \"descricao\": null, \"secao\": \"Lanches\", \"preco_centavos\": 3900, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Burger de cordeiro com bacon\", \"descricao\": null, \"secao\": \"Burgers\", \"preco_centavos\": 4800, \"tamanho\": null}}, {\"ref\": \"28\", \"categoria\": \"porcoes\", \"item\": {\"nome\": \"Batata frita\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 2500, \"tamanho\": null}, \"vizinho\": {\"nome\": \"Batata frita com cheddar e bacon\", \"descricao\": null, \"secao\": \"Porções\", \"preco_centavos\": 3400, \"tamanho\": null}}]}",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "pares": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "mesmo_tipo": {
+                "type": "boolean"
+              },
+              "mesma_proteina_ou_sabor": {
+                "type": "boolean"
+              },
+              "mesmo_servico": {
+                "type": "boolean"
+              },
+              "porcao_compativel": {
+                "type": "boolean"
+              },
+              "preco_plausivel": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "ref",
+              "mesmo_tipo",
+              "mesma_proteina_ou_sabor",
+              "mesmo_servico",
+              "porcao_compativel",
+              "preco_plausivel"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "pares"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "response": {
+    "duration_api_ms": 16592,
+    "stop_reason": "tool_use",
+    "session_id": "5a2fd5dd-838b-4624-bc4b-751b194439e1",
+    "total_cost_usd": 0.0516891,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5232,
+      "cache_read_input_tokens": 671,
+      "output_tokens": 3069,
+      "output_tokens_details": {
+        "thinking_tokens": 985
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 5232,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 3069,
+          "cache_read_input_tokens": 671,
+          "cache_creation_input_tokens": 5232,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 5232
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 3069,
+        "cacheReadInputTokens": 671,
+        "cacheCreationInputTokens": 5232,
+        "webSearchRequests": 0,
+        "costUSD": 0.0516891,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 985,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 5232,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"pares\":[{\"ref\":\"0\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"1\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":false},{\"ref\":\"2\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"3\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"4\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":false,\"preco_plausivel\":true},{\"ref\":\"5\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"6\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"7\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"8\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"9\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"10\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"11\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"12\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":false,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"13\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"14\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"15\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"16\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":false,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"17\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"18\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"19\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"20\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"21\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":false,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"22\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"23\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":false,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"24\",\"mesmo_tipo\":false,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":false,\"preco_plausivel\":false},{\"ref\":\"25\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"26\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"27\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":false,\"mesmo_servico\":true,\"porcao_compativel\":true,\"preco_plausivel\":true},{\"ref\":\"28\",\"mesmo_tipo\":true,\"mesma_proteina_ou_sabor\":true,\"mesmo_servico\":false,\"porcao_compativel\":true,\"preco_plausivel\":true}]}",
+    "structured_output": {
+      "pares": [
+        {
+          "ref": "0",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "1",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": false
+        },
+        {
+          "ref": "2",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "3",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "4",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": false,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "5",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "6",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "7",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "8",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "9",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "10",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "11",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "12",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": false,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "13",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "14",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "15",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "16",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": false,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "17",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "18",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "19",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "20",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "21",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": false,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "22",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "23",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": false,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "24",
+          "mesmo_tipo": false,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": false,
+          "preco_plausivel": false
+        },
+        {
+          "ref": "25",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "26",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "27",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": false,
+          "mesmo_servico": true,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        },
+        {
+          "ref": "28",
+          "mesmo_tipo": true,
+          "mesma_proteina_ou_sabor": true,
+          "mesmo_servico": false,
+          "porcao_compativel": true,
+          "preco_plausivel": true
+        }
+      ]
+    },
+    "ttft_ms": 8086,
+    "type": "result",
+    "duration_ms": 16788,
+    "uuid": "ff09e692-2671-446b-847f-d5cbee540b1f",
+    "ttft_stream_ms": 1058,
+    "time_to_request_ms": 189,
+    "time_to_request_phases_ms": {
+      "other": 2,
+      "system_prompt": 0,
+      "resume_other": 1,
+      "process_user_input": 1,
+      "input_attachments": 21,
+      "input_hooks": 1,
+      "conversation_append": 0,
+      "tool_pool_refresh": 1,
+      "init_message": 3,
+      "init_frame_send": 1,
+      "engine_pickup": 0,
+      "loop_entry": 2,
+      "message_prep": 0,
+      "model_config_wait": 0,
+      "autocompact": 1,
+      "request_announcements": 2,
+      "query_setup": 0,
+      "model_gates": 148,
+      "tool_schema_build": 1,
+      "message_normalization": 1,
+      "client_creation": 1,
+      "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 4,
+    "time_to_request_cpu_ms": 70,
+    "time_to_request_major_faults": 166,
+    "input_attachments_detail": {
+      "slowest_producer": "session_settings",
+      "slowest_producer_ms": 16,
+      "cpu_ms": 24,
+      "major_faults": 49,
+      "setup_ms": 0,
+      "prompt_producers_ms": 0,
+      "ambient_start_ms": 3,
+      "ambient_wait_ms": 16,
+      "render_ms": 0,
+      "producers": 43,
+      "token_counts": 0
+    },
+    "first_content_frame_ms": 1058,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

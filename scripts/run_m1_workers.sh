@@ -4,6 +4,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# render_xray prints the result page of the running web app (pnpm dev) into the PDF.
+export MARGO_APP_URL="${MARGO_APP_URL:-http://localhost:3000}"
+
 pids=()
 trap 'kill "${pids[@]}" 2>/dev/null || true' EXIT INT TERM
 for type in collect xray_neighborhood xray_pair xray_calc render_xray; do

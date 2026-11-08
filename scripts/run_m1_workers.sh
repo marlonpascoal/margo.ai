@@ -9,7 +9,7 @@ export MARGO_APP_URL="${MARGO_APP_URL:-http://localhost:3000}"
 
 pids=()
 trap 'kill "${pids[@]}" 2>/dev/null || true' EXIT INT TERM
-for type in collect xray_neighborhood xray_pair xray_calc render_xray; do
+for type in collect xray_neighborhood xray_pair xray_calc xray_opportunities render_xray; do
   node scripts/with-local-env.mjs uv run worker "$type" --local &
   pids+=("$!")
 done

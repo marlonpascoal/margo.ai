@@ -11,12 +11,14 @@ local = ["psycopg[binary]>=3.2"]
 [project.scripts]
 collector = "margo_collector.cli:main"
 record-anthropic-pairing = "margo_collector.record_pairing:main"
+record-anthropic-opportunities = "margo_collector.record_opportunities:main"
 
 [project.entry-points."margo.jobs"]
 collect = "margo_collector.handlers:collect"
 xray_neighborhood = "margo_collector.handlers:xray_neighborhood"
 xray_pair = "margo_collector.handlers:xray_pair"
 xray_calc = "margo_collector.handlers:xray_calc"
+xray_opportunities = "margo_collector.handlers:xray_opportunities"
 
 [build-system]
 requires = ["hatchling"]

@@ -317,6 +317,25 @@
   .rx .doubt { grid-template-columns: 24px minmax(0, 1fr); padding: 14px 12px; }
 }
 
+/* P23 "Oportunidades" (Opportunities.tsx): AI opportunities, numbered in priority order. */
+.rx .opps { padding: 20px; display: grid; gap: 14px; }
+.rx .opph { display: grid; gap: 4px; }
+.rx .oppnote { margin: 0; font-size: var(--text-sm); color: var(--color-ink-muted); }
+.rx .opplist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.rx .opp { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--color-border-subtle); }
+.rx .opp:first-child { border-top: 0; padding-top: 0; }
+.rx .oppn { width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--color-sunken); border: 1px solid var(--color-border); display: inline-flex; align-items: center; justify-content: center; font-size: var(--text-sm); color: var(--color-ink-2); }
+.rx .oppb { display: grid; gap: 6px; min-width: 0; }
+.rx .oppt { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.rx .oppt h3 { text-wrap: balance; }
+.rx .opplv { font-size: var(--text-xs); padding: 2px 8px; border-radius: var(--radius-full); border: 1px solid var(--color-border); color: var(--color-ink-muted); white-space: nowrap; }
+.rx .lv-subir_preco .opplv { color: var(--color-ok); background: var(--color-ok-bg); border-color: var(--color-ok-border); }
+.rx .lv-rever_custo .opplv { color: var(--color-danger); background: var(--color-danger-bg); border-color: var(--color-danger-border); }
+.rx .oppwhy { margin: 0; color: var(--color-ink-2); max-width: 72ch; }
+.rx .oppitems { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.rx .oppitems li { font-size: var(--text-sm); padding: 2px 8px; border-radius: var(--radius-sm); background: var(--color-sunken); color: var(--color-ink-2); }
+@media (max-width: 767px) { .rx .opps { padding: 16px; } }
+
 /* The PDF is this page printed (Marlon, 07/nov): A4, no navigation, no buttons, every section open. */
 .rx .print-only { display: none; }
 @page { size: A4; margin: 14mm 12mm; }
@@ -339,5 +358,8 @@
   .rx * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   html, body, .rx { background: var(--color-surface) !important; }
   .rx h1, .rx h2, .rx h3, .rx .catc > summary, .rx .rgh, .rx .catgh { break-after: avoid; }
+  .rx .opps { padding: 14px; gap: 10px; break-inside: auto; }
+  .rx .opp { break-inside: avoid; padding: 10px 0; }
+  .rx .opph { break-after: avoid; }
 }
 .rx .synthetic-mark { font-family: var(--font-mono); font-weight: 600; letter-spacing: .08em; color: var(--color-warn); border: 1px dashed var(--color-warn-border); padding: 2px 8px; border-radius: var(--radius-xs); }

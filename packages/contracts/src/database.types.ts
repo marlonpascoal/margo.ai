@@ -2207,6 +2207,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"xray_print": {
+                  Row: {
+                    "bytes": number,"created_at": string,"id": string,"pages": number,"path": string,"updated_at": string,"version": string,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bytes": number,"created_at"?: string,"id"?: string,"pages": number,"path": string,"updated_at"?: string,"version": string,"xray_id": string
+                  }
+                  Update: {
+                    "bytes"?: number,"created_at"?: string,"id"?: string,"pages"?: number,"path"?: string,"updated_at"?: string,"version"?: string,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_print_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"xray_print_token": {
+                  Row: {
+                    "created_at": string,"expires_at": string,"id": string,"token_hash": string,"updated_at": string,"used_at": string | null,"xray_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"expires_at": string,"id"?: string,"token_hash": string,"updated_at"?: string,"used_at"?: string | null,"xray_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"expires_at"?: string,"id"?: string,"token_hash"?: string,"updated_at"?: string,"used_at"?: string | null,"xray_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "xray_print_token_xray_id_fkey"
+      columns: ["xray_id"]
+isOneToOne: false
+      referencedRelation: "xray"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"xray_store": {
                   Row: {
                     "capture_rank": number | null,"capture_score": number | null,"capture_slot": boolean,"created_at": string,"delivers_to_target": boolean | null,"distance_m": number,"exclusion_reason": string | null,"id": string,"included": boolean,"left_out_of_pairing": boolean,"public_store_id": string,"updated_at": string,"xray_id": string
@@ -2471,6 +2511,9 @@ isOneToOne: false
 "monitor_doubts":
 { Args: { "p_xray": string }; Returns: Json
                            },
+"monitor_head_to_head":
+{ Args: { "p_xray": string }; Returns: Json
+                           },
 "monitor_history":
 { Args: { "p_monitor": string }; Returns: Json
                            },
@@ -2501,11 +2544,17 @@ isOneToOne: false
 "monitor_result":
 { Args: { "p_xray": string }; Returns: Json
                            },
+"monitor_result_stores":
+{ Args: { "p_xray": string }; Returns: Json
+                           },
 "monitor_set_period":
 { Args: { "p_actor": string,"p_every_days": number,"p_ip"?: unknown,"p_monitor": string,"p_user_agent"?: string }; Returns: undefined
                            },
 "monitor_set_status":
 { Args: { "p_action": string,"p_actor": string,"p_env"?: Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_monitor": string,"p_user_agent"?: string }; Returns: undefined
+                           },
+"monitor_store_lookup":
+{ Args: { "p_external_id": string }; Returns: Json
                            },
 "monitor_summaries":
 { Args: { "p_monitors": (string)[] }; Returns: Json
@@ -2596,6 +2645,9 @@ isOneToOne: false
                            },
 "xray_prepare_delivery":
 { Args: { "p_actor": string,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray": string }; Returns: undefined
+                           },
+"xray_print_token_use":
+{ Args: { "p_hash": string,"p_xray": string }; Returns: boolean
                            },
 "xray_store_set_included":
 { Args: { "p_actor": string,"p_included": boolean,"p_ip"?: unknown,"p_user_agent"?: string,"p_xray_store": string }; Returns: undefined

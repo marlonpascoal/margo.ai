@@ -384,3 +384,66 @@ export async function loadItemHistory(deps: LoadDeps, monitorId: string, ownItem
   if (!UUID.test(ownItemId) || !(await visibleMonitor(deps, monitorId))) return null;
   return (await deps.rpc("monitor_item_history", { p_monitor: monitorId, p_item: ownItemId })) as ItemHistoryPoint[];
 }
+
+// P23 extras (migration 20261231000001) ------------------------------------------------------------------------------
+
+/** "Ver as lojas": per analyzed item, the accepted stores, cheapest first, named as the owner may see them (Q7). */
+export type ResultStores = Record<string, { name: string; price_cents: number }[]>;
+
+/** Competitor view "Você e o Concorrente": items both sell, from the newest own run whose neighborhood holds it. */
+export interface HeadToHead {
+  own_xray_id: string;
+  own_store_name: string;
+  on: string;
+  items: { item_id: string; name: string; own_cents: number; their_cents: number; group: Group }[];
+}
+
+export interface ResultPage {
+  result: Result;
+  stores: ResultStores;
+  headToHead: HeadToHead | null;
+}
+
+async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultPage | null> {
+  const [result, positions, stores, h2h] = await Promise.all([
+    rpc("monitor_result", { p_xray: xrayId }) as Promise<Omit<Result, "positions"> | null>,
+    rpc("monitor_positions", { p_xray: xrayId }) as Promise<Result["positions"]>,
+    rpc("monitor_result_stores", { p_xray: xrayId }) as Promise<{ item_id: string; stores: { name: string; price_cents: number }[] }[]>,
+    rpc("monitor_head_to_head", { p_xray: xrayId }) as Promise<HeadToHead | null>,
+  ]);
+  if (!result || !["ready", "delivered"].includes(result.status)) return null;
+  return {
+    result: { ...result, positions },
+    stores: Object.fromEntries((stores ?? []).map((s) => [s.item_id, s.stores])),
+    headToHead: h2h && h2h.items?.length ? h2h : null,
+  };
+}
+
+/** P23 with its store lists and the competitor head-to-head: a given run of a visible monitoring, or the newest. */
+export async function loadResultPage(deps: LoadDeps, monitorId: string, xrayId?: string): Promise<ResultPage | null> {
+  const id = xrayId ?? (await latestReadyRun(deps, monitorId));
+  if (!id) return null;
+  const run = await visibleRun(deps, monitorId, id);
+  return run ? resultPage(deps.rpc, run.xrayId) : null;
+}
+
+/**
+ * The printed copy (/imprimir/raio-x/[xray]): no person here, so the caller has checked worker-render's one-time token
+ * (lib/monitor/print.ts) before this service-role read. Same data as P23.
+ */
+export async function loadResultPageForPrint(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultPage | null> {
+  return UUID.test(xrayId) ? resultPage(rpc, xrayId) : null;
+}
+
+/** m1.score_min_items (M1-12): a category under it shows "poucos itens". rule_param is readable by members. */
+export async function scoreMinItems(db: ReadDb): Promise<number> {
+  const { data } = await db.from("rule_param").select("value").eq("key", "m1.score_min_items").maybeSingle();
+  return data ? Number(data.value) : 5;
+}
+
+/** One row of P19 for a visible monitoring (store name, area, latest run), for the P21 to P24 headers. */
+export async function loadMonitorSummary(deps: LoadDeps, monitorId: string): Promise<MonitorSummary | null> {
+  if (!(await visibleMonitor(deps, monitorId))) return null;
+  const rows = (await deps.rpc("monitor_summaries", { p_monitors: [monitorId] })) as MonitorSummary[];
+  return rows[0] ?? null;
+}

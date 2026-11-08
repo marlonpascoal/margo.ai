@@ -345,7 +345,7 @@ def test_M1_04_D70_ai_refusal_or_cut_answer_reads_nothing():
 def test_M1_04_D70_ai_model_is_a_parameter_and_the_key_is_read_by_name(monkeypatch):
     monkeypatch.delenv("MARGO_AI_PROVIDER", raising=False)
     monkeypatch.delenv("MARGO_PAIR_MODEL", raising=False)
-    assert AiAttrReader(client=object()).model == llm.DEFAULT_MODELS["openai"]
+    assert AiAttrReader(client=object()).model == llm.USE_DEFAULTS["openai"]["MARGO_PAIR_MODEL"]
     monkeypatch.setenv("MARGO_PAIR_MODEL", "outro-modelo")
     assert AiAttrReader(client=object()).model == "outro-modelo"
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)

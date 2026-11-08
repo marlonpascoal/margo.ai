@@ -13,10 +13,10 @@ select is((select count(*)::int from public.job where type = 'collect'
   'the collect job runs again');
 
 insert into public.job (id, type, payload, status, dedupe_key)
-values ('00000000-0000-4000-8000-00000000d763', 'extract_capture', '{"public_store_id": "x"}', 'running', 'mf-test-2');
+values ('00000000-0000-4000-8000-00000000d763', 'extract_capture', '{"public_store_id": "00000000-0000-4000-8000-00000000d764"}', 'running', 'mf-test-2');
 update public.job set status = 'done' where id = '00000000-0000-4000-8000-00000000d763';
 select is((select count(*)::int from public.job where type = 'collect'
-            and dedupe_key = 'collect:00000000-0000-4000-8000-00000000d763'), 0, 'an ordinary capture wakes nothing');
+            and payload ->> 'xray_id' = '00000000-0000-4000-8000-00000000d764'), 0, 'an ordinary capture wakes nothing');
 
 select * from finish();
 rollback;

@@ -22,7 +22,9 @@ export default function NeighborMap({ map, comp }: { map: MapData; comp: boolean
           {map.radius_km} km
         </text>
       </svg>
-      <figcaption>{comp ? "No centro, a loja dele." : "No centro, a sua loja."} Cada ponto é uma loja lida.</figcaption>
+      <figcaption>
+        <span>{comp ? "No centro, a loja dele." : "No centro, a sua loja."}</span> <span>Cada ponto é uma loja lida.</span>
+      </figcaption>
     </figure>
   );
 }

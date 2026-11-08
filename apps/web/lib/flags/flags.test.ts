@@ -71,9 +71,10 @@ describe("feature flags (04 §6)", () => {
     expect(() => flagEnv("prod")).toThrow(/MARGO_FLAG_ENV/);
   });
 
-  it("A05_eighteen_keys_of_04_section_6_with_m1_concorrente_m1_extracao_and_m3_custo", () => {
-    expect(FLAG_KEYS).toHaveLength(18);
-    expect(new Set(FLAG_KEYS).size).toBe(18);
+  it("A05_nineteen_keys_of_04_section_6_with_m1_concorrente_m1_extracao_m3_custo_and_provisional_m1_portal", () => {
+    expect(FLAG_KEYS).toHaveLength(19);
+    expect(new Set(FLAG_KEYS).size).toBe(19);
+    expect(FLAG_KEYS.indexOf("m1.portal")).toBe(FLAG_KEYS.indexOf("m1.extracao") + 1);
     expect(FLAG_KEYS.indexOf("m1.concorrente")).toBe(FLAG_KEYS.indexOf("m1.raio_x") + 1);
     expect(FLAG_KEYS.indexOf("m1.extracao")).toBe(FLAG_KEYS.indexOf("m1.concorrente") + 1);
     expect(FLAG_KEYS.indexOf("m3.custo")).toBe(FLAG_KEYS.indexOf("m3.depara_ia") + 1);

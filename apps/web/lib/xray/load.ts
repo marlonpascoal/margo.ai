@@ -104,8 +104,13 @@ export async function captureProgress(db: Db, xrayId: string): Promise<{ states:
   return { states: list(states), blocker: check(blocker), quorum: Array.isArray(q) ? q[0] : q };
 }
 
+/** C03: the stores whose capture waits to retry, with when it runs again (public.xray_capture_retries). */
+export async function captureRetries(db: Db, xrayId: string): Promise<Map<string, string>> {
+  return new Map(list(await db.rpc("xray_capture_retries", { p_xray: xrayId })).map((r) => [r.public_store_id, r.retry_at]));
+}
+
 /** C03 list, nearest first. */
-export async function loadNeighborhood(db: Db, xrayId: string, states: CaptureRow[] = []): Promise<NeighborRow[]> {
+export async function loadNeighborhood(db: Db, xrayId: string, states: CaptureRow[] = [], retries: Map<string, string> = new Map()): Promise<NeighborRow[]> {
   const capture = new Map(states.map((c) => [c.public_store_id, c.state as CaptureState]));
   const rows = list(
     await db
@@ -124,6 +129,7 @@ export async function loadNeighborhood(db: Db, xrayId: string, states: CaptureRo
     lat: r.public_store?.lat != null ? Number(r.public_store.lat) : null,
     lng: r.public_store?.lng != null ? Number(r.public_store.lng) : null,
     capture: capture.get(r.public_store_id) ?? null,
+    retryAt: retries.get(r.public_store_id) ?? null,
     captureRank: r.capture_rank,
     captureScore: r.capture_score === null ? null : Number(r.capture_score),
     leftOut: r.left_out_of_pairing,

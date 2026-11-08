@@ -139,3 +139,47 @@ def test_M1_04_the_learnings_report_masks_store_words(conn, repo):
     out = subprocess.run([sys.executable, str(SCRIPT), "--learnings"], capture_output=True, text=True, env=env, cwd=ROOT)
     assert out.returncode == 0, out.stderr
     assert "pendentes 1" in out.stdout and "[lanche *]" in out.stdout and "zabumba" not in out.stdout.lower()
+
+
+def test_M1_04_B7_monitored_run_exclusives_and_ai_pairs_are_no_person_decision_and_no_doubt(conn, repo):
+    """In a monitoring run (app.monitor_after_pair): an exclusive item is neither reviewed nor skipped and asks the
+    owner nothing; a pair the AI made is no person's decision, so its item stays an open doubt."""
+    from test_b01_monitor_db import Account, capture_all, one, run_job, start
+
+    acc = Account(conn)
+    try:
+        bacon = FoodAttrs("burguer", frozenset({"bovino", "bacon"}), 1, None, None, frozenset(), "ia")
+        mine = [
+            it("a1", "Lanche Sintético Único", 4500, description="Pão, hambúrguer, frango, bacon, ovo, salsicha"),
+            it("a2", "Gigante Sintético Zeta", 3000),
+        ]
+        theirs = [
+            it("b1", "Lanche Sintético Único frango", 3000, description="Pão, filé de frango"),
+            it("b2", "Gigante Sintético bacon", 3100, description="Pão, hambúrguer, bacon"),
+        ]
+        mid, xid = start(conn, acc)
+        capture_all(conn, acc, {acc.target_ext: mine, acc.ext(1): theirs, acc.ext(2): theirs})
+        run_job(conn, "xray_pair", xid, lambda: pair_step(repo, xid, FakeReader(bacon)))
+        rows_ = {
+            r["name"]: r
+            for r in conn.execute(
+                "select m.name, i.pair_status, i.reviewed_at, i.skipped,"
+                " (select count(*) from public.xray_pair p where p.xray_item_id = i.id) as n,"
+                " (select count(*) from public.xray_pair p where p.xray_item_id = i.id and p.accepted and p.by is null) as by_rule"
+                " from public.xray_item i join public.public_menu_item m on m.id = i.public_menu_item_id where i.xray_id = %s",
+                (xid,),
+            ).fetchall()
+        }
+        ex = rows_["Lanche Sintético Único"]
+        assert (ex["pair_status"], ex["reviewed_at"], ex["skipped"]) == ("exclusivo", None, False)
+        assert ex["n"] == 2, "similar names listed, still no doubt"
+        ai = rows_["Gigante Sintético Zeta"]
+        assert ai["pair_status"] == "revisar" and ai["n"] == 2 and ai["reviewed_at"] is None and ai["skipped"]
+        doubts = one(conn, "select public.monitor_doubts(%s) as d", (xid,))["d"]
+        names = {d["name"] for d in doubts["items"]} if doubts["items"] and "name" in doubts["items"][0] else None
+        assert doubts["open"] == 1, "only the AI-read item is a doubt; the exclusive one asks nothing"
+        if names is not None:
+            assert "Lanche Sintético Único" not in names
+        del mid
+    finally:
+        acc.cleanup()

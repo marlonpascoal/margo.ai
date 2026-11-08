@@ -1,6 +1,6 @@
 // What the M1 screens show, derived from the stored X-ray rows. No rule is computed here: readings,
 // parity, gaps and the Pareto ranks come from the worker (M1-03 to M1-08); this only counts and orders.
-import type { PairStatus, Reading } from "./labels";
+import { retryLabel, type PairStatus, type Reading } from "./labels";
 
 export interface NeighborRow {
   id: string;
@@ -13,6 +13,8 @@ export interface NeighborRow {
   lng: number | null;
   /** The store's capture (public.xray_capture_states); null with no capture job. */
   capture: CaptureState | null;
+  /** When a capture waiting to retry runs again (public.xray_capture_retries); null otherwise. */
+  retryAt: string | null;
   /** M1-11, null for a store the filters left out or from before the rule. */
   captureRank: number | null;
   captureScore: number | null;
@@ -35,11 +37,14 @@ export function neighborhoodCounts(rows: Pick<NeighborRow, "included">[]) {
 }
 
 /** C03 status text of a store, as drawn: "no conjunto" or its exclusion reason. A store in the set whose capture
- * failed or stayed past the cap says so (not drawn). */
-export function storeState(r: Pick<NeighborRow, "included" | "reason" | "leftOut"> & { capture?: CaptureState | null }): string {
+ * failed, waits to retry, was left out of the last pairing or stayed past the cap says so (not drawn). A store left out
+ * while waiting to retry shows both, with the retry time. */
+export function storeState(r: Pick<NeighborRow, "included" | "reason" | "leftOut"> & { capture?: CaptureState | null; retryAt?: string | null }): string {
   if (!r.included) return r.reason ?? "manual";
-  if (r.leftOut) return "no conjunto, fora do pareamento";
+  const retry = r.capture === "missing" && r.retryAt ? retryLabel(r.retryAt) : null;
+  if (r.leftOut) return retry ? `no conjunto, fora do pareamento, ${retry}` : "no conjunto, fora do pareamento";
   if (r.capture === "failed") return "no conjunto, captura falhou";
+  if (retry) return `no conjunto, ${retry}`;
   if (r.capture === "beyond_cap") return "no conjunto, sem captura pelo limite";
   return "no conjunto";
 }

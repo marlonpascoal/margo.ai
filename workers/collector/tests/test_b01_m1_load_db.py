@@ -100,11 +100,11 @@ class Hood:
         return self.conn.execute("select * from public.extract_claim_next('teste', 'sandbox')").fetchone()
 
     def finish_all(self, *, failed_store: str | None = None) -> None:
-        """Answers every queued capture: `fail` for failed_store, a result without items for the others."""
+        """Answers every queued capture: a permanent `fail` for failed_store, a result without items for the others."""
         while (job := self.claim()) is not None:
             store = self.job_store(job["job_id"])
             if store == failed_store:
-                self.conn.execute("select public.extract_record_failure(%s, 'blocked', null)", (job["job_id"],))
+                self.conn.execute("select public.extract_record_failure(%s, 'not_found', null)", (job["job_id"],))
             else:
                 self.conn.execute("select public.finish_job(%s, 'done', '{}')", (job["job_id"],))
                 self.conn.execute("update public.extract_run set status = 'done' where job_id = %s", (job["job_id"],))
@@ -205,7 +205,8 @@ def test_B01_active_neighborhood_job_also_holds_the_pairing(conn, repo):
 
 
 def test_B01_a_capture_stuck_in_running_cannot_block_forever(conn):
-    """02 §4: past 30 minutes it returns to the queue once, then fails with an alert."""
+    """02 §4: past 30 minutes it returns to the queue while it has attempts left (m1.extract_max_attempts, 3), then
+    fails with an alert."""
     h = Hood(conn, 1)
     h.queue_captures()
     stuck = conn.execute(
@@ -222,6 +223,11 @@ def test_B01_a_capture_stuck_in_running_cannot_block_forever(conn):
     conn.execute("select public.claim_job(%s)", (stuck["id"],))
     later = conn.execute("select now() + interval '62 minutes' as t").fetchone()["t"]
     conn.execute("select * from public.requeue_stuck_jobs(%s)", (later,))
+    assert conn.execute("select status from public.job where id = %s", (stuck["id"],)).fetchone()["status"] == "queued"
+
+    conn.execute("select public.claim_job(%s)", (stuck["id"],))
+    last = conn.execute("select now() + interval '93 minutes' as t").fetchone()["t"]
+    conn.execute("select * from public.requeue_stuck_jobs(%s)", (last,))
     assert conn.execute("select status from public.job where id = %s", (stuck["id"],)).fetchone()["status"] == "failed"
     assert h.blocker() is None
     assert h.states()[h.stores[0]] == "failed"

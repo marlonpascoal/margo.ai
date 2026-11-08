@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { calculate, confirmStores, createXray, markDelivered, prepareDelivery, reviewItem, saveMinutes, setStoreIncluded, type XrayDeps } from "./commands";
 import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./format";
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
-import { confirmWaitLabel, exclusiveLabel, leftOutLabel, captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, XRAY_MESSAGES, withoutParityLabel } from "./labels";
+import { confirmWaitLabel, exclusiveLabel, leftOutLabel, captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, retryLabel, targetCaptureRetry, XRAY_MESSAGES, withoutParityLabel } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
 import { captureCounts, examplePair, exclusives, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow, withoutParity } from "./view";
 
@@ -65,6 +65,8 @@ describe("C03", () => {
     expect(collectStopReason("ExtractionOff")).toContain("extração está desligada");
     expect(collectStopReason(null, "other")).toBe("Coleta parada: erro ao ler as páginas públicas.");
     expect(collectStopReason(null, "flag_off")).toContain("desligado");
+    expect(collectStopReason(null, "network")).toBe("Coleta parada: a conexão com o canal falhou.");
+    expect(collectStopReason(null, "stuck")).toBe("Coleta parada: a leitura travou e as tentativas acabaram.");
   });
 });
 
@@ -186,6 +188,16 @@ describe("C03 captures of this X-ray", () => {
     expect(storeState({ ...base, capture: "beyond_cap" })).toBe("no conjunto, sem captura pelo limite");
     expect(storeState({ ...base, capture: "missing" })).toBe("no conjunto");
     expect(storeState({ included: false, reason: "manual", capture: "failed" })).toBe("manual");
+  });
+
+  it("B01_C03_a_store_waiting_to_retry_shows_the_time_in_sao_paulo", () => {
+    expect(retryLabel("2026-11-07T19:40:00Z")).toBe("nova tentativa às 16:40");
+    expect(retryLabel("2026-11-08T02:05:00Z")).toBe("nova tentativa às 23:05");
+    const base = { included: true, reason: null };
+    expect(storeState({ ...base, capture: "missing", retryAt: "2026-11-07T19:40:00Z" })).toBe("no conjunto, nova tentativa às 16:40");
+    expect(storeState({ ...base, capture: "failed", retryAt: null })).toBe("no conjunto, captura falhou");
+    expect(targetCaptureRetry("Alvo Sintético", "2026-11-07T19:40:00Z")).toBe("Cardápio de Alvo Sintético: nova tentativa às 16:40.");
+    expect(storeState({ ...base, capture: "missing", leftOut: true, retryAt: "2026-11-07T19:40:00Z" })).toBe("no conjunto, fora do pareamento, nova tentativa às 16:40");
   });
 
   it("B01_M1_11_the_rank_shows_only_when_there_is_one_and_rounds_only_for_display", () => {

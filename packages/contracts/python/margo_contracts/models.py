@@ -186,6 +186,13 @@ class MenuUnit(StrEnum):
     PACK = "pack"
 
 
+class MonitorStatus(StrEnum):
+    ACTIVE = "active"
+    PAUSED_BY_PERSON = "paused_by_person"
+    PAUSED_BY_PLAN = "paused_by_plan"
+    REMOVED = "removed"
+
+
 class NotificationChannel(StrEnum):
     EMAIL = "email"
     WHATSAPP = "whatsapp"
@@ -865,6 +872,7 @@ class Job(Row):
     finished_at: datetime | None
     id: UUID
     log: JsonValue
+    not_before: datetime | None
     payload: JsonValue
     status: JobStatus
     type: str
@@ -954,6 +962,20 @@ class MenuItem(Row):
     name: str
     top20_rank: int | None
     updated_at: datetime
+
+
+class MonitorPairDecision(Row):
+    accepted: bool
+    account_id: UUID
+    candidate_item_id: UUID
+    created_at: datetime
+    decided_at: datetime
+    decided_by: UUID | None
+    id: UUID
+    monitor_id: UUID
+    own_item_id: UUID
+    updated_at: datetime
+    xray_id: UUID | None
 
 
 class NoticePref(Row):
@@ -1292,6 +1314,7 @@ class Xray(Row):
     created_by: UUID | None
     delivered_at: datetime | None
     id: UUID
+    monitor_id: UUID | None
     pdf_path: str | None
     radius_km: int
     rules: JsonValue
@@ -1299,6 +1322,20 @@ class Xray(Row):
     target_kind: str
     target_store_id: UUID
     updated_at: datetime
+
+
+class XrayCategoryRank(Row):
+    created_at: datetime
+    id: UUID
+    is_target: bool
+    item_category: str
+    items_compared: int
+    price_index: Decimal
+    public_store_id: UUID
+    rank: int
+    stores_ranked: int
+    updated_at: datetime
+    xray_id: UUID
 
 
 class XrayItem(Row):
@@ -1327,6 +1364,68 @@ class XrayItem(Row):
     updated_at: datetime
     weekly_units: Decimal | None
     xray_id: UUID
+
+
+class XrayItemPosition(Row):
+    captured_cents: int | None
+    created_at: datetime
+    id: UUID
+    item_category: str | None
+    own_cents: int | None
+    parity_cents: int | None
+    percentile: Decimal
+    public_menu_item_id: UUID
+    rank: int
+    reading: XrayReading | None
+    score_version: str | None
+    score_weight: Decimal | None
+    stores: int
+    updated_at: datetime
+    xray_id: UUID
+    xray_item_id: UUID
+
+
+class XrayMenuScore(Row):
+    below: int
+    created_at: datetime
+    delta: int | None
+    delta_items: int | None
+    id: UUID
+    in_band: int
+    items: int
+    previous_xray_id: UUID | None
+    price_gap_per_sale_cents: int
+    risk: int
+    scope: str
+    score: int | None
+    score_version: str
+    updated_at: datetime
+    xray_id: UUID
+
+
+class XrayMonitor(Row):
+    account_id: UUID
+    categories: list[str]
+    created_at: datetime
+    created_by: UUID | None
+    discovered_at: datetime | None
+    env: FlagEnv
+    every_days: int
+    id: UUID
+    kitchen_id: UUID | None
+    last_xray_id: UUID | None
+    next_run_at: datetime | None
+    paused_at: datetime | None
+    paused_by: UUID | None
+    radius_km: int
+    removed_at: datetime | None
+    removed_by: UUID | None
+    rules: JsonValue
+    status: MonitorStatus
+    target_kind: str
+    target_store_id: UUID
+    updated_at: datetime
+    updated_by: UUID | None
 
 
 class XrayPair(Row):

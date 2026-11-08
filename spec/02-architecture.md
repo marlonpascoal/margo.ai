@@ -74,7 +74,7 @@ Table `job` (see data model) is the single queue for imports, collection, matchi
 3. Schedules (daily iFood pull at 06:00 São Paulo, weekly summary, trial reminders) are Maritime cron triggers on the relevant worker, or Vercel Cron when the work is a quick database update.
 4. The worker claims the job with `UPDATE job SET status='running', claimed_at=now() WHERE id=? AND status='queued'` (one winner), does the work, writes results and `status=done|failed` with a log.
 5. A job stuck in `running` for more than 30 minutes returns to `queued` once, then fails and raises an alert (C21).
-   `extract_discover` and `extract_capture` are claimed over HTTPS by an external extractor (06 §10) instead of a worker; the same claim, flag and stuck rules apply, up to `m1.extract_max_running` at once.
+   `extract_discover` and `extract_capture` are claimed over HTTPS by an external extractor (06 §10) instead of a worker; the same claim and flag rules apply, up to `m1.extract_max_running` at once. The extractor makes one attempt per claim; retry lives in the queue (04 §1, M1 retry): a transitory failure with attempts left puts the same job back in `queued` with a `not_before` time, and a claim skips jobs whose `not_before` is in the future. `job.attempts` counts the claims. A stuck extract job counts that claim as an attempt and waits the same way, with no extra attempts; after the last one it fails with the alert.
 6. Every import row has a natural key; re-importing the same period never double-counts (D31).
 
 The `Runner` interface in `workers/common` hides Maritime: `Runner.enqueue(job)` and `Runner.on_job(handler)`. Swapping the host means a new `Runner`, not new job code (D42).

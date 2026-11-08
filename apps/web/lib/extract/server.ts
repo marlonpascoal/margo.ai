@@ -84,6 +84,13 @@ export async function recordFailure(db: Db, deps: EnqueueDeps, jobId: string, re
   await wake(deps, (res.data as { wake: unknown }).wake);
 }
 
+/** M1 owner journey, same daily cron first: plan limits, then a new run of every monitoring due (monitor_queue_due). */
+export async function queueDueMonitors(db: Db): Promise<number> {
+  const res = await db.rpc("monitor_queue_due", { p_env: flagEnv() });
+  if (res.error) throw new Error(res.error.message);
+  return res.data as number;
+}
+
 /** D47c, daily cron: captures of stores in active X-rays whose last one is older than m1.extract_every_days. */
 export async function queueDueCaptures(db: Db): Promise<number> {
   const res = await db.rpc("extract_queue_due", { p_env: flagEnv() });

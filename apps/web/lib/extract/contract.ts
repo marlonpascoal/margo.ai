@@ -1,7 +1,8 @@
 // The extractor contract (docs/extract-api.md, D47c): an allowlist of fields for what comes back from
 // /api/extract/result. Anything not listed is dropped and named in the answer, so raw HTML, customer reviews
 // or a self-declared last_seen_open_at never reach a copy. Pure: no database, no clock except the argument.
-export const FAIL_REASONS = ["blocked", "not_found", "parse_error", "timeout", "other"] as const;
+/** Transitory or permanent is the server's call, per reason, in rule_param m1.extract_retry_reason_* (docs/extract-api.md). */
+export const FAIL_REASONS = ["blocked", "not_found", "parse_error", "timeout", "network", "other"] as const;
 export type FailReason = (typeof FAIL_REASONS)[number];
 export const isFailReason = (v: unknown): v is FailReason => (FAIL_REASONS as readonly unknown[]).includes(v);
 

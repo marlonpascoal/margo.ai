@@ -1,6 +1,7 @@
 // Words on the M1 screens. Drawn copy is verbatim; entries marked "not drawn" follow the console style
 // and are listed in the wave report for Marlon.
 import type { Database } from "@margoai/contracts";
+import { TIME_ZONE } from "@/lib/format";
 import { gapLabel, money } from "./format";
 
 export type Reading = Database["public"]["Enums"]["xray_reading"];
@@ -107,8 +108,10 @@ export function collectStopReason(error: string | null | undefined, reason?: str
       return "Coleta parada: a página veio em um formato que não sabemos ler.";
     case "timeout":
       return "Coleta parada: a leitura demorou demais.";
+    case "network":
+      return "Coleta parada: a conexão com o canal falhou.";
     case "stuck":
-      return "Coleta parada: a leitura travou duas vezes.";
+      return "Coleta parada: a leitura travou e as tentativas acabaram.";
     default:
       return "Coleta parada: erro ao ler as páginas públicas.";
   }
@@ -134,6 +137,13 @@ export const leftOutLabel = (names: string[]) => `Fora do pareamento, a captura 
 
 /** C03 under the store's name (M1-11), rounded only here. Not drawn. */
 export const captureRankLabel = (rank: number | null, score: number | null) => (rank === null || score === null ? null : `prioridade ${rank}, nota ${Math.round(score)}`);
+
+/** C03: a capture waiting to retry (job.not_before, docs/extract-api.md), the time in America/Sao_Paulo. Not drawn. */
+export const retryLabel = (at: string) =>
+  `nova tentativa às ${new Intl.DateTimeFormat("pt-BR", { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(at))}`;
+
+/** C03: the capture of the X-ray's own target waits to retry; it is in no list. Not drawn. */
+export const targetCaptureRetry = (name: string | null, at: string) => `Cardápio de ${name ?? "loja do raio-X"}: ${retryLabel(at)}.`;
 
 /** C03: the capture of the X-ray's own target failed; it is in no list. Not drawn. */
 export const targetCaptureFailed = (name: string | null) => `A captura do cardápio de ${name ?? "loja do raio-X"} falhou.`;

@@ -8,8 +8,8 @@ import { Notice, XrayTitle } from "@/components/xray";
 import { requireFlag } from "@/lib/flags";
 import { requireConsole } from "@/lib/console/staff";
 import { adminClient } from "@/lib/supabase/admin";
-import { captureProgressLabel, collectStopReason, confirmWaitLabel, leftOutLabel, targetCaptureFailed, XRAY_MESSAGES } from "@/lib/xray/labels";
-import { captureProgress, latestJob, loadNeighborhood, loadXrayHead } from "@/lib/xray/load";
+import { captureProgressLabel, collectStopReason, confirmWaitLabel, leftOutLabel, targetCaptureFailed, targetCaptureRetry, XRAY_MESSAGES } from "@/lib/xray/labels";
+import { captureProgress, captureRetries, latestJob, loadNeighborhood, loadXrayHead } from "@/lib/xray/load";
 import { captureCounts } from "@/lib/xray/view";
 import NeighborhoodView from "./NeighborhoodView";
 
@@ -21,10 +21,11 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ i
   const x = await loadXrayHead(db, (await params).id);
   if (!x) notFound();
   await requireFlag("m1.raio_x", x.accountId);
-  const { states, blocker, quorum } = await captureProgress(db, x.id);
-  const [rows, collect, discover] = await Promise.all([loadNeighborhood(db, x.id, states), latestJob(db, "collect", x.id), latestJob(db, "extract_discover", x.id)]);
+  const [{ states, blocker, quorum }, retries] = await Promise.all([captureProgress(db, x.id), captureRetries(db, x.id)]);
+  const [rows, collect, discover] = await Promise.all([loadNeighborhood(db, x.id, states, retries), latestJob(db, "collect", x.id), latestJob(db, "extract_discover", x.id)]);
   const counts = captureCounts(states);
   const targetFailed = states.some((c) => c.is_target && c.state === "failed");
+  const targetRetryAt = x.targetStoreId ? retries.get(x.targetStoreId) : undefined;
   const job = discover ?? collect;
   const title = <XrayTitle code="C03" step={2} store={x.storeName} title={`Vizinhança de ${x.radiusKm} km`} />;
   if (rows.length === 0) {
@@ -46,6 +47,7 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ i
       {!blocker && counts.missing > 0 ? <Notice tone="muted">{XRAY_MESSAGES.confirmLeavesOut}</Notice> : null}
       {rows.some((r) => r.leftOut) ? <Notice tone="muted">{leftOutLabel(rows.filter((r) => r.leftOut).map((r) => r.name))}</Notice> : null}
       {targetFailed ? <Notice tone="danger">{targetCaptureFailed(x.storeName)}</Notice> : null}
+      {targetRetryAt ? <Notice tone="muted">{targetCaptureRetry(x.storeName, targetRetryAt)}</Notice> : null}
       <NeighborhoodView xrayId={x.id} title={title} rows={rows} target={x.target} radiusKm={x.radiusKm} synthetic={x.synthetic} waiting={confirmWaitLabel(blocker, quorum)} />
     </ConsoleMain>
   );

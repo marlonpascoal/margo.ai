@@ -4,11 +4,22 @@ This is the only contract between MargoAI and whatever reads store pages (today 
 
 Examples below are synthetic. The complete bodies are in `fixtures/m1/extract/`, labeled SINTÉTICO.
 
+## What changed for extractors (Marlon, 07/nov)
+
+Retry moved from the extractor into MargoAI's queue.
+
+- **One attempt per claim.** Do not retry a store inside a claim. Make one attempt, then send `result` or `fail` at once, and release the slot.
+- **Send the reason that fits** (see [POST /api/extract/fail](#post-apiextractfail)). The server decides whether to try again: `blocked`, `timeout` and the new `network` are retried later; `not_found`, `parse_error` and `other` are final.
+- **`network` is new:** use it for a connection failure (DNS, connection refused or reset, TLS error) before any page came back.
+- **A page that never rendered** (for example the menu selector never appeared) is `timeout`, not `parse_error`. Send `parse_error` only for a page that rendered but could not be read.
+- **The same `job_id` may come back** in a later claim: that is the server's retry, not a duplicate. Do the job again as if new.
+- **Unchanged:** the endpoints, the bodies and the answers. The circuit breaker for a general block (many stores refused in a row) stays in the extractor: pause claiming, as before.
+
 ## Flow
 
 1. Poll `POST /api/extract/claim`. Jobs run in parallel up to a limit the server decides (`m1.extract_max_running`, a safety ceiling, today 20; the extractor's own worker count is the real control) across all extractors; at the limit, or with nothing queued, a claim answers 204. The limit does not change how fast an extractor may read pages: it keeps its own pacing (D47).
-2. Do the job.
-3. Send `POST /api/extract/result`, or `POST /api/extract/fail` if it could not be done.
+2. Make one attempt at the job.
+3. Send `POST /api/extract/result`, or `POST /api/extract/fail` if that attempt did not work. MargoAI decides whether the job is tried again ([Retry of a failed job](#retry-of-a-failed-job)).
 
 ## Auth
 
@@ -159,7 +170,18 @@ Also refused with 422: a capture with an empty `items` (it would mark the whole 
 { "job_id": "3f1c0000-0000-4000-8000-000000000002", "reason": "blocked", "detail": "403 na página da loja" }
 ```
 
-`reason`: `blocked`, `not_found`, `parse_error`, `timeout` or `other`. `detail` is optional, kept up to 500 characters, internal. Keep it free of personal data. 200 `{ "ok": true }`.
+`detail` is optional, kept up to 500 characters, internal. Keep it free of personal data; a short technical note such as the HTTP status or the selector that did not appear is enough. 200 `{ "ok": true }`, whether the job will be tried again or not.
+
+| `reason` | Send it when | MargoAI |
+|---|---|---|
+| `blocked` | The channel refused this page: 403, 429, a block or captcha page | Tries again later |
+| `timeout` | The page did not load or did not render in time, including a menu that never appeared | Tries again later |
+| `network` | The connection failed before any page came back: DNS, refused, reset, TLS | Tries again later |
+| `not_found` | The store does not exist at that url (404, store removed) | Final |
+| `parse_error` | The page rendered, but its content could not be read into the contract | Final |
+| `other` | Anything else | Final |
+
+A page that never rendered is `timeout` even when the extractor noticed it as a missing element; `parse_error` is only for a page that rendered.
 
 ## What MargoAI does with a result
 
@@ -170,12 +192,24 @@ Also refused with 422: a capture with an empty `items` (it would mark the whole 
 - Older copies arriving late do not overwrite newer values.
 - Captures go to the target and the top `m1.extract_max_captures_per_xray` stores of the ranking (M1-11); the others stay in the neighborhood with no capture job.
 
-## Retries
+## Retry of a failed job
+
+The extractor makes one attempt per claim and never retries inside a claim. MargoAI keeps the count and decides:
+
+- Which reasons are retried is set per reason in `rule_param` (`m1.extract_retry_reason_<reason>`: 1 retried, 0 final), the only place that decides. Today `blocked`, `timeout` and `network` are retried.
+- A job has `m1.extract_max_attempts` attempts in all, the first included (3). Each claim counts one, in the job's `attempts`; each attempt keeps its own run with its reason.
+- After a retried failure with attempts left, the same job (same `job_id`) returns to the queue with a `not_before` time: `m1.extract_retry_wait_minutes_1` (10) after the first attempt, `m1.extract_retry_wait_minutes_2` (30) after the second. No claim offers it before then; after it, it takes its place by age again, oldest first.
+- After the last attempt, or a final reason, the job fails as before.
+- A job stuck in running past 30 minutes counts that claim as an attempt (reason `stuck`) and waits the same way; after the last attempt it fails with an alert (02 §4.5). No extra attempts.
+- While it waits, the job is still pending, not finished: the daily cron does not queue a second job for the store, it counts as unfinished toward the pairing threshold (`m1.pair_min_captures_pct`), and if pairing runs without it the store is left out of pairing. C03 shows "nova tentativa às 16:40".
+- A general block (many stores refused in a row) is the extractor's to handle with its own circuit breaker: stop claiming for a while. The server's retry is per job and does not replace it.
+
+## Retries of requests
 
 - **Polling:** claim every few seconds to a minute; a 204 costs nothing.
 - **Network error or 5xx on `result` or `fail`:** retry with the same body. A repeated success is harmless.
 - **401, 404:** stop and check the token or the id; retrying will not help.
-- **409:** drop the job. A job that runs past 30 minutes returns to the queue once, and then fails with an alert (02 §4), so finish or `fail` well before that.
+- **409:** drop the job. A job that runs past 30 minutes counts as a failed attempt and returns to the queue while it has attempts left (02 §4), so finish or `fail` well before that.
 - **422:** fix the body or send `fail`. Do not resend it unchanged.
 - **413:** the limit is 4 MB. Drop optional fields such as `description`; if it still does not fit, send `fail` with `other`.
-- A failed job is not retried by MargoAI at once: a failed capture comes back with the next daily cron, and a failed discovery needs a new X-ray in C02.
+- A job that failed for good is not retried by MargoAI: a failed capture comes back with the next daily cron, and a failed discovery needs a new X-ray in C02.

@@ -114,7 +114,8 @@ test("E03_E05_A03_W01_W09_dono_logs_in_sees_the_month_sets_notices_and_the_sessi
   await page.setViewportSize({ width: 1280, height: 900 });
   const menu = page.getByRole("navigation", { name: "Portal do dono" });
   const links = await menu.getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent ?? "", a.getAttribute("href") ?? ""]));
-  expect(links.map(([, href]) => href)).toEqual(["/app", "/app/lojas", "/app/contestacoes", "/app/pessoas", "/app/plano", "/app/notificacoes", "/app/seguranca"]);
+  // W10 "Raio-X" while m1.portal is on (sandbox, every plan: draft §10 Q5).
+  expect(links.map(([, href]) => href)).toEqual(["/app", "/app/raio-x", "/app/lojas", "/app/contestacoes", "/app/pessoas", "/app/plano", "/app/notificacoes", "/app/seguranca"]);
   for (const [label, href] of [...links, ["", "/app/conectar"]]) {
     const res = await page.goto(href);
     expect(res!.status(), href).toBe(200);

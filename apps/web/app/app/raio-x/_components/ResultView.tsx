@@ -4,13 +4,14 @@
 // Money-free wording: a price gap is "diferença de preço por venda", never profit.
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { HeadToHead, History, ItemLists, MonitorStatus, ResultItem, ResultPage, TestPlan as TestPlanData } from "@/lib/monitor/load";
+import type { HeadToHead, History, ItemLists, MonitorStatus, Opportunities as OpportunitiesData, ResultItem, ResultPage, TestPlan as TestPlanData } from "@/lib/monitor/load";
 import { printVersion } from "@/lib/monitor/print";
 import { GROUP_LABEL, type Group } from "@/lib/monitor/rules";
 import { brl, dayMon, gapWords, headline, longWeekdayDayMon, ordinal, paretoSentence, positionChange, positionWords, readingGroups, storeListWithOwn, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
 import NavSelect from "@/components/NavSelect";
 import { CategoryScore, ScoreCard, ScoreMethod } from "./PriceScore";
 import NextSteps from "./NextSteps";
+import Opportunities from "./Opportunities";
 import ShareMenu from "./ShareMenu";
 import TestButton from "./TestButton";
 import TestPlan from "./TestPlan";
@@ -36,6 +37,8 @@ export interface ResultViewProps {
     plan: TestPlanData | null;
     canEdit: boolean;
     competitorAllowed: boolean;
+    /** AI opportunities of the run, already null when m1.oportunidades_ia is off for the account. */
+    opportunities: OpportunitiesData | null;
   };
 }
 
@@ -441,6 +444,7 @@ export default function ResultView(p: ResultViewProps) {
           </section>
         ) : null}
       </div>
+      {cont ? <Opportunities data={cont.opportunities} competitor={comp} /> : null}
       {cont ? <TestPlan plan={plan} monitorId={p.monitorId} canEdit={cont.canEdit} mode={p.mode} /> : null}
       <section className="stack" aria-labelledby="allh" style={{ gap: 10 }}>
         <div className="row-flex between">

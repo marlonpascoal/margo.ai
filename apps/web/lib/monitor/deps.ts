@@ -62,3 +62,9 @@ export async function serviceRuleParam(key: string, fallback: number): Promise<n
   const { data } = await adminClient().from("rule_param").select("value").eq("key", key).maybeSingle();
   return data ? Number(data.value) : fallback;
 }
+
+/** The account of a run, for the printed copy's flag checks (no portal session there). */
+export async function xrayAccountId(xrayId: string): Promise<string | null> {
+  const { data } = await adminClient().from("xray").select("account_id").eq("id", xrayId).maybeSingle();
+  return (data?.account_id as string | null | undefined) ?? null;
+}

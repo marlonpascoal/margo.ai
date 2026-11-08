@@ -3,7 +3,8 @@
 import { notFound, redirect } from "next/navigation";
 import { loadDeps } from "@/lib/monitor/deps";
 import { canAnswerDoubts } from "@/lib/monitor/rules";
-import { loadHistory, loadItemLists, loadMonitorSummary, loadResultPage, loadTestPlan, scoreMinItems, visibleMonitor, type Limits } from "@/lib/monitor/load";
+import { isEnabled } from "@/lib/flags";
+import { loadHistory, loadItemLists, loadMonitorSummary, loadOpportunities, loadResultPage, loadTestPlan, scoreMinItems, visibleMonitor, type Limits } from "@/lib/monitor/load";
 import { requirePortal } from "@/lib/portal/session";
 import ResultView from "./ResultView";
 
@@ -17,13 +18,14 @@ export default async function ResultPageServer({ monitorId, xrayId }: { monitorI
     if (xrayId) notFound();
     redirect(`/app/raio-x/${monitorId}/lendo`);
   }
-  const [summary, lists, history, minItems, plan, limits] = await Promise.all([
+  const [summary, lists, history, minItems, plan, limits, opportunities] = await Promise.all([
     loadMonitorSummary(deps, monitorId),
     loadItemLists(deps, monitorId, page.result.xray_id),
     loadHistory(deps, monitorId),
     scoreMinItems(m.db),
     loadTestPlan(deps, monitorId, page.result.xray_id),
     deps.rpc("monitor_limits", { p_account: m.account.id, p_env: deps.env }) as Promise<Limits>,
+    isEnabled("m1.oportunidades_ia", m.account.id).then((on) => (on ? loadOpportunities(deps, monitorId, page.result.xray_id) : null)),
   ]);
   const canEdit = canAnswerDoubts(m.role, { gerenteAnswers: limits.gerente_answers, monitorKitchenId: row.kitchenId, kitchenIds: m.kitchenIds, allKitchens: m.allKitchens });
   const runs = (history?.runs ?? []).filter((r) => ["ready", "delivered"].includes(r.status) && r.on).map((r) => ({ xray_id: r.xray_id, on: r.on as string }));
@@ -45,6 +47,7 @@ export default async function ResultPageServer({ monitorId, xrayId }: { monitorI
         plan,
         canEdit,
         competitorAllowed: limits.competitor_allowed,
+        opportunities,
       }}
     />
   );

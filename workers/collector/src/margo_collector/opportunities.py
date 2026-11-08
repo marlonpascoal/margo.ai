@@ -27,11 +27,15 @@ from margo_common.log import log_event
 
 MODEL_ENV = "MARGO_OPPORTUNITIES_MODEL"
 """Overrides the provider's default model (llm.DEFAULT_MODELS)."""
-PROMPT_VERSION = "oportunidades.v1"
+PROMPT_VERSION = "oportunidades.v2"
 MAX_ITEMS = 80
 """Compared items sent per run, in the result's order (pode_subir first, largest gap first)."""
 MAX_OPPORTUNITIES = 5
 LEVERS = ("subir_preco", "manter", "rever_custo", "acompanhar")
+FEW_STORES = 5
+"""Below the M1-04 default `min_pairs` (rules.Settings): fewer stores than an item needs to pair on its own."""
+SPREAD_FACTOR = 2
+"""The neighbors' highest price at least twice their lowest: sizes or portions likely differ (Marlon, 08/nov)."""
 
 SYSTEM = (
     "Você ajuda o dono de um restaurante a ler o raio-X de preços do cardápio dele no iFood. "
@@ -51,6 +55,10 @@ SYSTEM = (
     "Não faça contas, não some, não arredonde, não invente números. "
     "O custo dos itens é desconhecido: nunca fale em lucro, margem ou ganho. "
     "Ao sugerir subir, diga que pode vender menos; ao sugerir equilibrar um preço alto, diga que pode vender mais. "
+    "Cada item traz a comparacao: firme, poucas_lojas ou precos_espalhados. "
+    "Com poucas_lojas ou precos_espalhados, ou num prato ou porção sem o peso no nome, diga no porquê que o tamanho "
+    "ou a porção dos vizinhos pode ser diferente, e que ainda assim o preço de face já mostra a diferença. "
+    "Use acompanhar quando a comparação ainda é fraca, e diga que com mais lojas comparadas a leitura fica mais firme. "
     "Não use travessão. Não cite nomes de lojas."
 )
 
@@ -165,6 +173,18 @@ def _words(f: Facts, text: str | None) -> str | None:
     return text
 
 
+def comparison_strength(stores: Any, low_cents: Any, high_cents: Any) -> str:
+    """How much one item's comparison can be trusted, for the AI's wording (no number on screen comes from it).
+
+    `poucas_lojas`: fewer than FEW_STORES stores; `precos_espalhados`: the neighbors' highest price is at least
+    SPREAD_FACTOR times the lowest (sizes or portions likely differ); else `firme`. Few stores wins over spread."""
+    if stores is None or int(stores) < FEW_STORES:
+        return "poucas_lojas"
+    if low_cents and high_cents and int(high_cents) >= SPREAD_FACTOR * int(low_cents):
+        return "precos_espalhados"
+    return "firme"
+
+
 def build_facts(result: Mapping[str, Any], positions: Mapping[str, Any] | None) -> Facts:
     """M1-05 to M1-12 of one run, from monitor_result and monitor_positions, in the shape the prompt reads.
 
@@ -217,6 +237,7 @@ def build_facts(result: Mapping[str, Any], positions: Mapping[str, Any] | None) 
                 "diferenca_para_o_meio": _cents(f, None if own is None or parity is None else abs(parity - own)),
                 "leitura": it.get("reading"),
                 "lojas": _count(f, it.get("stores")),
+                "comparacao": comparison_strength(it.get("stores"), it.get("low_cents"), it.get("high_cents")),
             }
         )
 

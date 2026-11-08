@@ -67,6 +67,7 @@ def test_B01_opportunities_facts_per_item_category_and_store(facts):
         "diferenca_para_o_meio": "R$ 5,00",
         "leitura": "pode_subir",
         "lojas": 9,
+        "comparacao": "firme",
     }
     lanches = p["categorias"][0]
     assert lanches["grupo"] == "Lanches" and lanches["pode_subir"] == 2 and lanches["comparados"] == 3
@@ -76,6 +77,23 @@ def test_B01_opportunities_facts_per_item_category_and_store(facts):
     assert p["itens_so_seus"] == 2 and p["itens_alinhados_pct"] == 50 and p["faixa_da_media_pct"] == 10
     assert facts.item_ids == {i["item_id"] for i in RESULT["items"]}
     assert Decimal("24") in facts.money and Decimal("17") in facts.percents and Decimal("400") in facts.plain
+
+
+def test_B01_opportunities_comparison_strength_marks_few_stores_and_spread_prices():
+    """Marlon, 08/nov: outliers or different portions make a comparison diverge; the AI says so, and still reads the
+    face price. Few stores (below the M1-04 min_pairs default) wins over spread."""
+    assert opportunities.comparison_strength(9, 2500, 3400) == "firme"
+    assert opportunities.comparison_strength(1, 4299, 4299) == "poucas_lojas"
+    assert opportunities.comparison_strength(4, 2000, 9000) == "poucas_lojas"
+    assert opportunities.comparison_strength(6, 3000, 6000) == "precos_espalhados"
+    assert opportunities.comparison_strength(6, 3000, 5999) == "firme"
+    assert opportunities.comparison_strength(None, None, None) == "poucas_lojas"
+
+
+def test_B01_opportunities_prompt_v2_asks_for_the_size_caveat_and_more_stores():
+    assert PROMPT_VERSION == "oportunidades.v2"
+    for words in ("poucas_lojas", "precos_espalhados", "preço de face", "mais lojas comparadas"):
+        assert words in opportunities.SYSTEM
 
 
 def test_B01_opportunities_request_sends_the_facts_and_no_store_name(facts):

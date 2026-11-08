@@ -754,16 +754,20 @@ def balance_rank_m1_11(
     store_terms: Mapping[str, Iterable[str]],
     shares: Mapping[str, float],
     cap: int,
+    store_categories: Mapping[str, str | None] | None = None,
 ) -> list[Ranked]:
     """M1-11 (D76): the capture places follow the store's own menu. Each term gets its share of the `cap`
     places, best rank first, so a store that is mostly skewers is not read against burger shops only because
-    they have more ratings. The other stores follow in rank order."""
+    they have more ratings. A store whose own category names the term comes before one the search merely
+    surfaced ("Japonesa" also returns a pizzeria that sells sushi). The other stores follow in rank order."""
     by_rank = sorted(ranked, key=lambda r: r.rank)
     chosen: dict[str, Ranked] = {}
     for term, share in sorted(shares.items(), key=lambda kv: -kv[1]):
         wanted, quota = _term(term), math.ceil(share * cap)
         matching = [r for r in by_rank if wanted in {_term(t) for t in store_terms.get(r.store_id, ())}]
-        for r in matching[:quota]:
+        named = [r for r in by_rank if wanted in _term((store_categories or {}).get(r.store_id) or "")]
+        surfaced = [r for r in matching if r not in named]
+        for r in [*named, *surfaced][:quota]:
             chosen.setdefault(r.store_id, r)
     first = sorted(chosen.values(), key=lambda r: r.rank)
     rest = [r for r in by_rank if r.store_id not in chosen]

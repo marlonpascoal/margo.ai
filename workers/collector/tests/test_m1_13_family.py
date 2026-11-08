@@ -225,3 +225,11 @@ def test_D76_with_the_flag_off_the_flow_is_as_before():
     repo = _repo(False)
     assert collect_step(repo, "x", "sandbox", Fake()) == {"queued": 1}
     assert repo.xrays["x"].categories == []
+
+
+def test_D76_a_store_of_that_cuisine_comes_before_one_the_search_surfaced():
+    terms = {f"s{i}": ["Japonesa"] for i in range(40)}
+    categories = {f"s{i}": ("Pizza" if i < 10 else "Comida Japonesa") for i in range(40)}
+    order = balance_rank_m1_11(_ranked(40), terms, {"Japonesa": 1.0}, 30, categories)
+    first = {r.store_id for r in order if r.rank <= 30}
+    assert not any(categories[s] == "Pizza" for s in first)

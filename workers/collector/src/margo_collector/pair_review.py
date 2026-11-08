@@ -32,7 +32,7 @@ from .learning import pattern_m1_04
 from .rules import FoodOverrides, Item, Settings, item_category_m1_04, normalize_m1_03
 from .xray import ItemRow, PairRow, build_pairs
 
-PROMPT_VERSION = "pareamento.v1"
+PROMPT_VERSION = "pareamento.v2"
 MODEL_ENV = "MARGO_REVIEW_MODEL"
 """Overrides the provider's default model (llm.DEFAULT_MODELS)."""
 BATCH = 100
@@ -108,7 +108,7 @@ class PairReviewer(Protocol):
     model: str
     prompt_version: str
 
-    def review(self, pairs: Sequence[ReviewPair]) -> ReviewAnswers: ...
+    def review(self, pairs: Sequence[ReviewPair], cuisine: str | None = None) -> ReviewAnswers: ...
 
 
 @dataclass
@@ -148,7 +148,21 @@ def _side(item: Item) -> dict[str, Any]:
     }
 
 
-def build_call(pairs: Sequence[ReviewPair]) -> llm.Call:
+def cuisine_m1_12(shares: Mapping[str, float] | None, categories: Sequence[str]) -> str | None:
+    """D77: the main cuisine of the store: its menu's largest term, else the first category chosen."""
+    term = max(shares, key=lambda t: shares[t]) if shares else (categories[0] if categories else None)
+    return term.lower() if term else None
+
+
+def system_for(cuisine: str | None) -> str:
+    """D77: the reviewer is an expert in the store's main cuisine: it knows a Filadélfia is salmon and cream
+    cheese, and a hot roll is not a uramaki."""
+    if not cuisine:
+        return SYSTEM
+    return f"Você é especialista na cozinha {cuisine}: use esse conhecimento para julgar cada par. {SYSTEM}"
+
+
+def build_call(pairs: Sequence[ReviewPair], cuisine: str | None = None) -> llm.Call:
     """Business menu data only: `ref` is a local index, and an Item's store never goes out."""
     payload = {
         "pares": [
@@ -156,7 +170,7 @@ def build_call(pairs: Sequence[ReviewPair]) -> llm.Call:
             for p in pairs
         ]
     }
-    return llm.Call("revisao_de_pares", SYSTEM, payload, OUTPUT_SCHEMA, 16000)
+    return llm.Call("revisao_de_pares", system_for(cuisine), payload, OUTPUT_SCHEMA, 16000)
 
 
 def build_request(
@@ -192,11 +206,11 @@ class AiPairReviewer:
         self.ai = llm.StructuredClient(client, model, provider, MODEL_ENV)
         self.model = self.ai.model
 
-    def review(self, pairs: Sequence[ReviewPair]) -> ReviewAnswers:
+    def review(self, pairs: Sequence[ReviewPair], cuisine: str | None = None) -> ReviewAnswers:
         out: ReviewAnswers = {}
         for start in range(0, len(pairs), BATCH):
             batch = pairs[start : start + BATCH]
-            out.update(parse_answer(self.ai.ask(build_call(batch)), {p.ref for p in batch}))
+            out.update(parse_answer(self.ai.ask(build_call(batch, cuisine)), {p.ref for p in batch}))
         return out
 
 
@@ -271,6 +285,7 @@ def review_pairing_m1_12(
     max_rounds: int = DEFAULT_MAX_ROUNDS,
     min_runs: int = DEFAULT_MIN_RUNS,
     xray_id: str = "",
+    cuisine: str | None = None,
 ) -> ReviewRun:
     """M1-12: the rules' pairs, reviewed and re-run until nothing is left to judge or the rounds end."""
     first = build_pairs(own, pool, settings, decisions, food)
@@ -303,7 +318,7 @@ def review_pairing_m1_12(
                 rejected.add(key)
                 learned_bad += 1
                 run.detail.append(_rejection(key, "aprendido", number))
-        answers = reviewer.review(ask) if ask else {}
+        answers = reviewer.review(ask, cuisine) if ask else {}
         asked_any = asked_any or bool(ask)
         answered_any = answered_any or bool(answers)
         log_event(

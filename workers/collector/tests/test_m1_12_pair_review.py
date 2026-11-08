@@ -14,6 +14,7 @@ from margo_collector.pair_review import (
     ReviewPair,
     Verdict,
     build_call,
+    cuisine_m1_12,
     learned_verdict,
     pair_pattern,
     parse_answer,
@@ -40,7 +41,8 @@ class Fake:
         self.banned, self.silent, self.failed = banned, silent, failed
         self.calls: list[list[ReviewPair]] = []
 
-    def review(self, pairs: Sequence[ReviewPair]) -> ReviewAnswers:
+    def review(self, pairs: Sequence[ReviewPair], cuisine: str | None = None) -> ReviewAnswers:
+        self.cuisine = cuisine
         self.calls.append(list(pairs))
         out = {}
         for p in pairs:
@@ -241,3 +243,18 @@ def test_M1_12_eval_scores_a_perfect_and_a_lenient_reviewer():
 def test_M1_12_eval_pairs_hold_good_and_bad_cases():
     assert {True, False} == {ok for _, ok in LABELED}
     assert "Item" not in str(build_call([p for p, _ in LABELED]).payload)
+
+
+def test_D77_the_reviewer_is_an_expert_in_the_stores_main_cuisine():
+    assert cuisine_m1_12({"Japonesa": 0.8, "Lanches": 0.2}, ["Lanches"]) == "japonesa"
+    assert cuisine_m1_12(None, ["Pizza"]) == "pizza"
+    assert cuisine_m1_12(None, []) is None
+    pair = ReviewPair("0", "pratos", OWN[0], OWN[0])
+    assert "especialista na cozinha japonesa" in build_call([pair], "japonesa").system
+    assert "especialista" not in build_call([pair]).system
+
+
+def test_D77_the_cuisine_reaches_the_reviewer():
+    fake = Fake()
+    run(FIVE_GOOD, fake, cuisine="japonesa")
+    assert fake.cuisine == "japonesa"

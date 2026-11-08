@@ -38,7 +38,7 @@ from .learning import (
     read_food_m1_04,
     unreadable_items,
 )
-from .pair_review import PairReviewer, ReviewRun, review_pairing_m1_12
+from .pair_review import PairReviewer, ReviewRun, cuisine_m1_12, review_pairing_m1_12
 from .rules import Item, RankWeights, Settings, Store
 from .xray import CalcInput, CalcResult, ItemRow, StoreRow, build_neighborhood, calculate
 
@@ -317,6 +317,7 @@ def pair_step(
         max_rounds=max_rounds,
         min_runs=min_runs,
         xray_id=xray_id,
+        cuisine=cuisine_m1_12(x.rules.get("menu_term_shares"), x.categories),
     )
     rows = review.rows
     repo.save_pairs(xray_id, rows)

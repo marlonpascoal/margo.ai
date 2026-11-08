@@ -115,7 +115,8 @@ def build_neighborhood(
             rows.append(StoreRow(store.id, distance, d, reason is None, reason))
     order = rank_m1_11(candidates, wanted, settings.radius_km, rank_weights)
     if term_shares:
-        order = balance_rank_m1_11(order, terms, term_shares, capture_cap)
+        categories = {s.id: s.category for s in stores}
+        order = balance_rank_m1_11(order, terms, term_shares, capture_cap, categories)
     ranked = {r.store_id: r for r in order}
     return [
         replace(r, capture_score=ranked[r.public_store_id].score, capture_rank=ranked[r.public_store_id].rank)

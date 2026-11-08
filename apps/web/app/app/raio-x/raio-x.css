@@ -380,6 +380,16 @@
 .rx .oppitems li { font-size: var(--text-sm); padding: 2px 8px; border-radius: var(--radius-sm); background: var(--color-sunken); color: var(--color-ink-2); }
 @media (max-width: 767px) { .rx .opps { padding: 16px; } }
 
+/* P23 "Referência de faixa" (M1-13) */
+.rx .rngs { padding: 16px; display: grid; gap: 10px; }
+.rx .rngs h3 { font-size: 17px; }
+.rx .rngnote { margin: 4px 0 0; font-size: var(--text-sm); color: var(--color-ink-muted); }
+.rx .rnglist { list-style: none; margin: 0; padding: 0; }
+.rx .rng { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; padding: 10px 0; border-top: 1px solid var(--color-border-subtle); }
+.rx .rng .rngv { font-size: var(--text-sm); color: var(--color-ink-2); grid-column: 1; }
+.rx .rng .rngp { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: var(--text-xs); padding: 2px 8px; border-radius: var(--radius-full); border: 1px solid var(--color-border); color: var(--color-ink-muted); white-space: nowrap; }
+@media print { .rx .rng { break-inside: avoid; } }
+
 /* The PDF is this page printed (Marlon, 07/nov): A4, no navigation, no buttons, every section open. */
 .rx .print-only { display: none; }
 @page { size: A4; margin: 14mm 12mm; }

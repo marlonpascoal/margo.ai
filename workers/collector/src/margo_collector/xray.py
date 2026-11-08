@@ -19,12 +19,14 @@ from .rules import (
     FoodOverrides,
     Item,
     PairStatus,
+    PriceRange,
     RankCandidate,
     RankWeights,
     Reading,
     Settings,
     Store,
     candidate_m1_02,
+    comparison_tier_m1_13,
     exclusion_m1_02,
     full_price_m1_05,
     full_price_room_m1_07,
@@ -39,6 +41,7 @@ from .rules import (
     parity_full_m1_05,
     parity_m1_05,
     presumed_size_m1_04,
+    range_m1_13,
     rank_m1_11,
     reading_m1_07,
     similarity_m1_04,
@@ -230,6 +233,12 @@ class CalcRow:
     parity_full_cents: int | None = None
     gap_full: Fraction | None = None
     full_price_room: bool = False
+    tier: str | None = None
+    """M1-13: "exata" or "faixa"; None when the run is calculated without the two levels."""
+    range_low_cents: int | None = None
+    range_high_cents: int | None = None
+    range_stores: int | None = None
+    range_position: str | None = None
 
 
 @dataclass(frozen=True)
@@ -240,14 +249,28 @@ class CalcResult:
     total_loss_cents: int
 
 
-def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10), min_pairs: int = 1) -> CalcResult:
+def calculate(
+    items: Sequence[CalcInput],
+    band: Fraction = Fraction(1, 10),
+    min_pairs: int = 1,
+    *,
+    two_tiers: bool = False,
+) -> CalcResult:
     """M1-05 to M1-08. Skipped items stay out of parity and of the Pareto (C04). A store counts once, and
     an item
     not reviewed by a founder needs `min_pairs` distinct stores for a parity. The reading (M1-07) takes both
-    parities; the loss and the Pareto (M1-08) stay on the current one."""
+    parities; the loss and the Pareto (M1-08) stay on the current one. With `two_tiers` (M1-13) food with no
+    size written gets a price range instead, even when a person confirmed its pairs."""
     partial: dict[str, tuple[int, Fraction, Reading, int, int, Fraction]] = {}
+    ranged: dict[str, tuple[PriceRange | None, int]] = {}
     for it in items:
         if it.skipped:
+            continue
+        if two_tiers and comparison_tier_m1_13(it.own) == "faixa":
+            neighbors = one_per_store_m1_05(it.accepted)
+            enough = len(neighbors) >= min_pairs
+            found = range_m1_13(it.own.price_cents, [a.price_cents for a in neighbors]) if enough else None
+            ranged[it.key] = (found, len(neighbors))
             continue
         # M1-03: a pair accepted before a size was read from a name never mixes base units.
         unit = normalize_m1_03(it.own).unit
@@ -274,8 +297,22 @@ def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10), min_
     ranks = {r.key: r for r in pareto.rows}
     rows = []
     for it in items:
+        if it.key in ranged:
+            band_found, stores = ranged[it.key]
+            rows.append(
+                CalcRow(
+                    it.key, None, None, None, None, None, None,
+                    tier="faixa",
+                    range_low_cents=band_found.low_cents if band_found else None,
+                    range_high_cents=band_found.high_cents if band_found else None,
+                    range_stores=stores if band_found else None,
+                    range_position=band_found.position if band_found else None,
+                )
+            )
+            continue
         if it.key not in partial:
-            rows.append(CalcRow(it.key, None, None, None, None, None, None))
+            tier = "exata" if two_tiers else None
+            rows.append(CalcRow(it.key, None, None, None, None, None, None, tier=tier))
             continue
         parity, gap, reading, loss, parity_full, gap_full = partial[it.key]
         r = ranks.get(it.key)
@@ -291,6 +328,7 @@ def calculate(items: Sequence[CalcInput], band: Fraction = Fraction(1, 10), min_
                 parity_full,
                 gap_full,
                 full_price_room_m1_07(reading, gap_full, band),
+                tier="exata" if two_tiers else None,
             )
         )
     return CalcResult(tuple(rows), len(partial), pareto.items_for_80, pareto.total_loss_cents)

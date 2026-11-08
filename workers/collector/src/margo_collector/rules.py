@@ -355,12 +355,39 @@ class Normalized:
         return round_half_away(self.per_base * self.display_factor)
 
 
+_COUNT_IN_NAME = re.compile(r"(?<![\d.,])(\d{1,3})\s*(?:pecas?|pcs?|unidades?|unids?|uni|und|un)\b")
+_COUNT_IN_DESCRIPTION = re.compile(r"(?<![\d.,])(\d{1,3})\s*(?:unidades?|unids?|pecas?)\b")
+
+
+def _text(value: str | None) -> str:
+    return unicodedata.normalize("NFKD", value or "").encode("ascii", "ignore").decode().lower()
+
+
+def count_from_text_m1_03(item: Item) -> Fraction | None:
+    """M1-03 (D74): the unit count of a single food item the catalog left out: "8 peças", "40pçs" in the
+    name, or "Porção com 10 unidades" in the description when the name states none. Ambiguous means none: two
+    different counts or a "+". A count of one says nothing. Weights in a description are ingredients, never
+    read."""
+    if item_category_m1_04(item) == "bebidas" or "+" in item.name:
+        return None
+    name, description = _text(item.name), _text(item.description)
+    found = {int(n) for n in _COUNT_IN_NAME.findall(name)}
+    if not found and not re.search(r"\d", name):
+        found = {int(n) for n in _COUNT_IN_DESCRIPTION.findall(description)}
+    if len(found) != 1:
+        return None
+    count = found.pop()
+    return Fraction(count) if count > 1 else None
+
+
 def normalize_m1_03(item: Item) -> Normalized:
     """M1-03: items sold by weight (g), volume (ml) or pack are converted to a price per base unit (g, ml,
     un) before comparing. A pack without a unit count is a combo of different items: it compares only
     with other combos, whole."""
     price = Fraction(item.price_cents)
     qty = Fraction(str(item.unit_qty)) if item.unit_qty is not None else None
+    if qty is None and item.unit == "un":
+        qty = count_from_text_m1_03(item)
     if item.unit in ("g", "ml"):
         if qty is None:
             raise ValueError(f"M1-03: item {item.id} sold by {item.unit} needs unit_qty")
@@ -702,6 +729,34 @@ def pair_item_m1_04(
         return Pairing(own, norm, "revisar", "poucos pares", tuple(found))
     accepted = tuple(Candidate(c.item, c.similarity, confirms(c)) for c in found)
     return Pairing(own, norm, "normalizado" if norm.by_weight_or_pack else "auto", None, accepted)
+
+
+# M1-13 two levels of comparison ---------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class PriceRange:
+    low_cents: int
+    high_cents: int
+    position: Literal["abaixo", "dentro", "acima"]
+
+
+def comparison_tier_m1_13(item: Item) -> Literal["exata", "faixa"]:
+    """M1-13: food with no size written compares by range only; everything else exactly."""
+    if item_category_m1_04(item) in FOOD_CATEGORIES and not item_is_combo_m1_04(item):
+        return "exata" if normalize_m1_03(item).by_weight_or_pack else "faixa"
+    return "exata"
+
+
+def range_m1_13(own_cents: int, prices: Sequence[int]) -> PriceRange:
+    """M1-13: the middle half of the neighbors' real prices (nearest rank, so every end is a price someone
+    charges), and where the store's own price falls."""
+    s = sorted(prices)
+    low, high = s[(len(s) - 1) // 4], s[math.ceil(3 * (len(s) - 1) / 4)]
+    position: Literal["abaixo", "dentro", "acima"] = (
+        "abaixo" if own_cents < low else "acima" if own_cents > high else "dentro"
+    )
+    return PriceRange(low, high, position)
 
 
 # M1-05 to M1-07 parity, gap, reading --------------------------------------------------------------

@@ -29,7 +29,7 @@ from margo_common import llm
 from margo_common.log import log_event
 
 from .learning import pattern_m1_04
-from .rules import FoodOverrides, Item, Settings, item_category_m1_04
+from .rules import FoodOverrides, Item, Settings, item_category_m1_04, normalize_m1_03
 from .xray import ItemRow, PairRow, build_pairs
 
 PROMPT_VERSION = "pareamento.v1"
@@ -50,7 +50,7 @@ SYSTEM = (
     "Você confere pares de itens de cardápio de restaurantes vizinhos. Cada par foi proposto por regras"
     " como o mesmo produto, e o preço de um será usado para comparar com o do outro. Julgue como um "
     "cliente que escolhe entre os dois no aplicativo. Responda sim (true) ou não (false) a cada "
-    "pergunta, usando só nome, descrição, seção, categoria, unidades e preço. mesmo_tipo: são o mesmo "
+    "pergunta, usando só nome, descrição, seção, categoria, tamanho e preço. mesmo_tipo: são o mesmo "
     "tipo de produto? Um sashimi e uma isca não são; dois temakis são. mesma_proteina_ou_sabor: têm a "
     "mesma proteína principal, ou o mesmo sabor numa sobremesa ou bebida? mesmo_servico: são servidos "
     "do mesmo jeito? Um espeto não é um prato feito; um item mini não é o tamanho normal. "
@@ -129,13 +129,22 @@ class ReviewRun:
     answers: dict[str, bool] = field(default_factory=dict)
 
 
+def _size(item: Item) -> str | None:
+    """What the item states: "150 g", "500 ml", "8 unidades"; None when it states nothing."""
+    n = normalize_m1_03(item)
+    if not n.by_weight_or_pack:
+        return None
+    word = {"100g": "g", "100ml": "ml"}.get(n.unit, "unidades")
+    return f"{int(n.own_base_qty)} {word}"
+
+
 def _side(item: Item) -> dict[str, Any]:
     return {
         "nome": item.name,
         "descricao": item.description,
         "secao": item.section,
         "preco_centavos": item.price_cents,
-        "unidades": float(item.unit_qty) if item.unit_qty is not None else None,
+        "tamanho": _size(item),
     }
 
 

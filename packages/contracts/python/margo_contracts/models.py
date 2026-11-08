@@ -1362,6 +1362,7 @@ class XrayCategoryRank(Row):
 
 
 class XrayItem(Row):
+    comparison_tier: str | None
     created_at: datetime
     full_price_room: bool
     gap_full_pct: Decimal | None
@@ -1379,6 +1380,10 @@ class XrayItem(Row):
     parity_cents: int | None
     parity_full_cents: int | None
     public_menu_item_id: UUID
+    range_high_cents: int | None
+    range_low_cents: int | None
+    range_position: str | None
+    range_stores: int | None
     reading: XrayReading | None
     reviewed_at: datetime | None
     reviewed_by: UUID | None

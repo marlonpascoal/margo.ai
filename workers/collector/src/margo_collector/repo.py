@@ -35,6 +35,7 @@ from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual, presumed_
 @dataclass
 class MemoryXrayRepo:
     xrays: dict[str, XrayRun] = field(default_factory=dict)
+    two_tiers_on: bool = False
     pair_reviews: dict[str, ReviewRun] = field(default_factory=dict)
     pair_review_answers: dict[str, dict[str, bool]] = field(default_factory=dict)
     stores: dict[str, Store] = field(default_factory=dict)
@@ -168,6 +169,9 @@ class MemoryXrayRepo:
 
     def pair_review_params(self) -> tuple[float, int, int]:
         return DEFAULT_TARGET, DEFAULT_MAX_ROUNDS, DEFAULT_REVIEW_MIN_RUNS
+
+    def two_tiers(self, xray_id: str) -> bool:
+        return self.two_tiers_on
 
     def save_pair_review(self, xray_id: str, review: ReviewRun) -> None:
         self.pair_reviews[xray_id] = review
@@ -519,6 +523,14 @@ class PostgresXrayRepo:
                         (lid,),
                     )
 
+    def two_tiers(self, xray_id: str) -> bool:
+        rows = self._all(
+            "select public.flag_enabled('m1.comparacao_faixa', x.account_id, m.env) as on"
+            " from public.xray x join public.xray_monitor m on m.id = x.monitor_id where x.id = %s",
+            (xray_id,),
+        )
+        return bool(rows and rows[0]["on"])
+
     # M1-12 review of the automatic pairs
     def pair_review_learnings(self) -> dict[str, dict[str, bool]]:
         out: dict[str, dict[str, bool]] = {}
@@ -616,7 +628,7 @@ class PostgresXrayRepo:
         )
         items = self._all(
             "select i.id as xray_item_id, i.weekly_units, i.skipped, i.reviewed_by, i.size_presumed_ml, m.id as item_id,"
-            " m.public_store_id, m.name,"
+            " m.public_store_id, m.name, m.category as section, m.description,"
             f" coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, m.unit, m.unit_qty, {full}"
             " from public.xray_item i join public.public_menu_item m on m.id = i.public_menu_item_id"
             " left join public.public_menu_item_snapshot sn on sn.xray_id = i.xray_id and sn.public_menu_item_id = m.id"
@@ -624,7 +636,8 @@ class PostgresXrayRepo:
             (xray_id,),
         )
         pairs = self._all(
-            "select p.xray_item_id, p.size_presumed_ml, m.id, m.public_store_id, m.name, m.unit, m.unit_qty,"
+            "select p.xray_item_id, p.size_presumed_ml, m.id, m.public_store_id, m.name, m.category as section,"
+            " m.description, m.unit, m.unit_qty,"
             f" coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, {full}"
             " from public.xray_pair p join public.public_menu_item m on m.id = p.public_menu_item_id"
             " join public.xray_item i on i.id = p.xray_item_id"
@@ -643,6 +656,8 @@ class PostgresXrayRepo:
                     r["unit"],
                     r["unit_qty"],
                     full_price_cents=r["full_price_cents"],
+                    section=r["section"],
+                    description=r["description"],
                 ), _ml(r["size_presumed_ml"]))
             )
         return [
@@ -656,6 +671,8 @@ class PostgresXrayRepo:
                     r["unit"],
                     r["unit_qty"],
                     full_price_cents=r["full_price_cents"],
+                    section=r["section"],
+                    description=r["description"],
                 ), _ml(r["size_presumed_ml"])),
                 tuple(accepted.get(str(r["xray_item_id"]), [])),
                 r["weekly_units"],
@@ -671,7 +688,8 @@ class PostgresXrayRepo:
                 c.execute(
                     "update public.xray_item set parity_cents = %s, gap_pct = %s, loss_cents = %s, reading = %s,"
                     " pareto_rank = %s, pareto_cum_share = %s, parity_full_cents = %s, gap_full_pct = %s,"
-                    " full_price_room = %s where id = %s and xray_id = %s",
+                    " full_price_room = %s, comparison_tier = %s, range_low_cents = %s, range_high_cents = %s,"
+                    " range_stores = %s, range_position = %s where id = %s and xray_id = %s",
                     (
                         r.parity_cents,
                         to_numeric(r.gap) if r.gap is not None else None,
@@ -682,6 +700,11 @@ class PostgresXrayRepo:
                         r.parity_full_cents,
                         to_numeric(r.gap_full) if r.gap_full is not None else None,
                         r.full_price_room,
+                        r.tier,
+                        r.range_low_cents,
+                        r.range_high_cents,
+                        r.range_stores,
+                        r.range_position,
                         r.key,
                         xray_id,
                     ),

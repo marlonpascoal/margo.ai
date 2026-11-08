@@ -71,9 +71,9 @@ describe("feature flags (04 §6)", () => {
     expect(() => flagEnv("prod")).toThrow(/MARGO_FLAG_ENV/);
   });
 
-  it("A05_twenty_three_keys_of_04_section_6_with_m1_concorrente_m1_extracao_m3_custo_provisional_m1_portal_m1_oportunidades_ia_and_launch_screen_flags", () => {
-    expect(FLAG_KEYS).toHaveLength(23);
-    expect(new Set(FLAG_KEYS).size).toBe(23);
+  it("A05_twenty_four_keys_of_04_section_6_with_m1_concorrente_m1_extracao_m3_custo_provisional_m1_portal_m1_oportunidades_ia_and_launch_screen_flags", () => {
+    expect(FLAG_KEYS).toHaveLength(24);
+    expect(new Set(FLAG_KEYS).size).toBe(24);
     expect(FLAG_KEYS.indexOf("m1.portal")).toBe(FLAG_KEYS.indexOf("m1.extracao") + 1);
     expect(FLAG_KEYS.indexOf("m1.oportunidades_ia")).toBe(FLAG_KEYS.indexOf("m1.portal") + 1);
     expect(FLAG_KEYS.indexOf("m1.concorrente")).toBe(FLAG_KEYS.indexOf("m1.raio_x") + 1);

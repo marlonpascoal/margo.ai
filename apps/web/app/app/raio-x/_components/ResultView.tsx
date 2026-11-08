@@ -13,6 +13,7 @@ import NeighborMap from "./NeighborMap";
 import { CategoryScore, ScoreCard, ScoreMethod } from "./PriceScore";
 import NextSteps from "./NextSteps";
 import Opportunities from "./Opportunities";
+import PriceRanges from "./PriceRanges";
 import ShareMenu from "./ShareMenu";
 import TestButton from "./TestButton";
 import TestPlan from "./TestPlan";
@@ -463,6 +464,7 @@ export default function ResultView(p: ResultViewProps) {
           <span className="small muted">{compared} itens comparados</span>
         </div>
         {cats.map(catSection)}
+        <PriceRanges items={p.page.ranges} comp={comp} />
         {p.onlyYours.length ? (
           <Fold print={print} className="card catc" open={false}>
             <summary>

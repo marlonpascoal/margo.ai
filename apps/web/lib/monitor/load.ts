@@ -458,21 +458,34 @@ export interface NeighborMap {
   stores: { x_km: number; y_km: number }[];
 }
 
+/** P23 "Referência de faixa" (M1-13, migration 20261231000011): food with no size written, compared by range only. */
+export interface PriceRangeItem {
+  item_id: string;
+  name: string;
+  own_cents: number;
+  low_cents: number;
+  high_cents: number;
+  stores: number;
+  position: "abaixo" | "dentro" | "acima";
+}
+
 export interface ResultPage {
   result: Result;
   stores: ResultStores;
   headToHead: HeadToHead | null;
   /** Null when the target store has no coordinates. */
   map: NeighborMap | null;
+  ranges: PriceRangeItem[];
 }
 
 async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultPage | null> {
-  const [result, positions, stores, h2h, map] = await Promise.all([
+  const [result, positions, stores, h2h, map, ranges] = await Promise.all([
     rpc("monitor_result", { p_xray: xrayId }) as Promise<Omit<Result, "positions"> | null>,
     rpc("monitor_positions", { p_xray: xrayId }) as Promise<Result["positions"]>,
     rpc("monitor_result_stores", { p_xray: xrayId }) as Promise<{ item_id: string; stores: { name: string; price_cents: number }[] }[]>,
     rpc("monitor_head_to_head", { p_xray: xrayId }) as Promise<HeadToHead | null>,
     rpc("monitor_map", { p_xray: xrayId }) as Promise<NeighborMap | null>,
+    rpc("monitor_ranges", { p_xray: xrayId }) as Promise<PriceRangeItem[] | null>,
   ]);
   if (!result || !["ready", "delivered"].includes(result.status)) return null;
   return {
@@ -480,6 +493,7 @@ async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultP
     stores: Object.fromEntries((stores ?? []).map((s) => [s.item_id, s.stores])),
     headToHead: h2h && h2h.items?.length ? h2h : null,
     map: map ?? null,
+    ranges: ranges ?? [],
   };
 }
 

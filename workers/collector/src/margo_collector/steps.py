@@ -125,6 +125,10 @@ class XrayRepo(Protocol):
 
     def save_pairs(self, xray_id: str, rows: list[ItemRow]) -> None: ...
 
+    def two_tiers(self, xray_id: str) -> bool:
+        """M1-13: flag m1.comparacao_faixa for this monitored run."""
+        ...
+
     def pair_review_learnings(self) -> dict[str, dict[str, bool]]:
         """M1-12: each pair pattern's verdict by X-ray (public.m1_pair_review_answer)."""
         ...
@@ -305,7 +309,12 @@ def learn_food_step(
 def calc_step(repo: XrayRepo, xray_id: str) -> dict[str, int]:
     """M1-05 to M1-08; the X-ray becomes ready."""
     x = repo.load_xray(xray_id)
-    result = calculate(repo.calc_inputs(xray_id), x.settings.reading_band, x.settings.min_pairs)
+    result = calculate(
+        repo.calc_inputs(xray_id),
+        x.settings.reading_band,
+        x.settings.min_pairs,
+        two_tiers=repo.two_tiers(xray_id),
+    )
     repo.save_calc(xray_id, result)
     repo.snapshot(xray_id)
     return {"items": result.items_analyzed, "items_for_80": result.items_for_80}

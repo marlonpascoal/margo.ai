@@ -932,3 +932,8 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | Lojas por perto: {R$} a {R$} ({N} lojas). Você: {R$}. | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 range row, own store | |
 | Lojas por perto: {R$} a {R$} ({N} lojas). Ele: {R$}. | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 range row, competitor | |
 | abaixo da faixa / dentro da faixa / acima da faixa | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 range position | |
+| Ver os preços da vizinhança | `apps/web/app/app/raio-x/_components/ResultView.tsx` | P23 collapse title, D80, replaces "Ver as lojas (N)" | |
+| Você é o {N}º mais barato entre {N} lojas. / Ele é o {N}º mais barato entre {N} lojas. | `apps/web/lib/monitor/view.ts` | P23 collapse sentence, M1-10, D80 | |
+| o mais barato / o mais caro | `apps/web/lib/monitor/view.ts` | P23 collapse sentence, first and last place, D80 | |
+| Mais baratas / Até o meio / Acima do meio | `apps/web/lib/monitor/view.ts` | P23 collapse counts when the store is at or below the middle, D80 | |
+| Abaixo do meio / Até você / Até ele / Mais caras | `apps/web/lib/monitor/view.ts` | P23 collapse counts when the store is above the middle, D80 | |

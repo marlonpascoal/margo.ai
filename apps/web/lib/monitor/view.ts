@@ -265,14 +265,61 @@ export function stripGeometry(i: Pick<ResultItem, "own_cents" | "parity_cents" |
   };
 }
 
-/** "Ver as lojas": the store list with the owner's own row inserted at its price. */
-export function storeListWithOwn<T extends { name: string; price_cents: number }>(stores: T[], own: { name: string; price_cents: number }, parity: number) {
-  const rows: { name: string; price_cents: number; me: boolean; middle: boolean }[] = stores.map((s) => ({ name: s.name, price_cents: s.price_cents, me: false, middle: false }));
-  const at = rows.findIndex((r) => r.price_cents >= own.price_cents);
-  rows.splice(at < 0 ? rows.length : at, 0, { ...own, me: true, middle: false });
-  const m = rows.findIndex((r) => !r.me && r.price_cents === parity);
-  if (m >= 0) rows[m].middle = true;
-  return rows;
+/** Dots closer than this share of the track sit on top of each other instead of overlapping. */
+const SPREAD_STACK_GAP = 3;
+
+/** "Ver os preços da vizinhança" (D80): where the store sits among the neighbors' prices (M1-05 middle, M1-10 position),
+ *  with no store identified. Dots carry a position only, and the three zones always add up to the neighbors. */
+export function neighborhoodSpread(prices: number[], own: number, parity: number, who: string) {
+  const lo = Math.min(...prices, own, parity);
+  const hi = Math.max(...prices, own, parity);
+  const x = (v: number) => 3 + ((v - lo) / (hi - lo || 1)) * 94;
+  const align = (v: number) => (v < 30 ? "l" : v > 70 ? "r" : "c");
+
+  const points = [...prices.map((p) => ({ p, me: false })), { p: own, me: true }].sort((a, b) => a.p - b.p);
+  let anchor = -Infinity;
+  let level = 0;
+  const dots = points.map((d) => {
+    const left = x(d.p);
+    if (left - anchor < SPREAD_STACK_GAP) level += 1;
+    else {
+      anchor = left;
+      level = 0;
+    }
+    return { left, level, me: d.me };
+  });
+
+  const label = `${who[0].toUpperCase()}${who.slice(1)}`;
+  const total = prices.length + 1;
+  const cheaper = prices.filter((p) => p < own).length;
+  const pricier = prices.filter((p) => p > own).length;
+  const where = cheaper === 0 ? "o mais barato" : pricier === 0 ? "o mais caro" : `o ${cheaper + 1}º mais barato`;
+  const count = (test: (p: number) => boolean) => prices.filter(test).length;
+  const zones =
+    own <= parity
+      ? [
+          { label: "Mais baratas", count: count((p) => p < own) },
+          { label: "Até o meio", count: count((p) => p >= own && p <= parity) },
+          { label: "Acima do meio", count: count((p) => p > parity) },
+        ]
+      : [
+          { label: "Abaixo do meio", count: count((p) => p < parity) },
+          { label: `Até ${who.toLowerCase()}`, count: count((p) => p >= parity && p <= own) },
+          { label: "Mais caras", count: count((p) => p > own) },
+        ];
+
+  return {
+    who: label,
+    sentence: `${label} é ${where} entre ${total} lojas.`,
+    total,
+    lo,
+    hi,
+    dots,
+    levels: Math.max(...dots.map((d) => d.level)) + 1,
+    own: { left: x(own), align: align(x(own)) },
+    med: { left: x(parity), align: align(x(parity)) },
+    zones,
+  };
 }
 
 /** P23 category summary (M1-07 counts, M1-05 sum of price gaps of pode_subir items). */

@@ -24,7 +24,7 @@ import {
   scoreChangeSince,
   scoreDelta,
   stepTexts,
-  storeListWithOwn,
+  neighborhoodSpread,
   stripGeometry,
   testChangeSentence,
   testCountLine,
@@ -193,9 +193,50 @@ describe("B01 P23 result words, never money", () => {
     expect(g.range.width).toBeGreaterThanOrEqual(2);
   });
 
-  it("B01_P23_store_list_inserts_the_own_row_and_marks_the_middle", () => {
-    const rows = storeListWithOwn([{ name: "N1", price_cents: 1000 }, { name: "N2", price_cents: 1200 }, { name: "N3", price_cents: 1400 }], { name: "Você", price_cents: 1100 }, 1200);
-    expect(rows.map((r) => `${r.name}${r.me ? "*" : ""}${r.middle ? "^" : ""}`)).toEqual(["N1", "Você*", "N2^", "N3"]);
+  const neighbors = [2690, 2800, 3000, 3100, 3300, 3500, 3700, 3900];
+
+  it("B01_P23_spread_ranks_the_store_among_the_neighbors_and_itself", () => {
+    const s = neighborhoodSpread(neighbors, 2990, 3250, "Você");
+    expect(s.sentence).toBe("Você é o 3º mais barato entre 9 lojas.");
+    expect(s.total).toBe(9);
+    expect([s.lo, s.hi]).toEqual([2690, 3900]);
+  });
+
+  it("B01_P23_spread_says_cheapest_and_priciest_without_a_number", () => {
+    expect(neighborhoodSpread(neighbors, 2000, 3250, "Ele").sentence).toBe("Ele é o mais barato entre 9 lojas.");
+    expect(neighborhoodSpread(neighbors, 4000, 3250, "Você").sentence).toBe("Você é o mais caro entre 9 lojas.");
+  });
+
+  it("B01_P23_spread_zones_split_every_neighbor_below_the_middle", () => {
+    const z = neighborhoodSpread(neighbors, 2990, 3250, "Você").zones;
+    expect(z).toEqual([
+      { label: "Mais baratas", count: 2 },
+      { label: "Até o meio", count: 2 },
+      { label: "Acima do meio", count: 4 },
+    ]);
+  });
+
+  it("B01_P23_spread_zones_split_every_neighbor_above_the_middle", () => {
+    const z = neighborhoodSpread(neighbors, 3600, 3250, "Você").zones;
+    expect(z).toEqual([
+      { label: "Abaixo do meio", count: 4 },
+      { label: "Até você", count: 2 },
+      { label: "Mais caras", count: 2 },
+    ]);
+    expect(z.reduce((n, x) => n + x.count, 0)).toBe(neighbors.length);
+  });
+
+  it("B01_P23_spread_stacks_equal_prices_and_marks_only_the_own_dot", () => {
+    const s = neighborhoodSpread([3000, 3000, 3000, 4000], 3000, 3000, "Você");
+    expect(s.dots.filter((d) => d.me)).toHaveLength(1);
+    expect(s.dots.map((d) => d.level).sort()).toEqual([0, 0, 1, 2, 3]);
+    expect(s.levels).toBe(4);
+    expect(Object.keys(s.dots[0]).sort()).toEqual(["left", "level", "me"]);
+  });
+
+  it("B01_P23_spread_all_equal_prices_stay_on_the_track", () => {
+    const s = neighborhoodSpread([3000], 3000, 3000, "Você");
+    expect(s.dots.every((d) => d.left >= 3 && d.left <= 97)).toBe(true);
   });
 });
 

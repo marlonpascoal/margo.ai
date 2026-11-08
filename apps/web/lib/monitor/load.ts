@@ -441,8 +441,9 @@ export async function loadTestPlan(deps: LoadDeps, monitorId: string, xrayId: st
 
 // P23 extras (migration 20261231000001) ------------------------------------------------------------------------------
 
-/** "Ver as lojas": per analyzed item, the accepted stores, cheapest first, named as the owner may see them (Q7). */
-export type ResultStores = Record<string, { name: string; price_cents: number }[]>;
+/** "Ver os preços da vizinhança" (D80): per analyzed item, the accepted stores' prices, cheapest first. Names stop here on
+ *  the server, so no page can identify who charges what. */
+export type ResultStores = Record<string, number[]>;
 
 /** Competitor view "Você e o Concorrente": items both sell, from the newest own run whose neighborhood holds it. */
 export interface HeadToHead {
@@ -492,7 +493,7 @@ async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultP
   if (!result || !["ready", "delivered"].includes(result.status)) return null;
   return {
     result: { ...result, positions },
-    stores: Object.fromEntries((stores ?? []).map((s) => [s.item_id, s.stores])),
+    stores: Object.fromEntries((stores ?? []).map((s) => [s.item_id, s.stores.map((row) => row.price_cents)])),
     headToHead: h2h && h2h.items?.length ? h2h : null,
     map: map ?? null,
     ranges: ranges ?? [],

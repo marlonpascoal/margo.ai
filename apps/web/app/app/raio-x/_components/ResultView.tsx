@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import type { HeadToHead, History, ItemLists, MonitorStatus, Opportunities as OpportunitiesData, ResultItem, ResultPage, TestPlan as TestPlanData } from "@/lib/monitor/load";
 import { printVersion } from "@/lib/monitor/print";
 import { GROUP_LABEL, type Group } from "@/lib/monitor/rules";
-import { brl, dayMon, gapWords, headline, longWeekdayDayMon, ordinal, paretoSentence, positionChange, positionWords, readingGroups, storeListWithOwn, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
+import { brl, dayMon, gapWords, headline, longWeekdayDayMon, ordinal, paretoSentence, positionChange, positionWords, neighborhoodSpread, readingGroups, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
 import NavSelect from "@/components/NavSelect";
 import NeighborMap from "./NeighborMap";
 import { CategoryScore, ScoreCard, ScoreMethod } from "./PriceScore";
@@ -85,7 +85,48 @@ function Strip({ it, who }: { it: ResultItem; who: string }) {
   );
 }
 
-function ItemRow({ it, comp, who, ownLabel, stores, print, test }: { it: ResultItem; comp: boolean; who: string; ownLabel: string; stores: { name: string; price_cents: number }[]; print: boolean; test?: ReactNode }) {
+/** "Ver os preços da vizinhança" (D80): the distribution of the neighbors' prices, with no store identified. */
+function NeighborhoodSpread({ it, prices, who }: { it: ResultItem; prices: number[]; who: string }) {
+  const s = neighborhoodSpread(prices, it.own_cents, it.parity_cents, who);
+  return (
+    <details className="lojas">
+      <summary>Ver os preços da vizinhança</summary>
+      <div className="pz">
+        <p className="pz-s">{s.sentence}</p>
+        <div className="pz-row">
+          <span className="end">{brl(s.lo)}</span>
+          <div className="track" role="img" aria-label={`${s.sentence} ${s.who} ${brl(it.own_cents)}; meio da vizinhança ${brl(it.parity_cents)}; preços de ${brl(s.lo)} a ${brl(s.hi)}.`}>
+            <span className={`tag you a-${s.own.align}`} style={{ left: `${s.own.left}%` }} aria-hidden="true">
+              {s.who} {brl(it.own_cents)}
+            </span>
+            <div className="pz-dots" style={{ height: s.levels * 12 }} aria-hidden="true">
+              <i className="pz-med" style={{ left: `${s.med.left}%` }} />
+              {s.dots.map((d, i) => (
+                <i key={i} className={`pz-dot${d.me ? " me-dot" : ""}`} style={{ left: `${d.left}%`, bottom: d.level * 12 }} />
+              ))}
+            </div>
+            <span className={`tag md a-${s.med.align}`} style={{ left: `${s.med.left}%` }} aria-hidden="true">
+              meio {brl(it.parity_cents)}
+            </span>
+          </div>
+          <span className="end">{brl(s.hi)}</span>
+        </div>
+        <dl className="pz-zones">
+          {s.zones.map((z) => (
+            <div key={z.label}>
+              <dt>{z.label}</dt>
+              <dd>
+                {z.count} {z.count === 1 ? "loja" : "lojas"}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </details>
+  );
+}
+
+function ItemRow({ it, comp, who, prices, print, test }: { it: ResultItem; comp: boolean; who: string; prices: number[]; print: boolean; test?: ReactNode }) {
   let next: ReactNode = null;
   if (!comp && it.reading === "pode_subir")
     next = (
@@ -99,7 +140,6 @@ function ItemRow({ it, comp, who, ownLabel, stores, print, test }: { it: ResultI
         Espaço para subir quando os vizinhos não estão em promoção. Sem as promoções, o meio seria {brl(it.parity_full_cents)} e você estaria {gapWords(it.gap_full_pct)}.
       </p>
     );
-  const rows = storeListWithOwn(stores, { name: ownLabel, price_cents: it.own_cents }, it.parity_cents);
   return (
     <div className="it" data-item={it.name}>
       <div>
@@ -108,31 +148,13 @@ function ItemRow({ it, comp, who, ownLabel, stores, print, test }: { it: ResultI
           <span className={`gap ${RCLS[it.reading]}`}>{gapWords(it.gap_pct)}</span>
         </div>
         <span className="xs muted">
-          {GROUP_LABEL[it.group]} · {it.stores ?? stores.length} {(it.stores ?? stores.length) === 1 ? "loja vizinha vende" : "lojas vizinhas vendem"}
+          {GROUP_LABEL[it.group]} · {it.stores ?? prices.length} {(it.stores ?? prices.length) === 1 ? "loja vizinha vende" : "lojas vizinhas vendem"}
         </span>
         {next}
         {test}
       </div>
       <Strip it={it} who={who} />
-      {stores.length && !print ? (
-        <details className="lojas">
-          <summary>Ver as lojas ({stores.length})</summary>
-          <ol className="sl" aria-label={`Lojas que vendem ${it.name}, do menor para o maior preço`}>
-            {rows.map((r, i) => (
-              <li key={i} className={`${r.me ? "me-row" : ""} ${r.middle ? "meio-row" : ""}`}>
-                <span>
-                  {r.name}
-                  {r.middle ? <span className="xs muted"> · o meio</span> : null}
-                </span>
-                <span className="mono">{brl(r.price_cents)}</span>
-              </li>
-            ))}
-          </ol>
-          <p className="xs muted" style={{ margin: "6px 0 0" }}>
-            Do menor para o maior preço.
-          </p>
-        </details>
-      ) : null}
+      {prices.length && !print ? <NeighborhoodSpread it={it} prices={prices} who={who} /> : null}
     </div>
   );
 }
@@ -317,7 +339,7 @@ export default function ResultView(p: ResultViewProps) {
             </div>
             {g.reading === "nao_mexer" && !comp ? <p className="gwhy">Sem saber quanto custa fazer cada item, baixar o preço pode deixar a venda no prejuízo. Antes de mexer, confira o custo.</p> : null}
             {g.items.map((it) => (
-              <ItemRow key={it.item_id} it={it} comp={comp} who={who} ownLabel={comp ? `${name} (esta loja)` : "Você"} stores={stores[it.item_id] ?? []} print={print} test={testFor(it)} />
+              <ItemRow key={it.item_id} it={it} comp={comp} who={who} prices={stores[it.item_id] ?? []} print={print} test={testFor(it)} />
             ))}
           </div>
         ))}

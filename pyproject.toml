@@ -49,6 +49,7 @@ select = ["E", "F", "I", "B", "UP"]
 # The pt-BR prompt and the SINTÉTICO sample run read better unwrapped.
 "workers/collector/src/margo_collector/opportunities.py" = ["E501"]
 "workers/collector/src/margo_collector/record_opportunities.py" = ["E501"]
+"workers/collector/src/margo_collector/opportunity_eval.py" = ["E501"]
 "workers/render/src/margo_render/P01_raio_x.py" = ["E501"]
 "workers/render/src/margo_render/handlers.py" = ["E501"]
 "workers/render/src/margo_render/print_xray.py" = ["E501"]

@@ -1,12 +1,16 @@
-"""Record one real AI answer (D70) for P23 "Oportunidades" (D40). Marlon runs it; agents never do.
+"""Record real AI answers (D70) for P23 "Oportunidades" (D40). Marlon runs it; agents never do.
 
-    OPENAI_API_KEY=... uv run record-ai-opportunities          # fixtures/ai/opportunities-openai-<date>.json
-    OPENAI_API_KEY=... uv run record-ai-opportunities <model-id>
-    MARGO_AI_PROVIDER=anthropic ANTHROPIC_API_KEY=... uv run record-ai-opportunities
+    OPENAI_API_KEY=... uv run record-ai-opportunities                     # the base run
+    OPENAI_API_KEY=... uv run record-ai-opportunities --all               # every scenario in opportunity_eval
+    OPENAI_API_KEY=... uv run record-ai-opportunities --all <model-id>    # another model
+    OPENAI_API_KEY=... uv run record-ai-opportunities --scenario poucas_lojas
+    MARGO_AI_PROVIDER=anthropic ANTHROPIC_API_KEY=... uv run record-ai-opportunities --all
+    uv run score-ai-opportunities                                         # score every recording, offline
 
-Sends the facts of one SINTÉTICO run (no store name, no person) through the same `build_facts` and `build_request` the
-worker uses, and stores the provider, the request (no key) and the response as the SDK returns it, so `parse_response` and the
-number check can be tested against what the API really sends back (test_b01_opportunities.py replays it).
+Sends the facts of SINTÉTICO runs (no store name, no person) through the same `build_facts` and `build_request` the
+worker uses, and stores the provider, the scenario, the prompt version, the request (no key) and the response as the
+SDK returns it, in fixtures/ai/opportunities-<provider>-<scenario>-<date>.json, so `parse_response`, the number check
+and the scorer (opportunity_eval) can be run against what the API really sends back.
 """
 
 from __future__ import annotations
@@ -19,75 +23,53 @@ from typing import Any
 
 from margo_common import llm
 
-from .opportunities import AiOpportunityWriter, build_call, build_facts
+from .opportunities import PROMPT_VERSION, AiOpportunityWriter, build_call, build_facts
+from .opportunity_eval import BASE_POSITIONS, BASE_RESULT, OUT, SCENARIOS
 
-OUT = Path(__file__).resolve().parents[4] / "fixtures" / "ai"
+RESULT, POSITIONS = BASE_RESULT, BASE_POSITIONS
+"""The base run, as the tests and the first recording use it."""
 
 
-def _item(n: int, name: str, group: str, own: int, parity: int, low: int, high: int, reading: str, stores: int) -> dict[str, Any]:
-    return {
-        "item_id": f"00000000-0000-4000-8000-{n:012d}",
-        "name": name,
-        "group": group,
-        "own_cents": own,
-        "parity_cents": parity,
-        "low_cents": low,
-        "high_cents": high,
-        "gap_pct": round((own - parity) / parity, 4),
-        "reading": reading,
-        "stores": stores,
+def record(ai: Any, scenario: str) -> Path:
+    """One call for one scenario, written next to the other recordings."""
+    result, positions = SCENARIOS[scenario]
+    request = ai.request(build_call(build_facts(result, positions)))
+    response = llm.send(ai.provider, ai.client, request)
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / f"opportunities-{ai.provider}-{scenario}-{date.today().isoformat()}.json"
+    rec = {
+        "provider": ai.provider,
+        "scenario": scenario,
+        "prompt_version": PROMPT_VERSION,
+        "request": request,
+        "response": llm.response_dict(response),
     }
+    path.write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n")
+    return path
 
 
-ITEMS = [
-    _item(1, "X-Burger Sintético", "lanches", 2400, 2900, 2500, 3400, "pode_subir", 9),
-    _item(2, "X-Salada Sintético", "lanches", 2600, 3000, 2600, 3500, "pode_subir", 8),
-    _item(3, "X-Bacon Sintético", "lanches", 3200, 3250, 2800, 3700, "na_media", 10),
-    _item(4, "Batata Frita Sintética 400 g", "porcoes", 3900, 3200, 2600, 3800, "nao_mexer", 7),
-    _item(5, "Pudim Sintético", "sobremesas", 1200, 1250, 900, 1600, "na_media", 5),
-    _item(6, "Refrigerante Sintético 350 ml", "bebidas", 700, 650, 550, 800, "na_media", 11),
-]
-
-RESULT: dict[str, Any] = {
-    "status": "ready",
-    "target_kind": "own",
-    "radius_km": 3,
-    "reading_band": 0.1,
-    "stores_compared": 14,
-    "items_total": 9,
-    "items_analyzed": 6,
-    "below": 2,
-    "above": 1,
-    "only_yours": 2,
-    "position": {"rank": 4, "stores_ranked": 12, "price_index": 0.97, "items_compared": 6},
-    "items": ITEMS,
-    "by_category": [
-        {"group": "lanches", "items": 4, "items_compared": 3, "can_go_up": 2, "leave_alone": 0, "at_average": 1,
-         "price_gap_per_sale_cents": 900},
-        {"group": "porcoes", "items": 1, "items_compared": 1, "can_go_up": 0, "leave_alone": 1, "at_average": 0,
-         "price_gap_per_sale_cents": 0},
-        {"group": "sobremesas", "items": 2, "items_compared": 1, "can_go_up": 0, "leave_alone": 0, "at_average": 1,
-         "price_gap_per_sale_cents": 0},
-        {"group": "bebidas", "items": 2, "items_compared": 1, "can_go_up": 0, "leave_alone": 0, "at_average": 1,
-         "price_gap_per_sale_cents": 0},
-    ],
-}
-POSITIONS: dict[str, Any] = {
-    "score": {"score": 50, "items": 6},
-    "by_category": [{"group": "lanches", "score": None, "position": {"rank": 3, "stores_ranked": 9}}],
-}
+def parse_args(args: list[str]) -> tuple[list[str], str | None]:
+    """`[--all | --scenario <name>] [model-id]` to the scenarios to record and the model (None: the default)."""
+    scenarios, model, rest = ["base"], None, list(args)
+    while rest:
+        a = rest.pop(0)
+        if a == "--all":
+            scenarios = list(SCENARIOS)
+        elif a == "--scenario":
+            name = rest.pop(0) if rest else ""
+            if name not in SCENARIOS:
+                raise SystemExit(f"unknown scenario {name!r}; one of: {', '.join(SCENARIOS)}")
+            scenarios = [name]
+        else:
+            model = a
+    return scenarios, model
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = argv if argv is not None else sys.argv[1:]
-    ai = AiOpportunityWriter(model=args[0] if args else None).ai
-    request = ai.request(build_call(build_facts(RESULT, POSITIONS)))
-    response = llm.send(ai.provider, ai.client, request)
-    OUT.mkdir(parents=True, exist_ok=True)
-    path = OUT / f"opportunities-{ai.provider}-{date.today().isoformat()}.json"
-    record = {"provider": ai.provider, "request": request, "response": llm.response_dict(response)}
-    path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n")
-    print(path)
+    scenarios, model = parse_args(argv if argv is not None else sys.argv[1:])
+    ai = AiOpportunityWriter(model=model).ai
+    for scenario in scenarios:
+        print(record(ai, scenario))
     return 0
 
 

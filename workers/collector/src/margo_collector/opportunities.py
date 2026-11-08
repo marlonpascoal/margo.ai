@@ -27,7 +27,7 @@ from margo_common.log import log_event
 
 MODEL_ENV = "MARGO_OPPORTUNITIES_MODEL"
 """Overrides the provider's default model (llm.DEFAULT_MODELS)."""
-PROMPT_VERSION = "oportunidades.v2"
+PROMPT_VERSION = "oportunidades.v3"
 MAX_ITEMS = 80
 """Compared items sent per run, in the result's order (pode_subir first, largest gap first)."""
 MAX_OPPORTUNITIES = 5
@@ -38,27 +38,55 @@ SPREAD_FACTOR = 2
 """The neighbors' highest price at least twice their lowest: sizes or portions likely differ (Marlon, 08/nov)."""
 
 SYSTEM = (
-    "Você ajuda o dono de um restaurante a ler o raio-X de preços do cardápio dele no iFood. "
-    "O raio-X compara o preço de cada item com o de itens iguais das lojas vizinhas. "
+    "Você é especialista em preços de cardápio de delivery no iFood e ajuda o dono de um restaurante a ler o raio-X "
+    "de preços do cardápio dele. O raio-X compara o preço de cada item com o de itens iguais das lojas vizinhas. "
     "O meio da vizinhança é a mediana dos preços dos vizinhos. "
     "Leitura de cada item, com a faixa_da_media_pct dos fatos: pode_subir (abaixo do meio por mais que a faixa), "
     "na_media (dentro da faixa), nao_mexer (acima do meio por mais que a faixa). "
-    "Escreva de 3 a 5 oportunidades, da mais importante para a menos importante, em português do Brasil, "
-    "frases curtas e simples, como quem explica para alguém que não é da área. "
-    "Cada oportunidade tem: title (até 70 caracteres), why (até 2 frases curtas explicando o porquê), "
-    "item_ids (os ids dos itens citados, da lista de fatos) e lever, uma destas: "
+    "Campos que ajudam a decidir: tamanho_da_diferenca (pequena, moderada ou grande, já calculado); "
+    "comparacao (firme, poucas_lojas ou precos_espalhados); papel_na_categoria (mais_barato, mais_caro, no_meio ou "
+    "unico entre os itens comparados da mesma categoria no cardápio do dono); e, nos itens pode_subir, "
+    "preco_para_testar e aumento_do_teste_pct: um primeiro passo de subida já calculado, nunca maior que a faixa, "
+    "terminando em ,90 quando dá. "
+    "Escreva de 3 a 5 oportunidades, da mais importante para a menos importante. Como escolher e ordenar: "
+    "(a) pese juntos o tamanho da diferença e a força da comparação: grande e firme vem primeiro; "
+    "moderada e firme vem antes de grande com comparação fraca; "
+    "(b) pode_subir é a melhor oportunidade: proponha testar o preco_para_testar, um item por vez, olhar as vendas "
+    "por algumas semanas e só então pensar no próximo passo; diga que é um primeiro passo e que o meio está mais "
+    "acima; "
+    "(c) quando vários itens da mesma categoria estão abaixo, faça uma oportunidade da categoria, cite os itens e "
+    "diga para começar pelo de maior diferença, sem subir todos de uma vez; "
+    "(d) o item mais_barato da categoria costuma ser a porta de entrada do cardápio: suba com mais cuidado e "
+    "prefira começar por outro item da categoria; o item mais_caro serve de referência para os outros: se ele está "
+    "abaixo do meio, a categoria inteira parece barata e ele é um bom primeiro teste; "
+    "(e) bebidas e adicionais: o cliente compara menos esses preços; uma bebida ou adicional nao_mexer com "
+    "tamanho_da_diferenca moderada pede manter, dizendo que o preço está perto do meio e que baixar quase nunca "
+    "traz mais pedidos; use rever_custo nesses grupos só com diferença grande; "
+    "(f) nao_mexer: não sugira baixar direto; use rever_custo e diga que baixar pode vender mais, mas só o custo "
+    "diz se compensa; "
+    "(g) inclua uma oportunidade manter para onde o dono está mais forte (a categoria com mais itens na_media ou o "
+    "maior itens_alinhados_pct), para ele não mexer no que já está certo; "
+    "(h) use acompanhar quando a comparação é poucas_lojas, e diga que com mais lojas comparadas no próximo "
+    "raio-X a leitura fica mais firme; "
+    "(i) não repita o mesmo item em duas oportunidades e varie as alavancas quando os fatos permitem. "
+    "Comparação fraca: com poucas_lojas ou precos_espalhados, ou num prato ou porção sem o peso no nome, diga no "
+    "porquê que o tamanho ou a porção dos vizinhos pode ser diferente, e que ainda assim o preço de face já mostra "
+    "a diferença. "
+    "Cada oportunidade tem: title (até 70 caracteres, com a ação e o nome do item ou da categoria, sem "
+    "os nomes dos campos), why (até 2 frases curtas: a primeira com os números do item, como seu "
+    "preço, o meio e a diferença; a segunda com o que fazer e o cuidado), item_ids (os ids dos itens citados, da "
+    "lista de fatos) e lever, uma destas: "
     "subir_preco (o item está abaixo do meio: subir o preço aumenta o que entra por venda, mas pode vender menos), "
-    "manter (o preço está alinhado com a vizinhança: não mexer agora), "
+    "manter (o preço está alinhado com a vizinhança, ou a diferença não pede mudança: não mexer agora), "
     "rever_custo (o item está acima do meio: baixar o preço pode vender mais, mas só vale a pena sabendo o custo), "
-    "acompanhar (vale olhar de novo no próximo raio-X). "
+    "acompanhar (a comparação ainda é fraca: vale olhar de novo no próximo raio-X). "
+    "Escrita: português do Brasil, frases curtas e simples, como quem explica para alguém que não é da área; "
+    "sem palavras técnicas como elasticidade, ticket, markup ou âncora. "
     "Regras: use só números que aparecem nos fatos, escritos como nos fatos (R$ 32,00, 12%). "
-    "Não faça contas, não some, não arredonde, não invente números. "
-    "O custo dos itens é desconhecido: nunca fale em lucro, margem ou ganho. "
-    "Ao sugerir subir, diga que pode vender menos; ao sugerir equilibrar um preço alto, diga que pode vender mais. "
-    "Cada item traz a comparacao: firme, poucas_lojas ou precos_espalhados. "
-    "Com poucas_lojas ou precos_espalhados, ou num prato ou porção sem o peso no nome, diga no porquê que o tamanho "
-    "ou a porção dos vizinhos pode ser diferente, e que ainda assim o preço de face já mostra a diferença. "
-    "Use acompanhar quando a comparação ainda é fraca, e diga que com mais lojas comparadas a leitura fica mais firme. "
+    "Não faça contas, não some, não arredonde, não invente números, nem prazos ou quantidades com algarismos. "
+    "O custo dos itens é desconhecido: nunca fale em lucro, margem ou ganho, nem prometa dinheiro a mais. "
+    "Ao sugerir subir, diga que pode vender menos; ao falar de baixar um preço alto, diga que pode vender mais e "
+    "que só o custo diz se compensa. "
     "Não use travessão. Não cite nomes de lojas."
 )
 
@@ -185,17 +213,77 @@ def comparison_strength(stores: Any, low_cents: Any, high_cents: Any) -> str:
     return "firme"
 
 
+CHARM_CENTS = 90
+"""Delivery menus price at ",90" (R$ 29,90): the test price lands on the highest such point it can."""
+
+
+def gap_size(gap_fraction: Any, band: Any) -> str | None:
+    """M1-06 gap against the M1-07 band, as a word for the AI to weigh: `pequena` inside the band, `moderada` up to
+    twice the band, `grande` beyond it. No number on screen comes from it; it only orders the opportunities."""
+    if gap_fraction is None:
+        return None
+    g, b = abs(Decimal(str(gap_fraction))), Decimal(str(band))
+    if g < b:
+        return "pequena"
+    return "moderada" if g < 2 * b else "grande"
+
+
+def charm_at_or_below(cents: int) -> int:
+    """The highest price ending in ,90 at or below `cents` (R$ 26,40 -> R$ 25,90; R$ 29,90 -> R$ 29,90)."""
+    whole, frac = divmod(int(cents), 100)
+    return whole * 100 + CHARM_CENTS if frac >= CHARM_CENTS else (whole - 1) * 100 + CHARM_CENTS
+
+
+def first_test_price(own_cents: Any, parity_cents: Any, band: Any) -> int | None:
+    """First test price for a `pode_subir` item (M1-07), from the own price, the M1-05 parity and the M1-07 band.
+
+    A raise is tested one step at a time: the step is capped at the band over the own price (one test never moves
+    more than the band that defines "na média"), never past the parity, and lands on the ",90" point at or below that
+    cap when one is above the own price; otherwise the cap itself. A `pode_subir` item sits more than the band below
+    the parity, so the test is always a first step and the middle stays further up. None without room above the own
+    price."""
+    if own_cents is None or parity_cents is None or int(parity_cents) <= int(own_cents):
+        return None
+    own, parity = int(own_cents), int(parity_cents)
+    cap = min(parity, own + int((Decimal(own) * Decimal(str(band))).to_integral_value(rounding="ROUND_FLOOR")))
+    charm = charm_at_or_below(cap)
+    price = charm if charm > own else cap
+    return price if price > own else None
+
+
+def category_role(own_cents: Any, group_prices: Sequence[int]) -> str | None:
+    """Where an item sits in its own category ladder, among the run's compared items of the same M1-04 group:
+    `unico`, `mais_barato` (the entry item), `mais_caro` (the reference item) or `no_meio`."""
+    if own_cents is None or not group_prices:
+        return None
+    if len(group_prices) == 1:
+        return "unico"
+    low, high = min(group_prices), max(group_prices)
+    if low == high:
+        return "no_meio"
+    if int(own_cents) == low:
+        return "mais_barato"
+    return "mais_caro" if int(own_cents) == high else "no_meio"
+
+
 def build_facts(result: Mapping[str, Any], positions: Mapping[str, Any] | None) -> Facts:
     """M1-05 to M1-12 of one run, from monitor_result and monitor_positions, in the shape the prompt reads.
 
     Per compared item: name, category group, own price, parity (meio), low and high of the neighbors, gap % (M1-06),
-    reading (M1-07), stores, and the price difference to the middle. Per category: counts, % of items aligned (M1-12 v3)
-    and position (M1-10 per category). The store position (M1-10), the menu % aligned and the only-yours count."""
+    reading (M1-07), stores, the price difference to the middle, the comparison strength, the gap size against the band,
+    the item's place in its own category ladder and, for `pode_subir`, the first test price (`first_test_price`). Per
+    category: counts, % of items aligned (M1-12 v3), position (M1-10 per category) and the owner's lowest and highest
+    compared price. The store position (M1-10), the menu % aligned and the only-yours count."""
     f = Facts(prompt={})
     positions = positions or {}
     score = positions.get("score") or {}
     pos = result.get("position") or positions.get("store_position")
     cat_pos = {c.get("group"): c for c in positions.get("by_category") or []}
+    band = result.get("reading_band", 0.1)
+    ladder: dict[Any, list[int]] = {}
+    for it in result.get("items") or []:
+        if it.get("own_cents") is not None:
+            ladder.setdefault(it.get("group"), []).append(int(it["own_cents"]))
 
     categories = []
     for c in result.get("by_category") or []:
@@ -214,6 +302,8 @@ def build_facts(result: Mapping[str, Any], positions: Mapping[str, Any] | None) 
                 "diferenca_por_venda_dos_que_podem_subir": _cents(f, c.get("price_gap_per_sale_cents")),
                 "posicao_na_categoria": _count(f, rank.get("rank")),
                 "lojas_na_categoria": _count(f, rank.get("stores_ranked")),
+                "seu_menor_preco": _cents(f, min(ladder[group]) if ladder.get(group) else None),
+                "seu_maior_preco": _cents(f, max(ladder[group]) if ladder.get(group) else None),
             }
         )
 
@@ -223,27 +313,32 @@ def build_facts(result: Mapping[str, Any], positions: Mapping[str, Any] | None) 
         f.item_ids.add(iid)
         own, parity = it.get("own_cents"), it.get("parity_cents")
         gap = _pct(f, it.get("gap_pct"))
-        items.append(
-            {
-                "id": iid,
-                "nome": _words(f, it.get("name")),
-                "grupo": GROUP_LABEL.get(it.get("group"), it.get("group")),
-                "seu_preco": _cents(f, own),
-                "meio_da_vizinhanca": _cents(f, parity),
-                "vizinhos_de": _cents(f, it.get("low_cents")),
-                "vizinhos_ate": _cents(f, it.get("high_cents")),
-                "diferenca_pct": gap,
-                "em_relacao_ao_meio": "no meio" if not gap else ("abaixo" if gap < 0 else "acima"),
-                "diferenca_para_o_meio": _cents(f, None if own is None or parity is None else abs(parity - own)),
-                "leitura": it.get("reading"),
-                "lojas": _count(f, it.get("stores")),
-                "comparacao": comparison_strength(it.get("stores"), it.get("low_cents"), it.get("high_cents")),
-            }
-        )
+        row: dict[str, Any] = {
+            "id": iid,
+            "nome": _words(f, it.get("name")),
+            "grupo": GROUP_LABEL.get(it.get("group"), it.get("group")),
+            "seu_preco": _cents(f, own),
+            "meio_da_vizinhanca": _cents(f, parity),
+            "vizinhos_de": _cents(f, it.get("low_cents")),
+            "vizinhos_ate": _cents(f, it.get("high_cents")),
+            "diferenca_pct": gap,
+            "em_relacao_ao_meio": "no meio" if not gap else ("abaixo" if gap < 0 else "acima"),
+            "diferenca_para_o_meio": _cents(f, None if own is None or parity is None else abs(parity - own)),
+            "leitura": it.get("reading"),
+            "lojas": _count(f, it.get("stores")),
+            "comparacao": comparison_strength(it.get("stores"), it.get("low_cents"), it.get("high_cents")),
+            "tamanho_da_diferenca": gap_size(it.get("gap_pct"), band),
+            "papel_na_categoria": category_role(own, ladder.get(it.get("group")) or []),
+        }
+        price = first_test_price(own, parity, band) if it.get("reading") == "pode_subir" else None
+        if price is not None:
+            row["preco_para_testar"] = _cents(f, price)
+            row["aumento_do_teste_pct"] = _whole_pct(f, round_half_away((Decimal(price) - own) * 100 / own))
+        items.append(row)
 
     f.prompt = {
         "raio_km": _count(f, result.get("radius_km")),
-        "faixa_da_media_pct": _pct(f, result.get("reading_band", 0.1)),
+        "faixa_da_media_pct": _pct(f, band),
         "lojas_comparadas": _count(f, result.get("stores_compared")),
         "itens_no_cardapio": _count(f, result.get("items_total")),
         "itens_comparados": _count(f, result.get("items_analyzed")),

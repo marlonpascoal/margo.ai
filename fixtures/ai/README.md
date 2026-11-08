@@ -22,6 +22,14 @@ From the repository root, with the key in the environment only for the command:
     OPENAI_API_KEY=... uv run record-ai                              # worker-match (D14)
     OPENAI_API_KEY=... uv run record-ai-opportunities <model-id>     # another model
     MARGO_AI_PROVIDER=anthropic ANTHROPIC_API_KEY=... uv run record-ai-opportunities
+    OPENAI_API_KEY=... uv run record-ai-opportunities --all          # P23, every SINTÉTICO scenario
+    uv run score-ai-opportunities                                    # score the P23 recordings, offline
+
+`record-ai-opportunities --all` sends the six runs in `margo_collector.opportunity_eval.SCENARIOS` (base, many
+items below, most above, few stores, spread portions, beverages slightly above) and writes
+`opportunities-<provider>-<scenario>-<date>.json` with the prompt version. `score-ai-opportunities` scores each one:
+the check's pass rate, the levers used, and the rules the check does not enforce (3 to 5 answers, title and why
+length, the caveat on weak comparisons, "pode vender menos" on a raise, the cost on `rever_custo`, no item twice).
 
 What each one sends, through the same request builder the worker uses:
 

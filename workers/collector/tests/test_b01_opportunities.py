@@ -6,6 +6,7 @@ All items are SINTÉTICO."""
 from __future__ import annotations
 
 import json
+import re
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,7 @@ from margo_collector.opportunities import (
     opportunities_step,
     parse_response,
 )
+from margo_collector.opportunity_eval import SCENARIOS
 from margo_collector.record_opportunities import POSITIONS, RESULT
 from margo_common import llm
 
@@ -68,8 +70,15 @@ def test_B01_opportunities_facts_per_item_category_and_store(facts):
         "leitura": "pode_subir",
         "lojas": 9,
         "comparacao": "firme",
+        "tamanho_da_diferenca": "moderada",
+        "papel_na_categoria": "mais_barato",
+        "preco_para_testar": "R$ 25,90",
+        "aumento_do_teste_pct": 8,
     }
+    bacon = next(i for i in p["itens"] if i["nome"] == "X-Bacon Sintético")
+    assert "preco_para_testar" not in bacon and bacon["papel_na_categoria"] == "mais_caro"
     lanches = p["categorias"][0]
+    assert lanches["seu_menor_preco"] == "R$ 24,00" and lanches["seu_maior_preco"] == "R$ 32,00"
     assert lanches["grupo"] == "Lanches" and lanches["pode_subir"] == 2 and lanches["comparados"] == 3
     assert lanches["diferenca_por_venda_dos_que_podem_subir"] == "R$ 9,00"
     assert lanches["posicao_na_categoria"] == 3 and lanches["lojas_na_categoria"] == 9
@@ -90,10 +99,67 @@ def test_B01_opportunities_comparison_strength_marks_few_stores_and_spread_price
     assert opportunities.comparison_strength(None, None, None) == "poucas_lojas"
 
 
-def test_B01_opportunities_prompt_v2_asks_for_the_size_caveat_and_more_stores():
-    assert PROMPT_VERSION == "oportunidades.v2"
+def test_B01_opportunities_prompt_v3_keeps_the_caveat_and_adds_the_specialist_rules():
+    assert PROMPT_VERSION == "oportunidades.v3"
     for words in ("poucas_lojas", "precos_espalhados", "preço de face", "mais lojas comparadas"):
+        assert words in opportunities.SYSTEM, "v2 caveat kept (Marlon, 08/nov)"
+    for words in (
+        "tamanho_da_diferenca", "papel_na_categoria", "preco_para_testar", "um item por vez",
+        "primeiro passo", "porta de entrada", "bebidas e adicionais", "mais forte", "só o custo diz se compensa",
+    ):
         assert words in opportunities.SYSTEM
+    assert set(re.findall(r"\d+(?:,\d+)?", opportunities.SYSTEM)) <= {"90", "3", "5", "70", "2", "32,00", "12"}, (
+        "only the format examples and the limits: no sample price, step or deadline the model could copy"
+    )
+
+
+# Deterministic facts for the recommendations --------------------------------------------------------------------------
+
+
+def test_B01_opportunities_gap_size_against_the_band():
+    assert opportunities.gap_size(-0.05, 0.1) == "pequena"
+    assert opportunities.gap_size(-0.1, 0.1) == "moderada"
+    assert opportunities.gap_size(0.1125, 0.1) == "moderada"
+    assert opportunities.gap_size(0.2, 0.1) == "grande"
+    assert opportunities.gap_size(-0.33, 0.1) == "grande"
+    assert opportunities.gap_size(None, 0.1) is None
+
+
+def test_B01_opportunities_charm_price_at_or_below():
+    assert opportunities.charm_at_or_below(2640) == 2590
+    assert opportunities.charm_at_or_below(2990) == 2990
+    assert opportunities.charm_at_or_below(2999) == 2990
+    assert opportunities.charm_at_or_below(3000) == 2990
+    assert opportunities.charm_at_or_below(440) == 390
+
+
+def test_B01_opportunities_first_test_price_is_one_step_capped_by_the_band_and_the_middle():
+    """M1-07 band caps the step; the parity caps it too; the ",90" point at or below wins when above the own price."""
+    assert opportunities.first_test_price(2400, 2900, 0.1) == 2590, "cap R$ 26,40, charm R$ 25,90"
+    assert opportunities.first_test_price(5500, 8200, 0.1) == 5990, "a large gap still moves one step"
+    assert opportunities.first_test_price(400, 450, 0.1) == 440, "no ,90 above the own price: the cap itself"
+    assert opportunities.first_test_price(2600, 2650, 0.1) == 2650, "the middle caps the step"
+    assert opportunities.first_test_price(2600, 2600, 0.1) is None
+    assert opportunities.first_test_price(None, 2900, 0.1) is None
+    assert opportunities.first_test_price(2990, 3200, 0.1) == 3190, "the ,90 point under the middle"
+
+
+def test_B01_opportunities_category_role_in_the_own_ladder():
+    assert opportunities.category_role(2400, [2400]) == "unico"
+    assert opportunities.category_role(2400, [2400, 2600, 3200]) == "mais_barato"
+    assert opportunities.category_role(3200, [2400, 2600, 3200]) == "mais_caro"
+    assert opportunities.category_role(2600, [2400, 2600, 3200]) == "no_meio"
+    assert opportunities.category_role(890, [890, 890]) == "no_meio"
+    assert opportunities.category_role(None, [890]) is None
+
+
+def test_B01_opportunities_check_accepts_the_test_price_and_step(facts):
+    kept = check_opportunity(
+        op("Teste R$ 25,90 no X-Burger Sintético", "Está 17% abaixo do meio de R$ 29,00. Subir 8% é um primeiro passo e pode vender menos."),
+        facts,
+    )
+    assert kept is not None
+    assert not numbers_ok("Teste R$ 26,90", facts), "a price the facts do not carry is still dropped"
 
 
 def test_B01_opportunities_request_sends_the_facts_and_no_store_name(facts):
@@ -289,5 +355,6 @@ def test_B01_D70_opportunities_recorded_answers_parse_and_check(path):
         pytest.skip("no opportunities recording yet: fixtures/ai/README.md")
     rec = json.loads(path.read_text())
     raw = parse_response(rec["response"], rec["provider"])
-    kept, dropped = check_all(raw, build_facts(RESULT, POSITIONS))
+    result, positions = SCENARIOS[rec.get("scenario") or "base"]
+    kept, dropped = check_all(raw, build_facts(result, positions))
     assert len(kept) + dropped == len(raw)

@@ -18,7 +18,9 @@ if (!url || !out) {
 
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ locale: "pt-BR", timezoneId: "America/Sao_Paulo" });
+  // A4 printable width (210 mm minus the 12 mm side margins of @page, at 96 dpi): the layout is measured at the width
+  // it prints at, never at a desktop window's.
+  const page = await browser.newPage({ locale: "pt-BR", timezoneId: "America/Sao_Paulo", viewport: { width: 703, height: 1000 } });
   const res = await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
   if (!res || res.status() !== 200) {
     console.error(JSON.stringify({ error: "print_page_status", status: res?.status() ?? null }));

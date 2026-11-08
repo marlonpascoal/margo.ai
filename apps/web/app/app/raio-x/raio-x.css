@@ -329,9 +329,15 @@
   .rx .catc, .rx .rg { break-inside: auto; }
   .rx .it { break-inside: avoid; }
   .rx .catc > summary::after, .rx .catc[open] > summary::after, .rx .how > summary::after, .rx .how[open] > summary::after { content: none; }
-  .rx .lead2 { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+  /* Print media queries see the whole A4 width (794 px) while the printable box is 703 px: desktop rules would
+     overflow it. The lead stacks and every box stays inside the printable width. */
+  .rx-main, .rx .card { max-width: 100%; box-sizing: border-box; }
+  .rx-main { width: 100%; padding-right: 1px; }
+  .rx .lead2 { grid-template-columns: minmax(0, 1fr); }
   .rx .it { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
   .rx .sl { max-height: none; overflow: visible; }
   .rx * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body, .rx { background: var(--color-surface) !important; }
+  .rx h1, .rx h2, .rx h3, .rx .catc > summary, .rx .rgh, .rx .catgh { break-after: avoid; }
 }
 .rx .synthetic-mark { font-family: var(--font-mono); font-weight: 600; letter-spacing: .08em; color: var(--color-warn); border: 1px dashed var(--color-warn-border); padding: 2px 8px; border-radius: var(--radius-xs); }

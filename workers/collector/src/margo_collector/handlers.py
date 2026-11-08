@@ -15,6 +15,7 @@ from margo_common.runner import JobRun
 from pydantic import BaseModel
 
 from .ai_attrs import reader_from_env
+from .family import classifier_from_env
 from .opportunities import opportunities_step, writer_from_env
 from .pair_review import reviewer_from_env
 from .repo import PostgresXrayRepo
@@ -59,7 +60,9 @@ def xray_pair(run: JobRun[XrayPayload]) -> dict[str, int | str | bool | float | 
     """C03 "Confirmar N lojas": M1-03, M1-04 and the M1-12 review. Without the AI key they are skipped."""
     repo = PostgresXrayRepo(local_db_url())
     try:
-        return pair_step(repo, str(run.payload.xray_id), reader_from_env(), reviewer_from_env())
+        return pair_step(
+            repo, str(run.payload.xray_id), reader_from_env(), reviewer_from_env(), classifier_from_env()
+        )
     finally:
         repo.close()
 

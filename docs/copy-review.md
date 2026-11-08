@@ -926,7 +926,9 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | Escolha a cozinha da loja: ela define quem conta como concorrente. | `apps/web/app/app/raio-x/_components/NovoForm.tsx` | P20 hint when the catalog does not know the store, D71 | |
 | revisar: revisão de IA incompleta | `workers/collector/src/margo_collector/pair_review.py` | C04 and doubts, an item whose pairs the AI could not finish reviewing, M1-12 | |
 | Referência de faixa | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 section title, M1-13 | |
-| Comida sem tamanho escrito não dá para comparar item a item, porque a porção pode ser outra. Aqui é só referência: o que lojas por perto cobram por itens parecidos. | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 section note, M1-13 | |
+| Comparamos por tipo de prato, não item a item: não sabemos o tamanho nem a qualidade do que cada loja serve. Só você sabe se o seu é maior ou melhor. | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 section note, M1-13, D75 | |
+| Acima da faixa faz sentido se o seu for maior ou melhor. Se o do vizinho for maior pelo mesmo preço, fica difícil defender. | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 section note, M1-13, D75 | |
+| {Tipo de prato} por perto: {R$} a {R$} ({N} lojas). Você: {R$}. | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 range row, D75 | |
 | Lojas por perto: {R$} a {R$} ({N} lojas). Você: {R$}. | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 range row, own store | |
 | Lojas por perto: {R$} a {R$} ({N} lojas). Ele: {R$}. | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 range row, competitor | |
 | abaixo da faixa / dentro da faixa / acima da faixa | `apps/web/app/app/raio-x/_components/PriceRanges.tsx` | P23 range position | |

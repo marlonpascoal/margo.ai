@@ -741,6 +741,14 @@ class PriceRange:
     position: Literal["abaixo", "dentro", "acima"]
 
 
+@dataclass(frozen=True)
+class FamilyRange:
+    range: PriceRange
+    stores: int
+    basis: str
+    """What it compares with, in words: "temaki de salmão"."""
+
+
 def comparison_tier_m1_13(item: Item) -> Literal["exata", "faixa"]:
     """M1-13: food with no size written compares by range only; everything else exactly."""
     if item_category_m1_04(item) in FOOD_CATEGORIES and not item_is_combo_m1_04(item):

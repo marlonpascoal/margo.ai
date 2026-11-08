@@ -49,6 +49,11 @@ _SECTION_RULES: tuple[tuple[Category, re.Pattern[str]], ...] = (
 )
 
 
+_JAPANESE_DISH = re.compile(
+    r"\b(?:sashimis?|sushis?|\w*makis?|niguiris?|nigiris?|temakis?|carpaccios?|ceviches?|pokes?|combinados?)\b"
+)
+
+
 def section_category(section: str | None) -> Category | None:
     """The category a menu section names; None for "Os Mais Vendidos" and other non-sections, and for a section whose
     name says nothing ("Clássicos"): the item's own words then decide."""
@@ -374,6 +379,9 @@ def category_m1_04(
     n = plain(name)
     if _reads_as_drink(n) and section_category(taxonomy_level2) is None:
         return "bebidas"
+    # D75: a sashimi is a dish even when the menu files it under "Porções".
+    if section_category(section) == "porcoes" and _JAPANESE_DISH.search(n):
+        return "pratos"
     return (
         section_category(taxonomy_level2)
         or section_category(section)

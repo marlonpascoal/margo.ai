@@ -10,7 +10,7 @@ as the SDK returned it, and is named `<use>-<provider>-<date>.json`. Check each 
 - `MARGO_AI_PROVIDER`: `openai` (default) or `anthropic`.
 - `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`: the provider's key, read by name; never logged or stored. Without it,
   each AI step is skipped with a note and the rules alone decide.
-- Model per use, optional: `MARGO_MATCH_MODEL`, `MARGO_PAIR_MODEL`, `MARGO_REVIEW_MODEL`, `MARGO_OPPORTUNITIES_MODEL`. Defaults:
+- Model per use, optional: `MARGO_MATCH_MODEL`, `MARGO_PAIR_MODEL`, `MARGO_REVIEW_MODEL`, `MARGO_FAMILY_MODEL`, `MARGO_OPPORTUNITIES_MODEL`. Defaults:
   `gpt-6.1-sol` (OpenAI), `claude-sonnet-5-5` (Anthropic).
 
 ## Record

@@ -934,6 +934,16 @@ class M1AttrLearningRun(Row):
     xray_id: UUID
 
 
+class M1ItemFamily(Row):
+    created_at: datetime
+    family: str
+    model: str
+    pattern: str
+    protein: str
+    size_class: str
+    updated_at: datetime
+
+
 class M1PairReviewAnswer(Row):
     approved: bool
     created_at: datetime
@@ -1380,6 +1390,7 @@ class XrayItem(Row):
     parity_cents: int | None
     parity_full_cents: int | None
     public_menu_item_id: UUID
+    range_basis: str | None
     range_high_cents: int | None
     range_low_cents: int | None
     range_position: str | None

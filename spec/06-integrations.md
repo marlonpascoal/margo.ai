@@ -49,7 +49,7 @@ Each integration is an adapter behind an interface in `workers/common` or `apps/
 
 - **Provider (D70, Marlon 08/nov):** OpenAI (Responses API, strict JSON schema), default model `gpt-6.1-sol`. One
   module, `margo_common.llm`, knows the provider: `MARGO_AI_PROVIDER=openai|anthropic`, the key by name
-  (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`), the model per use (`MARGO_MATCH_MODEL`, `MARGO_PAIR_MODEL`, `MARGO_REVIEW_MODEL`,
+  (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`), the model per use (`MARGO_MATCH_MODEL`, `MARGO_PAIR_MODEL`, `MARGO_REVIEW_MODEL`, `MARGO_FAMILY_MODEL`,
   `MARGO_OPPORTUNITIES_MODEL`). A benchmark may change the provider later without touching the uses.
 - **Uses:** `worker-match` (below); M1-04 Stage 2 attributes and P23 "Oportunidades" in `worker-collector`. Each use
   validates every answer; the provider never decides what is stored.

@@ -17,6 +17,7 @@ from typing import Any, Protocol
 
 from margo_common.log import log_event
 
+from .family import Family, FamilyClassifier, classify_step_m1_13, family_ranges_m1_13
 from .ifood_public import ParsedStore
 from .learning import (
     Answer,
@@ -129,6 +130,14 @@ class XrayRepo(Protocol):
         """M1-13: flag m1.comparacao_faixa for this monitored run."""
         ...
 
+    def item_families(self) -> dict[str, Family]:
+        """M1-13: every classified pattern (public.m1_item_family)."""
+        ...
+
+    def save_item_families(self, found: dict[str, Family], model: str) -> None:
+        """M1-13: new patterns; an existing one stays."""
+        ...
+
     def pair_review_learnings(self) -> dict[str, dict[str, bool]]:
         """M1-12: each pair pattern's verdict by X-ray (public.m1_pair_review_answer)."""
         ...
@@ -221,7 +230,11 @@ def neighborhood_job_step(
 
 
 def pair_step(
-    repo: XrayRepo, xray_id: str, reader: AttrReader | None = None, reviewer: PairReviewer | None = None
+    repo: XrayRepo,
+    xray_id: str,
+    reader: AttrReader | None = None,
+    reviewer: PairReviewer | None = None,
+    classifier: FamilyClassifier | None = None,
 ) -> dict[str, int | str | bool | float | None]:
     """M1-03 and M1-04: the target's items against the items of the stores in the set, once enough captures
     finished. A store whose capture is still running is left out and marked; when it finishes the pairing
@@ -244,6 +257,9 @@ def pair_step(
     pool = repo.items_of_stores([s for s in repo.compared_store_ids(xray_id) if s not in set(left_out)])
     decisions = repo.pair_decisions(xray_id)
     food = learn_food_step(repo, xray_id, own, pool, decisions, reader)
+    if classifier is not None and repo.two_tiers(xray_id):
+        found = classify_step_m1_13([*own, *pool], repo.item_families(), classifier, xray_id)
+        repo.save_item_families(found, classifier.model)
     target, max_rounds, min_runs = repo.pair_review_params()
     review = review_pairing_m1_12(
         own,
@@ -309,11 +325,20 @@ def learn_food_step(
 def calc_step(repo: XrayRepo, xray_id: str) -> dict[str, int]:
     """M1-05 to M1-08; the X-ray becomes ready."""
     x = repo.load_xray(xray_id)
+    inputs = repo.calc_inputs(xray_id)
+    two_tiers = repo.two_tiers(xray_id)
+    ranges = (
+        family_ranges_m1_13(
+            [(i.key, i.own) for i in inputs],
+            repo.items_of_stores(repo.compared_store_ids(xray_id)),
+            repo.item_families(),
+            x.settings.min_pairs,
+        )
+        if two_tiers
+        else {}
+    )
     result = calculate(
-        repo.calc_inputs(xray_id),
-        x.settings.reading_band,
-        x.settings.min_pairs,
-        two_tiers=repo.two_tiers(xray_id),
+        inputs, x.settings.reading_band, x.settings.min_pairs, two_tiers=two_tiers, family_ranges=ranges
     )
     repo.save_calc(xray_id, result)
     repo.snapshot(xray_id)

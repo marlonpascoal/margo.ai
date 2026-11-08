@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from fractions import Fraction
 from typing import Any
 
+from .family import Family
 from .fetcher import CACHE_DAYS, CachedPage
 from .ifood_public import ParsedStore
 from .learning import (
@@ -36,6 +37,7 @@ from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual, presumed_
 class MemoryXrayRepo:
     xrays: dict[str, XrayRun] = field(default_factory=dict)
     two_tiers_on: bool = False
+    families: dict[str, Family] = field(default_factory=dict)
     pair_reviews: dict[str, ReviewRun] = field(default_factory=dict)
     pair_review_answers: dict[str, dict[str, bool]] = field(default_factory=dict)
     stores: dict[str, Store] = field(default_factory=dict)
@@ -172,6 +174,13 @@ class MemoryXrayRepo:
 
     def two_tiers(self, xray_id: str) -> bool:
         return self.two_tiers_on
+
+    def item_families(self) -> dict[str, Family]:
+        return dict(self.families)
+
+    def save_item_families(self, found: dict[str, Family], model: str) -> None:
+        for key, fam in found.items():
+            self.families.setdefault(key, fam)
 
     def save_pair_review(self, xray_id: str, review: ReviewRun) -> None:
         self.pair_reviews[xray_id] = review
@@ -531,6 +540,19 @@ class PostgresXrayRepo:
         )
         return bool(rows and rows[0]["on"])
 
+    def item_families(self) -> dict[str, Family]:
+        rows = self._all("select pattern, family, protein, size_class from public.m1_item_family")
+        return {r["pattern"]: Family(r["family"], r["protein"], r["size_class"]) for r in rows}
+
+    def save_item_families(self, found: dict[str, Family], model: str) -> None:
+        with self._tx() as c:
+            for key, fam in found.items():
+                c.execute(
+                    "insert into public.m1_item_family (pattern, family, protein, size_class, model)"
+                    " values (%s, %s, %s, %s, %s) on conflict (pattern) do nothing",
+                    (key, fam.family, fam.protein, fam.size, model),
+                )
+
     # M1-12 review of the automatic pairs
     def pair_review_learnings(self) -> dict[str, dict[str, bool]]:
         out: dict[str, dict[str, bool]] = {}
@@ -689,7 +711,7 @@ class PostgresXrayRepo:
                     "update public.xray_item set parity_cents = %s, gap_pct = %s, loss_cents = %s, reading = %s,"
                     " pareto_rank = %s, pareto_cum_share = %s, parity_full_cents = %s, gap_full_pct = %s,"
                     " full_price_room = %s, comparison_tier = %s, range_low_cents = %s, range_high_cents = %s,"
-                    " range_stores = %s, range_position = %s where id = %s and xray_id = %s",
+                    " range_stores = %s, range_position = %s, range_basis = %s where id = %s and xray_id = %s",
                     (
                         r.parity_cents,
                         to_numeric(r.gap) if r.gap is not None else None,
@@ -705,6 +727,7 @@ class PostgresXrayRepo:
                         r.range_high_cents,
                         r.range_stores,
                         r.range_position,
+                        r.range_basis,
                         r.key,
                         xray_id,
                     ),

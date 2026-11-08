@@ -16,6 +16,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 from .rules import (
+    FamilyRange,
     FoodOverrides,
     Item,
     PairStatus,
@@ -31,6 +32,7 @@ from .rules import (
     full_price_m1_05,
     full_price_room_m1_07,
     gap_m1_06,
+    is_food_m1_04,
     item_category_m1_04,
     loss_m1_08,
     neighborhood_m1_01,
@@ -239,6 +241,7 @@ class CalcRow:
     range_high_cents: int | None = None
     range_stores: int | None = None
     range_position: str | None = None
+    range_basis: str | None = None
 
 
 @dataclass(frozen=True)
@@ -255,22 +258,34 @@ def calculate(
     min_pairs: int = 1,
     *,
     two_tiers: bool = False,
+    family_ranges: Mapping[str, FamilyRange] | None = None,
 ) -> CalcResult:
     """M1-05 to M1-08. Skipped items stay out of parity and of the Pareto (C04). A store counts once, and
     an item
     not reviewed by a founder needs `min_pairs` distinct stores for a parity. The reading (M1-07) takes both
     parities; the loss and the Pareto (M1-08) stay on the current one. With `two_tiers` (M1-13) food with no
-    size written gets a price range instead, even when a person confirmed its pairs."""
+    size written gets a price range instead, even when a person confirmed its pairs, and so does food with a
+    size and no parity; `family_ranges` (by item key) wins over the range of the item's own pairs."""
     partial: dict[str, tuple[int, Fraction, Reading, int, int, Fraction]] = {}
-    ranged: dict[str, tuple[PriceRange | None, int]] = {}
+    ranged: dict[str, tuple[PriceRange | None, int, str | None]] = {}
+    family = family_ranges or {}
+
+    def as_range(it: CalcInput) -> tuple[PriceRange | None, int, str | None]:
+        if it.key in family:
+            f = family[it.key]
+            return f.range, f.stores, f.basis
+        neighbors = one_per_store_m1_05(it.accepted)
+        enough = len(neighbors) >= min_pairs and comparison_tier_m1_13(it.own) == "faixa"
+        found = range_m1_13(it.own.price_cents, [a.price_cents for a in neighbors]) if enough else None
+        return found, len(neighbors), None
+
     for it in items:
-        if it.skipped:
-            continue
         if two_tiers and comparison_tier_m1_13(it.own) == "faixa":
-            neighbors = one_per_store_m1_05(it.accepted)
-            enough = len(neighbors) >= min_pairs
-            found = range_m1_13(it.own.price_cents, [a.price_cents for a in neighbors]) if enough else None
-            ranged[it.key] = (found, len(neighbors))
+            ranged[it.key] = as_range(it)
+            continue
+        if it.skipped:
+            if two_tiers and is_food_m1_04(it.own):
+                ranged[it.key] = as_range(it)
             continue
         # M1-03: a pair accepted before a size was read from a name never mixes base units.
         unit = normalize_m1_03(it.own).unit
@@ -292,13 +307,17 @@ def calculate(
             parity_full,
             gap_full,
         )
+    if two_tiers:
+        for it in items:
+            if it.key not in partial and it.key not in ranged and is_food_m1_04(it.own):
+                ranged[it.key] = as_range(it)
     names = {it.key: it.own.name for it in items}
     pareto = pareto_m1_08({k: (names[k], v[3]) for k, v in partial.items()}, items_total=len(partial))
     ranks = {r.key: r for r in pareto.rows}
     rows = []
     for it in items:
         if it.key in ranged:
-            band_found, stores = ranged[it.key]
+            band_found, stores, basis = ranged[it.key]
             rows.append(
                 CalcRow(
                     it.key, None, None, None, None, None, None,
@@ -307,6 +326,7 @@ def calculate(
                     range_high_cents=band_found.high_cents if band_found else None,
                     range_stores=stores if band_found else None,
                     range_position=band_found.position if band_found else None,
+                    range_basis=basis if band_found else None,
                 )
             )
             continue

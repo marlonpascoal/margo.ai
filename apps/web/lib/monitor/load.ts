@@ -467,6 +467,8 @@ export interface PriceRangeItem {
   high_cents: number;
   stores: number;
   position: "abaixo" | "dentro" | "acima";
+  /** What the range compares with, in words; null when it comes from the item's own pairs. */
+  basis: string | null;
 }
 
 export interface ResultPage {

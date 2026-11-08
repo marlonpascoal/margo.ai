@@ -1265,6 +1265,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"m1_item_family": {
+                  Row: {
+                    "created_at": string,"family": string,"model": string,"pattern": string,"protein": string,"size_class": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"family": string,"model": string,"pattern": string,"protein": string,"size_class": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"family"?: string,"model"?: string,"pattern"?: string,"protein"?: string,"size_class"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"m1_pair_review_answer": {
                   Row: {
                     "approved": boolean,"created_at": string,"model": string,"pattern": string,"updated_at": string,"xray_id": string
@@ -2123,14 +2137,14 @@ isOneToOne: false
                   ]
                 },"xray_item": {
                   Row: {
-                    "comparison_tier": string | null,"created_at": string,"full_price_room": boolean,"gap_full_pct": number | null,"gap_pct": number | null,"id": string,"item_category": string | null,"loss_cents": number | null,"menu_item_id": string | null,"norm_price_cents": number,"norm_unit": string,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"parity_full_cents": number | null,"public_menu_item_id": string,"range_high_cents": number | null,"range_low_cents": number | null,"range_position": string | null,"range_stores": number | null,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"reviewed_by": string | null,"size_presumed_ml": number | null,"skipped": boolean,"updated_at": string,"weekly_units": number | null,"xray_id": string
+                    "comparison_tier": string | null,"created_at": string,"full_price_room": boolean,"gap_full_pct": number | null,"gap_pct": number | null,"id": string,"item_category": string | null,"loss_cents": number | null,"menu_item_id": string | null,"norm_price_cents": number,"norm_unit": string,"pair_note": string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share": number | null,"pareto_rank": number | null,"parity_cents": number | null,"parity_full_cents": number | null,"public_menu_item_id": string,"range_basis": string | null,"range_high_cents": number | null,"range_low_cents": number | null,"range_position": string | null,"range_stores": number | null,"reading": Database["public"]['Enums']["xray_reading"] | null,"reviewed_at": string | null,"reviewed_by": string | null,"size_presumed_ml": number | null,"skipped": boolean,"updated_at": string,"weekly_units": number | null,"xray_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "comparison_tier"?: string | null,"created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents": number,"norm_unit": string,"pair_note"?: string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id": string,"range_high_cents"?: number | null,"range_low_cents"?: number | null,"range_position"?: string | null,"range_stores"?: number | null,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"size_presumed_ml"?: number | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id": string
+                    "comparison_tier"?: string | null,"created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents": number,"norm_unit": string,"pair_note"?: string | null,"pair_status": Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id": string,"range_basis"?: string | null,"range_high_cents"?: number | null,"range_low_cents"?: number | null,"range_position"?: string | null,"range_stores"?: number | null,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"size_presumed_ml"?: number | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id": string
                   }
                   Update: {
-                    "comparison_tier"?: string | null,"created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents"?: number,"norm_unit"?: string,"pair_note"?: string | null,"pair_status"?: Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id"?: string,"range_high_cents"?: number | null,"range_low_cents"?: number | null,"range_position"?: string | null,"range_stores"?: number | null,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"size_presumed_ml"?: number | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id"?: string
+                    "comparison_tier"?: string | null,"created_at"?: string,"full_price_room"?: boolean,"gap_full_pct"?: number | null,"gap_pct"?: number | null,"id"?: string,"item_category"?: string | null,"loss_cents"?: number | null,"menu_item_id"?: string | null,"norm_price_cents"?: number,"norm_unit"?: string,"pair_note"?: string | null,"pair_status"?: Database["public"]['Enums']["pair_status"],"pareto_cum_share"?: number | null,"pareto_rank"?: number | null,"parity_cents"?: number | null,"parity_full_cents"?: number | null,"public_menu_item_id"?: string,"range_basis"?: string | null,"range_high_cents"?: number | null,"range_low_cents"?: number | null,"range_position"?: string | null,"range_stores"?: number | null,"reading"?: Database["public"]['Enums']["xray_reading"] | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"size_presumed_ml"?: number | null,"skipped"?: boolean,"updated_at"?: string,"weekly_units"?: number | null,"xray_id"?: string
                   }
                   Relationships: [
                     {

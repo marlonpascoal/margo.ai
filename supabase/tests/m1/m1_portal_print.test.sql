@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(13);
 
 create function pg_temp.id(tag text) returns uuid language sql immutable as $$ select md5('portal-print:' || tag)::uuid $$;
 create function pg_temp.item(store text, tag text, name text, price bigint) returns uuid language sql as $$
@@ -49,6 +49,17 @@ update public.xray_store set capture_rank = 7 where xray_id = pg_temp.id('xo') a
 select is(public.monitor_result_stores(pg_temp.id('xo')) -> 0 -> 'stores' -> 0 ->> 'name', 'Loja vizinha 07',
   'P23 Ver as lojas: with m1.portal_show_store_names 0 a neighbor is "Loja vizinha NN"');
 update public.rule_param set value = 1 where key = 'm1.portal_show_store_names';
+
+-- Stage 2 exclusivo -----------------------------------------------------------------------------------------------------
+select pg_temp.item('T', 'e', 'Prato Sintético da Casa', 4500), pg_temp.item('N1', 'e', 'Prato Sintético Parecido', 3900);
+insert into public.xray_item (id, xray_id, public_menu_item_id, norm_unit, norm_price_cents, pair_status, pair_note, item_category, skipped)
+values (pg_temp.id('ie'), pg_temp.id('xo'), pg_temp.id('Te'), 'un', 4500, 'exclusivo', 'exclusivo, sem comparação', 'pratos', false);
+insert into public.xray_pair (xray_item_id, public_menu_item_id, similarity, accepted) values (pg_temp.id('ie'), pg_temp.id('N1e'), 0.5, false);
+select is((public.monitor_doubts(pg_temp.id('xo')) ->> 'only_yours')::int, 1, 'Stage 2: an exclusivo item is "só seu" even with unaccepted candidates');
+select ok(not (public.monitor_doubts(pg_temp.id('xo')) -> 'items') @> format('[{"item_id": "%s"}]', pg_temp.id('ie'))::jsonb,
+  'Stage 2: an exclusivo item is never a doubt');
+select is((select jsonb_agg(e ->> 'name') from jsonb_array_elements(public.monitor_items(pg_temp.id('xo')) -> 'only_yours') e)::text,
+  '["Prato Sintético da Casa"]', 'Stage 2: "Itens só seus" lists the exclusivo item');
 
 -- Head-to-head ---------------------------------------------------------------------------------------------------------
 select is(public.monitor_head_to_head(pg_temp.id('xo')), null, 'head-to-head is for a competitor run only');

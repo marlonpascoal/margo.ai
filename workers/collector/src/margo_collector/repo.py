@@ -14,9 +14,18 @@ from typing import Any
 
 from .fetcher import CACHE_DAYS, CachedPage
 from .ifood_public import ParsedStore
+from .learning import (
+    DEFAULT_MIN_RUNS,
+    Answer,
+    FounderLearning,
+    Learning,
+    Pattern,
+    apply_answers,
+    apply_founders,
+)
 from .rules import Item, RankWeights, Store, to_numeric
 from .steps import Discovered, XrayRun
-from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual
+from .xray import CalcInput, CalcResult, ItemRow, StoreRow, is_manual, presumed_m1_04
 
 # Memory -------------------------------------------------------------------------------------------
 
@@ -40,6 +49,10 @@ class MemoryXrayRepo:
     blockers: dict[str, str] = field(default_factory=dict)
     unfinished: dict[str, list[str]] = field(default_factory=dict)
     left_out: dict[str, list[str]] = field(default_factory=dict)
+    learnings: dict[Pattern, Learning] = field(default_factory=dict)
+    learning_min_runs: int = DEFAULT_MIN_RUNS
+    learning_models: list[tuple[str, str, int]] = field(default_factory=list)
+    """(xray id, model, answers) of every save, as the Postgres run rows keep the model."""
 
     def load_xray(self, xray_id: str) -> XrayRun:
         return self.xrays[xray_id]
@@ -126,15 +139,31 @@ class MemoryXrayRepo:
     def save_pairs(self, xray_id: str, rows: list[ItemRow]) -> None:
         self.pairs[xray_id] = rows
 
+    def attr_learnings(self) -> dict[Pattern, Learning]:
+        return {
+            p: Learning(p, dict(lr.answers), lr.founder, lr.founder_disputed, lr.items_seen)
+            for p, lr in self.learnings.items()
+        }
+
+    def attr_learning_min_runs(self) -> int:
+        return self.learning_min_runs
+
+    def save_attr_answers(self, xray_id: str, model: str, answers) -> None:
+        apply_answers(self.learnings, xray_id, answers)
+        self.learning_models.append((xray_id, model, len(answers)))
+
+    def save_founder_learnings(self, taught) -> None:
+        apply_founders(self.learnings, taught)
+
     def calc_inputs(self, xray_id: str) -> list[CalcInput]:
         out = []
         for r in self.pairs.get(xray_id, []):
             extra = self.item_extra.get((xray_id, r.public_menu_item_id), {})
-            accepted = tuple(self.items[p.public_menu_item_id] for p in r.pairs if p.accepted)
+            accepted = tuple(presumed_m1_04(self.items[p.public_menu_item_id], p.size_presumed_ml) for p in r.pairs if p.accepted)
             out.append(
                 CalcInput(
                     r.public_menu_item_id,
-                    self.items[r.public_menu_item_id],
+                    presumed_m1_04(self.items[r.public_menu_item_id], r.size_presumed_ml),
                     accepted,
                     extra.get("weekly_units"),
                     bool(extra.get("skipped")),
@@ -157,6 +186,10 @@ class MemoryXrayRepo:
 
 
 # Postgres -----------------------------------------------------------------------------------------
+
+
+def _ml(v: Any) -> int | None:
+    return None if v is None else int(v)
 
 
 def _s(v: Any) -> str | None:
@@ -200,9 +233,23 @@ class PostgresXrayRepo:
             r["target_url"],
             r["radius_km"],
             list(r["categories"]),
-            dict(r["rules"] or {}),
+            {**self._size_params(), **dict(r["rules"] or {})},
             r["collected_at"],
         )
+
+    def _size_params(self) -> dict[str, Any]:
+        """M1-04 default sizes from rule_param, in the shape of xray.rules (an X-ray's own rules win)."""
+        rows = self._all("select key, value from public.rule_param where key like 'm1.default\\_%%'")
+        v = {r["key"]: r["value"] for r in rows}
+        out: dict[str, Any] = {}
+        sizes = {k.removeprefix("m1.default_ml."): int(x) for k, x in v.items() if k.startswith("m1.default_ml.")}
+        if sizes:
+            out["default_sizes"] = sizes
+        if "m1.default_size_min_rows" in v:
+            out["default_size_min_rows"] = int(v["m1.default_size_min_rows"])
+        if "m1.default_size_min_share" in v:
+            out["default_size_min_share"] = str(v["m1.default_size_min_share"])
+        return out
 
     def _store(self, r: dict[str, Any]) -> Store:
         return Store(
@@ -390,14 +437,72 @@ class PostgresXrayRepo:
         )
         return {(str(r["own"]), str(r["cand"])): (r["accepted"], str(r["by"])) for r in rows}
 
+    # M1-04 Stage 2 learnings
+    def attr_learnings(self) -> dict[Pattern, Learning]:
+        rows = self._all(
+            "select l.category, l.tokens, l.hints, l.founder_attrs, l.founder_disputed_at, l.items_seen,"
+            " coalesce(jsonb_object_agg(r.xray_id::text, r.attrs) filter (where r.xray_id is not null), '{}') as answers"
+            " from public.m1_attr_learning l left join public.m1_attr_learning_run r on r.learning_id = l.id group by l.id"
+        )
+        out = {}
+        for r in rows:
+            p = Pattern(r["category"], tuple(r["tokens"]), tuple(r["hints"]))
+            out[p] = Learning(p, dict(r["answers"]), r["founder_attrs"], r["founder_disputed_at"] is not None, r["items_seen"])
+        return out
+
+    def attr_learning_min_runs(self) -> int:
+        rows = self._all("select value from public.rule_param where key = 'm1.attr_learning_min_runs'")
+        return int(rows[0]["value"]) if rows else DEFAULT_MIN_RUNS
+
+    def _learning_id(self, c: Any, p: Pattern, seen: int = 0) -> str:
+        return c.execute(
+            "insert into public.m1_attr_learning (category, tokens, hints, items_seen) values (%s, %s, %s, %s)"
+            " on conflict (category, tokens, hints) do update set items_seen = public.m1_attr_learning.items_seen + excluded.items_seen"
+            " returning id",
+            (p.category, list(p.tokens), list(p.hints), seen),
+        ).fetchone()["id"]
+
+    def save_attr_answers(self, xray_id: str, model: str, answers: list[Answer]) -> None:
+        from psycopg.types.json import Jsonb
+
+        with self._tx() as c:
+            for a in answers:
+                lid = self._learning_id(c, a.pattern, a.items_seen)
+                c.execute(
+                    "insert into public.m1_attr_learning_run (learning_id, xray_id, attrs, model, confidence)"
+                    " values (%s, %s, %s, %s, %s) on conflict (learning_id, xray_id) do update set attrs = excluded.attrs,"
+                    " model = excluded.model, confidence = excluded.confidence",
+                    (lid, xray_id, Jsonb(a.attrs), model, a.confidence),
+                )
+
+    def save_founder_learnings(self, taught: list[FounderLearning]) -> None:
+        from psycopg.types.json import Jsonb
+
+        with self._tx() as c:
+            for f in taught:
+                lid = self._learning_id(c, f.pattern)
+                if f.attrs is not None:
+                    c.execute(
+                        "update public.m1_attr_learning set founder_attrs = %s, founder_by = %s, founder_at = now(),"
+                        " founder_disputed_at = null where id = %s",
+                        (Jsonb(f.attrs), f.person, lid),
+                    )
+                else:
+                    c.execute(
+                        "update public.m1_attr_learning set founder_disputed_at = coalesce(founder_disputed_at, now())"
+                        " where id = %s and founder_attrs is null",
+                        (lid,),
+                    )
+
     def save_pairs(self, xray_id: str, rows: list[ItemRow]) -> None:
         with self._tx() as c:
             keep_items = []
             for r in rows:
                 item = c.execute(
                     "insert into public.xray_item (xray_id, public_menu_item_id, norm_unit, norm_price_cents, pair_status,"
-                    " pair_note, item_category) values (%s, %s, %s, %s, %s, %s, %s)"
+                    " pair_note, item_category, size_presumed_ml) values (%s, %s, %s, %s, %s, %s, %s, %s)"
                     " on conflict (xray_id, public_menu_item_id) do update set item_category = excluded.item_category,"
+                    " size_presumed_ml = excluded.size_presumed_ml,"
                     " norm_unit = excluded.norm_unit, norm_price_cents = excluded.norm_price_cents,"
                     " pair_status = excluded.pair_status, pair_note = excluded.pair_note, parity_cents = null,"
                     " gap_pct = null, loss_cents = null, reading = null, pareto_rank = null, pareto_cum_share = null,"
@@ -411,15 +516,17 @@ class PostgresXrayRepo:
                         r.pair_status,
                         r.pair_note,
                         r.item_category,
+                        r.size_presumed_ml,
                     ),
                 ).fetchone()["id"]
                 keep_items.append(item)
                 for p in r.pairs:
                     c.execute(
-                        "insert into public.xray_pair (xray_item_id, public_menu_item_id, similarity, accepted, by)"
-                        " values (%s, %s, %s, %s, %s) on conflict (xray_item_id, public_menu_item_id) do update set"
-                        " similarity = excluded.similarity, accepted = excluded.accepted, by = excluded.by",
-                        (item, p.public_menu_item_id, to_numeric(p.similarity), p.accepted, p.by),
+                        "insert into public.xray_pair (xray_item_id, public_menu_item_id, similarity, accepted, by, size_presumed_ml)"
+                        " values (%s, %s, %s, %s, %s, %s) on conflict (xray_item_id, public_menu_item_id) do update set"
+                        " similarity = excluded.similarity, accepted = excluded.accepted, by = excluded.by,"
+                        " size_presumed_ml = excluded.size_presumed_ml",
+                        (item, p.public_menu_item_id, to_numeric(p.similarity), p.accepted, p.by, p.size_presumed_ml),
                     )
                 c.execute(
                     "delete from public.xray_pair where xray_item_id = %s and not (public_menu_item_id = any(%s::uuid[]))",
@@ -439,7 +546,8 @@ class PostgresXrayRepo:
             " as full_price_cents"
         )
         items = self._all(
-            "select i.id as xray_item_id, i.weekly_units, i.skipped, i.reviewed_by, m.id as item_id, m.public_store_id, m.name,"
+            "select i.id as xray_item_id, i.weekly_units, i.skipped, i.reviewed_by, i.size_presumed_ml, m.id as item_id,"
+            " m.public_store_id, m.name,"
             f" coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, m.unit, m.unit_qty, {full}"
             " from public.xray_item i join public.public_menu_item m on m.id = i.public_menu_item_id"
             " left join public.public_menu_item_snapshot sn on sn.xray_id = i.xray_id and sn.public_menu_item_id = m.id"
@@ -447,7 +555,7 @@ class PostgresXrayRepo:
             (xray_id,),
         )
         pairs = self._all(
-            "select p.xray_item_id, m.id, m.public_store_id, m.name, m.unit, m.unit_qty,"
+            "select p.xray_item_id, p.size_presumed_ml, m.id, m.public_store_id, m.name, m.unit, m.unit_qty,"
             f" coalesce(sn.price_cents, m.comparison_price_cents) as price_cents, {full}"
             " from public.xray_pair p join public.public_menu_item m on m.id = p.public_menu_item_id"
             " join public.xray_item i on i.id = p.xray_item_id"
@@ -458,7 +566,7 @@ class PostgresXrayRepo:
         accepted: dict[str, list[Item]] = {}
         for r in pairs:
             accepted.setdefault(str(r["xray_item_id"]), []).append(
-                Item(
+                presumed_m1_04(Item(
                     str(r["id"]),
                     str(r["public_store_id"]),
                     r["name"],
@@ -466,12 +574,12 @@ class PostgresXrayRepo:
                     r["unit"],
                     r["unit_qty"],
                     full_price_cents=r["full_price_cents"],
-                )
+                ), _ml(r["size_presumed_ml"]))
             )
         return [
             CalcInput(
                 str(r["xray_item_id"]),
-                Item(
+                presumed_m1_04(Item(
                     str(r["item_id"]),
                     str(r["public_store_id"]),
                     r["name"],
@@ -479,7 +587,7 @@ class PostgresXrayRepo:
                     r["unit"],
                     r["unit_qty"],
                     full_price_cents=r["full_price_cents"],
-                ),
+                ), _ml(r["size_presumed_ml"])),
                 tuple(accepted.get(str(r["xray_item_id"]), [])),
                 r["weekly_units"],
                 r["skipped"],

@@ -30,10 +30,18 @@ from .attributes import (
     beverage_attrs,
     category_m1_04,
     compare_beverages,
+    container_m1_04,
     is_combo_m1_04,
     missing_reason,
     quantity_m1_04,
     unreadable_reason,
+)
+from .food import (
+    EXCLUSIVE_NOTE,
+    FoodAttrs,
+    compare_food_m1_04,
+    food_attrs_m1_04,
+    unreadable_food_m1_04,
 )
 
 SAO_PAULO = ZoneInfo("America/Sao_Paulo")
@@ -42,7 +50,7 @@ EARTH_RADIUS_M = 6_371_008.8
 
 Unit = Literal["un", "g", "ml", "pack"]
 NormUnit = Literal["un", "100g", "100ml", "combo"]
-PairStatus = Literal["auto", "revisar", "normalizado", "manual"]
+PairStatus = Literal["auto", "revisar", "normalizado", "manual", "exclusivo"]
 Reading = Literal["pode_subir", "na_media", "nao_mexer"]
 
 
@@ -98,6 +106,21 @@ class Settings:
     similarity_threshold: Fraction = Fraction(3, 4)
     candidate_floor: Fraction = Fraction(3, 5)
     reading_band: Fraction = Fraction(1, 10)
+    default_sizes: tuple[tuple[str, int], ...] = (
+        ("agua", 500),
+        ("cerveja.lata", 350),
+        ("refrigerante.lata", 350),
+    )
+    """M1-04: params `m1.default_ml.*`, the default size in ml of a beverage type, or of a type in a
+    container."""
+    default_size_min_rows: int = 5
+    default_size_min_share: Fraction = Fraction(4, 5)
+    """M1-04: params `m1.default_size_min_rows` and `m1.default_size_min_share`: when a brand and container's
+    stated size is a default."""
+    attribute_floor: Fraction = Fraction(1, 100)
+    """M1-04 Stage 2: the least name similarity an item with the same attributes needs to be a candidate. The
+    default asks for one word of the name in common; measured on real data (scripts/m1_pairing_report.py
+    --exclusives)."""
 
     @classmethod
     def from_xray(cls, radius_km: int, rules: Mapping[str, Any] | None) -> Settings:
@@ -117,6 +140,12 @@ class Settings:
             similarity_threshold=frac("similarity_threshold", d.similarity_threshold),
             candidate_floor=frac("candidate_floor", d.candidate_floor),
             reading_band=frac("reading_band", d.reading_band),
+            attribute_floor=frac("attribute_floor", d.attribute_floor),
+            default_sizes=tuple(sorted((str(k), int(v)) for k, v in r["default_sizes"].items()))
+            if isinstance(r.get("default_sizes"), Mapping)
+            else d.default_sizes,
+            default_size_min_rows=int(r.get("default_size_min_rows", d.default_size_min_rows)),
+            default_size_min_share=frac("default_size_min_share", d.default_size_min_share),
         )
 
 
@@ -408,49 +437,213 @@ def item_is_combo_m1_04(item: Item) -> bool:
     return normalize_m1_03(item).unit == "combo" or is_combo_m1_04(item.name, item.section)
 
 
-def item_beverage_attrs_m1_04(item: Item) -> BeverageAttrs:
+def item_beverage_attrs_m1_04(item: Item, defaults: SizeDefaults | None = None) -> BeverageAttrs:
     """M1-04: the beverage attributes of a row. The size is the one M1-03 keeps: the row's millilitres,
-    else what the parser read in the name of a row whose unit says nothing (a pack of 6 has no size)."""
+    else what the parser read in the name of a row whose unit says nothing (a pack of 6 has no size). With
+    `defaults`, a single beverage of a known type with no size takes its default (`presumed_size_m1_04`)."""
     if item.unit == "ml" and item.unit_qty is not None:
         return beverage_attrs(item.name, item.unit_qty)
     if item.unit == "un" and item.unit_qty is None:
-        return beverage_attrs(item.name, item.size_from_name_ml)
+        attrs = beverage_attrs(item.name, item.size_from_name_ml)
+        if defaults is not None and attrs.size_ml is None and (ml := presumed_size_m1_04(item, defaults)):
+            return replace(attrs, size_ml=Fraction(ml), size_presumed=True)
+        return attrs
     return beverage_attrs(item.name)
+
+
+# M1-04 default sizes ------------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SizeDefaults:
+    """M1-04 default sizes, in ml, for a beverage whose name gives none. `table` comes from the params
+    (`m1.default_ml.<type>` or `m1.default_ml.<type>.<container>`); `derived` from the X-ray's own captures:
+    a brand and container whose stated size is clearly dominant. Order: the type's own default when the name
+    says no container (water, as Marlon stated it), else the brand and container the data shows, else the
+    type and container."""
+
+    table: Mapping[str, int] = field(default_factory=dict)
+    derived: Mapping[tuple[str, str], int] = field(default_factory=dict)
+
+    def lookup(self, kind: str, brand: str | None, container: str | None) -> int | None:
+        if container is None:
+            return self.table.get(kind)
+        if brand is not None and (brand, container) in self.derived:
+            return self.derived[(brand, container)]
+        return self.table.get(f"{kind}.{container}")
+
+
+def presumed_size_m1_04(item: Item, defaults: SizeDefaults) -> int | None:
+    """M1-04: the default size of a single beverage of a known type whose row and name give no size; never
+    for an unreadable type, a combo or a quantity. An explicit size always wins."""
+    if item.unit != "un" or item.unit_qty is not None or item.size_from_name_ml is not None:
+        return None
+    if item_category_m1_04(item) != "bebidas" or item_is_combo_m1_04(item) or quantity_m1_04(item.name) != 1:
+        return None
+    attrs = beverage_attrs(item.name)
+    if attrs.type is None:
+        return None
+    return defaults.lookup(attrs.type, attrs.brand, container_m1_04(item.name))
+
+
+def sized_item_m1_04(item: Item, defaults: SizeDefaults | None) -> Item:
+    """M1-03 with a default size: the row as if sold by that many ml, so it normalizes per 100 ml like the
+    rows that state it. Unchanged when no default applies."""
+    if defaults is None or (ml := presumed_size_m1_04(item, defaults)) is None:
+        return item
+    return replace(item, unit="ml", unit_qty=Decimal(ml))
+
+
+def size_defaults_m1_04(items: Iterable[Item], settings: Settings) -> SizeDefaults:
+    """M1-04: the params' table, plus a default for each brand and container whose stated size covers at least
+    `default_size_min_share` of at least `default_size_min_rows` single rows of the captured menus."""
+    counts: dict[tuple[str, str], dict[int, int]] = {}
+    for i in items:
+        container = container_m1_04(i.name)
+        if container is None or item_category_m1_04(i) != "bebidas" or item_is_combo_m1_04(i):
+            continue
+        if quantity_m1_04(i.name) != 1:
+            continue
+        attrs = item_beverage_attrs_m1_04(i)
+        if attrs.brand is None or attrs.size_ml is None or attrs.size_ml.denominator != 1:
+            continue
+        by_size = counts.setdefault((attrs.brand, container), {})
+        by_size[int(attrs.size_ml)] = by_size.get(int(attrs.size_ml), 0) + 1
+    derived = {}
+    for key, by_size in counts.items():
+        total = sum(by_size.values())
+        size, top = max(by_size.items(), key=lambda kv: (kv[1], -kv[0]))
+        share = Fraction(top, total)
+        if total >= settings.default_size_min_rows and share >= settings.default_size_min_share:
+            derived[key] = size
+    return SizeDefaults(dict(settings.default_sizes), derived)
+
+
+def presumed_note(ml: int) -> str:
+    """M1-04: the note of a pair that rests on a default size, as C04 shows it."""
+    return f"tamanho presumido {ml} ml"
 
 
 def _stores(items: Iterable[Item]) -> int:
     return len({i.store_id for i in items})
 
 
-def _pair_beverage(own: Item, norm: Normalized, pool: Iterable[Item], settings: Settings) -> Pairing:
+def _pair_beverage(
+    own: Item,
+    norm: Normalized,
+    pool: Iterable[Item],
+    settings: Settings,
+    defaults: SizeDefaults | None = None,
+) -> Pairing:
     """M1-04: only beverages with the same type, brand, flavor, variant and size confirm, however many stores
     sell them; similarity is then 1. An item with an unreadable attribute is listed for a founder and never
-    accepted."""
-    attrs = item_beverage_attrs_m1_04(own)
+    accepted. A default size is a size like any other; a pair that rests on one says so in its note."""
+    attrs = item_beverage_attrs_m1_04(own, defaults)
     blocked_reason = unreadable_reason(attrs)
     found: list[Candidate] = []
+    presumed: set[int] = {int(attrs.size_ml)} if attrs.size_presumed and attrs.size_ml is not None else set()
     for c in pool:
         if c.store_id == own.store_id or item_category_m1_04(c) != "bebidas" or item_is_combo_m1_04(c):
             continue
         if quantity_m1_04(c.name) != quantity_m1_04(own.name):
             continue
-        if normalize_m1_03(c).unit != norm.unit:
+        if normalize_m1_03(sized_item_m1_04(c, defaults)).unit != norm.unit:
             continue
-        match = compare_beverages(attrs, item_beverage_attrs_m1_04(c))
+        other = item_beverage_attrs_m1_04(c, defaults)
+        match = compare_beverages(attrs, other)
         if match == "identical":
             found.append(Candidate(c, Fraction(1), True))
+            if other.size_presumed and other.size_ml is not None:
+                presumed.add(int(other.size_ml))
         elif match == "unreadable":
             sim = similarity_m1_04(own.name, c.name)
             if sim >= settings.candidate_floor:
                 found.append(Candidate(c, sim, False))
     found.sort(key=lambda c: (-c.similarity, c.item.name, c.item.id))
     if any(c.accepted for c in found):
-        return Pairing(own, norm, "normalizado" if norm.by_weight_or_pack else "auto", None, tuple(found))
+        note = presumed_note(min(presumed)) if presumed else None
+        return Pairing(own, norm, "normalizado" if norm.by_weight_or_pack else "auto", note, tuple(found))
     note = blocked_reason or missing_reason(attrs) or NO_SAME_ATTRIBUTES
     return Pairing(own, norm, "revisar", note, tuple(found))
 
 
-def pair_item_m1_04(own: Item, pool: Iterable[Item], settings: Settings) -> Pairing:
+FOOD_CATEGORIES = frozenset({"lanches", "porcoes", "pratos", "sobremesas", "adicionais"})
+FoodOverrides = Mapping[str, FoodAttrs]
+"""M1-04 Stage 2: attributes read by a learning or the AI, by item id, for items the rule cannot read."""
+
+
+def item_food_attrs_m1_04(item: Item, food: FoodOverrides | None = None) -> FoodAttrs:
+    """M1-04 Stage 2: the attributes of a lanche or a porção, by rule; a learning or the AI only for an item
+    the rule cannot read (`food`)."""
+    category = item_category_m1_04(item)
+    attrs = food_attrs_m1_04(item.name, item.description, category)
+    if food and item.id in food and unreadable_food_m1_04(attrs, category) is not None:
+        return food[item.id]
+    return attrs
+
+
+def is_food_m1_04(item: Item) -> bool:
+    """M1-04 Stage 2: a single non-beverage item, the items paired by attributes."""
+    return item_category_m1_04(item) in FOOD_CATEGORIES and not item_is_combo_m1_04(item)
+
+
+def _pair_food(
+    own: Item, norm: Normalized, pool: Iterable[Item], settings: Settings, food: FoodOverrides | None
+) -> Pairing:
+    """M1-04 Stage 2: a non-beverage item pairs only with items of the same proteins, patty count, base,
+    weight and portion size (`compare_food_m1_04`) whose name shares at least `attribute_floor` of
+    similarity. Inside a store, the most similar name wins (tie-break). At least `min_pairs` stores pair it;
+    fewer is `revisar`, "poucos pares"; none is `exclusivo`, "exclusivo, sem comparação": no problem, outside
+    parity, loss and the Pareto. An item the rule and the AI cannot read is `revisar` with the reason. Items
+    with a similar name and other attributes are listed for a founder, never accepted."""
+    category = item_category_m1_04(own)
+    attrs = item_food_attrs_m1_04(own, food)
+    reason = unreadable_food_m1_04(attrs, category)
+    by_weight = norm.unit in ("100g", "100ml")
+    matched: dict[str, list[Candidate]] = {}
+    listed: list[Candidate] = []
+    for c in pool:
+        if c.store_id == own.store_id or not is_food_m1_04(c) or item_category_m1_04(c) != category:
+            continue
+        if quantity_m1_04(c.name) != quantity_m1_04(own.name):
+            continue
+        if not same_taxonomy_m1_04(own, c) or normalize_m1_03(c).unit != norm.unit:
+            continue
+        sim = similarity_m1_04(own.name, c.name)
+        other = item_food_attrs_m1_04(c, food)
+        if (
+            reason is None
+            and unreadable_food_m1_04(other, category) is None
+            and sim >= settings.attribute_floor
+            and compare_food_m1_04(attrs, other, by_weight=by_weight) == "identical"
+        ):
+            matched.setdefault(c.store_id, []).append(Candidate(c, sim, True))
+        elif sim >= settings.candidate_floor:
+            listed.append(Candidate(c, sim, False))
+    found = list(listed)
+    for rows in matched.values():
+        best = max(r.similarity for r in rows)
+        found.extend(r if r.similarity == best else Candidate(r.item, r.similarity, False) for r in rows)
+    found.sort(key=lambda c: (-c.similarity, c.item.name, c.item.id))
+    if reason is not None:
+        listed_only = tuple(Candidate(c.item, c.similarity, False) for c in found)
+        return Pairing(own, norm, "revisar", reason, listed_only)
+    stores = len(matched)
+    if stores >= settings.min_pairs:
+        return Pairing(own, norm, "normalizado" if norm.by_weight_or_pack else "auto", None, tuple(found))
+    unaccepted = tuple(Candidate(c.item, c.similarity, False) for c in found)
+    if stores == 0:
+        return Pairing(own, norm, "exclusivo", EXCLUSIVE_NOTE, unaccepted)
+    return Pairing(own, norm, "revisar", "poucos pares", unaccepted)
+
+
+def pair_item_m1_04(
+    own: Item,
+    pool: Iterable[Item],
+    settings: Settings,
+    food: FoodOverrides | None = None,
+    defaults: SizeDefaults | None = None,
+) -> Pairing:
     """M1-03 and M1-04 for one item of the target store. A hard block comes before any name: a combo only
     meets combos, an item only meets its category, an add-on nothing else, a count only the same count, and a
     beverage only what `_pair_beverage` lets through.
@@ -466,7 +659,9 @@ def pair_item_m1_04(own: Item, pool: Iterable[Item], settings: Settings) -> Pair
     category = item_category_m1_04(own)
     combo = item_is_combo_m1_04(own)
     if category == "bebidas" and not combo:
-        return _pair_beverage(own, norm, pool, settings)
+        return _pair_beverage(own, normalize_m1_03(sized_item_m1_04(own, defaults)), pool, settings, defaults)
+    if category in FOOD_CATEGORIES and not combo:
+        return _pair_food(own, norm, pool, settings, food)
     found: list[Candidate] = []
     for c in pool:
         if c.id == own.id or c.store_id == own.store_id or item_is_combo_m1_04(c) != combo:

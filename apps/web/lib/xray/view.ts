@@ -94,9 +94,15 @@ export function pairingTotals(items: Pick<ItemRow, "pairStatus">[]) {
 export const pendingReview = (items: Pick<ItemRow, "pairStatus" | "reviewed" | "skipped">[]) =>
   items.filter((i) => i.pairStatus === "revisar" && !i.reviewed && !i.skipped).length;
 
-/** M1-05: paired items with no parity, because too few stores sell the same item. A skipped item or one to review is not one. */
+/** M1-05: paired items with no parity, because too few stores sell the same item. A skipped item, one to review or an
+ * exclusive one is not one. */
 export const withoutParity = <T extends Pick<ItemRow, "parityCents" | "acceptedPairs" | "skipped" | "pairStatus">>(items: T[]) =>
-  items.filter((i) => i.parityCents === null && i.acceptedPairs > 0 && !i.skipped && i.pairStatus !== "revisar");
+  items.filter((i) => i.parityCents === null && i.acceptedPairs > 0 && !i.skipped && i.pairStatus !== "revisar" && i.pairStatus !== "exclusivo");
+
+/** M1-04 Stage 2: exclusive items with no parity: no problem, outside parity, loss and the Pareto. One a founder paired
+ * by hand has a parity and is in the table instead. */
+export const exclusives = <T extends Pick<ItemRow, "parityCents" | "skipped" | "pairStatus">>(items: T[]) =>
+  items.filter((i) => i.pairStatus === "exclusivo" && i.parityCents === null && !i.skipped);
 
 /** C04 "Exemplo de par": the name, with the price for a normalized item ("Fritas 400 g, R$ 22,00"). */
 export function examplePair(i: Pick<ItemRow, "exampleName" | "exampleCents" | "normUnit">, money: (c: number) => string): string {
@@ -130,6 +136,7 @@ export function xrayResult(items: ItemRow[]) {
     above: analyzed.filter((i) => i.reading === "nao_mexer").length,
     rows,
     withoutParity: withoutParity(items).map((i) => i.name),
+    exclusives: exclusives(items).map((i) => i.name),
     paretoCount: n80,
     pareto: top.map((i) => ({ name: i.name, width: maxLoss ? Math.round(((i.lossCents ?? 0) / maxLoss) * 100) : 0, cumShare: i.paretoCumShare ?? 0 })),
     /** M1-09: how many prices to raise go in P01 and the message (at most 3). */

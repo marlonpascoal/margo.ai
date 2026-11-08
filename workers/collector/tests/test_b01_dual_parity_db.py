@@ -119,10 +119,10 @@ def clean_jobs(conn):
 
 
 MENU = [
-    ("Alfa sintetico", 1000, None, 1300, 1500),  # case 1: both low
-    ("Bravo sintetico", 1000, None, 1050, 1300),  # case 2: note
-    ("Charlie sintetico", 1000, 1500, 1300, None),  # case 3 and 5: own promotion, full gap high
-    ("Delta sintetico", 1000, None, 1000, None),  # case 4: no promotion
+    ("X-Bacon alfa sintetico", 1000, None, 1300, 1500),  # case 1: both low
+    ("X-Frango bravo sintetico", 1000, None, 1050, 1300),  # case 2: note
+    ("X-Egg charlie sintetico", 1000, 1500, 1300, None),  # case 3 and 5: own promotion, full gap high
+    ("X-Salada delta sintetico", 1000, None, 1000, None),  # case 4: no promotion
 ]
 
 
@@ -132,21 +132,21 @@ def test_B01_M1_07_worker_rows_and_the_view_carry_both_parities(conn, repo):
     calc_step(repo, s.xid)
     rows = s.rows()
 
-    a = rows["Alfa sintetico"]
+    a = rows["X-Bacon alfa sintetico"]
     assert (a["parity_cents"], a["parity_full_cents"], a["reading"], a["full_price_room"]) == (1300, 1500, "pode_subir", False)
     assert (float(a["gap_pct"]), float(a["gap_full_pct"])) == (-0.2308, -0.3333)
     assert a["loss_cents"] == 300, "M1-08 on the current parity"
 
-    b = rows["Bravo sintetico"]
+    b = rows["X-Frango bravo sintetico"]
     assert (b["parity_cents"], b["parity_full_cents"], b["reading"], b["full_price_room"]) == (1050, 1300, "na_media", True)
     assert b["loss_cents"] == 50, "M1-08 on the current parity"
 
-    c = rows["Charlie sintetico"]
+    c = rows["X-Egg charlie sintetico"]
     assert (c["parity_cents"], c["parity_full_cents"], c["reading"], c["full_price_room"]) == (1300, 1300, "nao_mexer", False)
     assert (float(c["gap_pct"]), float(c["gap_full_pct"])) == (-0.2308, 0.1538)
     assert c["own_cents"] == 1000, "the main number is the current price"
 
-    d = rows["Delta sintetico"]
+    d = rows["X-Salada delta sintetico"]
     assert (d["parity_cents"], d["parity_full_cents"], d["reading"], d["full_price_room"]) == (1000, 1000, "na_media", False)
     assert d["gap_pct"] == d["gap_full_pct"] == 0
 
@@ -163,8 +163,8 @@ def test_B01_M1_05_the_snapshot_keeps_the_full_price_and_null_means_current(conn
             (s.xid, s.target),
         ).fetchall()
     }
-    assert kept["Charlie sintetico"] == (1000, 1500)
-    assert kept["Alfa sintetico"] == (1000, None)
+    assert kept["X-Egg charlie sintetico"] == (1000, 1500)
+    assert kept["X-Bacon alfa sintetico"] == (1000, None)
 
 
 def test_B01_M1_05_pairing_again_clears_the_full_price_results_too(conn, repo):
@@ -172,7 +172,7 @@ def test_B01_M1_05_pairing_again_clears_the_full_price_results_too(conn, repo):
     pair_step(repo, s.xid)
     calc_step(repo, s.xid)
     pair_step(repo, s.xid)
-    b = s.rows()["Bravo sintetico"]
+    b = s.rows()["X-Frango bravo sintetico"]
     assert (b["parity_cents"], b["parity_full_cents"], b["gap_full_pct"], b["full_price_room"]) == (None, None, None, False)
 
 
@@ -193,7 +193,7 @@ def test_B01_M1_05_case_7_a_run_from_before_this_change_has_no_secondary_info_an
         " where xray_id = %s",
         (s.xid,),
     )
-    old = s.rows()["Bravo sintetico"]
+    old = s.rows()["X-Frango bravo sintetico"]
     assert (old["parity_full_cents"], old["gap_full_pct"], old["full_price_room"]) == (None, None, False)
 
     # Recomputed anyway, a null full price in the snapshot means current, never the catalog's original of today.
@@ -202,7 +202,7 @@ def test_B01_M1_05_case_7_a_run_from_before_this_change_has_no_secondary_info_an
         assert row["parity_full_cents"] == row["parity_cents"]
         assert row["gap_full_pct"] == row["gap_pct"]
         assert row["full_price_room"] is False
-    assert s.rows()["Charlie sintetico"]["reading"] == "pode_subir", "the run knew no promotion: as it read then"
+    assert s.rows()["X-Egg charlie sintetico"]["reading"] == "pode_subir", "the run knew no promotion: as it read then"
 
 
 def test_B01_M1_05_case_8_a_weekly_capture_does_not_change_a_delivered_xray(conn, repo, clean_jobs):
@@ -211,13 +211,13 @@ def test_B01_M1_05_case_8_a_weekly_capture_does_not_change_a_delivered_xray(conn
     calc_step(repo, s.xid)
     conn.execute("update public.xray set status = 'delivered', delivered_at = now() where id = %s", (s.xid,))
     before = s.rows()
-    assert before["Bravo sintetico"]["parity_full_cents"] == 1300
+    assert before["X-Frango bravo sintetico"]["parity_full_cents"] == 1300
 
     s.capture_everything_at_new_prices(conn)
     assert (
         conn.execute(
             "select comparison_price_cents as c, original_price_cents as o from public.public_menu_item"
-            " where public_store_id = %s and name = 'Bravo sintetico'",
+            " where public_store_id = %s and name = 'X-Frango bravo sintetico'",
             (s.target,),
         ).fetchone()
         == {"c": 111, "o": 99900}

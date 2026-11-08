@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import { calculate, confirmStores, createXray, markDelivered, prepareDelivery, reviewItem, saveMinutes, setStoreIncluded, type XrayDeps } from "./commands";
 import { gapLabel, hoursLabel, kmLabel, money, parseHours, shareLabel } from "./format";
 import { canonicalStoreUrl, storeIdFromUrl } from "./ifood-url";
-import { confirmWaitLabel, leftOutLabel, captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, retryLabel, targetCaptureRetry, XRAY_MESSAGES, withoutParityLabel } from "./labels";
+import { confirmWaitLabel, exclusiveLabel, leftOutLabel, captureProgressLabel, captureRankLabel, collectStopReason, competitorRefusal, fullParityLabel, pairFailure, pairStatusLabel, pdfFileLabel, retryLabel, targetCaptureRetry, XRAY_MESSAGES, withoutParityLabel } from "./labels";
 import { signupLink, whatsappLink, xrayMessage } from "./P02-whatsapp-raio-x";
-import { captureCounts, examplePair, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow, withoutParity } from "./view";
+import { captureCounts, examplePair, exclusives, fullParityInfo, mapOffset, neighborhoodCounts, pairingTotals, pendingReview, priceHistory, storeState, xrayResult, type ItemRow, withoutParity } from "./view";
 
 const PANTANOS = "https://www.ifood.com.br/delivery/londrina-pr/pantanos-burguer-igapo/91a9c35d-0000-4000-8000-000000000000";
 
@@ -376,6 +376,26 @@ describe("M1-05 paired items with no parity stay visible in C05", () => {
   it("B3 names them in one sentence", () => {
     expect(withoutParityLabel(["Sundae"])).toBe("Sem paridade, poucas lojas vendem o mesmo item: Sundae.");
     expect(withoutParityLabel(["A", "B", "C"])).toBe("Sem paridade, poucas lojas vendem o mesmo item: A, B e C.");
+  });
+});
+
+describe("M1-04 Stage 2 exclusive items, C04 and C05", () => {
+  const only = { parityCents: null, acceptedPairs: 0, skipped: false, pairStatus: "exclusivo" as const, name: "Lanche da vila" };
+  it("M1-04 C04 says when a pair rests on a default size", () => {
+    expect(pairStatusLabel("normalizado", "tamanho presumido 500 ml")).toBe("normalizado, tamanho presumido 500 ml");
+    expect(pairStatusLabel("auto", null)).toBe("pareado");
+  });
+  it("B7 C04 shows the status, not revisar", () => {
+    expect(pairStatusLabel("exclusivo", "exclusivo, sem comparação")).toBe("exclusivo, sem comparação");
+    expect(pendingReview([{ ...only, reviewed: false }])).toBe(0);
+  });
+  it("B7 C05 names them under the table, outside the no-parity line", () => {
+    expect(exclusives([only])).toHaveLength(1);
+    expect(withoutParity([only])).toHaveLength(0);
+    expect(withoutParity([{ ...only, acceptedPairs: 2 }])).toHaveLength(0);
+    expect(exclusives([{ ...only, parityCents: 2500 }])).toHaveLength(0);
+    expect(exclusives([{ ...only, skipped: true }])).toHaveLength(0);
+    expect(exclusiveLabel(["A", "B"])).toBe("Exclusivos, sem comparação, nenhuma loja do raio-X vende o mesmo item: A e B.");
   });
 });
 

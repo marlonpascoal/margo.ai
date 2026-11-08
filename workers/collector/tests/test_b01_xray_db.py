@@ -67,7 +67,8 @@ def test_B01_worker_steps_reproduce_the_seeded_xray_from_canonical_rows(conn):
     repo = PostgresXrayRepo(local_db_url())
     try:
         assert neighborhood_step(repo, xid) == {"stores": 107, "in_set": 84}
-        assert pair_step(repo, xid) == {"items": 24, "revisar": 3}
+        out = pair_step(repo, xid)
+        assert (out["items"], out["revisar"], out["exclusivo"], out["ai_skipped"]) == (24, 3, 0, True)
         assert calc_step(repo, xid) == {"items": 24, "items_for_80": 6}
     finally:
         # The seed has no rank (M1-11 is null for rows from before the rule): C03 stays as drawn.

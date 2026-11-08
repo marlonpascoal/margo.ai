@@ -10,11 +10,27 @@ Results returned to the runner are counts and ids only (02 §7).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol
 
+from margo_common.log import log_event
+
 from .ifood_public import ParsedStore
+from .learning import (
+    Answer,
+    AttrReader,
+    FoodRun,
+    FounderLearning,
+    Learning,
+    Pattern,
+    apply_founders,
+    founder_learnings_m1_04,
+    pattern_m1_04,
+    read_food_m1_04,
+    unreadable_items,
+)
 from .rules import Item, RankWeights, Settings, Store
 from .xray import CalcInput, CalcResult, ItemRow, StoreRow, build_neighborhood, build_pairs, calculate
 
@@ -103,6 +119,23 @@ class XrayRepo(Protocol):
 
     def save_pairs(self, xray_id: str, rows: list[ItemRow]) -> None: ...
 
+    def attr_learnings(self) -> dict[Pattern, Learning]:
+        """M1-04 Stage 2: every learning with its answers by X-ray (public.m1_attr_learning and _run)."""
+        ...
+
+    def attr_learning_min_runs(self) -> int:
+        """Param m1.attr_learning_min_runs."""
+        ...
+
+    def save_attr_answers(self, xray_id: str, model: str, answers: Sequence[Answer]) -> None:
+        """This run's AI answers: one per pattern per X-ray, a re-run replacing it."""
+        ...
+
+    def save_founder_learnings(self, taught: Sequence[FounderLearning]) -> None:
+        """Founder corrections from C04: an answer wins and clears a dispute; a rejection disputes the
+        pattern."""
+        ...
+
     def calc_inputs(self, xray_id: str) -> list[CalcInput]: ...
 
     def save_calc(self, xray_id: str, result: CalcResult) -> None: ...
@@ -165,21 +198,67 @@ def neighborhood_job_step(
     return {**result, "captures": captures}
 
 
-def pair_step(repo: XrayRepo, xray_id: str) -> dict[str, int]:
+def pair_step(
+    repo: XrayRepo, xray_id: str, reader: AttrReader | None = None
+) -> dict[str, int | str | bool | None]:
     """M1-03 and M1-04: the target's items against the items of the stores in the set, once enough captures
     finished. A store whose capture is still running is left out and marked; when it finishes the pairing
     stays as it is until a person runs it again. A re-run replaces the pairs: stores no longer in the set
-    leave, a founder's decision on a store still in it stays."""
+    leave, a founder's decision on a store still in it stays.
+
+    Stage 2: non-beverage items the rules cannot read take a founder's or a promoted learning, else one AI
+    call (`reader`); the answers and the founder's C04 corrections are learned. Without a reader (no
+    ANTHROPIC_API_KEY) that step is skipped with a note, nothing is learned, and the result is the rules
+    alone."""
     if repo.pair_blocker(xray_id) is not None:
         raise LoadPending()
     x = repo.load_xray(xray_id)
     own = repo.items_of_stores([x.target_store_id])
     left_out = repo.unfinished_captures(xray_id)
     pool = repo.items_of_stores([s for s in repo.included_store_ids(xray_id) if s not in set(left_out)])
-    rows = build_pairs(own, pool, x.settings, repo.pair_decisions(xray_id))
+    decisions = repo.pair_decisions(xray_id)
+    food = learn_food_step(repo, xray_id, own, pool, decisions, reader)
+    rows = build_pairs(own, pool, x.settings, decisions, food.overrides)
     repo.save_pairs(xray_id, rows)
     repo.mark_left_out(xray_id, left_out)
-    return {"items": len(rows), "revisar": sum(1 for r in rows if r.pair_status == "revisar")}
+    return {
+        "items": len(rows),
+        "revisar": sum(1 for r in rows if r.pair_status == "revisar"),
+        "exclusivo": sum(1 for r in rows if r.pair_status == "exclusivo"),
+        "attr_unreadable": food.unreadable if reader else len(unreadable_items([*own, *pool])),
+        "attr_learned": food.from_learnings,
+        "ai_items": food.ai_items,
+        "ai_model": reader.model if reader else None,
+        "ai_skipped": reader is None,
+    }
+
+
+def learn_food_step(
+    repo: XrayRepo,
+    xray_id: str,
+    own: Sequence[Item],
+    pool: Sequence[Item],
+    decisions: dict[tuple[str, str], tuple[bool, str]],
+    reader: AttrReader | None,
+) -> FoodRun:
+    """M1-04 Stage 2: founder corrections first (they win), then learnings, then the AI for the rest; saves
+    what was learned. Nothing at all without a reader."""
+    items = [*own, *pool]
+    if reader is None:
+        note = "ANTHROPIC_API_KEY ausente: só regras, nada aprendido"
+        log_event("m1_attr_ai_skipped", xray_id=xray_id, note=note)
+        return read_food_m1_04(items, {}, None)
+    learnings = repo.attr_learnings()
+    # An unreadable item whose pattern the AI answered before had its attributes from the AI.
+    before = {i.id for i in unreadable_items(items) if (lr := learnings.get(pattern_m1_04(i))) and lr.answers}
+    taught = founder_learnings_m1_04(decisions, {i.id: i for i in items}, before)
+    if taught:
+        repo.save_founder_learnings(taught)
+        apply_founders(learnings, taught)
+    run = read_food_m1_04(items, learnings, reader, min_runs=repo.attr_learning_min_runs(), xray_id=xray_id)
+    if run.answers:
+        repo.save_attr_answers(xray_id, reader.model, run.answers)
+    return run
 
 
 def calc_step(repo: XrayRepo, xray_id: str) -> dict[str, int]:

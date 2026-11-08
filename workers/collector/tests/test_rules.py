@@ -136,7 +136,9 @@ def test_M1_04_below_min_pairs_goes_to_revisar_with_nothing_accepted():
     # 0.8 (strong), 0.667 (comparable, below the threshold) and 0.4 (not comparable).
     pool = _pool("Molho especial", 4) + _pool("Maionese especial extra", 3) + _pool("Molho da casa", 2)
     p = pair_item_m1_04(own, pool, Settings())
-    assert (p.status, p.note, len(p.candidates)) == ("revisar", "poucos pares", 7)
+    # Stage 2: the same add-on (molho) in 4 stores; "Molho da casa" shares those stores, listed but not the
+    # closest name there.
+    assert (p.status, p.note, len(p.candidates)) == ("revisar", "poucos pares", 9)
     assert not any(c.accepted for c in p.candidates)
 
 

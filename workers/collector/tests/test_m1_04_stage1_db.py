@@ -101,7 +101,7 @@ def test_B1_identical_beverages_confirm_through_the_worker_and_b4_shows_one(conn
         {
             "a": ("Sprite pet 2 litros", 900, "Bebidas"),
             "b": ("Água fria com gás 500ml", 300, "Bebidas"),
-            "c": ("Soda kiwi lata", 400, "Bebidas"),
+            "c": ("Soda kiwi garrafa", 400, "Bebidas"),
         },
         2,
     )
@@ -116,7 +116,7 @@ def test_B1_identical_beverages_confirm_through_the_worker_and_b4_shows_one(conn
     assert two["accepted_pairs"] == two["comparables"] == 2
     assert two["example_name"] == "Sprite pet 2 litros", "B4: the example is the same product"
     assert r["Água fria com gás 500ml"]["pair_status"] == "normalizado"
-    can = r["Soda kiwi lata"]
+    can = r["Soda kiwi garrafa"]
     assert (can["pair_status"], can["pair_note"], can["accepted_pairs"]) == ("revisar", "tamanho ilegível", 0)
     assert can["comparables"] == 2, "listed for a founder"
     assert can["example_name"] is None, "B4: an unconfirmed beverage shows no example"
@@ -314,7 +314,7 @@ def test_A1_A4_B1_B3_the_report_is_all_zeros_counts_only_and_says_the_same_both_
         assert "B1 bebidas em revisar com item idêntico em alguma loja: 0" in out
         assert "sem motivo válido: 0" in out
         assert "abaixo de 5 lojas, sem revisão de fundador: 0" in out
-        assert "pendente estágio 2" in out
+        assert "estágio 2:" in out and "B7 exclusivos com item idêntico em alguma loja: 0" in out
         for name in ("Sprite pet", "Soda kiwi", "Gigante da casa", "Bacon", h.tag):
             assert name not in out, "counts only"
     assert stored.stdout.splitlines()[3:] == dry.stdout.splitlines()[3:]

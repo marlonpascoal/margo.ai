@@ -3,13 +3,14 @@ name = "margo-collector"
 version = "0.0.0"
 description = "worker-collector (M1): public iFood pages under D47, and the price X-ray rules M1-01 to M1-08"
 requires-python = ">=3.12,<3.13"
-dependencies = ["margo-common", "margo-contracts"]
+dependencies = ["margo-common", "margo-contracts", "anthropic>=0.70"]
 
 [project.optional-dependencies]
 local = ["psycopg[binary]>=3.2"]
 
 [project.scripts]
 collector = "margo_collector.cli:main"
+record-anthropic-pairing = "margo_collector.record_pairing:main"
 
 [project.entry-points."margo.jobs"]
 collect = "margo_collector.handlers:collect"

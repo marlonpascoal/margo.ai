@@ -274,6 +274,7 @@ name = "margo-collector"
 version = "0.0.0"
 source = { editable = "workers/collector" }
 dependencies = [
+    { name = "anthropic" },
     { name = "margo-common" },
     { name = "margo-contracts" },
 ]
@@ -285,6 +286,7 @@ local = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anthropic", specifier = ">=0.70" },
     { name = "margo-common", editable = "workers/common" },
     { name = "margo-contracts", editable = "packages/contracts" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'local'", specifier = ">=3.2" },

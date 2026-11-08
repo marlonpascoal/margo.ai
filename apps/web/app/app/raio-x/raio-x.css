@@ -380,6 +380,10 @@
   .rx-main, .rx .card { max-width: 100%; box-sizing: border-box; }
   .rx-main { width: 100%; padding-right: 1px; }
   .rx .lead2 { grid-template-columns: minmax(0, 1fr); }
+  /* Chromium does not move later grid rows when an earlier one breaks across pages: they overlap. Page-level
+     stacks print as blocks. */
+  .rx-main, .rx-main > .stack, .rx .lead2 { display: block; }
+  .rx-main > * + *, .rx-main > .stack > * + *, .rx .lead2 > * + * { margin-top: 12px; }
   .rx .it { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
   .rx .sl { max-height: none; overflow: visible; }
   .rx * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

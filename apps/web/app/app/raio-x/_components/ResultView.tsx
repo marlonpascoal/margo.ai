@@ -135,6 +135,15 @@ function ItemRow({ it, comp, who, ownLabel, stores, print, test }: { it: ResultI
   );
 }
 
+/** A collapsible card on screen; a plain section in print, since Chromium overlaps a <details> split across pages. */
+function Fold({ print, open, children, ...rest }: { print: boolean; open: boolean; className: string; children: ReactNode; "data-category"?: string }) {
+  return print ? <section {...rest}>{children}</section> : (
+    <details {...rest} open={open}>
+      {children}
+    </details>
+  );
+}
+
 /** Stores whose menus this run read (capture slots that finished); a run without captures (seed, before D47d) counts
  *  the stores it compares with. */
 const storesRead = (r: ResultPage["result"]) => (r.stores_read > 0 ? r.stores_read : r.stores_compared);
@@ -272,7 +281,7 @@ export default function ResultView(p: ResultViewProps) {
     const groups = readingGroups(list);
     const label = GROUP_LABEL[c.group as Group] ?? c.group;
     return (
-      <details key={c.group} className="card catc" open={print || c.group === firstOpen} data-category={label}>
+      <Fold key={c.group} print={print} className="card catc" open={c.group === firstOpen} data-category={label}>
         <summary>
           <h3>{label}</h3>
           <span className="csum">
@@ -309,7 +318,7 @@ export default function ResultView(p: ResultViewProps) {
             ))}
           </div>
         ))}
-      </details>
+      </Fold>
     );
   };
 
@@ -453,7 +462,7 @@ export default function ResultView(p: ResultViewProps) {
         </div>
         {cats.map(catSection)}
         {p.onlyYours.length ? (
-          <details className="card catc" open={print}>
+          <Fold print={print} className="card catc" open={false}>
             <summary>
               <h3>{comp ? "Itens só dele" : "Itens só seus"}</h3>
               <span className="csum">
@@ -469,7 +478,7 @@ export default function ResultView(p: ResultViewProps) {
                 </div>
               ))}
             </div>
-          </details>
+          </Fold>
         ) : null}
       </section>
       {cont ? (

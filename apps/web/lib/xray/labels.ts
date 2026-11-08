@@ -35,8 +35,8 @@ export const EXCLUSIVE_LABEL = "exclusivo, sem comparação";
 export const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches, hambúrguer, porções", categories: ["Lanches", "Hambúrguer", "Porções"] },
   { value: "hamburguer", label: "Só hambúrguer", categories: ["Hambúrguer"] },
-  { value: "japonesa", label: "Japonesa", categories: ["Japonesa"] },
-  { value: "asiatica", label: "Chinesa e asiática", categories: ["Chinesa", "Asiática", "Coreana"] },
+  { value: "japonesa", label: "Japonesa", categories: ["Japonesa", "Comida Japonesa"] },
+  { value: "asiatica", label: "Chinesa e asiática", categories: ["Chinesa", "Comida Chinesa", "Asiática", "Coreana"] },
   { value: "pizza", label: "Pizza", categories: ["Pizza"] },
   { value: "italiana", label: "Italiana", categories: ["Italiana"] },
   { value: "brasileira", label: "Brasileira e marmita", categories: ["Brasileira", "Comida Brasileira", "Marmita"] },

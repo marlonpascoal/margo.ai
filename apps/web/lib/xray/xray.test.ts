@@ -39,11 +39,13 @@ describe("C02 and P20 categories by cuisine (M1-02, D71)", () => {
   it("offers one option per cuisine, with unique values", () => {
     const values = CATEGORY_OPTIONS.map((c) => c.value);
     expect(new Set(values).size).toBe(values.length);
-    expect(CATEGORY_OPTIONS.find((c) => c.value === "japonesa")?.categories).toEqual(["Japonesa"]);
+    expect(CATEGORY_OPTIONS.find((c) => c.value === "japonesa")?.categories).toContain("Japonesa");
   });
   it("finds the option of a store's iFood category, ignoring case and accents, as M1-02 does", () => {
     expect(categoryOptionFor("Japonesa")).toBe("japonesa");
     expect(categoryOptionFor("JAPONESA")).toBe("japonesa");
+    expect(categoryOptionFor("Comida Japonesa")).toBe("japonesa");
+    expect(categoryOptionFor("Comida Chinesa")).toBe("asiatica");
     expect(categoryOptionFor("arabe")).toBe("arabe");
     expect(categoryOptionFor("Comida Brasileira")).toBe("brasileira");
     expect(categoryOptionFor("Hambúrguer")).toBe("lanches");

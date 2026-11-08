@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 import { isEnabled } from "@/lib/flags";
 import { loadDeps, printDeps, printedPdf } from "@/lib/monitor/deps";
 import { loadResult } from "@/lib/monitor/load";
-import { pdfFileName, requestPrint } from "@/lib/monitor/print";
+import { pdfFileName, printVersion, requestPrint } from "@/lib/monitor/print";
 import { canPortal } from "@/lib/permissions";
 import { auditPerson, portalMember } from "@/lib/portal/session";
 import { adminClient } from "@/lib/supabase/admin";
@@ -27,9 +27,9 @@ async function visibleResult(req: Request, monitor: string) {
 export async function POST(req: Request, ctx: { params: Promise<{ monitor: string }> }) {
   const v = await visibleResult(req, (await ctx.params).monitor);
   if (!v) return notFound();
-  const s = await requestPrint(printDeps(), { xrayId: v.result.xray_id, version: v.result.version, accountId: v.m.account.id });
+  const s = await requestPrint(printDeps(), { xrayId: v.result.xray_id, version: printVersion(v.result.version), accountId: v.m.account.id });
   if (s.state === "preparing" && !s.deduped) {
-    await auditPerson(adminClient(), v.m, { action: "xray.print_request", entity: "xray", entityId: v.result.xray_id, after: { version: v.result.version, job_id: s.jobId } });
+    await auditPerson(adminClient(), v.m, { action: "xray.print_request", entity: "xray", entityId: v.result.xray_id, after: { version: printVersion(v.result.version), job_id: s.jobId } });
   }
   return NextResponse.json({ state: s.state }, { headers: { "cache-control": "private, no-store" } });
 }
@@ -37,7 +37,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ monitor: strin
 export async function GET(req: Request, ctx: { params: Promise<{ monitor: string }> }) {
   const v = await visibleResult(req, (await ctx.params).monitor);
   if (!v) return notFound();
-  const done = await printDeps().printed(v.result.xray_id, v.result.version);
+  const done = await printDeps().printed(v.result.xray_id, printVersion(v.result.version));
   if (new URL(req.url).searchParams.has("estado")) return NextResponse.json({ state: done ? "ready" : "preparing" }, { headers: { "cache-control": "private, no-store" } });
   if (!done) return NextResponse.json({ state: "preparing" }, { status: 202, headers: { "cache-control": "private, no-store" } });
   const file = await printedPdf(done.path);

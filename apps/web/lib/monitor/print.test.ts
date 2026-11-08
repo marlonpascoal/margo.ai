@@ -1,6 +1,6 @@
 // B01 P23 "Baixar PDF": the printed copy is cached per result version; the print page needs worker-render's token.
 import { describe, expect, it } from "vitest";
-import { pdfFileName, printDedupeKey, printTokenValid, requestPrint, tokenHash, type PrintDeps } from "./print";
+import { PRINT_LAYOUT, pdfFileName, printVersion, printDedupeKey, printTokenValid, requestPrint, tokenHash, type PrintDeps } from "./print";
 
 function fake(printed: { path: string; pages: number } | null) {
   const jobs: unknown[] = [];
@@ -46,5 +46,9 @@ describe("B01 P23 Baixar PDF", () => {
   it("B01_P23_pdf_file_name", () => {
     expect(pdfFileName("Burger do Bairro Centro", "2026-11-02")).toBe("raio-x-burger-do-bairro-centro-2026-11-02.pdf");
     expect(pdfFileName("Açaí & Cia", "2026-11-02")).toBe("raio-x-acai-cia-2026-11-02.pdf");
+  });
+  it("B01_P23_a_new_print_layout_never_serves_an_older_copy", () => {
+    expect(printVersion("abc")).toBe(`abc.l${PRINT_LAYOUT}`);
+    expect(printVersion("abc")).not.toBe("abc");
   });
 });

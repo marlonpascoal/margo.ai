@@ -232,10 +232,16 @@ export function stripGeometry(i: Pick<ResultItem, "own_cents" | "parity_cents" |
   const align = (v: number) => (v < 30 ? "l" : v > 70 ? "r" : "c");
   const low = i.low_cents ?? lo;
   const high = i.high_cents ?? hi;
+  // The neighbors' range keeps a visible width with a single neighbor (low = high).
+  const width = Math.max(x(high) - x(low), 2);
   return {
-    lo: low,
-    hi: high,
-    range: { left: x(low), width: x(high) - x(low) },
+    /** Ends of the track: the scale, own price included (an own price outside the neighbors sits at an end). */
+    lo,
+    hi,
+    /** The neighbors' range, for the accessible label. */
+    neighborsLo: low,
+    neighborsHi: high,
+    range: { left: Math.min(x(low), 100 - width), width },
     med: x(i.parity_cents),
     own: x(i.own_cents),
     ownAlign: align(x(i.own_cents)),

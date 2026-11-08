@@ -5,6 +5,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { HeadToHead, ItemLists, ResultItem, ResultPage } from "@/lib/monitor/load";
+import { printVersion } from "@/lib/monitor/print";
 import { GROUP_LABEL, type Group } from "@/lib/monitor/rules";
 import { brl, dayMon, gapWords, headline, longWeekdayDayMon, ordinal, paretoSentence, positionChange, positionWords, readingGroups, storeListWithOwn, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
 import NavSelect from "@/components/NavSelect";
@@ -42,7 +43,7 @@ function Strip({ it, who }: { it: ResultItem; who: string }) {
   const g = stripGeometry(it);
   const cls = it.reading === "nao_mexer" ? " hi" : it.reading === "na_media" ? " na" : "";
   return (
-    <div className="pstrip" role="img" aria-label={`${who} ${brl(it.own_cents)}; meio da vizinhança ${brl(it.parity_cents)}; de ${brl(g.lo)} a ${brl(g.hi)} em ${it.stores ?? 0} lojas`}>
+    <div className="pstrip" role="img" aria-label={`${who} ${brl(it.own_cents)}; meio da vizinhança ${brl(it.parity_cents)}; vizinhos de ${brl(g.neighborsLo)} a ${brl(g.neighborsHi)} em ${it.stores ?? 0} lojas`}>
       <span className="end" aria-hidden="true">
         {brl(g.lo)}
       </span>
@@ -228,7 +229,7 @@ export default function ResultView(p: ResultViewProps) {
   };
 
   return (
-    <main className="rx-main" data-version={r.version} data-xray={r.xray_id}>
+    <main className="rx-main" data-version={printVersion(r.version)} data-xray={r.xray_id}>
       {p.mode === "screen" ? <PrintOpen /> : null}
       <div className={print ? "row-flex between" : "print-only"}>
         <span className="row-flex between" style={{ width: "100%" }}>

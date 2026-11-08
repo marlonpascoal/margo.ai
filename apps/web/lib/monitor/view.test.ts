@@ -173,6 +173,18 @@ describe("B01 P23 result words, never money", () => {
     expect(g.ownAlign).toBe("r");
   });
 
+  it("B01_P23_strip_ends_are_the_scale_so_an_own_price_outside_the_neighbors_reads_right", () => {
+    const g = stripGeometry({ own_cents: 4800, parity_cents: 3345, low_cents: 2380, high_cents: 3790 });
+    expect([g.lo, g.hi]).toEqual([2380, 4800]);
+    expect([g.neighborsLo, g.neighborsHi]).toEqual([2380, 3790]);
+    expect(g.own).toBeCloseTo(97);
+  });
+
+  it("B01_P23_strip_with_one_neighbor_still_shows_its_price", () => {
+    const g = stripGeometry({ own_cents: 3600, parity_cents: 3700, low_cents: 3700, high_cents: 3700 });
+    expect(g.range.width).toBeGreaterThanOrEqual(2);
+  });
+
   it("B01_P23_store_list_inserts_the_own_row_and_marks_the_middle", () => {
     const rows = storeListWithOwn([{ name: "N1", price_cents: 1000 }, { name: "N2", price_cents: 1200 }, { name: "N3", price_cents: 1400 }], { name: "Você", price_cents: 1100 }, 1200);
     expect(rows.map((r) => `${r.name}${r.me ? "*" : ""}${r.middle ? "^" : ""}`)).toEqual(["N1", "Você*", "N2^", "N3"]);

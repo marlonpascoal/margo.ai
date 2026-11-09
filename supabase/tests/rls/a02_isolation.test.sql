@@ -287,7 +287,7 @@ reset role;
 select tests.login('fundador');
 select is(tests.n($$ select 1 from public.subscription where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees subscriptions');
 select is(tests.n($$ select 1 from public.billing_event where account_id in (tests.id('X'), tests.id('Y')) $$), 2, 'Fundador sees Asaas events');
-select is(tests.n($$ select 1 from public.feature_flag $$), 46, 'Fundador sees feature toggles (23 flags in two environments, as rls/schema.test.sql)');
+select is(tests.n($$ select 1 from public.feature_flag $$), 48, 'Fundador sees feature toggles (24 flags in two environments, as rls/schema.test.sql)');
 select throws_ok($$ update public.feature_flag set default_raio_x = true $$, '42501', null,
   'even Fundador writes only through audited server actions');
 reset role;

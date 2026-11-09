@@ -109,6 +109,52 @@ describe("B01 allowlist", () => {
   });
 });
 
+describe("M1 choices (complements)", () => {
+  const CHOICE = { name: "Escolha a proteína", min: 1, max: 1, options: [{ name: "Frango sintético", price_cents: 0 }, { name: "Carne sintética", price_cents: 500 }] };
+  const capture = (choices: unknown) => ({
+    source: "scraper",
+    collected_at: "2026-11-07T10:00:00-03:00",
+    capture: {
+      store: { external_id: STORE_A, url: "https://exemplo.test/a" },
+      items: [{ external_item_id: "i", name: "Monte seu prato sintético", price_cents: 0, minimum_price_cents: 1900, choices }],
+    },
+  });
+  const parse = (choices: unknown) => parseExtractResult("capture", STORE_A, capture(choices), NOW);
+  const items = (r: ReturnType<typeof parse>) => {
+    if (!r.ok) throw new Error(r.errors.join());
+    return r.copies[0]!.content.items as Record<string, unknown>[];
+  };
+
+  it("M1_choices_are_kept_with_groups_and_options", () => {
+    const r = parse([CHOICE]);
+    expect(items(r)[0]!.choices).toEqual([CHOICE]);
+    expect(r.ok && r.dropped).toEqual([]);
+  });
+
+  it("M1_choices_null_counts_as_absent", () => {
+    expect(items(parse(null))[0]).not.toHaveProperty("choices");
+  });
+
+  it("M1_choices_drop_unknown_fields_inside_groups_and_options", () => {
+    const r = parse([{ ...CHOICE, raw: "x", options: [{ ...CHOICE.options[0], foto: "y" }] }]);
+    expect(items(r)[0]!.choices).toEqual([{ ...CHOICE, options: [CHOICE.options[0]] }]);
+    expect(r.dropped).toEqual(["capture.items[].choices[].options[].foto", "capture.items[].choices[].raw"]);
+  });
+
+  it("M1_choices_malformed_are_refused_with_the_path", () => {
+    const errors = (c: unknown) => {
+      const r = parse(c);
+      return r.ok ? [] : r.errors;
+    };
+    expect(errors("x")).toEqual(["capture.items[0].choices: must be an array"]);
+    expect(errors([{ ...CHOICE, min: 2, max: 1 }])).toEqual(["capture.items[0].choices[0]: min is above max"]);
+    expect(errors([{ ...CHOICE, options: [] }])).toEqual(["capture.items[0].choices[0].options: must be an array with at least one option"]);
+    expect(errors([{ ...CHOICE, options: [{ name: "Sem preço" }] }])).toEqual(["capture.items[0].choices[0].options[0].price_cents: required"]);
+    expect(errors([{ name: "Grupo", options: CHOICE.options, max: 1 }])).toEqual(["capture.items[0].choices[0].min: required"]);
+    expect(errors([{ ...CHOICE, name: "<html>" }])).toEqual(["capture.items[0].choices[0].name: must not hold raw HTML"]);
+  });
+});
+
 describe("B01 fail reasons", () => {
   it("B01_fail_accepts_network_besides_the_old_reasons", () => {
     expect([...FAIL_REASONS]).toEqual(["blocked", "not_found", "parse_error", "timeout", "network", "other"]);

@@ -44,6 +44,9 @@ const count = (v: unknown) =>
 const textList = (v: unknown) =>
   Array.isArray(v) && v.length <= 200 && v.every((s) => text(200)(s) === null) ? null : "must be an array of strings";
 const bool = (v: unknown) => (typeof v === "boolean" ? null : "must be true or false");
+const choiceList = (v: unknown) => (Array.isArray(v) && v.length <= 100 ? null : "must be an array");
+const optionList = (v: unknown) =>
+  Array.isArray(v) && v.length >= 1 && v.length <= 500 ? null : "must be an array with at least one option";
 const unit = (v: unknown) => (v === "g" || v === "ml" || v === "un" || v === "pack" ? null : 'must be "g", "ml", "un" or "pack"');
 
 const STORE: Record<string, Rule> = {
@@ -81,6 +84,19 @@ const ITEM: Record<string, Rule> = {
   minimum_price_cents: { check: cents },
   unit: { check: unit },
   unit_qty: { check: number(0.01, 10_000_000) },
+  choices: { check: choiceList },
+};
+
+const CHOICE: Record<string, Rule> = {
+  name: { required: true, check: text(300) },
+  min: { required: true, check: count },
+  max: { required: true, check: count },
+  options: { required: true, check: optionList },
+};
+
+const CHOICE_OPTION: Record<string, Rule> = {
+  name: { required: true, check: text(300) },
+  price_cents: { required: true, check: cents },
 };
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -149,6 +165,23 @@ function parseDiscover(r: Reader, raw: unknown, externalId: string | null): Extr
   return copies;
 }
 
+/** The allowlist goes down into each complement group and option, so nothing else in them reaches a copy. */
+function parseChoices(r: Reader, at: string, groups: unknown[]): Record<string, unknown>[] {
+  const dropAs = "capture.items[].choices[]";
+  return groups.flatMap((raw, j) => {
+    const here = `${at}.choices[${j}]`;
+    const group = r.fields(here, dropAs, raw, CHOICE);
+    if (!group) return [];
+    if (typeof group.min === "number" && typeof group.max === "number" && group.min > group.max) {
+      r.errors.push(`${here}: min is above max`);
+    }
+    if (Array.isArray(group.options)) {
+      group.options = group.options.flatMap((o, k) => r.fields(`${here}.options[${k}]`, `${dropAs}.options[]`, o, CHOICE_OPTION) ?? []);
+    }
+    return [group];
+  });
+}
+
 function parseCapture(r: Reader, raw: unknown, externalId: string | null): ExtractCopy[] {
   if (!isObject(raw)) {
     r.errors.push("capture: must be an object");
@@ -172,6 +205,7 @@ function parseCapture(r: Reader, raw: unknown, externalId: string | null): Extra
     if ((item.unit === "g" || item.unit === "ml") && item.unit_qty === undefined) {
       r.errors.push(`capture.items[${i}].unit_qty: required when unit is ${item.unit as string}`);
     }
+    if (Array.isArray(item.choices)) item.choices = parseChoices(r, `capture.items[${i}]`, item.choices);
     items.push(item);
   });
   return store ? [{ external_id: store.external_id as string, content: { kind: "capture", store, items } }] : [];

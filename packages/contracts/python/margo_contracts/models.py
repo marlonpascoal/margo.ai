@@ -1171,6 +1171,7 @@ class Plan(Row):
 
 class PublicMenuItem(Row):
     category: str | None
+    choices: JsonValue | None
     collected_at: datetime
     comparison_price_cents: int | None
     created_at: datetime

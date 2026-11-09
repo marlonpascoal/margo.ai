@@ -21,7 +21,8 @@ select tables_are('public', array[
   'invoice', 'invoice_line', 'ingredient', 'ingredient_match', 'ingredient_price', 'recipe', 'recipe_line',
   'packaging_cost', 'contribution', 'campaign_item', 'close_cost_line', 'close_decision', 'invoice_import', 'ingredient_rule',
   'ingredient_account_rule', 'xray_monitor', 'monitor_pair_decision', 'xray_category_rank', 'xray_item_position', 'xray_menu_score',
-  'xray_print', 'xray_print_token', 'm1_attr_learning', 'm1_attr_learning_run', 'monitor_test_item', 'xray_opportunity'
+  'xray_print', 'xray_print_token', 'm1_attr_learning', 'm1_attr_learning_run', 'monitor_test_item', 'xray_opportunity',
+  'xray_pair_review', 'm1_pair_review_answer', 'm1_item_family', 'm1_ai_cache'
 ], 'A02: tables of 03 §1 to §5, the login code guard (04 §8), the M1 page cache (D47) and M2 params and evidence');
 
 select is_empty($$

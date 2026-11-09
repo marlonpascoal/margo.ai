@@ -142,6 +142,18 @@ A store with neither `search_terms` nor `taxonomies` stays a candidate. A store 
 | `minimum_price_cents` | | integer | Used when `price_cents` is 0 |
 | `unit` | | `"g"`, `"ml"`, `"un"`, `"pack"` | Default `"un"` |
 | `unit_qty` | | number | Required when `unit` is `"g"` or `"ml"`. For a pack, the units in it; leave it out for a combo of different items. Without it, and with `unit` absent or `"un"`, MargoAI reads the size from `name` when it is unambiguous (M1-03); what you send always wins |
+| `choices` | | array of CHOICE | The item's complement groups. Send it for items whose price depends on a choice (`price_cents` 0 with `minimum_price_cents`); leave it out for the others |
+
+### CHOICE
+
+| Field | Required | Type | Notes |
+|---|---|---|---|
+| `name` | yes | string | The group's title, such as "Escolha a proteína" |
+| `min` | yes | integer | Choices the customer must make. 1 or more: required group. 0: optional |
+| `max` | yes | integer | Most choices allowed in the group. Not below `min` |
+| `options` | yes | array, at least one | Each is `{ "name": string, "price_cents": integer }`. `price_cents` is what the option adds to the price: 0 means included |
+
+Unknown fields inside a group or an option are dropped and named in `dropped`, as anywhere else.
 
 ### Answers
 
@@ -187,7 +199,7 @@ A page that never rendered is `timeout` even when the extractor noticed it as a 
 
 - Each store becomes a dated copy that is never rewritten. Identical content is stored once.
 - The catalog updates at once. A field a copy lacks is left as it was, and a founder's choices (national chain, store taken out of a set) are never touched.
-- A capture carries the complete menu, so for an item in it a missing `original_price_cents` or `minimum_price_cents` means there is none now, and the stored value is cleared. A discovery copy never clears them.
+- A capture carries the complete menu, so for an item in it a missing `original_price_cents`, `minimum_price_cents` or `choices` means there is none now, and the stored value is cleared. A discovery copy never clears them.
 - An item missing from a newer capture is marked removed, never deleted; it returns if a later capture lists it.
 - Older copies arriving late do not overwrite newer values.
 - Captures go to the target and the top `m1.extract_max_captures_per_xray` stores of the ranking (M1-11); the others stay in the neighborhood with no capture job.

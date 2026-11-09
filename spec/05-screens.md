@@ -48,6 +48,12 @@ Every screen shows the label `dados fictícios` only when rendering the seed; re
 - **Actions** toggle a store in or out (writes `xray_store.included`, reason `manual`); "Confirmar N lojas" starts pairing and opens C04; disabled, with what it waits for, until enough captures finished and the target has its menu, and while the neighborhood job runs; refused on the server too (04 §1). Stores left out because their capture had not finished are named
 - **Done when** counts update live and the excluded reason is shown for every excluded store.
 
+### Cardápio coletado (no drawing, Marlon 08/nov)
+- **Route** `/console/raio-x/[id]/cardapio`, the X-ray's target; `?loja=<xray_store id>` for a store of its neighborhood. Staff only (`clients` area), flag `m1.raio_x`.
+- **Shows** the store's items as of its latest capture, by section: name, description, size, price, price before a promotion, the channel's type when it is not `DEFAULT`, and the complement groups (name, rule, options and what each adds). Totals and the date of the latest collection. Removed items are not listed.
+- **Actions** read only; links back to C05 and out to the store on iFood.
+- **Done when** an item "a partir de" reads from its minimum and a store of another X-ray answers 404.
+
 ### C04. Pareamento de itens (step 3)
 - **Route** `/console/raio-x/[id]/pareamento`.
 - **Shows** totals (items, auto-paired, to review, normalized by weight); table: own item, number of comparables, unit, example pair, status.

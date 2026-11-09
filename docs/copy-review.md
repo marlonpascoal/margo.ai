@@ -937,3 +937,10 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | o mais barato / o mais caro | `apps/web/lib/monitor/view.ts` | P23 collapse sentence, first and last place, D80 | |
 | Mais baratas / Até o meio / Acima do meio | `apps/web/lib/monitor/view.ts` | P23 collapse counts when the store is at or below the middle, D80 | |
 | Abaixo do meio / Até você / Até ele / Mais caras | `apps/web/lib/monitor/view.ts` | P23 collapse counts when the store is above the middle, D80 | |
+| Cardápio coletado / Última coleta em {data} às {hora}. | `apps/web/app/console/(app)/raio-x/[id]/cardapio/page.tsx` | Console, collected menu (no drawing), Marlon 08/nov | |
+| {N} itens · {N} seções · {N} com complementos | `apps/web/app/console/(app)/raio-x/[id]/cardapio/page.tsx` | Console, collected menu | |
+| Nenhum cardápio coletado para esta loja. | `apps/web/app/console/(app)/raio-x/[id]/cardapio/page.tsx` | Console, collected menu, empty | |
+| Ver cardápio / ver cardápio / Voltar ao raio-X / Abrir no iFood | console C05, C03, collected menu | Links to and from the collected menu | |
+| a partir de {R$} / sem preço / de {R$} / Sem seção | `apps/web/lib/xray/menu.ts` | Console, collected menu, prices and section | |
+| opcional, até {N} / obrigatório, escolha {N} / obrigatório, de {N} a {N} / incluso / + {R$} | `apps/web/lib/xray/menu.ts` | Console, collected menu, complements | |
+| {N} grupos de complementos / 1 grupo de complementos | `apps/web/app/console/(app)/raio-x/[id]/cardapio/page.tsx` | Console, collected menu | |

@@ -1,6 +1,7 @@
 "use client";
 // C03 body, as drawn: map placeholder with the stores, the list with a checkbox per store, and
 // "Confirmar N lojas". Counts update as soon as a box changes; each change is saved (reason "manual").
+import Link from "next/link";
 import { useOptimistic, useTransition, type ReactNode } from "react";
 import { FictitiousLabel } from "@/components/console";
 import { card, primaryButton } from "@/components/xray";
@@ -96,7 +97,10 @@ export default function NeighborhoodView({
                 <label className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-2.5 border-b border-border-subtle px-4 py-2.5 text-md">
                   <input type="checkbox" checked={r.included} onChange={(e) => toggle(r.id, e.target.checked)} aria-label={r.name} />
                   <span>
-                    <b>{r.name}</b>
+                    <b>{r.name}</b>{" "}
+                    <Link href={`/console/raio-x/${xrayId}/cardapio?loja=${r.id}`} className="text-xs">
+                      ver cardápio
+                    </Link>
                     <br />
                     <span className="text-xs text-ink-muted">{[r.category, kmLabel(r.distanceM), captureRankLabel(r.captureRank, r.captureScore)].filter(Boolean).join(" · ")}</span>
                   </span>

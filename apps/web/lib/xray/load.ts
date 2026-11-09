@@ -1,4 +1,5 @@
 // Reads for the M1 console screens, with the service role, after requireConsole("clients") (02 §5).
+import type { MenuRow } from "./menu";
 import type { Db } from "@/lib/supabase/admin";
 import type { CaptureState, HistoryPrice, HistoryRun, ItemRow, NeighborRow } from "./view";
 
@@ -32,6 +33,27 @@ export interface XrayHead {
   /** xray.target_kind: the account's own channel store, or another store. */
   targetKind: "own" | "competitor";
   targetStoreId: string;
+}
+
+/** The public store a row of this X-ray's neighborhood points at; null when the row is not of this X-ray. */
+export async function loadNeighborStoreId(db: Db, xrayId: string, xrayStoreId: string): Promise<string | null> {
+  if (!isUuid(xrayStoreId)) return null;
+  const r = check(await db.from("xray_store").select("public_store_id").eq("id", xrayStoreId).eq("xray_id", xrayId).maybeSingle());
+  return r?.public_store_id ?? null;
+}
+
+/** A store's name and link, and the items its latest capture lists (a removed item is not in the menu any more). */
+export async function loadStoreMenu(db: Db, storeId: string): Promise<{ name: string | null; url: string | null; rows: MenuRow[] }> {
+  const [store, rows] = await Promise.all([
+    db.from("public_store").select("name, url").eq("id", storeId).maybeSingle(),
+    db
+      .from("public_menu_item")
+      .select("id, name, description, category, price_cents, original_price_cents, minimum_price_cents, unit, unit_qty, unit_from_name, item_type, choices, collected_at")
+      .eq("public_store_id", storeId)
+      .is("removed_at", null),
+  ]);
+  const s = check(store);
+  return { name: s?.name ?? null, url: s?.url ?? null, rows: check(rows) ?? [] };
 }
 
 /** The X-ray and its target store; null for an unknown id (the page answers 404). */

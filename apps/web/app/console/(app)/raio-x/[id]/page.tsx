@@ -46,6 +46,7 @@ export default async function XrayPage({ params }: { params: Promise<{ id: strin
             {TARGET_KIND_LABEL[x.targetKind]}
           </span>
           {x.synthetic && <FictitiousLabel />}
+          <SecondaryLink href={`/console/raio-x/${x.id}/cardapio`}>Ver cardápio</SecondaryLink>
           <SecondaryLink href={`/console/raio-x/${x.id}/pareamento`}>Rever pares</SecondaryLink>
           <input type="hidden" name="xray" value={x.id} />
           <button type="submit" className={primaryButton} disabled={!ready}>

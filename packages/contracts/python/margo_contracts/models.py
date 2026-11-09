@@ -1178,6 +1178,7 @@ class PublicMenuItem(Row):
     description: str | None
     external_item_id: str
     id: UUID
+    item_type: str | None
     minimum_price_cents: int | None
     name: str
     original_price_cents: int | None

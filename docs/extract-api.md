@@ -143,6 +143,7 @@ A store with neither `search_terms` nor `taxonomies` stays a candidate. A store 
 | `unit` | | `"g"`, `"ml"`, `"un"`, `"pack"` | Default `"un"` |
 | `unit_qty` | | number | Required when `unit` is `"g"` or `"ml"`. For a pack, the units in it; leave it out for a combo of different items. Without it, and with `unit` absent or `"un"`, MargoAI reads the size from `name` when it is unambiguous (M1-03); what you send always wins |
 | `choices` | | array of CHOICE | The item's complement groups. Send it for items whose price depends on a choice (`price_cents` 0 with `minimum_price_cents`). `[]`: the complements were read and there are none. Left out or null: they could not be read, the capture still counts and what is stored stays. A fixed price clears them |
+| `type` | | string | The channel's item type, as it wrote it (a default item, a combo, a half-and-half pizza). Comes with the complements read and follows the same rule: left out or null keeps what is stored, a fixed price clears it |
 
 ### CHOICE
 

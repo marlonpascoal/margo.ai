@@ -131,6 +131,17 @@ describe("M1 choices (complements)", () => {
     expect(r.ok && r.dropped).toEqual([]);
   });
 
+  it("M1_type_is_kept_as_the_channel_sent_it_and_must_be_text", () => {
+    const body = (type: unknown) => {
+      const b = capture([CHOICE]);
+      (b.capture.items[0] as Record<string, unknown>).type = type;
+      return parseExtractResult("capture", STORE_A, b, NOW);
+    };
+    expect(items(body("DEFAULT"))[0]!.type).toBe("DEFAULT");
+    const bad = body(7);
+    expect(bad.ok ? [] : bad.errors).toEqual(["capture.items[0].type: must be a non-empty string"]);
+  });
+
   it("M1_choices_null_counts_as_absent", () => {
     expect(items(parse(null))[0]).not.toHaveProperty("choices");
   });

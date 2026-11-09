@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(49);
+select plan(52);
 
 create function pg_temp.copy(p_run uuid, p_ext text, p_at timestamptz, p_payload jsonb) returns uuid
 language plpgsql as $$
@@ -171,6 +171,24 @@ select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-choices'
   '{"kind": "capture", "store": {"external_id": "ext-choices"},
     "items": [{"external_item_id": "monte", "name": "Monte", "price_cents": 0, "minimum_price_cents": 1900, "choices": []}]}'));
 select is(pg_temp.item_choices(), null::jsonb, 'Complements: an empty list says the item was read and has none');
+
+-- The item type follows the same rule as the complements -----------------------------------------------------------
+create function pg_temp.item_type() returns text language sql as $$
+  select i.item_type from public.public_menu_item i join public.public_store s on s.id = i.public_store_id
+   where s.external_id = 'ext-type' and i.external_item_id = 'pizza'
+$$;
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-type', '2026-10-01 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-type"},
+    "items": [{"external_item_id": "pizza", "name": "Pizza", "price_cents": 0, "minimum_price_cents": 1900, "type": "PIZZA"}]}'));
+select is(pg_temp.item_type(), 'PIZZA', 'Item type: a capture stores it as sent');
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-type', '2026-10-08 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-type"},
+    "items": [{"external_item_id": "pizza", "name": "Pizza", "price_cents": 0, "minimum_price_cents": 1900}]}'));
+select is(pg_temp.item_type(), 'PIZZA', 'Item type: a variable price without it means it could not be read, so it stays');
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-type', '2026-10-15 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-type"},
+    "items": [{"external_item_id": "pizza", "name": "Pizza", "price_cents": 1900}]}'));
+select is(pg_temp.item_type(), null::text, 'Item type: a fixed price clears it');
 
 -- snapshot_xray and the view -----------------------------------------------------------------------------------
 insert into public.xray (id, target_store_id, status, collected_at) values ('aaaaaaaa-0000-4000-8000-000000000001', (select id from s1), 'collecting', now());

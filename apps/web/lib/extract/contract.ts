@@ -85,6 +85,7 @@ const ITEM: Record<string, Rule> = {
   unit: { check: unit },
   unit_qty: { check: number(0.01, 10_000_000) },
   choices: { check: choiceList },
+  type: { check: text(50) },
 };
 
 const CHOICE: Record<string, Rule> = {

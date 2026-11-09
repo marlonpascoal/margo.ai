@@ -14,6 +14,7 @@ import { CategoryScore, ScoreCard, ScoreMethod } from "./PriceScore";
 import NextSteps from "./NextSteps";
 import Opportunities from "./Opportunities";
 import PriceRanges from "./PriceRanges";
+import CaptureNow from "./CaptureNow";
 import ShareMenu from "./ShareMenu";
 import TestButton from "./TestButton";
 import TestPlan from "./TestPlan";
@@ -38,6 +39,8 @@ export interface ResultViewProps {
     status: MonitorStatus;
     plan: TestPlanData | null;
     canEdit: boolean;
+    /** "Capturar agora": Dono, m1.captura_manual on, monitoring active. The server checks again. */
+    canCapture: boolean;
     competitorAllowed: boolean;
     /** AI opportunities of the run, already null when m1.oportunidades_ia is off for the account. */
     opportunities: OpportunitiesData | null;
@@ -366,6 +369,7 @@ export default function ResultView(p: ResultViewProps) {
         </div>
         <div className="row-flex no-print">
           <Fict synthetic={p.synthetic} />
+          {print || !cont?.canCapture ? null : <CaptureNow monitorId={p.monitorId} />}
           {print ? null : <ShareMenu monitorId={p.monitorId} xrayId={r.xray_id} />}
         </div>
       </div>

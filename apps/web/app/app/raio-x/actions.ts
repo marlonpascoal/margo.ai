@@ -11,6 +11,7 @@ import {
   confirmSuggestions,
   createMonitor,
   markTest,
+  runMonitorNow,
   setMonitorPeriod,
   setMonitorStatus,
   undoAnswer,
@@ -69,6 +70,12 @@ export async function createMonitorAction(input: {
 export async function setMonitorStatusAction(monitorId: string, action: "pause" | "resume" | "remove"): Promise<ActionResult<void>> {
   const m = await requirePortal({ action: "manage_monitors", flags: FLAGS });
   return done(await setMonitorStatus(monitorDeps(), await actor(m.personId), monitorId, action));
+}
+
+/** P23 "Capturar agora": Dono only, behind m1.captura_manual; the SQL function checks both again. */
+export async function runMonitorNowAction(monitorId: string): Promise<ActionResult<string>> {
+  const m = await requirePortal({ action: "manage_monitors", flags: [...FLAGS, "m1.captura_manual"] });
+  return done(await runMonitorNow(monitorDeps(), await actor(m.personId), monitorId));
 }
 
 /** P19 "Mudar frequência". */

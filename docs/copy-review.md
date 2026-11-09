@@ -944,3 +944,6 @@ Strings the prototype does not have. The rest of these screens is the prototype'
 | a partir de {R$} / sem preço / de {R$} / Sem seção | `apps/web/lib/xray/menu.ts` | Console, collected menu, prices and section | |
 | opcional, até {N} / obrigatório, escolha {N} / obrigatório, de {N} a {N} / incluso / + {R$} | `apps/web/lib/xray/menu.ts` | Console, collected menu, complements | |
 | {N} grupos de complementos / 1 grupo de complementos | `apps/web/app/console/(app)/raio-x/[id]/cardapio/page.tsx` | Console, collected menu | |
+| Capturar agora / Capturar agora? / Cancelar | `apps/web/app/app/raio-x/_components/CaptureNow.tsx` | P23 manual capture (no drawing), Marlon 08/nov | |
+| Vamos ler de novo o cardápio da loja e das lojas vizinhas e montar um raio-X novo. Leva alguns minutos e dá para pedir uma vez por dia. | `apps/web/app/app/raio-x/_components/CaptureNow.tsx` | P23 manual capture, confirmation | |
+| Já tem uma captura em andamento. / Você já pediu uma captura nas últimas {N} horas. | `apps/web/lib/monitor/rules.ts` | P23 manual capture, refusals | |

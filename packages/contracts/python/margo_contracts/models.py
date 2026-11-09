@@ -1463,6 +1463,7 @@ class XrayMonitor(Row):
     every_days: int
     id: UUID
     kitchen_id: UUID | None
+    last_manual_run_at: datetime | None
     last_xray_id: UUID | None
     next_run_at: datetime | None
     paused_at: datetime | None

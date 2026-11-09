@@ -42,7 +42,7 @@ export default async function PrintResultPage({ params, searchParams }: { params
       mode="print"
       continuity={
         monitorId
-          ? { history: history?.runs ?? [], nextRunAt: summary?.next_run_at ?? null, status: summary?.status ?? "active", plan, canEdit: false, competitorAllowed: false, opportunities }
+          ? { history: history?.runs ?? [], nextRunAt: summary?.next_run_at ?? null, status: summary?.status ?? "active", plan, canEdit: false, canCapture: false, competitorAllowed: false, opportunities }
           : undefined
       }
     />

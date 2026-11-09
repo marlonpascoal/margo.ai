@@ -2253,14 +2253,14 @@ isOneToOne: false
                   ]
                 },"xray_monitor": {
                   Row: {
-                    "account_id": string,"categories": (string)[],"created_at": string,"created_by": string | null,"discovered_at": string | null,"env": Database["public"]['Enums']["flag_env"],"every_days": number,"id": string,"kitchen_id": string | null,"last_xray_id": string | null,"next_run_at": string | null,"paused_at": string | null,"paused_by": string | null,"radius_km": number,"removed_at": string | null,"removed_by": string | null,"rules": NonNullable<Json>,"status": Database["public"]['Enums']["monitor_status"],"target_kind": string,"target_store_id": string,"updated_at": string,"updated_by": string | null
+                    "account_id": string,"categories": (string)[],"created_at": string,"created_by": string | null,"discovered_at": string | null,"env": Database["public"]['Enums']["flag_env"],"every_days": number,"id": string,"kitchen_id": string | null,"last_manual_run_at": string | null,"last_xray_id": string | null,"next_run_at": string | null,"paused_at": string | null,"paused_by": string | null,"radius_km": number,"removed_at": string | null,"removed_by": string | null,"rules": NonNullable<Json>,"status": Database["public"]['Enums']["monitor_status"],"target_kind": string,"target_store_id": string,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"categories"?: (string)[],"created_at"?: string,"created_by"?: string | null,"discovered_at"?: string | null,"env"?: Database["public"]['Enums']["flag_env"],"every_days": number,"id"?: string,"kitchen_id"?: string | null,"last_xray_id"?: string | null,"next_run_at"?: string | null,"paused_at"?: string | null,"paused_by"?: string | null,"radius_km"?: number,"removed_at"?: string | null,"removed_by"?: string | null,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["monitor_status"],"target_kind": string,"target_store_id": string,"updated_at"?: string,"updated_by"?: string | null
+                    "account_id": string,"categories"?: (string)[],"created_at"?: string,"created_by"?: string | null,"discovered_at"?: string | null,"env"?: Database["public"]['Enums']["flag_env"],"every_days": number,"id"?: string,"kitchen_id"?: string | null,"last_manual_run_at"?: string | null,"last_xray_id"?: string | null,"next_run_at"?: string | null,"paused_at"?: string | null,"paused_by"?: string | null,"radius_km"?: number,"removed_at"?: string | null,"removed_by"?: string | null,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["monitor_status"],"target_kind": string,"target_store_id": string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "account_id"?: string,"categories"?: (string)[],"created_at"?: string,"created_by"?: string | null,"discovered_at"?: string | null,"env"?: Database["public"]['Enums']["flag_env"],"every_days"?: number,"id"?: string,"kitchen_id"?: string | null,"last_xray_id"?: string | null,"next_run_at"?: string | null,"paused_at"?: string | null,"paused_by"?: string | null,"radius_km"?: number,"removed_at"?: string | null,"removed_by"?: string | null,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["monitor_status"],"target_kind"?: string,"target_store_id"?: string,"updated_at"?: string,"updated_by"?: string | null
+                    "account_id"?: string,"categories"?: (string)[],"created_at"?: string,"created_by"?: string | null,"discovered_at"?: string | null,"env"?: Database["public"]['Enums']["flag_env"],"every_days"?: number,"id"?: string,"kitchen_id"?: string | null,"last_manual_run_at"?: string | null,"last_xray_id"?: string | null,"next_run_at"?: string | null,"paused_at"?: string | null,"paused_by"?: string | null,"radius_km"?: number,"removed_at"?: string | null,"removed_by"?: string | null,"rules"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["monitor_status"],"target_kind"?: string,"target_store_id"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -2739,6 +2739,9 @@ isOneToOne: false
                            },
 "monitor_result_stores":
 { Args: { "p_xray": string }; Returns: Json
+                           },
+"monitor_run_now":
+{ Args: { "p_actor": string,"p_env"?: Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_monitor": string,"p_user_agent"?: string }; Returns: string
                            },
 "monitor_set_period":
 { Args: { "p_actor": string,"p_every_days": number,"p_ip"?: unknown,"p_monitor": string,"p_user_agent"?: string }; Returns: undefined

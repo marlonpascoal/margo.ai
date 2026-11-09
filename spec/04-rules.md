@@ -113,6 +113,7 @@ Defaults per plan (sandbox and production keep separate values). "Off in all pla
 | `m1.raio_x` | Price X-ray from public data | on | on | on |
 | `m1.concorrente` | X-ray of a store that is not the account's own (competitor), up to `plan.competitor_xrays_per_month` per São Paulo month: Raio-X 0, Lucro 3, Rede 10, edited in C15 (Marlon, 31/out) | off | on | on |
 | `m1.extracao` | Extraction through an external extractor (06 §10): the `extract_discover` and `extract_capture` jobs and the daily cron. On in sandbox and off in production, in all three plans | on in sandbox, off in production | on in sandbox, off in production | on in sandbox, off in production |
+| `m1.captura_manual` | P23 "Capturar agora": the owner asks for a new run that reads the whole X-ray again, `m1.manual_capture_min_hours` (param, 24) apart. On in sandbox and off in production, in all three plans | on | on | on |
 | `m2.ifood_api` | iFood reading through the official API | off | on | on |
 | `m2.extensao_chrome` | Chrome extension | off | on | on |
 | `m2.arquivo_99food` | 99Food statement import | off | on | on |

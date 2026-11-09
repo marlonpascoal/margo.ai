@@ -426,3 +426,8 @@
   .rx .opph { break-after: avoid; }
 }
 .rx .synthetic-mark { font-family: var(--font-mono); font-weight: 600; letter-spacing: .08em; color: var(--color-warn); border: 1px dashed var(--color-warn-border); padding: 2px 8px; border-radius: var(--radius-xs); }
+
+/* A modal opened from a card keeps the browser centering: .card resets margins. */
+dialog.card {
+  margin: auto;
+}

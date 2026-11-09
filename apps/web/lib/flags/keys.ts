@@ -13,6 +13,7 @@ export const FLAG_KEYS = [
   "m1.portal",
   "m1.oportunidades_ia",
   "m1.comparacao_faixa",
+  "m1.captura_manual",
   "m2.ifood_api",
   "m2.extensao_chrome",
   "m2.arquivo_99food",

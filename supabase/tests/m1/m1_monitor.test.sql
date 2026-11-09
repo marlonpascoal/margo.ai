@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(46);
+select plan(55);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated;
@@ -160,6 +160,41 @@ select tests.login('L:ger');
 select is(tests.n($$ select 1 from public.xray_monitor $$), 5, 'A03: Gerente of kitchen 1 sees its own store and the competitors near it');
 select is(tests.n($$ select 1 from public.xray_monitor where kitchen_id = tests.id('L:k2') $$), 0, 'A03: not the store of kitchen 2');
 reset role;
+
+-- Manual capture of the whole X-ray (Marlon, 08/nov) ---------------------------------------------------------------------
+insert into public.channel_store (account_id, kitchen_id, channel, external_id, name, source) values
+  (tests.id('L'), tests.id('L:k1'), 'ifood', tests.ext(60), 'Loja 60', 'public');
+create temp table m_now as select tests.create('L', 60) as id;
+create function tests.now_run(actor text) returns uuid language sql as $$
+  select public.monitor_run_now((select id from m_now), tests.id(actor), 'sandbox')
+$$;
+insert into public.public_store (id, channel, external_id, url) values (tests.id('n:v'), 'ifood', tests.ext(61), tests.url(61));
+insert into public.xray_store (xray_id, public_store_id, distance_m, included, capture_slot)
+  select last_xray_id, tests.id('n:v'), 500, true, true from public.xray_monitor where id = (select id from m_now);
+select throws_ok($$ select tests.now_run('L:dono') $$, 'monitor_run_active', 'Manual capture: refused while a run is in progress');
+update public.xray set status = 'ready' where monitor_id = (select id from m_now);
+update public.xray_monitor set discovered_at = now() where id = (select id from m_now);
+-- Both stores were captured today, so the weekly rule alone would read neither.
+insert into public.extract_content (content_hash, payload) values ('now-1', '{"items": []}');
+with r as (insert into public.extract_run (kind, source, status) values ('capture', 'scraper', 'done') returning id)
+insert into public.extract_copy (run_id, channel, store_external_id, collected_at, content_hash)
+  select r.id, 'ifood', e, now(), 'now-1' from r, unnest(array[tests.ext(60), tests.ext(61)]) e;
+delete from public.job where type = 'extract_capture';
+select throws_ok($$ select tests.now_run('L:fin') $$, 'monitor_not_allowed', 'Manual capture: only who manages the monitoring');
+create temp table now_run as select tests.now_run('L:dono') as id;
+select is((select status::text from public.xray where id = (select id from now_run)), 'collecting', 'Manual capture: a new run starts');
+select is(tests.n($$ select 1 from public.job where type = 'extract_capture' and status = 'queued' and payload ->> 'external_id' in ('$$ || tests.ext(60) || $$', '$$ || tests.ext(61) || $$') $$), 2,
+  'Manual capture: the whole X-ray is read again, even stores captured today');
+select is((select next_run_at > now() + interval '6 days' from public.xray_monitor where id = (select id from m_now)), true, 'Manual capture: the next automatic run counts from now');
+select is(tests.n($$ select 1 from public.audit_log where action = 'monitor.run_now' $$), 1, 'A04: the manual capture is in the audit log');
+update public.xray set status = 'ready' where id = (select id from now_run);
+select throws_ok($$ select tests.now_run('L:dono') $$, 'monitor_run_too_soon:24', 'Manual capture: once per m1.manual_capture_min_hours');
+update public.xray_monitor set last_manual_run_at = now() - interval '25 hours' where id = (select id from m_now);
+update public.feature_flag set default_lucro = false where key = 'm1.captura_manual' and env = 'sandbox';
+select throws_ok($$ select tests.now_run('L:dono') $$, 'monitor_not_enabled', 'Manual capture: behind m1.captura_manual');
+update public.feature_flag set default_lucro = true where key = 'm1.captura_manual' and env = 'sandbox';
+update public.xray_monitor set status = 'paused_by_person' where id = (select id from m_now);
+select throws_ok($$ select tests.now_run('L:dono') $$, 'monitor_not_active', 'Manual capture: not on a paused monitoring');
 
 select * from finish();
 rollback;

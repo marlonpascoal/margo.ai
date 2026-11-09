@@ -71,6 +71,11 @@ export async function setMonitorStatus(deps: MonitorDeps, actor: Actor, monitorI
   });
 }
 
+/** P23 "Capturar agora": a new run that reads the whole X-ray again. Returns the run. */
+export async function runMonitorNow(deps: MonitorDeps, actor: Actor, monitorId: string) {
+  return attempt(async () => (await deps.rpc("monitor_run_now", { p_monitor: monitorId, p_env: deps.env, ...who(actor) })) as string);
+}
+
 /** P19 "Mudar frequência". */
 export async function setMonitorPeriod(deps: MonitorDeps, actor: Actor, monitorId: string, everyDays: number) {
   return attempt(async () => {

@@ -2,7 +2,7 @@
 // one). Nothing calculated yet: to P21. Not visible to this person: 404 (A02, A03).
 import { notFound, redirect } from "next/navigation";
 import { loadDeps } from "@/lib/monitor/deps";
-import { canAnswerDoubts } from "@/lib/monitor/rules";
+import { canAnswerDoubts, canManageMonitors } from "@/lib/monitor/rules";
 import { isEnabled } from "@/lib/flags";
 import { loadHistory, loadItemLists, loadMonitorSummary, loadOpportunities, loadResultPage, loadTestPlan, scoreMinItems, visibleMonitor, type Limits } from "@/lib/monitor/load";
 import { requirePortal } from "@/lib/portal/session";
@@ -18,7 +18,7 @@ export default async function ResultPageServer({ monitorId, xrayId }: { monitorI
     if (xrayId) notFound();
     redirect(`/app/raio-x/${monitorId}/lendo`);
   }
-  const [summary, lists, history, minItems, plan, limits, opportunities] = await Promise.all([
+  const [summary, lists, history, minItems, plan, limits, opportunities, manualCapture] = await Promise.all([
     loadMonitorSummary(deps, monitorId),
     loadItemLists(deps, monitorId, page.result.xray_id),
     loadHistory(deps, monitorId),
@@ -26,6 +26,7 @@ export default async function ResultPageServer({ monitorId, xrayId }: { monitorI
     loadTestPlan(deps, monitorId, page.result.xray_id),
     deps.rpc("monitor_limits", { p_account: m.account.id, p_env: deps.env }) as Promise<Limits>,
     isEnabled("m1.oportunidades_ia", m.account.id).then((on) => (on ? loadOpportunities(deps, monitorId, page.result.xray_id) : null)),
+    isEnabled("m1.captura_manual", m.account.id),
   ]);
   const canEdit = canAnswerDoubts(m.role, { gerenteAnswers: limits.gerente_answers, monitorKitchenId: row.kitchenId, kitchenIds: m.kitchenIds, allKitchens: m.allKitchens });
   const runs = (history?.runs ?? []).filter((r) => ["ready", "delivered"].includes(r.status) && r.on).map((r) => ({ xray_id: r.xray_id, on: r.on as string }));
@@ -46,6 +47,7 @@ export default async function ResultPageServer({ monitorId, xrayId }: { monitorI
         status: summary?.status ?? "active",
         plan,
         canEdit,
+        canCapture: manualCapture && canManageMonitors(m.role) && summary?.status === "active",
         competitorAllowed: limits.competitor_allowed,
         opportunities,
       }}

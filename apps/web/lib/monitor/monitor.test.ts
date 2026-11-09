@@ -3,7 +3,7 @@
 // workers/collector/tests/test_b01_monitor_db.py.
 import { describe, expect, it } from "vitest";
 import type { ReadDb } from "@/lib/supabase/reader";
-import { answerDoubt, confirmSuggestions, createMonitor, markTest, undoAnswer, unmarkTest, type MonitorDeps } from "./commands";
+import { answerDoubt, confirmSuggestions, createMonitor, markTest, undoAnswer, unmarkTest, type MonitorDeps, runMonitorNow } from "./commands";
 import { loadDoubts, loadOpportunities, loadResult, loadTestPlan, paceInput, type Progress } from "./load";
 import { canAnswerDoubts, canManageMonitors, doubtReason, etaRange, etaText, isSlow, monitorRefusal, periodOptions, refusalText, roundUpMinutes, type PaceInput } from "./rules";
 
@@ -255,5 +255,25 @@ describe("B01 commands send every SQL parameter that has no default", () => {
     await confirmSuggestions(deps, actor, "x", null);
     expect("p_kitchen" in calls[0] && calls[0].p_kitchen === null).toBe(true);
     expect("p_items" in calls[1] && calls[1].p_items === null).toBe(true);
+  });
+});
+
+describe("M1 manual capture", () => {
+  const actor = { personId: "p", ip: null, userAgent: null };
+  const deps = (rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>) => ({ rpc, wake: async () => {}, env: "sandbox" as const });
+
+  it("M1_manual_capture_calls_the_audited_function_with_the_actor", async () => {
+    const calls: [string, Record<string, unknown>][] = [];
+    const r = await runMonitorNow(deps(async (fn, args) => (calls.push([fn, args]), "xray-1")), actor, "m1");
+    expect(r).toEqual({ ok: true, value: "xray-1" });
+    expect(calls).toEqual([["monitor_run_now", { p_monitor: "m1", p_env: "sandbox", p_actor: "p", p_ip: undefined, p_user_agent: undefined }]]);
+  });
+
+  it("M1_manual_capture_refusals_are_said_in_words", async () => {
+    const refused = (message: string) => runMonitorNow(deps(async () => { throw new Error(message); }), actor, "m1");
+    expect(await refused("monitor_run_active")).toEqual({ ok: false, refusal: { code: "run_active" } });
+    expect(await refused("monitor_run_too_soon:24")).toEqual({ ok: false, refusal: { code: "run_too_soon", hours: 24 } });
+    expect(refusalText({ code: "run_active" })).toBe("Já tem uma captura em andamento.");
+    expect(refusalText({ code: "run_too_soon", hours: 24 })).toBe("Você já pediu uma captura nas últimas 24 horas.");
   });
 });

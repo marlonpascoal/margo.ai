@@ -142,7 +142,7 @@ A store with neither `search_terms` nor `taxonomies` stays a candidate. A store 
 | `minimum_price_cents` | | integer | Used when `price_cents` is 0 |
 | `unit` | | `"g"`, `"ml"`, `"un"`, `"pack"` | Default `"un"` |
 | `unit_qty` | | number | Required when `unit` is `"g"` or `"ml"`. For a pack, the units in it; leave it out for a combo of different items. Without it, and with `unit` absent or `"un"`, MargoAI reads the size from `name` when it is unambiguous (M1-03); what you send always wins |
-| `choices` | | array of CHOICE | The item's complement groups. Send it for items whose price depends on a choice (`price_cents` 0 with `minimum_price_cents`). `[]`: the complements were read and there are none. Left out or null: they could not be read, the capture still counts and what is stored stays. A fixed price clears them |
+| `choices` | | array of CHOICE | The item's complement groups. Send it for items whose price depends on a choice (`price_cents` 0 with `minimum_price_cents`). `[]`: the complements were read and there are none. Left out or null on an item with a variable price: they could not be read, the menu and what is stored stay, and the job ends failed (`incomplete_choices`, not retried). A fixed price clears them |
 | `type` | | string | The channel's item type, as it wrote it (a default item, a combo, a half-and-half pizza). Comes with the complements read and follows the same rule: left out or null keeps what is stored, a fixed price clears it |
 
 ### CHOICE
@@ -165,6 +165,7 @@ Unknown fields inside a group or an option are dropped and named in `dropped`, a
 ```
 
 - `copies` counts the stores written.
+- A 200 can still leave a capture job failed: see `choices` in ITEM.
 - Unknown fields are dropped, not rejected, and named in `dropped`. Never send raw HTML or customer reviews. A known text field holding an HTML document is refused with 422.
 - A null counts as absent.
 - Sending the same `job_id` again after a success changes nothing and answers 200 with the same `copies` and an empty `dropped`.

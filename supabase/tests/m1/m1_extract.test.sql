@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(52);
+select plan(59);
 
 create function pg_temp.copy(p_run uuid, p_ext text, p_at timestamptz, p_payload jsonb) returns uuid
 language plpgsql as $$
@@ -189,6 +189,35 @@ select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-type', '
   '{"kind": "capture", "store": {"external_id": "ext-type"},
     "items": [{"external_item_id": "pizza", "name": "Pizza", "price_cents": 1900}]}'));
 select is(pg_temp.item_type(), null::text, 'Item type: a fixed price clears it');
+
+-- A capture with a variable-price item whose complements did not come is a failure; the menu still lands -------------
+create function pg_temp.running(p_tag text) returns uuid language plpgsql as $$
+declare jid uuid;
+begin
+  insert into public.job (type, payload, status, attempts) values ('extract_capture', jsonb_build_object('external_id', p_tag, 'url', 'https://exemplo.test/' || p_tag), 'running', 1) returning id into jid;
+  insert into public.extract_run (job_id, kind, status) values (jid, 'capture', 'running');
+  return jid;
+end $$;
+create function pg_temp.submit(p_job uuid, p_ext text, p_at timestamptz, p_items jsonb) returns jsonb language sql as $$
+  select public.extract_record_result(p_job, 'scraper', p_at,
+    jsonb_build_array(jsonb_build_object('external_id', p_ext, 'content', jsonb_build_object('kind', 'capture', 'store', jsonb_build_object('external_id', p_ext), 'items', p_items))))
+$$;
+create function pg_temp.job_status(p_job uuid) returns text language sql as $$ select status::text from public.job where id = p_job $$;
+create temp table inc as select pg_temp.running('ext-inc-1') a, pg_temp.running('ext-inc-2') b, pg_temp.running('ext-inc-3') c, pg_temp.running('ext-inc-4') d;
+select pg_temp.submit((select a from inc), 'ext-inc-1', '2026-11-01 10:00-03',
+  '[{"external_item_id": "v", "name": "Variável", "price_cents": 0, "minimum_price_cents": 1900}, {"external_item_id": "f", "name": "Fixo", "price_cents": 1000}]');
+select is(pg_temp.job_status((select a from inc)), 'failed', 'Incomplete capture: a variable price without choices fails the job');
+select is((select error from public.extract_run where job_id = (select a from inc)), 'incomplete_choices: 1 item(s)', 'Incomplete capture: the reason is recorded');
+select is((select count(*)::int from public.public_menu_item i join public.public_store s on s.id = i.public_store_id where s.external_id = 'ext-inc-1'), 2, 'Incomplete capture: the menu still lands');
+select is((select status::text from public.extract_run where job_id = (select a from inc)), 'failed', 'Incomplete capture: the run says so too');
+select pg_temp.submit((select b from inc), 'ext-inc-2', '2026-11-01 10:00-03',
+  '[{"external_item_id": "v", "name": "Variável", "price_cents": 0, "minimum_price_cents": 1900, "choices": [{"name": "G", "min": 1, "max": 1, "options": [{"name": "O", "price_cents": 0}]}]}]');
+select is(pg_temp.job_status((select b from inc)), 'done', 'Incomplete capture: with the groups it is done');
+select pg_temp.submit((select c from inc), 'ext-inc-3', '2026-11-01 10:00-03',
+  '[{"external_item_id": "v", "name": "Variável", "price_cents": 0, "minimum_price_cents": 1900, "choices": []}]');
+select is(pg_temp.job_status((select c from inc)), 'done', 'Incomplete capture: an empty list says it was read');
+select pg_temp.submit((select d from inc), 'ext-inc-4', '2026-11-01 10:00-03', '[{"external_item_id": "f", "name": "Fixo", "price_cents": 1000}]');
+select is(pg_temp.job_status((select d from inc)), 'done', 'Incomplete capture: fixed prices need no complements');
 
 -- snapshot_xray and the view -----------------------------------------------------------------------------------
 insert into public.xray (id, target_store_id, status, collected_at) values ('aaaaaaaa-0000-4000-8000-000000000001', (select id from s1), 'collecting', now());

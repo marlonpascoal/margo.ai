@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(47);
+select plan(49);
 
 create function pg_temp.copy(p_run uuid, p_ext text, p_at timestamptz, p_payload jsonb) returns uuid
 language plpgsql as $$
@@ -155,10 +155,22 @@ select app.apply_extract_copy(pg_temp.copy(pg_temp.run('discover'), 'ext-choices
   '{"kind": "discover_store", "store": {"external_id": "ext-choices"},
     "items": [{"external_item_id": "monte", "name": "Monte", "price_cents": 0}]}'));
 select is(pg_temp.item_choices() -> 0 ->> 'name', 'Proteína', 'Complements: a discovery copy without them leaves them');
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-choices', '2026-10-12 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-choices"},
+    "items": [{"external_item_id": "monte", "name": "Monte", "price_cents": 0, "minimum_price_cents": 1900}]}'));
+select is(pg_temp.item_choices() -> 0 ->> 'name', 'Proteína', 'Complements: a variable price with no choices means they could not be read, so they stay');
 select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-choices', '2026-10-15 10:00-03',
   '{"kind": "capture", "store": {"external_id": "ext-choices"},
     "items": [{"external_item_id": "monte", "name": "Monte", "price_cents": 1900}]}'));
-select is(pg_temp.item_choices(), null::jsonb, 'Complements: a capture without them clears them');
+select is(pg_temp.item_choices(), null::jsonb, 'Complements: an item with a fixed price now has none');
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-choices', '2026-10-22 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-choices"},
+    "items": [{"external_item_id": "monte", "name": "Monte", "price_cents": 0, "minimum_price_cents": 1900,
+               "choices": [{"name": "Sabor", "min": 1, "max": 1, "options": [{"name": "Queijo", "price_cents": 0}]}]}]}'));
+select app.apply_extract_copy(pg_temp.copy(pg_temp.run('capture'), 'ext-choices', '2026-10-29 10:00-03',
+  '{"kind": "capture", "store": {"external_id": "ext-choices"},
+    "items": [{"external_item_id": "monte", "name": "Monte", "price_cents": 0, "minimum_price_cents": 1900, "choices": []}]}'));
+select is(pg_temp.item_choices(), null::jsonb, 'Complements: an empty list says the item was read and has none');
 
 -- snapshot_xray and the view -----------------------------------------------------------------------------------
 insert into public.xray (id, target_store_id, status, collected_at) values ('aaaaaaaa-0000-4000-8000-000000000001', (select id from s1), 'collecting', now());

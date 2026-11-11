@@ -186,7 +186,8 @@ select is((select status::text from public.xray where id = (select id from now_r
 select is(tests.n($$ select 1 from public.job where type = 'extract_capture' and status = 'queued' and payload ->> 'external_id' in ('$$ || tests.ext(60) || $$', '$$ || tests.ext(61) || $$') $$), 2,
   'Manual capture: the whole X-ray is read again, even stores captured today');
 select is((select next_run_at > now() + interval '6 days' from public.xray_monitor where id = (select id from m_now)), true, 'Manual capture: the next automatic run counts from now');
-select is(tests.n($$ select 1 from public.audit_log where action = 'monitor.run_now' $$), 1, 'A04: the manual capture is in the audit log');
+select is((select count(*)::int from public.audit_log where action = 'monitor.run_now' and entity_id = (select id from m_now)), 1,
+  'A04: the manual capture is in the audit log');
 update public.xray set status = 'ready' where id = (select id from now_run);
 select throws_ok($$ select tests.now_run('L:dono') $$, 'monitor_run_too_soon:24', 'Manual capture: once per m1.manual_capture_min_hours');
 update public.xray_monitor set last_manual_run_at = now() - interval '25 hours' where id = (select id from m_now);

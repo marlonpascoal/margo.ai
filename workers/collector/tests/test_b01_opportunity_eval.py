@@ -135,7 +135,7 @@ def openai_resp(answer: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def test_B01_opportunity_eval_score_recording_uses_its_scenario():
-    rec = {"provider": "openai", "scenario": "base", "prompt_version": "oportunidades.v3", "request": {"model": "m"}, "response": openai_resp(GOOD)}
+    rec = {"provider": "openai", "scenario": "base", "prompt_version": "oportunidades.v4", "request": {"model": "m"}, "response": openai_resp(GOOD)}
     s = score_recording(rec)
     assert s["scenario"] == "base" and s["model"] == "m" and s["ok"]
     old = {"provider": "openai", "request": {"model": "m"}, "response": openai_resp(GOOD)}
@@ -178,11 +178,11 @@ def test_B01_opportunity_eval_recorder_writes_one_file_per_scenario_and_the_scor
     paths = [record_opportunities.record(ai, name) for name in SCENARIOS]
     assert len(client.requests) == len(SCENARIOS) and len({p.name for p in paths}) == len(SCENARIOS)
     rec = json.loads(paths[0].read_text())
-    assert rec["scenario"] == "base" and rec["prompt_version"] == "oportunidades.v3" and rec["provider"] == "openai"
+    assert rec["scenario"] == "base" and rec["prompt_version"] == "oportunidades.v4" and rec["provider"] == "openai"
     assert "api_key" not in json.dumps(rec)
     assert opportunity_eval.main([str(p) for p in paths]) == 0
     out = capsys.readouterr().out
-    assert "base" in out and "oportunidades.v3  modelo-de-teste: 1 of 6 recordings pass" in out
+    assert "base" in out and "oportunidades.v4  modelo-de-teste: 1 of 6 recordings pass" in out
 
 
 def test_B01_opportunity_eval_scenario_facts_feed_the_check():

@@ -647,8 +647,7 @@ def _pair_food(
             reason is None
             and unreadable_food_m1_04(other, category) is None
             and sim >= settings.attribute_floor
-            and compare_food_m1_04(attrs, other, by_weight=by_weight, base_required=needs_base)
-            == "identical"
+            and compare_food_m1_04(attrs, other, by_weight=by_weight, base_required=needs_base) == "identical"
             # D72: two items with no base at all share only a protein, unless their names are close.
             and (not needs_base or attrs.base or other.base or sim >= settings.similarity_threshold)
         ):
@@ -743,10 +742,15 @@ class PriceRange:
 
 @dataclass(frozen=True)
 class FamilyRange:
-    range: PriceRange
+    range: PriceRange | None
+    """None (M1-15) when too few stores sell the same kind of sandwich: the item gets no range at all."""
     stores: int
     basis: str
     """What it compares with, in words: "temaki de salmão"."""
+    prices: tuple[int, ...] = ()
+    """One price per store behind the range, for the chart on P23."""
+    indicative: bool = False
+    """M1-18 (D86): built on 3 or 4 stores instead of the minimum. Shown as "poucas lojas", unscored."""
 
 
 def balance_rank_m1_11(

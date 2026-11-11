@@ -14,7 +14,9 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from decimal import Decimal
 from fractions import Fraction
+from typing import Any
 
+from .combo import PartRef, combo_m1_14
 from .rules import (
     FamilyRange,
     FoodOverrides,
@@ -35,6 +37,7 @@ from .rules import (
     gap_m1_06,
     is_food_m1_04,
     item_category_m1_04,
+    item_is_combo_m1_04,
     loss_m1_08,
     neighborhood_m1_01,
     normalize_m1_03,
@@ -250,6 +253,11 @@ class CalcRow:
     range_stores: int | None = None
     range_position: str | None = None
     range_basis: str | None = None
+    range_prices: tuple[int, ...] | None = None
+    """M1-13: one price per store behind the range, cheapest first; None for a combo (a sum has no stores)."""
+    combo_solo_cents: int | None = None
+    """M1-14: a combo's parts bought singly in the same store."""
+    combo_parts: tuple[dict[str, Any], ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -275,19 +283,23 @@ def calculate(
     size written gets a price range instead, even when a person confirmed its pairs, and so does food with a
     size and no parity; `family_ranges` (by item key) wins over the range of the item's own pairs."""
     partial: dict[str, tuple[int, Fraction, Reading, int, int, Fraction]] = {}
-    ranged: dict[str, tuple[PriceRange | None, int, str | None]] = {}
+    ranged: dict[str, tuple[PriceRange | None, int, str | None, tuple[int, ...]]] = {}
     family = family_ranges or {}
 
-    def as_range(it: CalcInput) -> tuple[PriceRange | None, int, str | None]:
+    def as_range(it: CalcInput) -> tuple[PriceRange | None, int, str | None, tuple[int, ...]]:
         if it.key in family:
             f = family[it.key]
-            return f.range, f.stores, f.basis
+            return f.range, f.stores, f.basis, f.prices
         neighbors = one_per_store_m1_05(it.accepted)
         enough = len(neighbors) >= min_pairs and comparison_tier_m1_13(it.own) == "faixa"
-        found = range_m1_13(it.own.price_cents, [a.price_cents for a in neighbors]) if enough else None
-        return found, len(neighbors), None
+        prices = sorted(a.price_cents for a in neighbors)
+        found = range_m1_13(it.own.price_cents, prices) if enough else None
+        return found, len(neighbors), None, tuple(prices)
 
+    combos = [it for it in items if two_tiers and item_is_combo_m1_04(it.own)]
     for it in items:
+        if it in combos:
+            continue
         if two_tiers and comparison_tier_m1_13(it.own) == "faixa":
             ranged[it.key] = as_range(it)
             continue
@@ -323,18 +335,58 @@ def calculate(
     pareto = pareto_m1_08({k: (names[k], v[3]) for k, v in partial.items()}, items_total=len(partial))
     ranks = {r.key: r for r in pareto.rows}
     rows = []
+    refs: dict[str, PartRef] = {}
     for it in items:
-        if it.key in ranged:
-            band_found, stores, basis = ranged[it.key]
+        if it.key in partial:
+            unit = normalize_m1_03(it.own).unit
+            n = len(one_per_store_m1_05([a for a in it.accepted if normalize_m1_03(a).unit == unit]))
+            refs[it.own.id] = PartRef(partial[it.key][0], partial[it.key][0], n)
+        elif it.key in ranged and ranged[it.key][0] is not None:
+            band_found, stores, _, _ = ranged[it.key]
+            assert band_found is not None
+            refs[it.own.id] = PartRef(band_found.low_cents, band_found.high_cents, stores)
+    menu = [it.own for it in items]
+    for it in items:
+        if it in combos:
+            c = combo_m1_14(it.own, menu, refs)
             rows.append(
                 CalcRow(
-                    it.key, None, None, None, None, None, None,
+                    it.key,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    tier="faixa",
+                    range_low_cents=c.range.low_cents if c and c.range else None,
+                    range_high_cents=c.range.high_cents if c and c.range else None,
+                    range_stores=c.stores if c and c.range else None,
+                    range_position=c.range.position if c and c.range else None,
+                    range_basis="soma das partes" if c and c.range else None,
+                    combo_solo_cents=c.solo_cents if c else None,
+                    combo_parts=c.parts if c else None,
+                )
+            )
+            continue
+        if it.key in ranged:
+            band_found, stores, basis, prices = ranged[it.key]
+            rows.append(
+                CalcRow(
+                    it.key,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
                     tier="faixa",
                     range_low_cents=band_found.low_cents if band_found else None,
                     range_high_cents=band_found.high_cents if band_found else None,
-                    range_stores=stores if band_found else None,
+                    range_stores=stores if band_found or basis else None,
                     range_position=band_found.position if band_found else None,
-                    range_basis=basis if band_found else None,
+                    range_basis=basis,
+                    range_prices=prices if band_found else None,
                 )
             )
             continue

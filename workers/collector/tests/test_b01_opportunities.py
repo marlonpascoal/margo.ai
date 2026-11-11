@@ -71,12 +71,12 @@ def test_B01_opportunities_facts_per_item_category_and_store(facts):
         "lojas": 9,
         "comparacao": "firme",
         "tamanho_da_diferenca": "moderada",
-        "papel_na_categoria": "mais_barato",
+        "papel_na_categoria": "porta_de_entrada",
         "preco_para_testar": "R$ 25,90",
         "aumento_do_teste_pct": 8,
     }
     bacon = next(i for i in p["itens"] if i["nome"] == "X-Bacon Sintético")
-    assert "preco_para_testar" not in bacon and bacon["papel_na_categoria"] == "mais_caro"
+    assert "preco_para_testar" not in bacon and bacon["papel_na_categoria"] == "referencia"
     lanches = p["categorias"][0]
     assert lanches["seu_menor_preco"] == "R$ 24,00" and lanches["seu_maior_preco"] == "R$ 32,00"
     assert lanches["grupo"] == "Lanches" and lanches["pode_subir"] == 2 and lanches["comparados"] == 3
@@ -100,12 +100,12 @@ def test_B01_opportunities_comparison_strength_marks_few_stores_and_spread_price
 
 
 def test_B01_opportunities_prompt_v3_keeps_the_caveat_and_adds_the_specialist_rules():
-    assert PROMPT_VERSION == "oportunidades.v3"
+    assert PROMPT_VERSION == "oportunidades.v4"
     for words in ("poucas_lojas", "precos_espalhados", "preço de face", "mais lojas comparadas"):
         assert words in opportunities.SYSTEM, "v2 caveat kept (Marlon, 08/nov)"
     for words in (
         "tamanho_da_diferenca", "papel_na_categoria", "preco_para_testar", "um item por vez",
-        "primeiro passo", "porta de entrada", "bebidas e adicionais", "mais forte", "só o custo diz se compensa",
+        "primeiro passo", "porta_de_entrada", "bebidas e adicionais", "mais forte", "só o custo diz se compensa",
     ):
         assert words in opportunities.SYSTEM
     assert set(re.findall(r"\d+(?:,\d+)?", opportunities.SYSTEM)) <= {"90", "3", "5", "70", "2", "32,00", "12"}, (
@@ -146,8 +146,8 @@ def test_B01_opportunities_first_test_price_is_one_step_capped_by_the_band_and_t
 
 def test_B01_opportunities_category_role_in_the_own_ladder():
     assert opportunities.category_role(2400, [2400]) == "unico"
-    assert opportunities.category_role(2400, [2400, 2600, 3200]) == "mais_barato"
-    assert opportunities.category_role(3200, [2400, 2600, 3200]) == "mais_caro"
+    assert opportunities.category_role(2400, [2400, 2600, 3200]) == "porta_de_entrada"
+    assert opportunities.category_role(3200, [2400, 2600, 3200]) == "referencia"
     assert opportunities.category_role(2600, [2400, 2600, 3200]) == "no_meio"
     assert opportunities.category_role(890, [890, 890]) == "no_meio"
     assert opportunities.category_role(None, [890]) is None
@@ -358,3 +358,32 @@ def test_B01_D70_opportunities_recorded_answers_parse_and_check(path):
     result, positions = SCENARIOS[rec.get("scenario") or "base"]
     kept, dropped = check_all(raw, build_facts(result, positions))
     assert len(kept) + dropped == len(raw)
+
+
+def test_D83_facts_carry_the_menu_weight_ranges_combos_and_dishes_with_no_competitor():
+    result = {
+        "items": [],
+        "menu": [
+            {"item_id": "c", "name": "Combo Sintético", "section": "Combos", "price_cents": 8000, "kind": "combo", "reason": None, "most_ordered": True},
+            {"item_id": "h", "name": "Burger Sintético", "section": "Lanches", "price_cents": 4000, "kind": "sem", "reason": "hambúrguer artesanal", "most_ordered": False},
+            {"item_id": "d", "name": "Dog Sintético", "section": "Lanches", "price_cents": 3000, "kind": "faixa", "reason": "cachorro-quente", "most_ordered": False},
+        ],
+        "ranges": [
+            {"item_id": "c", "name": "Combo Sintético", "own_cents": 8000, "combo_solo_cents": 10000, "low_cents": None, "high_cents": None},
+            {"item_id": "d", "name": "Dog Sintético", "own_cents": 3000, "combo_solo_cents": None, "low_cents": 2400, "high_cents": 2800,
+             "stores": 9, "position": "acima", "basis": "cachorro-quente"},
+            {"item_id": "h", "name": "Burger Sintético", "own_cents": 4000, "combo_solo_cents": None, "low_cents": None, "high_cents": None,
+             "basis": "hambúrguer artesanal"},
+        ],
+    }
+    p = opportunities.build_facts(result, None).prompt
+    assert [w["secao"] for w in p["peso_do_cardapio"]] == ["Combos", "Lanches"]
+    assert p["mais_pedidos"][0]["como_foi_lido"] == "combo"
+    assert p["combos"][0]["desconto_pct"] == 20
+    assert p["faixas"][0]["posicao"] == "acima"
+    assert p["sem_concorrente"] == [{"nome": "Burger Sintético", "tipo": "hambúrguer artesanal"}]
+
+
+def test_D83_the_prompt_speaks_of_positioning_never_of_cheap():
+    assert "nunca use as palavras barato" in opportunities.SYSTEM
+    assert "mais_barato" not in opportunities.SYSTEM

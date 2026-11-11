@@ -781,13 +781,16 @@ class PostgresXrayRepo:
         ]
 
     def save_calc(self, xray_id: str, result: CalcResult) -> None:
+        from psycopg.types.json import Jsonb
+
         with self._tx() as c:
             for r in result.rows:
                 c.execute(
                     "update public.xray_item set parity_cents = %s, gap_pct = %s, loss_cents = %s, reading = %s,"
                     " pareto_rank = %s, pareto_cum_share = %s, parity_full_cents = %s, gap_full_pct = %s,"
                     " full_price_room = %s, comparison_tier = %s, range_low_cents = %s, range_high_cents = %s,"
-                    " range_stores = %s, range_position = %s, range_basis = %s where id = %s and xray_id = %s",
+                    " range_stores = %s, range_position = %s, range_basis = %s, combo_solo_cents = %s,"
+                    " combo_parts = %s, range_prices = %s where id = %s and xray_id = %s",
                     (
                         r.parity_cents,
                         to_numeric(r.gap) if r.gap is not None else None,
@@ -804,6 +807,9 @@ class PostgresXrayRepo:
                         r.range_stores,
                         r.range_position,
                         r.range_basis,
+                        r.combo_solo_cents,
+                        Jsonb(list(r.combo_parts)) if r.combo_parts is not None else None,
+                        list(r.range_prices) if r.range_prices is not None else None,
                         r.key,
                         xray_id,
                     ),
@@ -819,11 +825,14 @@ class PostgresXrayRepo:
         return bool(self._all("select 1 from public.xray_opportunity where xray_id = %s", (xray_id,)))
 
     def opportunity_inputs(self, xray_id: str) -> tuple[dict[str, Any], dict[str, Any] | None] | None:
-        """The run as P23 shows it: monitor_result and monitor_positions, plus its target kind."""
+        """The run as P23 shows it: monitor_result and monitor_positions, plus its target kind, its range items and
+        combos (monitor_ranges) and the weight of the whole menu (monitor_menu_weight, D83)."""
         rows = self._all(
-            "select public.monitor_result(%s) || jsonb_build_object('target_kind', x.target_kind) as r,"
+            "select public.monitor_result(%s) || jsonb_build_object('target_kind', x.target_kind,"
+            " 'ranges', public.monitor_ranges(%s), 'menu', public.monitor_menu_weight(%s),"
+            " 'neighborhood', public.monitor_neighborhood_size(%s)) as r,"
             " public.monitor_positions(%s) as p from public.xray x where x.id = %s",
-            (xray_id, xray_id, xray_id),
+            (xray_id, xray_id, xray_id, xray_id, xray_id, xray_id),
         )
         if not rows or rows[0]["r"] is None:
             return None

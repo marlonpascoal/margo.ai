@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(26);
 
 create function pg_temp.id(tag text) returns uuid language sql immutable as $$ select md5('pos:' || tag)::uuid $$;
 create function pg_temp.item(store text, tag text, name text, price bigint) returns uuid language sql as $$
@@ -59,7 +59,7 @@ select results_eq($$ select score, items, in_band, below, risk, price_gap_per_sa
 select results_eq($$ select scope, score from public.xray_menu_score where xray_id = pg_temp.id('x') and scope <> 'menu' order by scope $$,
   $$ values ('bebidas', 100), ('lanches', 0), ('porcoes', 0) $$,
   'M1-12 v3 per category: an item below or above the band is not aligned');
-select is((select score_version from public.xray_menu_score where xray_id = pg_temp.id('x') and scope = 'menu'), 'm1-12.v3',
+select is((select score_version from public.xray_menu_score where xray_id = pg_temp.id('x') and scope = 'menu'), 'm1-12.v4',
   'M1-12: each value keeps the version of its formula');
 select results_eq($$ select captured_cents, parity_cents from public.xray_item_position where xray_item_id in (pg_temp.id('ib'), pg_temp.id('if')) order by captured_cents desc $$,
   $$ values (2000::bigint, 2600::bigint), (800::bigint, 800::bigint) $$,
@@ -128,6 +128,19 @@ delete from public.xray_menu_score where xray_id = pg_temp.id('x');
 insert into public.xray_menu_score (xray_id, scope, score, score_version, items, in_band, below, risk, price_gap_per_sale_cents)
   values (pg_temp.id('x'), 'menu', 85, 'm1-12.v2', 3, 1, 1, 1, 600);
 select is(public.monitor_positions(pg_temp.id('x')) -> 'score', 'null'::jsonb, 'P23: a score of an older formula is not shown');
+
+-- M1-12 v4 (D83): range dishes count with the exact items; combos stay out --------------------------------------------
+insert into public.xray (id, target_store_id, status, collected_at) values (pg_temp.id('x4'), pg_temp.id('T'), 'ready', '2026-11-08 10:00-03');
+insert into public.xray_item (id, xray_id, public_menu_item_id, norm_unit, norm_price_cents, pair_status, comparison_tier,
+                              range_position, combo_solo_cents, item_category) values
+  (pg_temp.id('r1'), pg_temp.id('x4'), pg_temp.id('Tb'), 'un', 2000, 'auto', 'faixa', 'dentro', null, 'lanches'),
+  (pg_temp.id('r2'), pg_temp.id('x4'), pg_temp.id('Tf'), 'un', 1000, 'auto', 'faixa', 'acima', null, 'lanches'),
+  (pg_temp.id('r3'), pg_temp.id('x4'), pg_temp.id('Tc'), 'un', 600, 'auto', 'faixa', 'abaixo', 9000, 'porcoes');
+select app.menu_score_m1_12(pg_temp.id('x4'));
+select results_eq($$ select score, items, in_band, below, risk from public.xray_menu_score where xray_id = pg_temp.id('x4') and scope = 'menu' $$,
+  $$ values (50, 2, 1, 0, 1) $$, 'M1-12 v4: a dish inside its range is aligned, one above is not, a combo is left out');
+select is((select score_version from public.xray_menu_score where xray_id = pg_temp.id('x4') and scope = 'menu'), 'm1-12.v4',
+  'M1-12 v4: the current version');
 
 select * from finish();
 rollback;

@@ -63,16 +63,18 @@ def test_M1_13_range_of_the_same_family_and_protein():
     assert r.basis == "temaki de salmão"
 
 
-def test_M1_13_falls_back_to_the_family_when_too_few_sell_the_protein():
+def test_M1_17_a_japanese_dish_never_falls_back_to_another_fish():
+    # Was M1-13's fallback to the family; M1-17 (D85): tuna is not compared with salmon.
     own = item("own", "T", "Temaki de atum", 2500)
     families = {**fam(*NEAR), **fam(own, protein="atum")}
     r = family_ranges_m1_13([("k", own)], NEAR, families, 5)["k"]
-    assert r.basis == "temaki"
+    assert r.range is None and r.basis == "temaki de atum"
 
 
 def test_M1_13_mini_only_compares_with_mini():
     own = item("own", "T", "Temaki mini de salmão", 2500)
-    assert family_ranges_m1_13([("k", own)], NEAR, {**fam(*NEAR), **fam(own, size="mini")}, 5) == {}
+    r = family_ranges_m1_13([("k", own)], NEAR, {**fam(*NEAR), **fam(own, size="mini")}, 5)
+    assert "k" not in r or r["k"].range is None
 
 
 def test_M1_13_individual_and_normal_are_one_group():
@@ -163,10 +165,11 @@ def test_M1_13_with_the_flag_off_nothing_is_classified():
 # Neighbors by the store's own menu (D76) ------------------------------------------------------------------------
 
 
-def test_M1_13_with_few_sized_peers_the_whole_portion_price_is_the_reference():
+def test_M1_17_a_japanese_dish_with_pieces_compares_only_with_stated_pieces():
+    # Was D75's whole-portion fallback; M1-17 (D85): 10 pieces are not compared with a temaki of unknown size.
     own = item("own", "T", "Temaki 10 unid", 3000, qty=10)
     r = family_ranges_m1_13([("k", own)], NEAR, fam(own, *NEAR), 5)["k"]
-    assert (r.range.low_cents, r.stores) == (3500, 5)
+    assert r.range is None
 
 
 def _menu(*names: str) -> list[Item]:

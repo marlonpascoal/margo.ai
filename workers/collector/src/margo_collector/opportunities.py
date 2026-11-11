@@ -27,7 +27,7 @@ from margo_common.log import log_event
 
 MODEL_ENV = "MARGO_OPPORTUNITIES_MODEL"
 """Overrides the provider's default model (llm.DEFAULT_MODELS)."""
-PROMPT_VERSION = "oportunidades.v3"
+PROMPT_VERSION = "oportunidades.v4"
 MAX_ITEMS = 80
 """Compared items sent per run, in the result's order (pode_subir first, largest gap first)."""
 MAX_OPPORTUNITIES = 5
@@ -44,11 +44,25 @@ SYSTEM = (
     "Leitura de cada item, com a faixa_da_media_pct dos fatos: pode_subir (abaixo do meio por mais que a faixa), "
     "na_media (dentro da faixa), nao_mexer (acima do meio por mais que a faixa). "
     "Campos que ajudam a decidir: tamanho_da_diferenca (pequena, moderada ou grande, já calculado); "
-    "comparacao (firme, poucas_lojas ou precos_espalhados); papel_na_categoria (mais_barato, mais_caro, no_meio ou "
+    "comparacao (firme, poucas_lojas ou precos_espalhados); papel_na_categoria (porta_de_entrada, referencia, no_meio ou "
     "unico entre os itens comparados da mesma categoria no cardápio do dono); e, nos itens pode_subir, "
     "preco_para_testar e aumento_do_teste_pct: um primeiro passo de subida já calculado, nunca maior que a faixa, "
     "terminando em ,90 quando dá. "
+    "Os fatos também trazem peso_do_cardapio (cada seção com o peso dos preços dela no cardápio e quanto desse peso "
+    "foi comparado), mais_pedidos (os itens que a loja diz serem os mais pedidos e como cada um foi lido), faixas "
+    "(pratos sem tamanho escrito, comparados por tipo de prato: faixa_de, faixa_ate e posicao abaixo, dentro ou "
+    "acima; não existe meio nem preço sugerido para eles), combos (o desconto que o combo concede sobre as partes "
+    "compradas avulsas na própria loja) e sem_concorrente (pratos que nenhuma das lojas lidas vende do mesmo tipo; outras lojas por perto podem vender). "
     "Escreva de 3 a 5 oportunidades, da mais importante para a menos importante. Como escolher e ordenar: "
+    "antes de tudo, a importância segue o peso do cardápio: comece pelas seções que concentram o peso e pelos mais_pedidos; "
+    "bebidas e adicionais vêm por último, mesmo com diferença grande; se os mais_pedidos ou as seções de maior "
+    "peso não têm comparação, faça uma oportunidade acompanhar que diga isso e o motivo; "
+    "faixas: acima da faixa pede sustentar com diferencial (tamanho, ingrediente, preparo) ou rever_custo, nunca "
+    "subir; abaixo da faixa é posicionamento de entrada, use manter ou acompanhar; "
+    "combos: fale do desconto concedido e diga que só o custo mostra se a margem comporta; "
+    "sem_concorrente: use acompanhar e diga que nenhuma das lojas lidas vende o mesmo tipo e que um raio-X com "
+    "mais lojas lidas da vizinhança (lojas_comparadas contra lojas_na_vizinhanca) pode encontrar com quem comparar; "
+    "não diga que não existe concorrente por perto; "
     "(a) pese juntos o tamanho da diferença e a força da comparação: grande e firme vem primeiro; "
     "moderada e firme vem antes de grande com comparação fraca; "
     "(b) pode_subir é a melhor oportunidade: proponha testar o preco_para_testar, um item por vez, olhar as vendas "
@@ -56,9 +70,9 @@ SYSTEM = (
     "acima; "
     "(c) quando vários itens da mesma categoria estão abaixo, faça uma oportunidade da categoria, cite os itens e "
     "diga para começar pelo de maior diferença, sem subir todos de uma vez; "
-    "(d) o item mais_barato da categoria costuma ser a porta de entrada do cardápio: suba com mais cuidado e "
-    "prefira começar por outro item da categoria; o item mais_caro serve de referência para os outros: se ele está "
-    "abaixo do meio, a categoria inteira parece barata e ele é um bom primeiro teste; "
+    "(d) o item porta_de_entrada da categoria é o de menor preço dela no cardápio: suba com mais cuidado e "
+    "prefira começar por outro item; o item referencia é o de maior preço: se ele está abaixo do meio, a categoria "
+    "inteira fica abaixo da região e ele é um bom primeiro teste; "
     "(e) bebidas e adicionais: o cliente compara menos esses preços; uma bebida ou adicional nao_mexer com "
     "tamanho_da_diferenca moderada pede manter, dizendo que o preço está perto do meio e que baixar quase nunca "
     "traz mais pedidos; use rever_custo nesses grupos só com diferença grande; "
@@ -66,7 +80,7 @@ SYSTEM = (
     "diz se compensa; "
     "(g) inclua uma oportunidade manter para onde o dono está mais forte (a categoria com mais itens na_media ou o "
     "maior itens_alinhados_pct), para ele não mexer no que já está certo; "
-    "(h) use acompanhar quando a comparação é poucas_lojas, e diga que com mais lojas comparadas no próximo "
+    "(h) use acompanhar quando a comparação, de um item ou de uma faixa, é poucas_lojas, e diga que com mais lojas comparadas no próximo "
     "raio-X a leitura fica mais firme; "
     "(i) não repita o mesmo item em duas oportunidades e varie as alavancas quando os fatos permitem. "
     "Comparação fraca: com poucas_lojas ou precos_espalhados, ou num prato ou porção sem o peso no nome, diga no "
@@ -87,6 +101,9 @@ SYSTEM = (
     "O custo dos itens é desconhecido: nunca fale em lucro, margem ou ganho, nem prometa dinheiro a mais. "
     "Ao sugerir subir, diga que pode vender menos; ao falar de baixar um preço alto, diga que pode vender mais e "
     "que só o custo diz se compensa. "
+    "Tom de especialista em posicionamento, não de pechincha: nunca use as palavras barato, barata, caro ou cara; "
+    "fale de posicionamento (entrada, intermediário, premium), de preço abaixo ou acima da região e do que fazer: "
+    "sustentar, comunicar o diferencial ou rever. "
     "Não use travessão. Não cite nomes de lojas."
 )
 
@@ -253,7 +270,7 @@ def first_test_price(own_cents: Any, parity_cents: Any, band: Any) -> int | None
 
 def category_role(own_cents: Any, group_prices: Sequence[int]) -> str | None:
     """Where an item sits in its own category ladder, among the run's compared items of the same M1-04 group:
-    `unico`, `mais_barato` (the entry item), `mais_caro` (the reference item) or `no_meio`."""
+    `unico`, `porta_de_entrada` (the lowest-priced item), `referencia` (the highest-priced item) or `no_meio`."""
     if own_cents is None or not group_prices:
         return None
     if len(group_prices) == 1:
@@ -262,8 +279,8 @@ def category_role(own_cents: Any, group_prices: Sequence[int]) -> str | None:
     if low == high:
         return "no_meio"
     if int(own_cents) == low:
-        return "mais_barato"
-    return "mais_caro" if int(own_cents) == high else "no_meio"
+        return "porta_de_entrada"
+    return "referencia" if int(own_cents) == high else "no_meio"
 
 
 def build_facts(result: Mapping[str, Any], positions: Mapping[str, Any] | None) -> Facts:
@@ -336,10 +353,49 @@ def build_facts(result: Mapping[str, Any], positions: Mapping[str, Any] | None) 
             row["aumento_do_teste_pct"] = _whole_pct(f, round_half_away((Decimal(price) - own) * 100 / own))
         items.append(row)
 
+    menu = list(result.get("menu") or [])
+    total = sum(int(m.get("price_cents") or 0) for m in menu) or 1
+    sections: dict[str, list[Mapping[str, Any]]] = {}
+    for m in menu:
+        sections.setdefault(str(m.get("section")), []).append(m)
+    weight = []
+    for name, rows in sorted(sections.items(), key=lambda kv: -sum(int(r.get("price_cents") or 0) for r in kv[1])):
+        w = sum(int(r.get("price_cents") or 0) for r in rows)
+        c = sum(int(r.get("price_cents") or 0) for r in rows if r.get("kind") != "sem")
+        weight.append({"secao": _words(f, name), "peso_pct": _whole_pct(f, round(w * 100 / total)),
+                       "comparado_pct": _whole_pct(f, round(c * 100 / w) if w else 0)})
+    most = [{"nome": _words(f, m.get("name")), "preco": _cents(f, m.get("price_cents")), "como_foi_lido": m.get("kind"),
+             "motivo": _words(f, m.get("reason"))} for m in menu if m.get("most_ordered")]
+    ranges, combos, alone = [], [], []
+    for g in result.get("ranges") or []:
+        iid = str(g["item_id"])
+        if g.get("combo_solo_cents") is not None:
+            f.item_ids.add(iid)
+            solo, own_c = int(g["combo_solo_cents"]), int(g["own_cents"])
+            combos.append({"id": iid, "nome": _words(f, g.get("name")), "seu_preco": _cents(f, own_c),
+                           "avulso": _cents(f, solo),
+                           "desconto_pct": _whole_pct(f, round((solo - own_c) * 100 / solo) if solo else 0)})
+        elif g.get("low_cents") is not None:
+            f.item_ids.add(iid)
+            ranges.append({"id": iid, "nome": _words(f, g.get("name")), "seu_preco": _cents(f, g.get("own_cents")),
+                           "faixa_de": _cents(f, g.get("low_cents")), "faixa_ate": _cents(f, g.get("high_cents")),
+                           "lojas": _count(f, g.get("stores")), "posicao": g.get("position"),
+                           "tipo": _words(f, g.get("basis")),
+                           # M1-18 (D86): a range on 3 or 4 stores is indicative.
+                           "comparacao": "poucas_lojas" if (g.get("stores") or 0) < 5 else "firme"})
+        elif g.get("basis"):
+            alone.append({"nome": _words(f, g.get("name")), "tipo": _words(f, g.get("basis"))})
+
     f.prompt = {
+        "peso_do_cardapio": weight,
+        "mais_pedidos": most,
+        "faixas": ranges,
+        "combos": combos,
+        "sem_concorrente": alone,
         "raio_km": _count(f, result.get("radius_km")),
         "faixa_da_media_pct": _pct(f, band),
         "lojas_comparadas": _count(f, result.get("stores_compared")),
+        "lojas_na_vizinhanca": _count(f, result.get("neighborhood")),
         "itens_no_cardapio": _count(f, result.get("items_total")),
         "itens_comparados": _count(f, result.get("items_analyzed")),
         "itens_abaixo_do_meio": _count(f, result.get("below")),

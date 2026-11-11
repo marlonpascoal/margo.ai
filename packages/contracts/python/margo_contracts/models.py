@@ -1383,6 +1383,8 @@ class XrayCategoryRank(Row):
 
 
 class XrayItem(Row):
+    combo_parts: JsonValue | None
+    combo_solo_cents: int | None
     comparison_tier: str | None
     created_at: datetime
     full_price_room: bool
@@ -1405,6 +1407,7 @@ class XrayItem(Row):
     range_high_cents: int | None
     range_low_cents: int | None
     range_position: str | None
+    range_prices: list[int] | None
     range_stores: int | None
     reading: XrayReading | None
     reviewed_at: datetime | None

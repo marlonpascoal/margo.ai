@@ -1,10 +1,10 @@
 // P23 timeline (Marlon, 08/nov: a single X-ray is one point of the monitoring's chart). "Raio-X n desta loja", the next
 // run, and a small chart of the last up to 8 calculated runs: M1-12 v3 "Itens alinhados" and the M1-10 position
-// (1ª = mais barata), this run's point highlighted and the next run as an empty dotted point. Server-rendered SVG on
+// (entrada embaixo, premium em cima), this run's point highlighted and the next run as an empty dotted point. Server-rendered SVG on
 // linePaths, as HistoryChart (Chart.tsx), which has neither a highlighted point nor a pending one, so it is not reused.
 import Link from "next/link";
 import type { History, MonitorStatus } from "@/lib/monitor/load";
-import { linePaths, nextRunText, ordinal, runLabel, timelineWindow, type TimelinePoint } from "@/lib/monitor/view";
+import { linePaths, nextRunText, positionLabel, runLabel, tierWord, timelineWindow, type TimelinePoint } from "@/lib/monitor/view";
 import { SCORE_LABEL, SHOW_SCORE } from "./PriceScore";
 
 export interface TimelineProps {
@@ -78,23 +78,23 @@ export default function Timeline(p: TimelineProps) {
   // M1-12 v3: share of the compared items in the neighborhood band, 0 to 100.
   if (SHOW_SCORE)
     panels.push({ key: "score", title: SCORE_LABEL, top: 10, bottom: 52, lo: 0, hi: 100, values: w.points.map((x) => x.score), fmt: (v) => `${v}%` });
-  // M1-10: position among the neighborhood stores, 1 = cheapest, drawn on top.
+  // M1-10: position among the neighborhood stores, premium (the last rank) drawn on top.
   const top = panels.length ? 76 : 10;
   panels.push({
     key: "rank",
-    title: "Posição",
+    title: "Posicionamento",
     top,
     bottom: top + 42,
     lo: 1,
     hi: maxOf,
-    invert: true,
+    invert: false,
     values: w.points.map((x) => x.rank),
-    fmt: (v, pt) => `${ordinal(v)}${pt.stores_ranked ? ` de ${pt.stores_ranked}` : ""}`,
+    fmt: (v, pt) => (pt.stores_ranked ? tierWord(v, pt.stores_ranked) : `${v}`),
   });
   const axisY = panels.at(-1)!.bottom + 22;
   const H = axisY + 6;
   const xs = linePaths(hasNext ? [...w.points.map(() => 0), 0] : w.points.map(() => 0), { width: W, height: H, left: LEFT, right: RIGHT, top: 0, bottom: 0, lo: 0, hi: 1 }).x;
-  const aria = w.points.map((x) => `${x.label}: ${[SHOW_SCORE && x.score !== null ? `${SCORE_LABEL.toLowerCase()} ${x.score}%` : null, x.rank !== null ? `posição ${ordinal(x.rank)}` : null].filter(Boolean).join(", ")}`).join("; ");
+  const aria = w.points.map((x) => `${x.label}: ${[SHOW_SCORE && x.score !== null ? `${SCORE_LABEL.toLowerCase()} ${x.score}%` : null, x.rank !== null && x.stores_ranked ? `posicionamento ${positionLabel(x.rank, x.stores_ranked)}` : null].filter(Boolean).join(", ")}`).join("; ");
 
   return (
     <section className="card pad stack tl" aria-labelledby="tlh">
@@ -119,7 +119,7 @@ export default function Timeline(p: TimelineProps) {
           ) : null}
         </svg>
       </div>
-      <span className="xs muted">1ª = mais barata.</span>
+      <span className="xs muted">Embaixo, preço de entrada; em cima, premium. Itens alinhados conta pratos e itens exatos.</span>
       {w.single ? <p className="small" style={{ margin: 0 }}>O histórico começa aqui. A cada raio-X somamos um ponto.</p> : null}
       {p.mode === "screen" ? (
         <Link className="small no-print" href={`/app/raio-x/${p.monitorId}/historico`}>

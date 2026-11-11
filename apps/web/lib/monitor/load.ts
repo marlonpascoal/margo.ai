@@ -184,6 +184,8 @@ export interface Candidate {
   pair_id: string;
   name: string;
   store: string | null;
+  /** The candidate's menu description, to tell two items apart (P22). */
+  description: string | null;
   price_cents: number;
   unit: string;
   unit_qty: number | null;
@@ -195,6 +197,8 @@ export interface Doubt {
   item_id: string;
   own_item_id: string;
   name: string;
+  /** The own item's menu description (P22). */
+  description: string | null;
   own_cents: number;
   unit: string;
   unit_qty: number | null;
@@ -229,7 +233,7 @@ export async function loadDoubts(deps: LoadDeps, monitorId: string, xrayId?: str
 export interface ItemLists {
   by_category: { group: Group; only_yours: number; confirmed: number }[];
   only_yours: { item_id: string; name: string; own_cents: number; category: string | null; group: Group }[];
-  confirmed: { item_id: string; name: string; own_cents: number; parity_cents: number | null; category: string | null; group: Group; by_system: boolean; accepted: { pair_id: string; name: string; store: string | null; price_cents: number }[] }[];
+  confirmed: { item_id: string; name: string; own_cents: number; parity_cents: number | null; category: string | null; group: Group; by_system: boolean; accepted: { pair_id: string; name: string; store: string | null; description: string | null; price_cents: number }[] }[];
 }
 
 /** P22 collapsed sections "Itens só seus" and "Confirmados pelo sistema". */
@@ -464,12 +468,30 @@ export interface PriceRangeItem {
   item_id: string;
   name: string;
   own_cents: number;
-  low_cents: number;
-  high_cents: number;
-  stores: number;
-  position: "abaixo" | "dentro" | "acima";
+  /** Null for a combo whose parts have no reference yet (M1-14): it shows its discount only. */
+  low_cents: number | null;
+  high_cents: number | null;
+  stores: number | null;
+  position: "abaixo" | "dentro" | "acima" | null;
   /** What the range compares with, in words; null when it comes from the item's own pairs. */
   basis: string | null;
+  /** M1-14: a combo's parts bought singly in the same store; null for an item that is not a combo. */
+  combo_solo_cents: number | null;
+  combo_parts: { part: string; qty: number; item: string; price_cents: number }[] | null;
+  /** One price per store behind the range, cheapest first; null for a combo and for runs before 10/nov. */
+  prices: number[] | null;
+}
+
+/** P23 "Onde está o peso do seu cardápio" (D83, migration 20261231000024): every own item, how it was compared. */
+export interface MenuWeightItem {
+  item_id: string;
+  name: string;
+  section: string;
+  price_cents: number;
+  kind: "exata" | "faixa" | "combo" | "sem";
+  /** The range basis, or the pairing note when the item was not compared. */
+  reason: string | null;
+  most_ordered: boolean;
 }
 
 export interface ResultPage {
@@ -479,16 +501,26 @@ export interface ResultPage {
   /** Null when the target store has no coordinates. */
   map: NeighborMap | null;
   ranges: PriceRangeItem[];
+  menu: MenuWeightItem[];
+  /** Stores in the neighborhood set, read or not (migration 20261231000026). */
+  neighborhood: number;
+  /** "Com quem comparamos": the stores this run read, nearest first (migration 20261231000029). */
+  compared: ComparedStore[];
 }
 
+export type ComparedStore = { name: string; category: string | null; distance_m: number | null };
+
 async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultPage | null> {
-  const [result, positions, stores, h2h, map, ranges] = await Promise.all([
+  const [result, positions, stores, h2h, map, ranges, menu, neighborhood, compared] = await Promise.all([
     rpc("monitor_result", { p_xray: xrayId }) as Promise<Omit<Result, "positions"> | null>,
     rpc("monitor_positions", { p_xray: xrayId }) as Promise<Result["positions"]>,
     rpc("monitor_result_stores", { p_xray: xrayId }) as Promise<{ item_id: string; stores: { name: string; price_cents: number }[] }[]>,
     rpc("monitor_head_to_head", { p_xray: xrayId }) as Promise<HeadToHead | null>,
     rpc("monitor_map", { p_xray: xrayId }) as Promise<NeighborMap | null>,
     rpc("monitor_ranges", { p_xray: xrayId }) as Promise<PriceRangeItem[] | null>,
+    rpc("monitor_menu_weight", { p_xray: xrayId }) as Promise<MenuWeightItem[] | null>,
+    rpc("monitor_neighborhood_size", { p_xray: xrayId }) as Promise<number | null>,
+    rpc("monitor_compared_stores", { p_xray: xrayId }) as Promise<ComparedStore[] | null>,
   ]);
   if (!result || !["ready", "delivered"].includes(result.status)) return null;
   return {
@@ -497,6 +529,9 @@ async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultP
     headToHead: h2h && h2h.items?.length ? h2h : null,
     map: map ?? null,
     ranges: ranges ?? [],
+    menu: menu ?? [],
+    neighborhood: neighborhood ?? 0,
+    compared: compared ?? [],
   };
 }
 

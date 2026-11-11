@@ -1,4 +1,4 @@
-// M1-12 v3 "% de itens alinhados" (Marlon, 07/nov): the share of the compared items whose price sits in the
+// M1-12 v4 "% de itens alinhados" (D83: exact items and range dishes); v3 (Marlon, 07/nov): the share of the compared items whose price sits in the
 // neighborhood band (M1-07 na_media, up to 10% above or below the middle). Not a profit measure: no cost, no volume.
 // Every place it shows on P19 to P24 renders one of these components, reading only loadResult().positions and
 // loadHistory(). SHOW_SCORE false hides it everywhere, and the method paragraph goes with it.
@@ -33,7 +33,7 @@ export function ScoreCard({ result, previousOn, competitor }: { result: Result; 
   if (!SHOW_SCORE || !s || s.score === null) return null;
   const change = scoreChangeSince(s.delta, previousOn);
   return (
-    <section className="card scorec" aria-labelledby="sch">
+    <section className="card pad scorec" aria-labelledby="sch">
       <div className="scn">
         <span className="eyebrow" id="sch">
           {SCORE_LABEL}
@@ -45,23 +45,23 @@ export function ScoreCard({ result, previousOn, competitor }: { result: Result; 
       </div>
       <div className="scx">
         <p className="posline" style={{ fontSize: 15 }}>
-          {s.in_band} de {s.items} itens comparados estão na faixa de preço da vizinhança, até 10% acima ou abaixo do meio.
+          {s.in_band} de {s.items} itens comparados estão alinhados à região: perto do preço do meio ou dentro da faixa do mesmo tipo de prato.
         </p>
         <div className="meter" role="img" aria-label={`${s.score}% dos itens alinhados`}>
           <i style={{ width: `${s.score}%` }} />
         </div>
         <div className="scfacts">
-          {s.below > 0 ? (
-            <span className="up">
-              {s.below} {s.below === 1 ? "item abaixo" : "itens abaixo"} do meio, <b className="mono">{brl(s.price_gap_per_sale_cents)}</b> de diferença por venda
-            </span>
-          ) : null}
           {s.risk > 0 ? (
             <span className="hold">
-              {s.risk} {s.risk === 1 ? "item acima" : "itens acima"}
-              {competitor ? " do meio" : ": não mexa sem saber o custo"}
+              {s.risk} {s.risk === 1 ? "item acima" : "itens acima"} da região{competitor ? "" : ": sustente com diferencial ou reveja o custo"}
             </span>
           ) : null}
+          {s.below > 0 ? (
+            <span className="up">
+              {s.below} {s.below === 1 ? "item abaixo" : "itens abaixo"} da região{competitor ? "" : ": há espaço de preço"}
+            </span>
+          ) : null}
+          <span className="small muted">Combos e itens sem comparação ficam fora desta conta.</span>
         </div>
       </div>
     </section>
@@ -87,7 +87,7 @@ export function ScoreMethod({ competitor, minItems }: { competitor: boolean; min
   if (!SHOW_SCORE) return null;
   return (
     <p>
-      <b>Itens alinhados.</b> Contamos quantos itens comparados {competitor ? "ele vende" : "você vende"} na faixa de preço da vizinhança, até 10% acima ou abaixo do preço do meio. Itens abaixo e acima da faixa aparecem à parte. Não leva em conta custo nem volume de vendas. Categorias com menos de {minItems} itens comparados ficam sem número. A mudança desde o raio-X anterior compara os mesmos itens.
+      <b>Itens alinhados.</b> Contamos quantos itens comparados {competitor ? "ele vende" : "você vende"} estão alinhados à região: na comparação exata, até 10% acima ou abaixo do preço do meio; nos pratos por faixa, dentro da faixa do mesmo tipo de prato. Combos e itens sem comparação ficam fora. Itens abaixo e acima aparecem à parte. Não leva em conta custo nem volume de vendas. Categorias com menos de {minItems} itens comparados ficam sem número. A mudança desde o raio-X anterior compara os mesmos itens.
     </p>
   );
 }
@@ -110,7 +110,7 @@ export function ScoreHistory({ runs, labels, prevOn, id }: { runs: { score: numb
         </span>
       </h3>
       <HistoryChart id={id} labels={labels} series={[{ name: "Itens alinhados", values, tone: "main" }]} {...scoreOpts(`${SCORE_LABEL} por raio-X`)} />
-      <span className="xs muted">Parte dos itens comparados na faixa de preço da vizinhança, em cada raio-X. A mudança compara os mesmos itens do raio-X anterior.</span>
+      <span className="xs muted">Itens comparados alinhados à região em cada raio-X: perto do meio na comparação exata ou dentro da faixa nos pratos. A mudança compara os mesmos itens do raio-X anterior.</span>
     </div>
   );
 }

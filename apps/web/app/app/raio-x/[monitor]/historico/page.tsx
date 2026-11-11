@@ -9,7 +9,7 @@ import NavSelect from "@/components/NavSelect";
 import { loadDeps } from "@/lib/monitor/deps";
 import { loadHistory, loadItemHistory, loadMonitorSummary, scoreMinItems } from "@/lib/monitor/load";
 import { GROUP_LABEL, type Group } from "@/lib/monitor/rules";
-import { brl, dayMon, ordinal, rankChangeSince } from "@/lib/monitor/view";
+import { brl, dayMon, positionLabel, rankChangeSince } from "@/lib/monitor/view";
 import { requirePortal } from "@/lib/portal/session";
 import { HistoryChart } from "../../_components/Chart";
 import { CategoryScoreHistory, SCORE_LABEL, SHOW_SCORE, ScoreHistory } from "../../_components/PriceScore";
@@ -50,7 +50,7 @@ function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
 
 const posOpts = (of: number, label: string) => {
   const hi = Math.max(of, 4);
-  return { lo: 1, hi, invert: true, ticks: [1, Math.round(hi / 2), hi], fmt: (v: number) => ordinal(Math.round(v)), label };
+  return { lo: 1, hi, invert: false, ticks: [1, Math.round(hi / 2), hi], fmt: (v: number) => `${Math.round(v)}`, label };
 };
 
 export default async function HistoryPage({ params, searchParams }: { params: Promise<{ monitor: string }>; searchParams: Promise<{ categoria?: string; item?: string }> }) {
@@ -77,7 +77,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
         {head}
         <div className="card pad stack" style={{ justifyItems: "start" }}>
           <b>O histórico aparece a partir do segundo raio-X{summary.next_run_at ? `, em ${dayMon(summary.next_run_at)}` : ""}.</b>
-          <span className="small muted">A cada raio-X somamos um ponto: itens alinhados, posição de preço, cada categoria e o preço de cada item.</span>
+          <span className="small muted">A cada raio-X somamos um ponto: itens alinhados, posicionamento, cada categoria e o preço de cada item.</span>
           {runs.length ? (
             <Link className="btn sm" href={`/app/raio-x/${monitor}`}>
               Ver o raio-X de {dayMon(runs[0].on!)}
@@ -120,30 +120,30 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
       <TableToggle
         id="hr"
         title="O restaurante"
-        sub={`${SHOW_SCORE ? "Score de preço e posição" : "Posição"} de preço, a cada raio-X`}
+        sub={`${SHOW_SCORE ? "Itens alinhados e posicionamento" : "Posicionamento"}, a cada raio-X`}
         chart={
           <div className="h3row">
             {SHOW_SCORE ? <ScoreHistory id="cScore" runs={runs.map((r) => ({ score: r.score, delta: r.delta }))} labels={labels} prevOn={prevOn} /> : null}
             <div className="stack" style={{ gap: 6 }}>
               <h3>
-                Posição de preço{" "}
+                Posicionamento{" "}
                 <span className="small muted" style={{ fontWeight: 400 }}>
-                  {[last.rank && last.stores_ranked ? `${ordinal(last.rank)} de ${last.stores_ranked}` : null, rankChangeSince(last.rank, runs.at(-2)!.rank, prevOn)].filter(Boolean).join(" · ")}
+                  {[last.rank && last.stores_ranked ? positionLabel(last.rank, last.stores_ranked) : null, rankChangeSince(last.rank, runs.at(-2)!.rank, prevOn)].filter(Boolean).join(" · ")}
                 </span>
               </h3>
-              <HistoryChart id="cPos" labels={labels} series={[{ name: "Posição", values: runs.map((r) => r.rank), tone: "main" }]} {...posOpts(maxOf, "Posição de preço por raio-X")} />
-              <span className="xs muted">1ª = a loja mais barata da vizinhança.</span>
+              <HistoryChart id="cPos" labels={labels} series={[{ name: "Posicionamento", values: runs.map((r) => r.rank), tone: "main" }]} {...posOpts(maxOf, "Posição de preço por raio-X")} />
+              <span className="xs muted">Embaixo, preço de entrada; em cima, premium.</span>
             </div>
           </div>
         }
-        table={<Table head={["Raio-X", ...(SHOW_SCORE ? [SCORE_LABEL] : []), "Posição", "Lojas"]} rows={runs.map((r, i) => [labels[i], ...(SHOW_SCORE ? [r.score !== null ? `${r.score}%` : "sem número"] : []), r.rank ? ordinal(r.rank) : "", r.stores_ranked ?? ""])} />}
+        table={<Table head={["Raio-X", ...(SHOW_SCORE ? [SCORE_LABEL] : []), "Posicionamento", "Lojas"]} rows={runs.map((r, i) => [labels[i], ...(SHOW_SCORE ? [r.score !== null ? `${r.score}%` : "sem número"] : []), r.rank && r.stores_ranked ? positionLabel(r.rank, r.stores_ranked) : "", r.stores_ranked ?? ""])} />}
       />
 
       {cat ? (
         <TableToggle
           id="hc"
           title="Por categoria"
-          sub="Score e posição de cada categoria, entre as lojas que vendem itens dela"
+          sub="Itens alinhados e posicionamento de cada categoria, entre as lojas que vendem itens dela"
           chart={
             <div className="stack">
               <div className="chips" role="group" aria-label="Escolher categoria">
@@ -161,20 +161,20 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
                 <CategoryScoreHistory id="cCatScore" label={catLabel} values={catRuns.map((c) => c?.score ?? null)} delta={catLast?.delta ?? null} prevOn={prevOn} minItems={minItems} labels={labels} />
                 <div className="stack" style={{ gap: 6 }}>
                   <h3>
-                    Posição em {catLabel}{" "}
+                    Posicionamento em {catLabel}{" "}
                     <span className="small muted" style={{ fontWeight: 400 }}>
-                      {[catLast?.rank && catLast.stores_ranked ? `${ordinal(catLast.rank)} de ${catLast.stores_ranked}` : null, rankChangeSince(catLast?.rank ?? null, catRuns.at(-2)?.rank ?? null, prevOn)].filter(Boolean).join(" · ")}
+                      {[catLast?.rank && catLast.stores_ranked ? positionLabel(catLast.rank, catLast.stores_ranked) : null, rankChangeSince(catLast?.rank ?? null, catRuns.at(-2)?.rank ?? null, prevOn)].filter(Boolean).join(" · ")}
                     </span>
                   </h3>
-                  <HistoryChart id="cCatPos" labels={labels} series={[{ name: "Posição", values: catRuns.map((c) => c?.rank ?? null), tone: "main" }]} {...posOpts(catOf, `Posição de ${catLabel} por raio-X`)} />
+                  <HistoryChart id="cCatPos" labels={labels} series={[{ name: "Posicionamento", values: catRuns.map((c) => c?.rank ?? null), tone: "main" }]} {...posOpts(catOf, `Posição de ${catLabel} por raio-X`)} />
                 </div>
               </div>
             </div>
           }
           table={
             <Table
-              head={["Raio-X", ...(SHOW_SCORE ? [`Score ${catLabel}`] : []), `Posição ${catLabel}`]}
-              rows={runs.map((_, i) => [labels[i], ...(SHOW_SCORE ? [typeof catRuns[i]?.score === "number" ? `${catRuns[i]!.score}%` : "poucos itens"] : []), catRuns[i]?.rank ? `${ordinal(catRuns[i]!.rank!)} de ${catRuns[i]!.stores_ranked}` : ""])}
+              head={["Raio-X", ...(SHOW_SCORE ? [`Score ${catLabel}`] : []), `Posicionamento ${catLabel}`]}
+              rows={runs.map((_, i) => [labels[i], ...(SHOW_SCORE ? [typeof catRuns[i]?.score === "number" ? `${catRuns[i]!.score}%` : "poucos itens"] : []), catRuns[i]?.rank && catRuns[i]!.stores_ranked ? positionLabel(catRuns[i]!.rank!, catRuns[i]!.stores_ranked!) : ""])}
             />
           }
         />
@@ -184,7 +184,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
         <TableToggle
           id="hp"
           title="Um produto"
-          sub="Preço e posição entre as lojas que vendem o item"
+          sub="Preço e posicionamento entre as lojas que vendem o item"
           extra={
             <NavSelect
               label="Item"
@@ -223,17 +223,17 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
               </div>
               <div className="stack" style={{ gap: 6 }}>
                 <h3>
-                  Posição do seu preço{" "}
+                  Posicionamento do seu preço{" "}
                   <span className="small muted" style={{ fontWeight: 400 }}>
-                    {[lastIp?.rank && lastIp.stores ? `${ordinal(lastIp.rank)} mais barata de ${lastIp.stores}` : null, rankChangeSince(lastIp?.rank ?? null, ip.at(-2)?.rank ?? null, prevOn)].filter(Boolean).join(" · ")}
+                    {[lastIp?.rank && lastIp.stores ? positionLabel(lastIp.rank, lastIp.stores) : null, rankChangeSince(lastIp?.rank ?? null, ip.at(-2)?.rank ?? null, prevOn)].filter(Boolean).join(" · ")}
                   </span>
                 </h3>
-                <HistoryChart id="cItemPos" labels={labels} series={[{ name: "Posição", values: iRank, tone: "main" }]} {...posOpts(iOf, `Posição de ${item.name} por raio-X`)} />
-                <span className="xs muted">1ª = o preço mais barato entre as lojas que vendem o item.</span>
+                <HistoryChart id="cItemPos" labels={labels} series={[{ name: "Posicionamento", values: iRank, tone: "main" }]} {...posOpts(iOf, `Posição de ${item.name} por raio-X`)} />
+                <span className="xs muted">Embaixo, preço de entrada; em cima, premium, entre as lojas que vendem o item.</span>
               </div>
             </div>
           }
-          table={<Table head={["Raio-X", "Você", "Meio", "Posição"]} rows={runs.map((_, i) => [labels[i], own[i] !== null ? brl(own[i]!) : "", mid[i] !== null ? brl(mid[i]!) : "", ip[i]?.rank ? `${ordinal(ip[i]!.rank!)} de ${ip[i]!.stores}` : ""])} />}
+          table={<Table head={["Raio-X", "Você", "Meio", "Posicionamento"]} rows={runs.map((_, i) => [labels[i], own[i] !== null ? brl(own[i]!) : "", mid[i] !== null ? brl(mid[i]!) : "", ip[i]?.rank && ip[i]!.stores ? positionLabel(ip[i]!.rank!, ip[i]!.stores!) : ""])} />}
         />
       ) : null}
 
@@ -247,7 +247,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
             dayMon(r.on!),
             r.stores_read,
             ...(SHOW_SCORE ? [r.score !== null ? `${r.score}%` : ""] : []),
-            r.rank && r.stores_ranked ? `${ordinal(r.rank)} de ${r.stores_ranked}` : "",
+            r.rank && r.stores_ranked ? positionLabel(r.rank, r.stores_ranked) : "",
             r.items_compared,
             <Link key="v" className="small" href={i === 0 ? `/app/raio-x/${monitor}` : `/app/raio-x/${monitor}/${r.xray_id}`}>
               Ver

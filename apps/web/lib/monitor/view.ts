@@ -198,13 +198,12 @@ export function headline(top: ResultItem[]): { count: number; max: number; sum: 
 /** M1-10 position in words (P23): "Você cobra menos que 27 das 30 lojas vizinhas" and who charges less. */
 export function positionWords(rank: number, storesRanked: number, who: "você" | string): { lead: string; tail: string } {
   const others = storesRanked - 1;
-  const more = storesRanked - rank;
-  const cheaper = rank - 1;
-  const subject = who === "você" ? "Você cobra" : `${who} cobra`;
-  const obj = who === "você" ? "você" : "ele";
+  const above = rank - 1;
+  const tier = TIER_LABEL[tierOf(storesRanked > 1 ? above / others : 0.5)];
+  const subject = who === "você" ? "Seu preço" : `O preço de ${who.replace(/^O /, "")}`;
   return {
-    lead: `${subject} menos que ${more} das ${others} lojas vizinhas`,
-    tail: cheaper === 0 ? `Nenhuma cobra menos que ${obj}.` : `Só ${cheaper} ${cheaper === 1 ? "cobra" : "cobram"} menos que ${obj}.`,
+    lead: `${subject} está no posicionamento ${tier} da região`,
+    tail: `Fica acima de ${above} das ${others} lojas vizinhas nos itens em comum.`,
   };
 }
 
@@ -268,59 +267,6 @@ export function stripGeometry(i: Pick<ResultItem, "own_cents" | "parity_cents" |
 /** Dots closer than this share of the track sit on top of each other instead of overlapping. */
 const SPREAD_STACK_GAP = 3;
 
-/** "Ver os preços da vizinhança" (D80): where the store sits among the neighbors' prices (M1-05 middle, M1-10 position),
- *  with no store identified. Dots carry a position only, and the three zones always add up to the neighbors. */
-export function neighborhoodSpread(prices: number[], own: number, parity: number, who: string) {
-  const lo = Math.min(...prices, own, parity);
-  const hi = Math.max(...prices, own, parity);
-  const x = (v: number) => 3 + ((v - lo) / (hi - lo || 1)) * 94;
-  const align = (v: number) => (v < 30 ? "l" : v > 70 ? "r" : "c");
-
-  const points = [...prices.map((p) => ({ p, me: false })), { p: own, me: true }].sort((a, b) => a.p - b.p);
-  let anchor = -Infinity;
-  let level = 0;
-  const dots = points.map((d) => {
-    const left = x(d.p);
-    if (left - anchor < SPREAD_STACK_GAP) level += 1;
-    else {
-      anchor = left;
-      level = 0;
-    }
-    return { left, level, me: d.me };
-  });
-
-  const label = `${who[0].toUpperCase()}${who.slice(1)}`;
-  const total = prices.length + 1;
-  const cheaper = prices.filter((p) => p < own).length;
-  const pricier = prices.filter((p) => p > own).length;
-  const where = cheaper === 0 ? "o mais barato" : pricier === 0 ? "o mais caro" : `o ${cheaper + 1}º mais barato`;
-  const count = (test: (p: number) => boolean) => prices.filter(test).length;
-  const zones =
-    own <= parity
-      ? [
-          { label: "Mais baratas", count: count((p) => p < own) },
-          { label: "Até o meio", count: count((p) => p >= own && p <= parity) },
-          { label: "Acima do meio", count: count((p) => p > parity) },
-        ]
-      : [
-          { label: "Abaixo do meio", count: count((p) => p < parity) },
-          { label: `Até ${who.toLowerCase()}`, count: count((p) => p >= parity && p <= own) },
-          { label: "Mais caras", count: count((p) => p > own) },
-        ];
-
-  return {
-    who: label,
-    sentence: `${label} é ${where} entre ${total} lojas.`,
-    total,
-    lo,
-    hi,
-    dots,
-    levels: Math.max(...dots.map((d) => d.level)) + 1,
-    own: { left: x(own), align: align(x(own)) },
-    med: { left: x(parity), align: align(x(parity)) },
-    zones,
-  };
-}
 
 /** P23 category summary (M1-07 counts, M1-05 sum of price gaps of pode_subir items). */
 export function categorySummary(c: Result["by_category"][number]) {
@@ -335,13 +281,13 @@ export function firstOpenGroup(cats: Result["by_category"]): Group | null {
 
 // P24 / W15 ---------------------------------------------------------------------------------------------------------------
 
-/** M1-10 rank change in words: "2 posições mais barata desde 26/out", "igual a 26/out". */
+/** M1-10 rank change in words: "desceu 2 posições no preço desde 26/out", "igual a 26/out". */
 export function rankChangeSince(now: number | null, prev: number | null, prevOn: string | null): string | null {
   if (now === null || prev === null || !prevOn) return null;
   const d = prev - now;
   if (d === 0) return `igual a ${dayMon(prevOn)}`;
   const n = Math.abs(d);
-  return `${n} ${n === 1 ? "posição" : "posições"} mais ${d > 0 ? "barata" : "cara"} desde ${dayMon(prevOn)}`;
+  return `${d > 0 ? "desceu" : "subiu"} ${n} ${n === 1 ? "posição" : "posições"} no preço desde ${dayMon(prevOn)}`;
 }
 
 /** M1-12 change in words: "+1 desde 26/out", "igual a 26/out". */
@@ -451,10 +397,272 @@ export function testChangeSentence(t: TestItem): string {
 /** M1-10 position of the item among the stores selling it, then and now: "Entre as lojas que vendem: era 5ª de 9, agora 3ª de 9." */
 export function testPositionChange(t: TestItem): string | null {
   if (t.same_run || !t.then || !t.now || t.then.rank === null || t.now.rank === null || t.then.stores === null || t.now.stores === null) return null;
-  return `Entre as lojas que vendem: era ${ordinal(t.then.rank)} de ${t.then.stores}, agora ${ordinal(t.now.rank)} de ${t.now.stores}.`;
+  return `Entre as lojas que vendem: era ${tierWord(t.then.rank, t.then.stores)} (${t.then.rank} de ${t.then.stores}), agora ${tierWord(t.now.rank, t.now.stores)} (${t.now.rank} de ${t.now.stores}).`;
 }
 
 /** "Até o próximo raio-X" count of the test plan (m1.test_max_items). */
 export function testCountLine(active: number, max: number): string {
   return active === 0 ? "Nenhum item em teste." : `${active} de ${max} itens em teste.`;
+}
+
+/** M1-14 (D81): the discount the combo grants on its parts bought singly in the same store, per order. */
+export function comboDiscountLabel(comboCents: number, soloCents: number): string {
+  const pct = soloCents > 0 ? Math.round((1 - comboCents / soloCents) * 100) : 0;
+  if (pct > 0) return `desconto de ${pct}% sobre o avulso (${money(soloCents - comboCents)} por pedido)`;
+  if (pct < 0) return `${-pct}% acima do avulso (${money(soloCents)})`;
+  return `mesmo preço do avulso (${money(soloCents)})`;
+}
+
+type RangeRow = {
+  own_cents: number;
+  low_cents: number | null;
+  high_cents: number | null;
+  position: "abaixo" | "dentro" | "acima" | null;
+  combo_solo_cents: number | null;
+  basis: string | null;
+  name: string;
+};
+
+const POSITION_ORDER = { acima: 0, dentro: 1, abaixo: 2 } as const;
+
+/** P23 "Referência de faixa": dishes first above the range, then inside, then below, each by how far out it is;
+ *  never alphabetical. Combos by their discount on the singles, smallest discount first. */
+export function sortRanges<T extends RangeRow>(items: T[]): { dishes: T[]; combos: T[]; unmatched: T[] } {
+  const away = (i: T) =>
+    i.position === "acima" && i.high_cents ? (i.own_cents - i.high_cents) / i.high_cents : i.position === "abaixo" && i.low_cents ? (i.low_cents - i.own_cents) / i.low_cents : 0;
+  const dishes = items
+    .filter((i) => i.combo_solo_cents === null && i.position !== null)
+    .sort((a, b) => POSITION_ORDER[a.position!] - POSITION_ORDER[b.position!] || away(b) - away(a) || a.name.localeCompare(b.name, "pt-BR"));
+  const off = (i: T) => (i.combo_solo_cents ? 1 - i.own_cents / i.combo_solo_cents : 0);
+  const combos = items.filter((i) => i.combo_solo_cents !== null).sort((a, b) => off(a) - off(b) || a.name.localeCompare(b.name, "pt-BR"));
+  // M1-15: a dish with a basis and no range has no store of the same kind nearby.
+  const unmatched = items.filter((i) => i.combo_solo_cents === null && i.position === null && i.basis !== null).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  return { dishes, combos, unmatched };
+}
+
+/** M1-18 (D86): a range built on fewer stores than the minimum is indicative, marked "poucas lojas", out of the score. */
+export const RANGE_MIN_STORES_M1_18 = 5;
+export function isIndicativeM1_18(stores: number | null | undefined): boolean {
+  return stores != null && stores > 0 && stores < RANGE_MIN_STORES_M1_18;
+}
+
+/** The section's conclusion first: dishes by position (never summed with combos) and the combos' mean discount. */
+export function rangeSummary<T extends RangeRow>(items: T[]) {
+  const { dishes, combos, unmatched } = sortRanges(items);
+  const n = (p: "acima" | "dentro" | "abaixo") => dishes.filter((d) => d.position === p).length;
+  const discounts = combos.map((c) => 1 - c.own_cents / (c.combo_solo_cents as number));
+  return {
+    dishes: dishes.length,
+    above: n("acima"),
+    inside: n("dentro"),
+    below: n("abaixo"),
+    combos: combos.length,
+    unmatched: unmatched.length,
+    comboDiscountPct: discounts.length ? Math.round((discounts.reduce((a, b) => a + b, 0) / discounts.length) * 100) : null,
+  };
+}
+
+// Positioning (D83, Marlon, 10/nov): an expert's words, not a bargain hunter's. A price sits in the region's entrada,
+// intermediário or premium third; each number says what to do (sustain, communicate, review), never "cheaper".
+export type Tier = "entrada" | "intermediario" | "premium";
+export const TIER_LABEL: Record<Tier, string> = { entrada: "de entrada", intermediario: "intermediário", premium: "premium" };
+export const TIER_ZONE: Record<Tier, string> = { entrada: "Entrada", intermediario: "Intermediário", premium: "Premium" };
+
+/** The third a share of lower-priced stores falls in: under a third entrada, over two thirds premium. */
+export function tierOf(shareBelow: number): Tier {
+  return shareBelow < 1 / 3 ? "entrada" : shareBelow > 2 / 3 ? "premium" : "intermediario";
+}
+
+export type SpreadMark = { kind: "meio"; value: number } | { kind: "faixa"; low: number; high: number };
+
+/** P23 "Ver os preços da vizinhança", one chart for exact items (with the middle) and range items (with the band):
+ *  one dot per store, no store identified, the own price highlighted, and the stores split in thirds of the region. */
+export function spreadChart(prices: number[], own: number, who: string, mark: SpreadMark) {
+  const marks = mark.kind === "meio" ? [mark.value] : [mark.low, mark.high];
+  const lo = Math.min(...prices, own, ...marks);
+  const hi = Math.max(...prices, own, ...marks);
+  const x = (v: number) => 3 + ((v - lo) / (hi - lo || 1)) * 94;
+  const align = (v: number) => (v < 30 ? "l" : v > 70 ? "r" : "c");
+  const points = [...prices.map((p) => ({ p, me: false })), { p: own, me: true }].sort((a, b) => a.p - b.p);
+  let anchor = -Infinity;
+  let level = 0;
+  const dots = points.map((d) => {
+    const left = x(d.p);
+    if (left - anchor < SPREAD_STACK_GAP) level += 1;
+    else {
+      anchor = left;
+      level = 0;
+    }
+    return { left, level, me: d.me };
+  });
+  const label = `${who[0].toUpperCase()}${who.slice(1)}`;
+  const sorted = [...prices].sort((a, b) => a - b);
+  const cut = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))] ?? own;
+  const t1 = cut(1 / 3);
+  const t2 = cut(2 / 3);
+  const below = prices.filter((p) => p < own).length;
+  const tier = tierOf(prices.length ? below / prices.length : 0.5);
+  const zoneOf = (p: number): Tier => (p < t1 ? "entrada" : p >= t2 ? "premium" : "intermediario");
+  return {
+    who: label,
+    tier,
+    sentence: prices.length
+      ? `${label} ${who === "você" ? "está" : "fica"} no posicionamento ${TIER_LABEL[tier]}: acima de ${below} das ${prices.length} lojas.`
+      : null,
+    lo,
+    hi,
+    dots,
+    levels: Math.max(...dots.map((d) => d.level)) + 1,
+    own: { left: x(own), align: align(x(own)) },
+    mark:
+      mark.kind === "meio"
+        ? { kind: "meio" as const, left: x(mark.value), align: align(x(mark.value)), text: `meio ${money(mark.value)}` }
+        : { kind: "faixa" as const, left: x(mark.low), width: Math.max(x(mark.high) - x(mark.low), 1), text: `faixa ${money(mark.low)} a ${money(mark.high)}` },
+    zones: prices.length
+      ? (["entrada", "intermediario", "premium"] as const).map((z) => ({ tier: z, label: TIER_ZONE[z], count: prices.filter((p) => zoneOf(p) === z).length, mine: z === tier }))
+      : [],
+  };
+}
+
+export type WeightRow = { name: string; section: string; price_cents: number; kind: "exata" | "faixa" | "combo" | "sem"; reason: string | null; most_ordered: boolean };
+
+/** P23 "Onde está o peso do seu cardápio" (D83): sections by the weight of their prices, the fewest that make 80% of the
+ *  menu, how much of that weight was compared, and the store's own best sellers with how each was read. */
+export function menuWeight<T extends WeightRow>(items: T[]) {
+  const total = items.reduce((a, i) => a + i.price_cents, 0) || 1;
+  const bySection = new Map<string, T[]>();
+  for (const i of items) bySection.set(i.section, [...(bySection.get(i.section) ?? []), i]);
+  const sections = [...bySection.entries()]
+    .map(([section, rows]) => {
+      const weight = rows.reduce((a, i) => a + i.price_cents, 0);
+      const compared = rows.filter((i) => i.kind !== "sem").reduce((a, i) => a + i.price_cents, 0);
+      return { section, items: rows.length, compared: rows.filter((i) => i.kind !== "sem").length, share: weight / total, comparedShare: weight ? compared / weight : 0 };
+    })
+    .sort((a, b) => b.share - a.share);
+  let acc = 0;
+  const core = sections.filter((s) => {
+    const take = acc < 0.8;
+    acc += s.share;
+    return take;
+  });
+  const coreWeight = core.reduce((a, s) => a + s.share, 0);
+  const coreCompared = core.reduce((a, s) => a + s.share * s.comparedShare, 0);
+  return {
+    sections,
+    core: core.map((s) => s.section),
+    coreShare: Math.round(coreWeight * 100),
+    coreComparedPct: coreWeight ? Math.round((coreCompared / coreWeight) * 100) : 0,
+    mostOrdered: items.filter((i) => i.most_ordered).sort((a, b) => b.price_cents - a.price_cents),
+  };
+}
+
+const NOTE_WORDS: Record<string, string> = {
+  "combos diferentes": "combo com partes que a loja não vende avulsas",
+  "poucos pares": "poucas lojas vendem algo igual",
+  "nenhuma loja com os mesmos atributos": "nenhuma loja vende algo igual",
+  "tamanho ilegível": "o tamanho não está no nome",
+  "tipo ilegível": "o tipo não está claro no nome",
+};
+
+/** How an item was read, in the owner's words. */
+export function kindWords(kind: WeightRow["kind"], reason: string | null, storesRead?: number): string {
+  if (kind === "exata") return "comparação exata";
+  if (kind === "combo") return "combo comparado pelas partes";
+  if (kind === "faixa") return reason ? `faixa de ${reason}` : "faixa de referência";
+  if (reason && NOTE_WORDS[reason]) return `sem comparação: ${NOTE_WORDS[reason]}`;
+  const where = storesRead ? `nenhuma das ${storesRead} lojas lidas` : "nenhuma das lojas lidas";
+  return reason && !reason.includes("ilegível") ? `sem comparação: ${where} vende ${reason}` : "sem comparação";
+}
+
+/** P23 range row's thin strip (D83): where the band and the own price sit on the scale of the stores' prices. */
+export function rangeBar(prices: number[], own: number, low: number, high: number) {
+  const lo = Math.min(...prices, own, low);
+  const hi = Math.max(...prices, own, high);
+  const x = (v: number) => 3 + ((v - lo) / (hi - lo || 1)) * 94;
+  return { own: { left: x(own) }, band: { left: x(low), width: Math.max(x(high) - x(low), 1) } };
+}
+
+export type Finding = { tone: "warn" | "info" | "ok"; title: string; detail: string };
+type FindingRange = { name: string; own_cents: number; low_cents: number | null; high_cents: number | null; position: "abaixo" | "dentro" | "acima" | null; combo_solo_cents: number | null; basis: string | null };
+
+/** P23 "O que este raio-X mostra" (D83, Marlon, 11/nov): the run's findings in order of importance, from everything it
+ *  read, not only the exact items: best sellers without a comparison, dishes above their range, the combos' discount,
+ *  dishes with no competitor among the stores read, then the exact items. Each says what to do; never "cheaper". */
+export function keyFindings(p: {
+  menu: WeightRow[];
+  ranges: FindingRange[];
+  storesRead: number;
+  /** Stores in the neighborhood; more than read plants the thought of a wider X-ray (Marlon, 11/nov). */
+  storesTotal: number;
+  exact: { analyzed: number; below: number; above: number; raiseCount: number; raiseMax: number };
+}): Finding[] {
+  const out: Finding[] = [];
+  const most = p.menu.filter((i) => i.most_ordered);
+  const blind = most.filter((i) => i.kind === "sem");
+  if (blind.length) {
+    out.push({
+      tone: "warn",
+      title: `${blind.length} de ${most.length} mais pedidos da casa sem comparação`,
+      detail: `${kindWords(blind[0].kind, blind[0].reason, p.storesRead).replace(/^sem comparação: /, "Motivo: ")}. São os itens que mais vendem e o raio-X ainda não tem referência para eles.`,
+    });
+  }
+  const { dishes, combos, unmatched } = sortRanges(p.ranges.map((r) => ({ ...r })));
+  const above = dishes.filter((d) => d.position === "acima");
+  if (above.length) {
+    const top = above[0];
+    out.push({
+      tone: "warn",
+      title: `${above.length} ${above.length === 1 ? "prato acima" : "pratos acima"} da faixa da região`,
+      detail: `O mais distante: ${top.name}, ${money(top.own_cents)} contra ${money(top.low_cents!)} a ${money(top.high_cents!)}. Sustente com diferencial (tamanho, ingrediente, preparo) ou reveja o custo.`,
+    });
+  }
+  if (combos.length) {
+    const off = combos.map((c) => ({ c, pct: Math.round((1 - c.own_cents / (c.combo_solo_cents as number)) * 100) }));
+    const mean = Math.round(off.reduce((a, x) => a + x.pct, 0) / off.length);
+    const max = off.reduce((a, x) => (x.pct > a.pct ? x : a));
+    out.push({
+      tone: "info",
+      title: `${combos.length} combos com desconto médio de ${mean}% sobre o avulso`,
+      detail: `O maior: ${max.c.name}, ${max.pct}% de desconto. Confira se a margem comporta antes de manter.`,
+    });
+  }
+  if (unmatched.length) {
+    out.push({
+      tone: "info",
+      title: `${unmatched.length} ${unmatched.length === 1 ? "prato" : "pratos"} sem concorrente do mesmo tipo nas ${p.storesRead} lojas lidas`,
+      detail: `${unmatched[0].basis ? `Por exemplo, ${unmatched[0].basis}. ` : ""}${
+        p.storesTotal > p.storesRead
+          ? `Este raio-X leu ${p.storesRead} das ${p.storesTotal} lojas da vizinhança; um raio-X com mais lojas lidas pode encontrar com quem comparar.`
+          : "Ler mais lojas da vizinhança pode trazer comparação."
+      }`,
+    });
+  }
+  if (p.exact.analyzed) {
+    const aligned = p.exact.analyzed - p.exact.below - p.exact.above;
+    out.push(
+      p.exact.raiseCount
+        ? { tone: "info", title: `${p.exact.raiseCount} ${p.exact.raiseCount === 1 ? "item exato" : "itens exatos"} abaixo do meio da região`, detail: `Até ${money(p.exact.raiseMax)} de diferença por venda. Teste subir um por vez.` }
+        : { tone: "ok", title: `${aligned} de ${p.exact.analyzed} itens de comparação exata alinhados à região`, detail: "Mesmo produto e tamanho nas lojas vizinhas. Nada a fazer agora." },
+    );
+  }
+  return out;
+}
+
+/** M1-10 position in positioning words (D83): "intermediário, 15 de 27 em preço". The number stays, the cheapness goes. */
+export function positionLabel(rank: number, storesRanked: number): string {
+  const tier = tierOf(storesRanked > 1 ? (rank - 1) / (storesRanked - 1) : 0.5);
+  return `${TIER_LABEL[tier] === "de entrada" ? "entrada" : TIER_LABEL[tier]}, ${rank} de ${storesRanked} em preço`;
+}
+
+/** The positioning word of a rank among stores: "entrada", "intermediário" or "premium". */
+export function tierWord(rank: number, storesRanked: number): string {
+  const tier = tierOf(storesRanked > 1 ? (rank - 1) / (storesRanked - 1) : 0.5);
+  return tier === "entrada" ? "entrada" : TIER_LABEL[tier];
+}
+
+
+/** P23 "Com quem comparamos" (Marlon, 11/nov): one store read, "Nome · Comida Japonesa · 0,2 km". Never a price. */
+export function comparedStoreLine(s: { name: string; category: string | null; distance_m: number | null }): string {
+  const km = s.distance_m === null ? null : `${(s.distance_m / 1000).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+  return [s.name, s.category, km].filter(Boolean).join(" · ");
 }

@@ -77,6 +77,7 @@ export default function Revisar({ monitorId, xrayId, doubts, lists, canAnswer }:
             <b>{d.name}</b>
             <span className="mono">{brl(d.own_cents)}</span>
           </div>
+          {d.description ? <p className="desc">{d.description}</p> : null}
           <div className="q">É o mesmo produto que o seu?</div>
           <div className="reason">{doubtReason(d.pair_note, d.stores)}.</div>
           <div className="cands">
@@ -86,6 +87,7 @@ export default function Revisar({ monitorId, xrayId, doubts, lists, canAnswer }:
                 <span>
                   {c.name}
                   <small>{c.store ?? "Loja vizinha"}</small>
+                  {c.description ? <small className="desc">{c.description}</small> : null}
                 </span>
                 <span className="pr">{brl(c.price_cents)}</span>
               </label>
@@ -313,6 +315,7 @@ function ConfirmedRow({ r, ro, pending, onSave }: { r: ItemLists["confirmed"][nu
               <span>
                 {a.name}
                 <small>{a.store ?? "Loja vizinha"}</small>
+                {a.description ? <small className="desc">{a.description}</small> : null}
               </span>
               <span className="pr">{brl(a.price_cents)}</span>
             </label>

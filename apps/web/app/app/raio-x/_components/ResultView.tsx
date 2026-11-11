@@ -7,13 +7,15 @@ import type { ReactNode } from "react";
 import type { HeadToHead, History, ItemLists, MonitorStatus, Opportunities as OpportunitiesData, ResultItem, ResultPage, TestPlan as TestPlanData } from "@/lib/monitor/load";
 import { printVersion } from "@/lib/monitor/print";
 import { GROUP_LABEL, type Group } from "@/lib/monitor/rules";
-import { brl, dayMon, gapWords, headline, longWeekdayDayMon, ordinal, paretoSentence, positionChange, positionWords, neighborhoodSpread, readingGroups, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
+import { brl, comparedStoreLine, dayMon, gapWords, headline, keyFindings, longWeekdayDayMon, ordinal, positionChange, positionLabel, positionWords, readingGroups, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
 import NavSelect from "@/components/NavSelect";
 import NeighborMap from "./NeighborMap";
 import { CategoryScore, ScoreCard, ScoreMethod } from "./PriceScore";
 import NextSteps from "./NextSteps";
 import Opportunities from "./Opportunities";
+import MoneyMap from "./MoneyMap";
 import PriceRanges from "./PriceRanges";
+import Spread from "./Spread";
 import CaptureNow from "./CaptureNow";
 import ShareMenu from "./ShareMenu";
 import TestButton from "./TestButton";
@@ -55,9 +57,9 @@ const GROUPS_OWN: Record<ReadingKey, [string, string]> = {
   nao_mexer: ["Não mexa sem saber o custo", "10% ou mais acima do meio."],
 };
 const GROUPS_COMP: Record<ReadingKey, [string, string]> = {
-  pode_subir: ["Mais barato que a vizinhança", "10% ou mais abaixo do meio."],
+  pode_subir: ["Abaixo da região", "10% ou mais abaixo do meio."],
   na_media: ["Na média", "Menos de 10% de diferença do meio."],
-  nao_mexer: ["Mais caro que a vizinhança", "10% ou mais acima do meio."],
+  nao_mexer: ["Acima da região", "10% ou mais acima do meio."],
 };
 
 function Strip({ it, who }: { it: ResultItem; who: string }) {
@@ -88,45 +90,9 @@ function Strip({ it, who }: { it: ResultItem; who: string }) {
   );
 }
 
-/** "Ver os preços da vizinhança" (D80): the distribution of the neighbors' prices, with no store identified. */
+/** "Ver os preços da vizinhança" (D80, D83): the same chart as the range items, with the middle. */
 function NeighborhoodSpread({ it, prices, who }: { it: ResultItem; prices: number[]; who: string }) {
-  const s = neighborhoodSpread(prices, it.own_cents, it.parity_cents, who);
-  return (
-    <details className="lojas">
-      <summary>Ver os preços da vizinhança</summary>
-      <div className="pz">
-        <p className="pz-s">{s.sentence}</p>
-        <div className="pz-row">
-          <span className="end">{brl(s.lo)}</span>
-          <div className="track" role="img" aria-label={`${s.sentence} ${s.who} ${brl(it.own_cents)}; meio da vizinhança ${brl(it.parity_cents)}; preços de ${brl(s.lo)} a ${brl(s.hi)}.`}>
-            <span className={`tag you a-${s.own.align}`} style={{ left: `${s.own.left}%` }} aria-hidden="true">
-              {s.who} {brl(it.own_cents)}
-            </span>
-            <div className="pz-dots" style={{ height: s.levels * 12 }} aria-hidden="true">
-              <i className="pz-med" style={{ left: `${s.med.left}%` }} />
-              {s.dots.map((d, i) => (
-                <i key={i} className={`pz-dot${d.me ? " me-dot" : ""}`} style={{ left: `${d.left}%`, bottom: d.level * 12 }} />
-              ))}
-            </div>
-            <span className={`tag md a-${s.med.align}`} style={{ left: `${s.med.left}%` }} aria-hidden="true">
-              meio {brl(it.parity_cents)}
-            </span>
-          </div>
-          <span className="end">{brl(s.hi)}</span>
-        </div>
-        <dl className="pz-zones">
-          {s.zones.map((z) => (
-            <div key={z.label}>
-              <dt>{z.label}</dt>
-              <dd>
-                {z.count} {z.count === 1 ? "loja" : "lojas"}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </details>
-  );
+  return <Spread prices={prices} own={it.own_cents} who={who} mark={{ kind: "meio", value: it.parity_cents }} />;
 }
 
 function ItemRow({ it, comp, who, prices, print, test }: { it: ResultItem; comp: boolean; who: string; prices: number[]; print: boolean; test?: ReactNode }) {
@@ -177,8 +143,10 @@ const storesRead = (r: ResultPage["result"]) => (r.stores_read > 0 ? r.stores_re
 
 /** P23 "Como fizemos este raio-X" (Marlon, 08/nov: more didactic): the method in three steps with this run's numbers
  *  (M1-01 neighborhood and capture slots, M1-04 pairing, M1-05 parity) and the three M1-07 readings with what each asks. */
-function MethodSteps({ r, comp, compared, map }: { r: ResultPage["result"]; comp: boolean; compared: number; map: ResultPage["map"] }) {
-  const his = comp ? "dele" : "seus";
+function MethodSteps({ r, comp, map, menu, neighborhood, stores, print }: { r: ResultPage["result"]; comp: boolean; map: ResultPage["map"]; menu: ResultPage["menu"]; neighborhood: number; stores: ResultPage["compared"]; print: boolean }) {
+  const n = (k: string) => menu.filter((i) => i.kind === k).length;
+  const read = storesRead(r);
+  const whose = comp ? "dele" : "seu";
   return (
     <section className={`card mhow${map ? " withmap" : ""}`} aria-labelledby="stepsh">
       <p className="eyebrow" id="stepsh">
@@ -187,34 +155,50 @@ function MethodSteps({ r, comp, compared, map }: { r: ResultPage["result"]; comp
       {map ? <NeighborMap map={map} comp={comp} /> : null}
       <ol className="mhow3">
         <li>
-          <b>Lemos {storesRead(r)} lojas vizinhas</b>
+          <b>
+            Lemos {read} {neighborhood > read ? `das ${neighborhood} lojas` : "lojas"} da vizinhança
+          </b>
           <span>
-            Num raio de {r.radius_km} km, só o que está público no iFood em {dayMon(r.on)}.
+            Num raio de {r.radius_km} km, só o que está público no iFood em {dayMon(r.on)}. Entram primeiro as lojas com mais avaliações e com o mesmo tipo de cardápio.
+          </span>
+          {stores.length > 0 ? (
+            <details className="lojas mstores" open={print}>
+              <summary>Com quem comparamos: ver as {stores.length} lojas</summary>
+              <ol className="mstorelist">
+                {stores.map((s, k) => (
+                  <li key={k}>{comparedStoreLine(s)}</li>
+                ))}
+              </ol>
+            </details>
+          ) : null}
+        </li>
+        <li>
+          <b>Comparamos cada item do jeito justo para ele</b>
+          <span>
+            Comparação exata em {n("exata")} itens, faixa por tipo de prato em {n("faixa")} e combo pelas partes em {n("combo")}. Os outros {n("sem")} ficam sem comparação: não comparamos com o que é diferente.
           </span>
         </li>
         <li>
-          <b>
-            Achamos {compared} {compared === 1 ? "produto igual" : "produtos iguais"} aos {his}
-          </b>
-          <span>Mesmo produto, tamanho e sabor. {comp ? "Os itens só dele" : "Os itens só seus"} ficam à parte.</span>
+          <b>Só com pratos do mesmo tipo</b>
+          <span>O que define o preço conta: segmento (artesanal, lanchonete, smash), número de carnes, recheio e tamanho quando estão escritos.</span>
         </li>
         <li>
-          <b>Olhamos o preço do meio</b>
-          <span>Para cada produto, metade das lojas cobra menos que o meio e metade cobra mais.</span>
+          <b>Ordenamos pelo peso no cardápio</b>
+          <span>Sem dados de venda, pesam o preço de cada item e os mais pedidos {comp ? "dele" : "da casa"}. Bebidas costumam vir por último.</span>
         </li>
       </ol>
       <dl className="mhowl">
         <div>
-          <dt className="up">{comp ? "Mais barato" : "Espaço para subir"}</dt>
-          <dd>{comp ? "10% ou mais abaixo do meio." : "10% ou mais abaixo do meio. Teste subir um item por vez e acompanhe no próximo raio-X."}</dd>
+          <dt>Comparação exata</dt>
+          <dd>Mesmo produto e tamanho: existe um preço do meio. {comp ? "10% ou mais abaixo ou acima dele conta como fora da região." : "10% ou mais abaixo dele é espaço para subir; acima, não mexa sem saber o custo."}</dd>
         </div>
         <div>
-          <dt className="mid">Na média</dt>
-          <dd>{comp ? "Menos de 10% de diferença do meio." : "Menos de 10% de diferença do meio. Nada a fazer agora."}</dd>
+          <dt>Faixa da região</dt>
+          <dd>Pratos sem tamanho escrito, sem meio nem preço sugerido. Acima da faixa pede diferencial (tamanho, ingrediente, preparo) ou rever o custo.</dd>
         </div>
         <div>
-          <dt className="hold">{comp ? "Mais caro" : "Não mexa sem saber o custo"}</dt>
-          <dd>{comp ? "10% ou mais acima do meio." : "10% ou mais acima do meio. Antes de baixar, confira quanto custa fazer o item."}</dd>
+          <dt>Posicionamento</dt>
+          <dd>As lojas da região em três terços: entrada, intermediário e premium. Mostra onde o preço {whose} está, não se ele está certo.</dd>
         </div>
       </dl>
     </section>
@@ -264,6 +248,15 @@ export default function ResultView(p: ResultViewProps) {
   const compared = r.items_analyzed;
   const prevOn = r.previous_position ? (p.runs.find((x) => x.xray_id === r.previous_position!.xray_id)?.on ?? null) : null;
   const top = headline(r.top_raise);
+  const findings = comp
+    ? []
+    : keyFindings({
+        menu: p.page.menu,
+        ranges: p.page.ranges,
+        storesRead: r.stores_read,
+        storesTotal: p.page.neighborhood,
+        exact: { analyzed: r.items_analyzed, below: r.below, above: r.above, raiseCount: top.count, raiseMax: top.max },
+      });
   const G = comp ? GROUPS_COMP : GROUPS_OWN;
   const cats = r.by_category.filter((c) => c.group !== "so_seus" && c.items_compared > 0);
   const firstOpen = [...cats].sort((a, b) => b.price_gap_per_sale_cents - a.price_gap_per_sale_cents)[0]?.group;
@@ -316,12 +309,8 @@ export default function ResultView(p: ResultViewProps) {
             <span>{c.items_compared} comparados</span>
             {comp ? (
               <>
-                <span className="up">
-                  {c.can_go_up} mais {c.can_go_up === 1 ? "barato" : "baratos"}
-                </span>
-                <span className="hold">
-                  {c.leave_alone} mais {c.leave_alone === 1 ? "caro" : "caros"}
-                </span>
+                <span className="up">{c.can_go_up} abaixo da região</span>
+                <span className="hold">{c.leave_alone} acima da região</span>
               </>
             ) : (
               <>
@@ -403,11 +392,12 @@ export default function ResultView(p: ResultViewProps) {
       {r.stores_read < r.stores_total ? (
         <div className="banner neutral">
           <span>
-            Comparado com {r.stores_read} de {r.stores_total} lojas.
+            Lemos {r.stores_read} das {r.stores_total} lojas previstas para este raio-X; as outras não responderam a tempo.
           </span>
         </div>
       ) : null}
-      <MethodSteps r={r} comp={comp} compared={compared} map={p.page.map} />
+      <MoneyMap items={p.page.menu} comp={comp} storesRead={r.stores_read} />
+      <MethodSteps r={r} comp={comp} map={p.page.map} menu={p.page.menu} neighborhood={p.page.neighborhood} stores={p.page.compared} print={print} />
       {print ? null : (
         <details className="card how">
           <summary>
@@ -420,33 +410,24 @@ export default function ResultView(p: ResultViewProps) {
       <ScoreCard result={r} previousOn={prevOn} competitor={comp} />
       <div className="lead2">
         {!comp ? (
-          <section className="card money" aria-labelledby="hl">
+          <section className="card pad money" aria-labelledby="hl">
             <p className="eyebrow">O que este raio-X mostra</p>
-            {top.count ? (
-              <>
-                <h2 className="headline" id="hl">
-                  {top.count} {top.count === 1 ? "item está" : "itens estão"} bem abaixo do preço do meio da vizinhança: até <span className="amt">{brl(top.max)} de diferença por venda</span>.
-                </h2>
-                <ol className="t3">
-                  {r.top_raise.map((i) => (
-                    <li key={i.item_id}>
-                      <b style={{ fontWeight: 600 }}>{i.name}</b>
-                      <span className="pr">
-                        você {brl(i.own_cents)} · meio {brl(i.parity_cents)}
-                      </span>
-                      <span className="gain">{brl(i.parity_cents - i.own_cents)} por venda</span>
-                    </li>
-                  ))}
-                </ol>
-                <p className="small muted" style={{ margin: 0 }}>
-                  {top.count > 1 ? `Somando um de cada, ${brl(top.sum)} de diferença por venda. ` : ""}É diferença de preço, não lucro: subir pode mudar quanto você vende. {paretoSentence(r.pareto_count, compared) ?? ""}
-                </p>
-              </>
-            ) : (
-              <h2 className="headline" id="hl">
-                Nenhum item está 10% ou mais abaixo do meio da vizinhança.
-              </h2>
-            )}
+            <h2 className="headline" id="hl">
+              {findings.length ? `${findings.length} ${findings.length === 1 ? "ponto pede" : "pontos pedem"} atenção, do mais importante para o menos.` : "Sem achados neste raio-X."}
+            </h2>
+            {findings.length ? (
+              <ol className="finds">
+                {findings.map((f) => (
+                  <li key={f.title} className={`find ${f.tone}`}>
+                    <b>{f.title}</b>
+                    <span>{f.detail}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+            <p className="small muted" style={{ margin: 0 }}>
+              Em ordem de importância, pelo peso no cardápio. Preço público, sem custo nem volume de vendas.
+            </p>
           </section>
         ) : headToHead ? (
           <HeadToHeadBlock h={headToHead} name={name} />
@@ -459,18 +440,18 @@ export default function ResultView(p: ResultViewProps) {
             <p className="posline">
               <b>{words.lead}</b>, nos itens em comum. {words.tail}
             </p>
-            <div role="img" aria-label={`Posição ${position.rank} de ${position.stores_ranked}, da loja mais barata para a mais cara`}>
+            <div role="img" aria-label={`Posição ${position.rank} de ${position.stores_ranked} em preço, do posicionamento de entrada ao premium`}>
               <div className="rank" style={{ gridTemplateColumns: `repeat(${position.stores_ranked}, minmax(0, 1fr))` }}>
                 {Array.from({ length: position.stores_ranked }, (_, i) => (
                   <i key={i} className={i === position.rank - 1 ? "you" : i < position.rank - 1 ? "cheaper" : ""} />
                 ))}
               </div>
               <div className="rankl">
-                <span>mais barata</span>
+                <span>entrada</span>
                 <span>
-                  {ordinal(position.rank)} de {position.stores_ranked}
+                  {positionLabel(position.rank, position.stores_ranked)}
                 </span>
-                <span>mais cara</span>
+                <span>premium</span>
               </div>
             </div>
             {change ? <span className="chg">{change}</span> : null}
@@ -486,11 +467,17 @@ export default function ResultView(p: ResultViewProps) {
       {cont ? <TestPlan plan={plan} monitorId={p.monitorId} canEdit={cont.canEdit} mode={p.mode} /> : null}
       <section className="stack" aria-labelledby="allh" style={{ gap: 10 }}>
         <div className="row-flex between">
-          <h2 id="allh">Por categoria</h2>
-          <span className="small muted">{compared} itens comparados</span>
+          <h2 id="allh">Item a item</h2>
+          <span className="small muted">primeiro os pratos e combos, depois a comparação exata</span>
         </div>
+        <PriceRanges items={p.page.ranges} comp={comp} storesRead={r.stores_read} storesTotal={p.page.neighborhood} />
+        {cats.length ? (
+          <div className="secthead">
+            <h3>Comparação exata</h3>
+            <span className="small muted">Mesmo produto e mesmo tamanho nas lojas vizinhas: aqui existe um preço do meio.</span>
+          </div>
+        ) : null}
         {cats.map(catSection)}
-        <PriceRanges items={p.page.ranges} comp={comp} />
         {p.onlyYours.length ? (
           <Fold print={print} className="card catc" open={false}>
             <summary>

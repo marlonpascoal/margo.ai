@@ -5,7 +5,7 @@ import Link from "next/link";
 import { loadDeps } from "@/lib/monitor/deps";
 import { loadHistory, loadMonitorList, type MonitorSummary } from "@/lib/monitor/load";
 import { canManageMonitors } from "@/lib/monitor/rules";
-import { monitorPill, ordinal, periodLabel, planLine, rankDelta, weekdayDayMon } from "@/lib/monitor/view";
+import { monitorPill, ordinal, periodLabel, positionLabel, planLine, rankDelta, weekdayDayMon } from "@/lib/monitor/view";
 import { requirePortal } from "@/lib/portal/session";
 import MonitorMenu from "./_components/MonitorMenu";
 import { ScoreInline, scoreOfHistory } from "./_components/PriceScore";
@@ -82,7 +82,7 @@ export default async function MonitorListPage() {
         <div className="pos">
           {lr?.rank && lr.stores_ranked ? (
             <>
-              <b>{ordinal(lr.rank)}</b> mais barata de {lr.stores_ranked}
+              <b>{positionLabel(lr.rank, lr.stores_ranked)}</b>
               {rankDelta(lr.rank, lr.previous_rank) ? <span className="muted"> ({rankDelta(lr.rank, lr.previous_rank)})</span> : null}
               <ScoreInline score={scores.get(r.monitor_id) ?? null} />
             </>
@@ -148,7 +148,7 @@ export default async function MonitorListPage() {
             <section className="card" aria-label="Suas lojas">
               <div className="ghead">
                 <h2>Suas lojas</h2>
-                <span className="small muted">a posição conta da mais barata para a mais cara</span>
+                <span className="small muted">posicionamento: entrada, intermediário ou premium na região</span>
               </div>
               {own.map(row)}
             </section>

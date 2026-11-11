@@ -16,7 +16,7 @@ export interface PrintDeps {
 export type PrintState = { state: "ready"; path: string; pages: number } | { state: "preparing"; jobId: string; deduped: boolean };
 
 /** Print layout version: bump it when the printed page changes, so copies printed with an older layout are not served. */
-export const PRINT_LAYOUT = "11";
+export const PRINT_LAYOUT = "13";
 
 /** The cache version of a printed copy: the result version plus the print layout (the print page reports the same). */
 export const printVersion = (resultVersion: string) => `${resultVersion}.l${PRINT_LAYOUT}`;

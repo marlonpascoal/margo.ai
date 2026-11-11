@@ -29,7 +29,7 @@ export default function TestPlan({ plan, monitorId, canEdit, mode }: TestPlanPro
                 <div className="stack" style={{ gap: 2 }}>
                   <b>{t.name}</b>
                   <span className="small">{testChangeSentence(t)}</span>
-                  {pos ? <span className="xs muted">{pos} 1ª = mais barata.</span> : null}
+                  {pos ? <span className="xs muted">{pos}</span> : null}
                 </div>
                 {print ? null : <TestButton monitorId={monitorId} xrayId={plan.xray_id} ownItemId={t.own_item_id} marked canEdit={canEdit} full={plan.active >= plan.max_items} maxItems={plan.max_items} />}
               </li>

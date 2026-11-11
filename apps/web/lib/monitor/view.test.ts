@@ -2,6 +2,14 @@
 import { describe, expect, it } from "vitest";
 import type { History, MonitorSummary, ResultItem, TestItem, TestPoint } from "./load";
 import {
+  positionLabel,
+  comboDiscountLabel,
+  keyFindings,
+  spreadChart,
+  menuWeight,
+  kindWords,
+  rangeSummary,
+  sortRanges,
   byGroup,
   mapDots,
   dayMon,
@@ -24,7 +32,6 @@ import {
   scoreChangeSince,
   scoreDelta,
   stepTexts,
-  neighborhoodSpread,
   stripGeometry,
   testChangeSentence,
   testCountLine,
@@ -166,9 +173,9 @@ describe("B01 P23 result words, never money", () => {
   });
 
   it("B01_M1_10_position_in_words_and_change", () => {
-    expect(positionWords(4, 31, "você")).toEqual({ lead: "Você cobra menos que 27 das 30 lojas vizinhas", tail: "Só 3 cobram menos que você." });
-    expect(positionWords(2, 31, "O Concorrente A").tail).toBe("Só 1 cobra menos que ele.");
-    expect(positionWords(1, 5, "você").tail).toBe("Nenhuma cobra menos que você.");
+    expect(positionWords(4, 31, "você")).toEqual({ lead: "Seu preço está no posicionamento de entrada da região", tail: "Fica acima de 3 das 30 lojas vizinhas nos itens em comum." });
+    expect(positionWords(25, 31, "O Concorrente A").lead).toBe("O preço de Concorrente A está no posicionamento premium da região");
+    expect(positionWords(3, 5, "você").lead).toBe("Seu preço está no posicionamento intermediário da região");
     expect(positionChange({ rank: 4, stores_ranked: 31 }, { rank: 6, stores_ranked: 31 }, "2026-10-26", 7)).toBe("Na semana passada (26/out), 25 cobravam mais. Agora são 2 a mais.");
     expect(positionChange({ rank: 4, stores_ranked: 31 }, { rank: 4, stores_ranked: 31 }, "2026-10-26", 7)).toBe("Igual à semana passada.");
     expect(positionChange({ rank: 4, stores_ranked: 31 }, null, null, 7)).toBeNull();
@@ -195,55 +202,48 @@ describe("B01 P23 result words, never money", () => {
 
   const neighbors = [2690, 2800, 3000, 3100, 3300, 3500, 3700, 3900];
 
-  it("B01_P23_spread_ranks_the_store_among_the_neighbors_and_itself", () => {
-    const s = neighborhoodSpread(neighbors, 2990, 3250, "Você");
-    expect(s.sentence).toBe("Você é o 3º mais barato entre 9 lojas.");
-    expect(s.total).toBe(9);
+  it("D83_spread_says_the_positioning_tier_not_cheapness", () => {
+    const s = spreadChart(neighbors, 2990, "você", { kind: "meio", value: 3250 });
+    expect(s.sentence).toBe("Você está no posicionamento de entrada: acima de 2 das 8 lojas.");
+    expect(s.tier).toBe("entrada");
     expect([s.lo, s.hi]).toEqual([2690, 3900]);
+    expect(spreadChart(neighbors, 3800, "você", { kind: "meio", value: 3250 }).tier).toBe("premium");
   });
 
-  it("B01_P23_spread_says_cheapest_and_priciest_without_a_number", () => {
-    expect(neighborhoodSpread(neighbors, 2000, 3250, "Ele").sentence).toBe("Ele é o mais barato entre 9 lojas.");
-    expect(neighborhoodSpread(neighbors, 4000, 3250, "Você").sentence).toBe("Você é o mais caro entre 9 lojas.");
-  });
-
-  it("B01_P23_spread_zones_split_every_neighbor_below_the_middle", () => {
-    const z = neighborhoodSpread(neighbors, 2990, 3250, "Você").zones;
-    expect(z).toEqual([
-      { label: "Mais baratas", count: 2 },
-      { label: "Até o meio", count: 2 },
-      { label: "Acima do meio", count: 4 },
-    ]);
-  });
-
-  it("B01_P23_spread_zones_split_every_neighbor_above_the_middle", () => {
-    const z = neighborhoodSpread(neighbors, 3600, 3250, "Você").zones;
-    expect(z).toEqual([
-      { label: "Abaixo do meio", count: 4 },
-      { label: "Até você", count: 2 },
-      { label: "Mais caras", count: 2 },
+  it("D83_spread_zones_are_the_region_thirds_with_the_own_one_marked", () => {
+    const z = spreadChart(neighbors, 3200, "você", { kind: "meio", value: 3250 }).zones;
+    expect(z.map((x) => [x.label, x.count, x.mine])).toEqual([
+      ["Entrada", 2, false],
+      ["Intermediário", 3, true],
+      ["Premium", 3, false],
     ]);
     expect(z.reduce((n, x) => n + x.count, 0)).toBe(neighbors.length);
   });
 
+  it("D83_one_chart_for_exact_items_and_ranges", () => {
+    const m = spreadChart(neighbors, 2990, "você", { kind: "meio", value: 3250 }).mark;
+    const f = spreadChart(neighbors, 2990, "você", { kind: "faixa", low: 2800, high: 3500 }).mark;
+    expect(m.text).toBe("meio R$ 32,50");
+    expect(f.text).toBe("faixa R$ 28,00 a R$ 35,00");
+  });
+
   it("B01_P23_spread_stacks_equal_prices_and_marks_only_the_own_dot", () => {
-    const s = neighborhoodSpread([3000, 3000, 3000, 4000], 3000, 3000, "Você");
+    const s = spreadChart([3000, 3000, 3000, 4000], 3000, "você", { kind: "meio", value: 3000 });
     expect(s.dots.filter((d) => d.me)).toHaveLength(1);
     expect(s.dots.map((d) => d.level).sort()).toEqual([0, 0, 1, 2, 3]);
     expect(s.levels).toBe(4);
-    expect(Object.keys(s.dots[0]).sort()).toEqual(["left", "level", "me"]);
   });
 
   it("B01_P23_spread_all_equal_prices_stay_on_the_track", () => {
-    const s = neighborhoodSpread([3000], 3000, 3000, "Você");
+    const s = spreadChart([3000], 3000, "você", { kind: "meio", value: 3000 });
     expect(s.dots.every((d) => d.left >= 3 && d.left <= 97)).toBe(true);
   });
 });
 
 describe("B01 P24 history", () => {
   it("B01_P24_changes_since_the_previous_run", () => {
-    expect(rankChangeSince(4, 6, "2026-10-26")).toBe("2 posições mais barata desde 26/out");
-    expect(rankChangeSince(5, 4, "2026-10-26")).toBe("1 posição mais cara desde 26/out");
+    expect(rankChangeSince(4, 6, "2026-10-26")).toBe("desceu 2 posições no preço desde 26/out");
+    expect(rankChangeSince(5, 4, "2026-10-26")).toBe("subiu 1 posição no preço desde 26/out");
     expect(scoreChangeSince(1, "2026-10-26")).toBe("+1 desde 26/out");
     expect(scoreChangeSince(0, "2026-10-26")).toBe("igual a 26/out");
   });
@@ -348,7 +348,7 @@ describe("B01 P23 continuity: timeline, tests and next steps", () => {
   });
 
   it("B01_P23_test_position_change_M1_10", () => {
-    expect(testPositionChange(test())).toBe("Entre as lojas que vendem: era 5ª de 9, agora 3ª de 9.");
+    expect(testPositionChange(test())).toBe("Entre as lojas que vendem: era intermediário (5 de 9), agora entrada (3 de 9).");
     expect(testPositionChange(test({ same_run: true }))).toBeNull();
     expect(testPositionChange(test({ now: point({ rank: null }) }))).toBeNull();
   });
@@ -366,5 +366,116 @@ describe("P23 radius map", () => {
     expect(dots[0]).toEqual({ x: 45, y: -0 });
     expect(dots[1]).toEqual({ x: 0, y: -90 });
     expect(dots[2]).toEqual({ x: 0, y: 90 });
+  });
+});
+
+describe("M1-14 combos", () => {
+  it("M1_14_combo_discount_on_the_singles", () => {
+    expect(comboDiscountLabel(6790, 10680)).toBe("desconto de 36% sobre o avulso (R$ 38,90 por pedido)");
+    expect(comboDiscountLabel(5590, 5480)).toBe("2% acima do avulso (R$ 54,80)");
+    expect(comboDiscountLabel(5000, 5000)).toBe("mesmo preço do avulso (R$ 50,00)");
+  });
+});
+
+describe("M1-13 range section", () => {
+  const r = (name: string, own: number, low: number | null, high: number | null, position: "abaixo" | "dentro" | "acima" | null, solo: number | null = null) => ({
+    name, own_cents: own, low_cents: low, high_cents: high, position, combo_solo_cents: solo, basis: "x" as string | null,
+  });
+  const items = [
+    r("B dentro", 3000, 2500, 3500, "dentro"),
+    r("A abaixo", 2000, 2500, 3500, "abaixo"),
+    r("C pouco acima", 3600, 2500, 3500, "acima"),
+    r("D muito acima", 5000, 2500, 3500, "acima"),
+    r("Combo 10%", 9000, 9000, 12000, "abaixo", 10000),
+    r("Combo 40%", 6000, 9000, 12000, "abaixo", 10000),
+    r("Artesanal sem par", 3999, null, null, null),
+  ];
+  it("M1_13_dishes_above_first_by_distance_and_combos_apart", () => {
+    const s = sortRanges(items);
+    expect(s.dishes.map((d) => d.name)).toEqual(["D muito acima", "C pouco acima", "B dentro", "A abaixo"]);
+    expect(s.combos.map((d) => d.name)).toEqual(["Combo 10%", "Combo 40%"]);
+    expect(s.unmatched.map((d) => d.name)).toEqual(["Artesanal sem par"]);
+  });
+  it("M1_13_summary_never_mixes_dishes_and_combos", () => {
+    expect(rangeSummary(items)).toEqual({ dishes: 4, above: 2, inside: 1, below: 1, combos: 2, unmatched: 1, comboDiscountPct: 25 });
+  });
+});
+
+describe("D83 menu weight", () => {
+  const w = (name: string, section: string, price: number, kind: "exata" | "faixa" | "combo" | "sem", most = false, reason: string | null = null) => ({
+    name, section, price_cents: price, kind, reason, most_ordered: most,
+  });
+  const menu = [
+    w("Combo A", "Combos", 8000, "sem", true, "combos diferentes"),
+    w("Combo B", "Combos", 7000, "combo"),
+    w("Lanche", "Lanches", 4000, "faixa", false, "hambúrguer artesanal"),
+    w("Lanche 2", "Lanches", 3000, "sem", false, "hambúrguer artesanal"),
+    w("Coca", "Bebidas", 800, "exata"),
+    w("Água", "Bebidas", 500, "exata"),
+  ];
+  it("D83_sections_by_weight_and_the_80_percent_core", () => {
+    const m = menuWeight(menu);
+    expect(m.sections.map((s) => s.section)).toEqual(["Combos", "Lanches", "Bebidas"]);
+    expect(m.core).toEqual(["Combos", "Lanches"]);
+    expect(m.coreShare).toBe(94);
+    expect(m.coreComparedPct).toBe(50);
+    expect(m.mostOrdered.map((i) => i.name)).toEqual(["Combo A"]);
+  });
+  it("D83_how_each_item_was_read_in_plain_words", () => {
+    expect(kindWords("sem", "combos diferentes")).toBe("sem comparação: combo com partes que a loja não vende avulsas");
+    expect(kindWords("sem", "hambúrguer artesanal", 50)).toBe("sem comparação: nenhuma das 50 lojas lidas vende hambúrguer artesanal");
+    expect(kindWords("faixa", "cachorro-quente de salsicha")).toBe("faixa de cachorro-quente de salsicha");
+  });
+});
+
+describe("D83 key findings", () => {
+  it("D83_findings_follow_importance_and_never_say_cheaper", () => {
+    const f = keyFindings({
+      menu: [
+        { name: "Combo Casa", section: "Mais pedidos", price_cents: 8000, kind: "sem", reason: "combos diferentes", most_ordered: true },
+        { name: "Dog", section: "Dogs", price_cents: 3000, kind: "faixa", reason: "cachorro-quente", most_ordered: false },
+      ],
+      ranges: [
+        { name: "Dog", own_cents: 3100, low_cents: 2400, high_cents: 2750, position: "acima", combo_solo_cents: null, basis: "cachorro-quente" },
+        { name: "Combo 2 dogs", own_cents: 5700, low_cents: 5400, high_cents: 6698, position: "dentro", combo_solo_cents: 7300, basis: "soma das partes" },
+        { name: "Burger 160", own_cents: 3999, low_cents: null, high_cents: null, position: null, combo_solo_cents: null, basis: "hambúrguer artesanal" },
+      ],
+      storesRead: 34,
+      storesTotal: 140,
+      exact: { analyzed: 14, below: 0, above: 2, raiseCount: 0, raiseMax: 0 },
+    });
+    expect(f.map((x) => x.title)).toEqual([
+      "1 de 1 mais pedidos da casa sem comparação",
+      "1 prato acima da faixa da região",
+      "1 combos com desconto médio de 22% sobre o avulso",
+      "1 prato sem concorrente do mesmo tipo nas 34 lojas lidas",
+      "12 de 14 itens de comparação exata alinhados à região",
+    ]);
+    expect(f[3].detail).toContain("Este raio-X leu 34 das 140 lojas da vizinhança");
+    expect(JSON.stringify(f)).not.toMatch(/barat|caro/);
+  });
+});
+
+describe("D83 position label", () => {
+  it("D83_position_reads_as_positioning_with_the_number", () => {
+    expect(positionLabel(1, 27)).toBe("entrada, 1 de 27 em preço");
+    expect(positionLabel(15, 27)).toBe("intermediário, 15 de 27 em preço");
+    expect(positionLabel(27, 27)).toBe("premium, 27 de 27 em preço");
+  });
+});
+
+
+describe("M1-18 indicative range", () => {
+  it("M1-18 3 or 4 stores are indicative, 5 or more and none are not", async () => {
+    const { isIndicativeM1_18 } = await import("./view");
+    expect([2, 3, 4, 5, 0, null].map((n) => isIndicativeM1_18(n))).toEqual([true, true, true, false, false, false]);
+  });
+});
+
+describe("P23 Com quem comparamos", () => {
+  it("P23 a store read shows name, category and distance, never a price", async () => {
+    const { comparedStoreLine } = await import("./view");
+    expect(comparedStoreLine({ name: "Loja SINTÉTICA", category: "Comida Japonesa", distance_m: 215 })).toBe("Loja SINTÉTICA · Comida Japonesa · 0,2 km");
+    expect(comparedStoreLine({ name: "Loja SINTÉTICA", category: null, distance_m: null })).toBe("Loja SINTÉTICA");
   });
 });

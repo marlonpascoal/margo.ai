@@ -9,7 +9,7 @@ import { comboDiscountLabel, isIndicativeM1_18, rangeBar, rangeSummary, sortRang
 import Spread from "./Spread";
 import { money } from "@/lib/xray/format";
 
-const VISIBLE = 8;
+const VISIBLE_ON_SCREEN = 8;
 const POSITION_LABEL = { abaixo: "Abaixo da faixa", dentro: "Dentro da faixa", acima: "Acima da faixa" } as const;
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -81,13 +81,15 @@ function UnmatchedRow({ i, read }: { i: PriceRangeItem; read: number }) {
         <b className="rname">{i.name}</b>
         <span className="rprice">{money(i.own_cents)}</span>
       </div>
-      <p className="rread">Nenhuma das {read} lojas lidas vende {i.basis}. Sem comparação justa por enquanto.</p>
+      <p className="rread">Entre as {read} lojas lidas, não há {i.basis} comparável em número suficiente para uma faixa justa.</p>
     </li>
   );
 }
 
-function Group<T>({ title, rows, render }: { title: string; rows: T[]; render: (r: T) => ReactNode }) {
+function Group<T>({ title, rows, render, all }: { title: string; rows: T[]; render: (r: T) => ReactNode; all?: boolean }) {
   if (rows.length === 0) return null;
+  // The PDF has no "Ver mais": every row prints.
+  const VISIBLE = all ? rows.length : VISIBLE_ON_SCREEN;
   return (
     <div className="rgrp">
       <h4>{title}</h4>
@@ -102,7 +104,7 @@ function Group<T>({ title, rows, render }: { title: string; rows: T[]; render: (
   );
 }
 
-export default function PriceRanges({ items, comp, storesRead, storesTotal }: { items: PriceRangeItem[]; comp: boolean; storesRead: number; storesTotal: number }) {
+export default function PriceRanges({ items, comp, storesRead, storesTotal, print = false }: { items: PriceRangeItem[]; comp: boolean; storesRead: number; storesTotal: number; print?: boolean }) {
   if (items.length === 0) return null;
   const who = comp ? "ele" : "você";
   const { dishes, combos, unmatched } = sortRanges(items);
@@ -125,7 +127,7 @@ export default function PriceRanges({ items, comp, storesRead, storesTotal }: { 
           <div>
             <dt>{plural(sum.unmatched, "prato sem concorrente do mesmo tipo", "pratos sem concorrente do mesmo tipo")}</dt>
             <dd>
-              Nenhuma das {storesRead} lojas lidas vende o mesmo tipo. Não comparamos com o que é diferente.
+              Entre as {storesRead} lojas lidas, poucas vendem o mesmo tipo do mesmo jeito. Não comparamos com o que é diferente.
               {storesTotal > storesRead ? ` Este raio-X leu ${storesRead} das ${storesTotal} lojas da vizinhança; com mais lojas lidas pode surgir comparação.` : ""}
             </dd>
           </div>
@@ -139,9 +141,9 @@ export default function PriceRanges({ items, comp, storesRead, storesTotal }: { 
           </div>
         ) : null}
       </dl>
-      <Group title="Pratos" rows={dishes} render={(i) => <DishRow key={i.item_id} i={i} who={who} />} />
-      <Group title="Combos" rows={combos} render={(i) => <ComboRow key={i.item_id} i={i} />} />
-      <Group title="Sem concorrente do mesmo tipo nas lojas lidas" rows={unmatched} render={(i) => <UnmatchedRow key={i.item_id} i={i} read={storesRead} />} />
+      <Group all={print} title="Pratos" rows={dishes} render={(i) => <DishRow key={i.item_id} i={i} who={who} />} />
+      <Group all={print} title="Combos" rows={combos} render={(i) => <ComboRow key={i.item_id} i={i} />} />
+      <Group all={print} title="Sem concorrente do mesmo tipo nas lojas lidas" rows={unmatched} render={(i) => <UnmatchedRow key={i.item_id} i={i} read={storesRead} />} />
     </section>
   );
 }

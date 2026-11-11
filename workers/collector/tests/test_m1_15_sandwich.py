@@ -103,3 +103,12 @@ def test_M1_18_two_stores_are_still_no_range():
     fams = {family_key(i): BURGER for i in [own, *pool]}
     r = family_ranges_m1_13([("k", own)], pool, fams, 5)["k"]
     assert r.range is None and not r.indicative
+
+
+def test_M1_18_an_indicative_range_needs_coherent_prices():
+    # 4 stores from R$ 7,99 to R$ 36,90: a promo or an add-on, not a reference. No range rather than a wild one.
+    own = it("o", "P", "Burguer 160", 3999)
+    pool = [it(f"a{n}", f"A{n}", "Burger artesanal 150g", c) for n, c in enumerate((799, 2990, 3290, 3690))]
+    fams = {family_key(i): BURGER for i in [own, *pool]}
+    r = family_ranges_m1_13([("k", own)], pool, fams, 5)["k"]
+    assert r.range is None and not r.indicative

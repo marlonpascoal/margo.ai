@@ -506,12 +506,16 @@ export interface ResultPage {
   neighborhood: number;
   /** "Com quem comparamos": the stores this run read, nearest first (migration 20261231000029). */
   compared: ComparedStore[];
+  /** The categories the run searched, with their share of the own menu (migration 20261231000030). */
+  searched: SearchTerm[];
 }
+
+export type SearchTerm = { term: string; menu_share: number | null };
 
 export type ComparedStore = { name: string; category: string | null; distance_m: number | null };
 
 async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultPage | null> {
-  const [result, positions, stores, h2h, map, ranges, menu, neighborhood, compared] = await Promise.all([
+  const [result, positions, stores, h2h, map, ranges, menu, neighborhood, compared, searched] = await Promise.all([
     rpc("monitor_result", { p_xray: xrayId }) as Promise<Omit<Result, "positions"> | null>,
     rpc("monitor_positions", { p_xray: xrayId }) as Promise<Result["positions"]>,
     rpc("monitor_result_stores", { p_xray: xrayId }) as Promise<{ item_id: string; stores: { name: string; price_cents: number }[] }[]>,
@@ -521,6 +525,7 @@ async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultP
     rpc("monitor_menu_weight", { p_xray: xrayId }) as Promise<MenuWeightItem[] | null>,
     rpc("monitor_neighborhood_size", { p_xray: xrayId }) as Promise<number | null>,
     rpc("monitor_compared_stores", { p_xray: xrayId }) as Promise<ComparedStore[] | null>,
+    rpc("monitor_search_terms", { p_xray: xrayId }) as Promise<SearchTerm[] | null>,
   ]);
   if (!result || !["ready", "delivered"].includes(result.status)) return null;
   return {
@@ -532,6 +537,7 @@ async function resultPage(rpc: LoadDeps["rpc"], xrayId: string): Promise<ResultP
     menu: menu ?? [],
     neighborhood: neighborhood ?? 0,
     compared: compared ?? [],
+    searched: (searched ?? []).map((t) => ({ term: t.term, menu_share: t.menu_share === null ? null : Number(t.menu_share) })),
   };
 }
 

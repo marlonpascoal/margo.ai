@@ -2754,6 +2754,11 @@ isOneToOne: false
 "monitor_run_now":
 { Args: { "p_actor": string,"p_env"?: Database["public"]['Enums']["flag_env"],"p_ip"?: unknown,"p_monitor": string,"p_user_agent"?: string }; Returns: string
                            },
+"monitor_search_terms":
+{ Args: { "p_xray": string }; Returns: {
+              "menu_share": number,"term": string
+            }[]
+                           },
 "monitor_set_period":
 { Args: { "p_actor": string,"p_every_days": number,"p_ip"?: unknown,"p_monitor": string,"p_user_agent"?: string }; Returns: undefined
                            },

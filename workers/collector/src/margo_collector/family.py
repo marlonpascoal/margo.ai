@@ -672,6 +672,8 @@ def _sized_jp_m1_19(
 
 INDICATIVE_MIN_STORES_M1_18 = 3
 """M1-18 (D86): the fewest comparable stores for an indicative range."""
+INDICATIVE_MAX_SPREAD_M1_18 = 2
+"""M1-18: with so few stores, the highest price at most twice the lowest, or one odd price makes the range."""
 
 
 def family_ranges_m1_13(
@@ -802,7 +804,11 @@ def family_ranges_m1_13(
                 basis,
                 tuple(sorted(chosen)),
             )
-        elif mine is not None and len(chosen) >= INDICATIVE_MIN_STORES_M1_18:
+        elif (
+            mine is not None
+            and len(chosen) >= INDICATIVE_MIN_STORES_M1_18
+            and max(chosen) <= INDICATIVE_MAX_SPREAD_M1_18 * min(chosen)
+        ):
             # M1-18 (D86): the strict rules leave few stores of the same kind. With 3 or 4 the range shows as
             # indicative, marked "poucas lojas", and stays out of "Itens alinhados".
             out[key] = FamilyRange(

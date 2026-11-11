@@ -479,3 +479,19 @@ describe("P23 Com quem comparamos", () => {
     expect(comparedStoreLine({ name: "Loja SINTÉTICA", category: null, distance_m: null })).toBe("Loja SINTÉTICA");
   });
 });
+
+describe("P23 categorias buscadas", () => {
+  it("P23 names the searched categories with their menu share", async () => {
+    const { searchedWords } = await import("./view");
+    expect(searchedWords([{ term: "Carnes", menu_share: 0.79 }, { term: "Hambúrguer", menu_share: 0.16 }, { term: "Lanches", menu_share: null }, { term: "Porções", menu_share: null }])).toBe(
+      "Carnes (79% do cardápio), Hambúrguer (16%), Lanches e Porções",
+    );
+    expect(searchedWords([{ term: "Japonesa", menu_share: 0.76 }])).toBe("Japonesa (76% do cardápio)");
+  });
+  it("P23 counts the stores read by category, most first", async () => {
+    const { storesByCategory } = await import("./view");
+    const s = [{ category: "Lanches" }, { category: "Lanches" }, { category: "Pizza" }, { category: null }];
+    expect(storesByCategory(s)).toBe("Lanches 2 · Pizza 1 · sem categoria 1");
+    expect(storesByCategory(s, 1)).toBe("Lanches 2 · outras 2");
+  });
+});

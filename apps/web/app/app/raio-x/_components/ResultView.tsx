@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import type { HeadToHead, History, ItemLists, MonitorStatus, Opportunities as OpportunitiesData, ResultItem, ResultPage, TestPlan as TestPlanData } from "@/lib/monitor/load";
 import { printVersion } from "@/lib/monitor/print";
 import { GROUP_LABEL, type Group } from "@/lib/monitor/rules";
-import { brl, comparedStoreLine, dayMon, gapWords, headline, keyFindings, longWeekdayDayMon, ordinal, positionChange, positionLabel, positionWords, readingGroups, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
+import { brl, comparedStoreLine, dayMon, searchedWords, storesByCategory, gapWords, headline, keyFindings, longWeekdayDayMon, ordinal, positionChange, positionLabel, positionWords, readingGroups, stripGeometry, type ReadingKey } from "@/lib/monitor/view";
 import NavSelect from "@/components/NavSelect";
 import NeighborMap from "./NeighborMap";
 import { CategoryScore, ScoreCard, ScoreMethod } from "./PriceScore";
@@ -143,7 +143,7 @@ const storesRead = (r: ResultPage["result"]) => (r.stores_read > 0 ? r.stores_re
 
 /** P23 "Como fizemos este raio-X" (Marlon, 08/nov: more didactic): the method in three steps with this run's numbers
  *  (M1-01 neighborhood and capture slots, M1-04 pairing, M1-05 parity) and the three M1-07 readings with what each asks. */
-function MethodSteps({ r, comp, map, menu, neighborhood, stores, print }: { r: ResultPage["result"]; comp: boolean; map: ResultPage["map"]; menu: ResultPage["menu"]; neighborhood: number; stores: ResultPage["compared"]; print: boolean }) {
+function MethodSteps({ r, comp, map, menu, neighborhood, stores, searched, print }: { r: ResultPage["result"]; comp: boolean; map: ResultPage["map"]; menu: ResultPage["menu"]; neighborhood: number; stores: ResultPage["compared"]; searched: ResultPage["searched"]; print: boolean }) {
   const n = (k: string) => menu.filter((i) => i.kind === k).length;
   const read = storesRead(r);
   const whose = comp ? "dele" : "seu";
@@ -161,9 +161,19 @@ function MethodSteps({ r, comp, map, menu, neighborhood, stores, print }: { r: R
           <span>
             Num raio de {r.radius_km} km, só o que está público no iFood em {dayMon(r.on)}. Entram primeiro as lojas com mais avaliações e com o mesmo tipo de cardápio.
           </span>
+          {searched.length > 0 ? (
+            <span>
+              <b className="mterm">Categorias buscadas:</b> {searchedWords(searched)}.
+            </span>
+          ) : null}
           {stores.length > 0 ? (
-            <details className="lojas mstores" open={print}>
-              <summary>Com quem comparamos: ver as {stores.length} lojas</summary>
+            <span>
+              <b className="mterm">Lojas lidas por categoria:</b> {storesByCategory(stores)}.
+            </span>
+          ) : null}
+          {stores.length > 0 ? (
+            <details className="mstores" open={print}>
+              <summary>{print ? `Com quem comparamos: as ${stores.length} lojas lidas` : `Com quem comparamos: ver as ${stores.length} lojas`}</summary>
               <ol className="mstorelist">
                 {stores.map((s, k) => (
                   <li key={k}>{comparedStoreLine(s)}</li>
@@ -248,6 +258,9 @@ export default function ResultView(p: ResultViewProps) {
   const compared = r.items_analyzed;
   const prevOn = r.previous_position ? (p.runs.find((x) => x.xray_id === r.previous_position!.xray_id)?.on ?? null) : null;
   const top = headline(r.top_raise);
+  // An item compared by range or as a combo, or listed under "sem concorrente do mesmo tipo", is not "só seu".
+  const inRanges = new Set(p.page.ranges.map((i) => i.item_id));
+  const onlyYours = p.onlyYours.filter((i) => !inRanges.has(i.item_id));
   const findings = comp
     ? []
     : keyFindings({
@@ -397,7 +410,7 @@ export default function ResultView(p: ResultViewProps) {
         </div>
       ) : null}
       <MoneyMap items={p.page.menu} comp={comp} storesRead={r.stores_read} />
-      <MethodSteps r={r} comp={comp} map={p.page.map} menu={p.page.menu} neighborhood={p.page.neighborhood} stores={p.page.compared} print={print} />
+      <MethodSteps r={r} comp={comp} map={p.page.map} menu={p.page.menu} neighborhood={p.page.neighborhood} stores={p.page.compared} searched={p.page.searched} print={print} />
       {print ? null : (
         <details className="card how">
           <summary>
@@ -470,7 +483,7 @@ export default function ResultView(p: ResultViewProps) {
           <h2 id="allh">Item a item</h2>
           <span className="small muted">primeiro os pratos e combos, depois a comparação exata</span>
         </div>
-        <PriceRanges items={p.page.ranges} comp={comp} storesRead={r.stores_read} storesTotal={p.page.neighborhood} />
+        <PriceRanges items={p.page.ranges} comp={comp} storesRead={r.stores_read} storesTotal={p.page.neighborhood} print={print} />
         {cats.length ? (
           <div className="secthead">
             <h3>Comparação exata</h3>
@@ -478,17 +491,17 @@ export default function ResultView(p: ResultViewProps) {
           </div>
         ) : null}
         {cats.map(catSection)}
-        {p.onlyYours.length ? (
+        {onlyYours.length ? (
           <Fold print={print} className="card catc" open={false}>
             <summary>
               <h3>{comp ? "Itens só dele" : "Itens só seus"}</h3>
               <span className="csum">
-                <span>{p.onlyYours.length} itens</span>
+                <span>{onlyYours.length} itens</span>
                 <span>ninguém por perto vende algo igual</span>
               </span>
             </summary>
             <div className="rg">
-              {p.onlyYours.map((i) => (
+              {onlyYours.map((i) => (
                 <div className="it it-only" key={i.item_id}>
                   <span>{i.name}</span>
                   <span className="xs muted">sem comparação</span>
@@ -516,7 +529,7 @@ export default function ResultView(p: ResultViewProps) {
           {comp ? "dele" : "seu"} (mesmo produto, tamanho e sabor), só quando lojas suficientes vendem o item. Quando os vizinhos estão em promoção, também olhamos o preço cheio deles.
         </p>
         <p>
-          {compared} itens comparados.{comp ? "" : ` Itens só seus: ${r.only_yours}, ninguém por perto vende algo igual.`} Valores por venda, sem saber quantas unidades {comp ? "ele vende" : "você vende"}. Sem dado de custo.
+          {compared} itens comparados.{comp ? "" : ` Itens só seus: ${onlyYours.length}, ninguém por perto vende algo igual.`} Valores por venda, sem saber quantas unidades {comp ? "ele vende" : "você vende"}. Sem dado de custo.
         </p>
         <ScoreMethod competitor={comp} minItems={p.minItems} />
         <p>

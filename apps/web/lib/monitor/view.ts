@@ -666,3 +666,25 @@ export function comparedStoreLine(s: { name: string; category: string | null; di
   const km = s.distance_m === null ? null : `${(s.distance_m / 1000).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
   return [s.name, s.category, km].filter(Boolean).join(" · ");
 }
+
+/** P23 "Como fizemos" (Marlon, 11/nov): the categories searched, "Carnes (79% do cardápio), Hambúrguer (16%), Lanches e Porções". */
+export function searchedWords(terms: { term: string; menu_share: number | null }[]): string {
+  let first = true;
+  const parts = terms.map((t) => {
+    if (t.menu_share === null || t.menu_share <= 0) return t.term;
+    const pct = `${Math.round(t.menu_share * 100)}%${first ? " do cardápio" : ""}`;
+    first = false;
+    return `${t.term} (${pct})`;
+  });
+  return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} e ${parts[parts.length - 1]}` : (parts[0] ?? "");
+}
+
+/** The stores read by category, most first: "Lanches 12 · Hambúrguer 8 · outras 5". At most `top` named. */
+export function storesByCategory(stores: { category: string | null }[], top = 6): string {
+  const n = new Map<string, number>();
+  for (const s of stores) n.set(s.category ?? "sem categoria", (n.get(s.category ?? "sem categoria") ?? 0) + 1);
+  const sorted = [...n.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"));
+  const shown = sorted.slice(0, top).map(([c, k]) => `${c} ${k}`);
+  const rest = sorted.slice(top).reduce((a, [, k]) => a + k, 0);
+  return [...shown, ...(rest ? [`outras ${rest}`] : [])].join(" · ");
+}

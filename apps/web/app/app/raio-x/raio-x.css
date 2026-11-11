@@ -259,9 +259,9 @@
 /* Como fizemos este raio-X (P23, didactic method) */
 .rx .mhow { display: grid; gap: 18px; padding: 24px; }
 .rx .mhow3 { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; counter-reset: st; }
-.rx .mhow3 li { counter-increment: st; display: grid; gap: 4px; padding-left: 34px; position: relative; font-size: var(--text-sm); color: var(--color-ink-2); }
-.rx .mhow3 li::before { content: counter(st); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--color-sunken); color: var(--color-ink); font-family: var(--font-mono); font-weight: 600; display: grid; place-items: center; font-size: var(--text-xs); }
-.rx .mhow3 li b { color: var(--color-ink); font-size: var(--text-md); }
+.rx .mhow3 > li { counter-increment: st; display: grid; gap: 4px; padding-left: 34px; position: relative; font-size: var(--text-sm); color: var(--color-ink-2); }
+.rx .mhow3 > li::before { content: counter(st); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--color-sunken); color: var(--color-ink); font-family: var(--font-mono); font-weight: 600; display: grid; place-items: center; font-size: var(--text-xs); }
+.rx .mhow3 > li > b { color: var(--color-ink); font-size: var(--text-md); }
 .rx .mhowl { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-top: 1px solid var(--color-border-subtle); padding-top: 12px; }
 .rx .mhowl div { display: grid; gap: 2px; align-content: start; }
 .rx .mhowl dt { font-weight: 600; font-size: var(--text-sm); }
@@ -452,7 +452,7 @@
   .rx .no-print, .rx .menu, .rx .lojas > summary, .rx .resacts, .rx .bulk { display: none !important; }
   .rx .print-only { display: block; }
   .rx .card { break-inside: avoid; }
-  .rx .catc, .rx .rg { break-inside: auto; }
+  .rx .catc, .rx .rg, .rx .mhow, .rx .mmap, .rx .rngs { break-inside: auto; }
   .rx .it { break-inside: avoid; }
   .rx .catc > summary::after, .rx .catc[open] > summary::after, .rx .how > summary::after, .rx .how[open] > summary::after { content: none; }
   /* Print media queries see the whole A4 width (794 px) while the printable box is 703 px: desktop rules would
@@ -467,7 +467,9 @@
   .rx .it { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
   .rx * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   html, body, .rx { background: var(--color-surface) !important; }
-  .rx h1, .rx h2, .rx h3, .rx .catc > summary, .rx .rgh, .rx .catgh { break-after: avoid; }
+  .rx h1, .rx h2, .rx h3, .rx h4, .rx .secthead, .rx .catc > summary, .rx .rgh, .rx .catgh { break-after: avoid; }
+  .rx .money, .rx .mhowl { break-inside: auto; }
+  .rx .money li, .rx .money > div > div { break-inside: avoid; }
   .rx .opps { padding: 14px; gap: 10px; break-inside: auto; }
   .rx .opp { break-inside: avoid; padding: 10px 0; }
   .rx .opph { break-after: avoid; }
@@ -483,3 +485,10 @@ dialog.card {
 .mstores { margin-top: 8px; }
 .mstorelist { margin: 8px 0 0; padding-left: 20px; columns: 2 260px; column-gap: 24px; font-size: var(--text-xs); color: var(--color-ink-2); }
 .mstorelist li { break-inside: avoid; padding: 2px 0; }
+.mstores > summary { cursor: pointer; font-size: var(--text-sm); color: var(--color-link); }
+@media print {
+  .mstores > summary { color: var(--color-ink); font-weight: 600; list-style: none; }
+  .mstores > summary::-webkit-details-marker { display: none; }
+  .mstorelist { columns: 2; font-size: 10px; }
+}
+.rx .mhow3 > li > span > .mterm { font-size: var(--text-sm); color: var(--color-ink); font-weight: 600; }
